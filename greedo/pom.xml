@@ -9,7 +9,6 @@
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>greedo</artifactId>
-  <packaging>pom</packaging>
   
 	<repositories>
 	  <!--Note that in general repositories are not transitive, so they need to be repeated at every level where needed.-->
