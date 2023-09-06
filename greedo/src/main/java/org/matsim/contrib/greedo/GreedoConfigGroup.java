@@ -101,17 +101,17 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	private boolean gapRelativeMSA = false;
-
-	@StringGetter("gapRelativeMSA")
-	public boolean getGapRelativeMSA() {
-		return this.gapRelativeMSA;
-	}
-
-	@StringSetter("gapRelativeMSA")
-	public void setGapRelativeMSA(boolean gapRelativeMSA) {
-		this.gapRelativeMSA = gapRelativeMSA;
-	}
+//	private boolean gapRelativeMSA = false;
+//
+//	@StringGetter("gapRelativeMSA")
+//	public boolean getGapRelativeMSA() {
+//		return this.gapRelativeMSA;
+//	}
+//
+//	@StringSetter("gapRelativeMSA")
+//	public void setGapRelativeMSA(boolean gapRelativeMSA) {
+//		this.gapRelativeMSA = gapRelativeMSA;
+//	}
 
 	//
 
@@ -239,7 +239,7 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 		Vanilla, RelativeToInitialGap, SbaytiCounterpart, SbaytiCounterpartExact
 	}
 
-	private UpperboundStepSize upperboundStepSize = UpperboundStepSize.RelativeToInitialGap;
+	private UpperboundStepSize upperboundStepSize = UpperboundStepSize.Vanilla;
 
 	@StringGetter("upperboundStepSize")
 	public UpperboundStepSize getUpperboundStepSize() {

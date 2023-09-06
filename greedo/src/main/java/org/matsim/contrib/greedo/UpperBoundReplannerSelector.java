@@ -88,10 +88,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpart.equals(this.stepSizeLogic)) {
 			return (this.sbaytiCounterpartGapThreshold / currentGap);
 		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpartExact.equals(this.stepSizeLogic)) {
-			
+
 			return (this.sbaytiGsum - this.sbaytiGcrit * this.sbaytiCnt) / currentGap;
-			
-			
+
 		} else {
 			throw new RuntimeException("Unknown step size logic: " + this.stepSizeLogic);
 		}
@@ -114,12 +113,12 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 	private Double sbaytiGcrit = null;
 
 	@Override
-	Set<Id<Person>> selectReplannersHook(Map<Id<Person>, Double> personId2gap_POSSIBLY_NEGATIVE_GAPS) {
+	Set<Id<Person>> selectReplannersHook(Map<Id<Person>, Double> personId2gap) {
 
-		// only consider strictly positive gaps
-		final Map<Id<Person>, Double> personId2gap = personId2gap_POSSIBLY_NEGATIVE_GAPS.entrySet().stream().filter(e -> e.getValue() > 0.0)
-				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-		
+//		// only consider strictly positive gaps
+//		final Map<Id<Person>, Double> personId2gap = personId2gap_POSSIBLY_NEGATIVE_GAPS.entrySet().stream().filter(e -> e.getValue() > 0.0)
+//				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+
 		/*
 		 * (1) Initialize.
 		 */
@@ -158,7 +157,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 		final String logFile = "exact-replanning.log";
 		if (this.logReplanningProcess) {
-			Hacks.append2file(logFile, "strictly positive gaps: " + ((double) personId2gap.size()) / ((double) personId2gap_POSSIBLY_NEGATIVE_GAPS.size()) + "\n");
+			Hacks.append2file(logFile, "strictly positive gaps: "
+					+ ((double) personId2gap.size()) / ((double) personId2gap.size()) + "\n");
 			Hacks.append2file(logFile, "G(lambda)\tD(lambda)\tQ(lambda)\n");
 		}
 
