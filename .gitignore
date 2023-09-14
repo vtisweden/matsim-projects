@@ -1,4 +1,5 @@
 output/
+data/
 .settings
 
 # maven gitignore template
