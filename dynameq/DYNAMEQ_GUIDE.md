@@ -4,8 +4,7 @@
 The primary objective of this project is to translate input files from Dynameq format to a format suitable for use in MATSim.
 
 ## Quick Start
-1. Clone the Repository
-Begin by cloning the entire repo: `git clone https://github.com/vtisweden/matsim-projects.git`
+1. Begin by cloning the entire repo: `git clone https://github.com/vtisweden/matsim-projects.git`
 
 2. Import and Set Up the Project
 - Setup project according to Maven instructions. Working in Eclipse IDE: Import the cloned repo as an existing Maven project.
