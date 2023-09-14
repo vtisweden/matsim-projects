@@ -20,6 +20,9 @@
 package se.vti.matsim.dynameq.network;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -33,6 +36,13 @@ import org.matsim.core.network.io.NetworkWriter;
 
 /**
  * 
+ * Directory and File Configuration Instructions:
+ * ----------------------------------------------
+ * 1. The 'baseDataFolder' folder path should be altered in accordance with your setup.
+ * 	  For simplicity, it is recommended to store the Dynameq files under a folder named 'data' at the root directory of this sub-project.
+ * 2. Change the path in 'originalNetworkFilePath' to match the location and name of your Dynameq network file.
+ * 3. 'produced_matsim_files/dynameq_network.xml' will be the output location and name for the produced MATSim network file.
+ * 
  * @author FilipK
  *
  */
@@ -41,18 +51,36 @@ public class CreateNetwork {
 	private static final Logger log = Logger.getLogger(CreateNetwork.class);
 
 	public static void main(String[] args) throws IOException {
+		
+		Path baseDataFolder = Paths.get("data");
+		
+		Path originalNetworkFilePath = baseDataFolder.resolve("nuläge dynafile/STHLM_v46_RT_1_20_base.dqt");
+		
+		Path modifiedDynaFolder = baseDataFolder.resolve("modified_dynameq_files");
+		Path producedMatsimFilesFolder = baseDataFolder.resolve("produced_matsim_files");
 
-		final String BASE_NETWORK_FILE_PATH = "data/dynameq_files/nuläge dynafile/STHLM_v46_RT_1_20_base.dqt";
-		final String FIXED_BASE_NETWORK_FILE_PATH = "data/modified_dynameq_files/STHLM_v46_RT_1_20_base_FIXED.txt";
-		final String OUTPUT_NETWORK_FILE = "data/produced_matsim_files/dynameq_network.xml";
+		// Ensure directories exist
+		try {
+		    Files.createDirectories(modifiedDynaFolder);
+		    Files.createDirectories(producedMatsimFilesFolder);
+		} catch (Exception e) {
+		    System.out.println("Error creating directories: " + e.getMessage());
+		}
+
+		// Derive the fixed filename from the original filename
+		String baseFileNameWithoutExt = com.google.common.io.Files.getNameWithoutExtension(originalNetworkFilePath.getFileName().toString());
+		Path fixedBaseNetworkFilePath = modifiedDynaFolder.resolve(baseFileNameWithoutExt + "_FIXED.txt");
+
+		Path outputNetworkFile = producedMatsimFilesFolder.resolve("dynameq_network.xml");
 
 		BaseNetworkFileCleaner baseNetworkFileCleaner = new BaseNetworkFileCleaner();
-		baseNetworkFileCleaner.removeLeadingWhitespacesAndStars(BASE_NETWORK_FILE_PATH, FIXED_BASE_NETWORK_FILE_PATH);
+		baseNetworkFileCleaner.removeLeadingWhitespacesAndStars(originalNetworkFilePath.toString(), fixedBaseNetworkFilePath.toString());
 
-		BaseNetworkFileReader baseNetworkFileReader = new BaseNetworkFileReader(FIXED_BASE_NETWORK_FILE_PATH);
+		BaseNetworkFileReader baseNetworkFileReader = new BaseNetworkFileReader(fixedBaseNetworkFilePath.toString());
 
 		Network network = NetworkUtils.createNetwork();
-
+		
+		// The keywords (ex: "NODES" and "CENTROIDS") specify the start and end sections in the text file to read data from.
 		baseNetworkFileReader.readAndAddNodes(network, "NODES", "CENTROIDS");
 		baseNetworkFileReader.readAndAddLinks(network, "LINKS", "LANE_PERMS");
 		baseNetworkFileReader.readAndAddCentroids(network, "CENTROIDS", "LINKS");
@@ -61,7 +89,7 @@ public class CreateNetwork {
 
 		new NetworkCleaner().run(network);
 
-		new NetworkWriter(network).write(OUTPUT_NETWORK_FILE);
+		new NetworkWriter(network).write(outputNetworkFile.toString());
 
 		log.info("Number of " + Utils.LinkTypeConstants.LINK + " in network: "
 				+ getNumberOfLinksByType(network.getLinks(), Utils.LinkTypeConstants.LINK));

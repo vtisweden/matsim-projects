@@ -20,11 +20,15 @@
 package se.vti.matsim.dynameq.population;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -49,6 +53,17 @@ import se.vti.matsim.dynameq.utils.TimeDiscretization;
 import se.vti.matsim.dynameq.utils.Units;
 
 /**
+ *
+ * Directory and File Configuration Instructions:
+ * ----------------------------------------------
+ * 1. Adjust 'baseDataFolder' to correspond to your directory setup. It should align with the folder used in CreateNetwork.
+ * 2. The 'dynameqMatrixFolder' should contain all matrix files you want to process. 
+ *    Ensure matrix filenames in the lists match your matrix data.
+ * 3. Modify 'modifiedDynaFolder', 'producedMatsimFilesFolder', and 'networkFile' to suit your directory structure and naming conventions.
+ * 	  They should correspond the naming used in CreateNetwork.
+ * 4. Confirm and adjust VOT and vehicle type definitions to match labels in your matrix data.
+ * 5. Confirm that 'startHour_FM', 'startHour_EM', and 'binCnt' correspond to the time frames in your matrix data.
+ * 6. The final translated population will be saved to 'produced_matsim_files/dynameq_population.xml'.
  * 
  * @author FilipK
  *
@@ -58,40 +73,65 @@ public class CreatePopulation {
 	private static final Logger log = Logger.getLogger(CreateNetwork.class);
 
 	public static void main(String[] args) throws IOException {
+		
+		Path baseDataFolder = Paths.get("data");
+		Path dynameqMatrixFolder = baseDataFolder.resolve("nuläge matriser");
+		
+		Path modifiedDynaFolder = baseDataFolder.resolve("modified_dynameq_files");
+		Path producedMatsimFilesFolder = baseDataFolder.resolve("produced_matsim_files");
+		Path networkFile = producedMatsimFilesFolder.resolve("dynameq_network.xml");
+		
+		// Split the matrix files based on FM and EM types.
+		List<Path> matrixFilesFM = Arrays.asList(
+			dynameqMatrixFolder.resolve("klass1-3_nulage_fm_matx_matx.dqt"),
+			dynameqMatrixFolder.resolve("klass4-5_10-11_nulage_fm_matx_matx.dqt"),
+			dynameqMatrixFolder.resolve("klass6-7_lbu_nulage_fm_matx_matx.dqt"),
+			dynameqMatrixFolder.resolve("klass8-9_lbs_nulage_fm_matx_matx.dqt")
+		);
+
+		List<Path> matrixFilesEM = Arrays.asList(
+			dynameqMatrixFolder.resolve("klass1-3_nulage_em_matx_matx.dqt"),
+			dynameqMatrixFolder.resolve("klass4-5_10-11_nulage_em_matx_matx.dqt"),
+		    dynameqMatrixFolder.resolve("klass6-7_lbu_nulage_em_matx_matx.dqt"),
+		    dynameqMatrixFolder.resolve("klass8-9_lbs_nulage_em_matx_matx.dqt")
+		);
+		
+		// Found in the matrix files. Value of time or vehicle type
+		String vot_veh_type_1_3 = "Tidsvarde1till3";
+		String vot_veh_type_4_5 = "Tidsvarde4till5";
+		String vot_veh_type_lbu = "Lbu";
+		String vot_veh_type_lbs = "Lbs";
+
+		// Parameters related to matrix file.
+		int startHour_FM = 6; // First hour in matrix-file
+		int startHour_EM = 14;
+		int binCnt = 4; // Number of hours in matrix-file
+		double samplingRate = 1.0; // The sampling rate is multiplied with the OD value
+		
+		Path outputPopulationFile = producedMatsimFilesFolder.resolve("dynameq_population.xml");
 
 		// TODO: Having to "fix" every file could be avoided by implementing a
 		// customized TabularFileParser
-		final String MATRIX_FILE_1_3_EM = "data/dynameq_files/nuläge matriser/klass1-3_nulage_em_matx_matx.dqt";
-		final String MATRIX_FILE_1_3_FM = "data/dynameq_files/nuläge matriser/klass1-3_nulage_fm_matx_matx.dqt";
-		final String MATRIX_FILE_4_5_EM = "data/dynameq_files/nuläge matriser/klass4-5_10-11_nulage_em_matx_matx.dqt";
-		final String MATRIX_FILE_4_5_FM = "data/dynameq_files/nuläge matriser/klass4-5_10-11_nulage_fm_matx_matx.dqt";
-		final String MATRIX_FILE_6_7_LBU_EM = "data/dynameq_files/nuläge matriser/klass6-7_lbu_nulage_em_matx_matx.dqt";
-		final String MATRIX_FILE_6_7_LBU_FM = "data/dynameq_files/nuläge matriser/klass6-7_lbu_nulage_fm_matx_matx.dqt";
-		final String MATRIX_FILE_8_9_LBS_EM = "data/dynameq_files/nuläge matriser/klass8-9_lbs_nulage_em_matx_matx.dqt";
-		final String MATRIX_FILE_8_9_LBS_FM = "data/dynameq_files/nuläge matriser/klass8-9_lbs_nulage_fm_matx_matx.dqt";
+		
+		List<Path> fixedMatrixFilesFM = matrixFilesFM.stream()
+		    .map(file -> modifiedDynaFolder.resolve(com.google.common.io.Files.getNameWithoutExtension(file.getFileName().toString()) + "_FIXED.txt"))
+		    .collect(Collectors.toList());
 
-		final String MATRIX_FILE_1_3_EM_FIXED = "data/modified_dynameq_files/klass1-3_nulage_em_matx_matx_FIXED.txt";
-		final String MATRIX_FILE_1_3_FM_FIXED = "data/modified_dynameq_files/klass1-3_nulage_fm_matx_matx_FIXED.txt";
-		final String MATRIX_FILE_4_5_EM_FIXED = "data/modified_dynameq_files/klass4-5_10-11_nulage_em_matx_matx_FIXED.txt";
-		final String MATRIX_FILE_4_5_FM_FIXED = "data/modified_dynameq_files/klass4-5_10-11_nulage_fm_matx_matx_FIXED.txt";
-		final String MATRIX_FILE_6_7_LBU_EM_FIXED = "data/modified_dynameq_files/klass6-7_lbu_nulage_em_matx_matx_FIXED.txt";
-		final String MATRIX_FILE_6_7_LBU_FM_FIXED = "data/modified_dynameq_files/klass6-7_lbu_nulage_fm_matx_matx_FIXED.txt";
-		final String MATRIX_FILE_8_9_LBS_EM_FIXED = "data/modified_dynameq_files/klass8-9_lbs_nulage_em_matx_matx_FIXED.txt";
-		final String MATRIX_FILE_8_9_LBS_FM_FIXED = "data/modified_dynameq_files/klass8-9_lbs_nulage_fm_matx_matx_FIXED.txt";
-
-		final String NETWORK_FILE = "data/produced_matsim_files/dynameq_network.xml";
-
+		List<Path> fixedMatrixFilesEM = matrixFilesEM.stream()
+		    .map(file -> modifiedDynaFolder.resolve(com.google.common.io.Files.getNameWithoutExtension(file.getFileName().toString()) + "_FIXED.txt"))
+		    .collect(Collectors.toList());
+		
 		MatrixFileCleaner matrixFileCleaner = new MatrixFileCleaner();
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_1_3_EM, MATRIX_FILE_1_3_EM_FIXED, "SLICE");
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_1_3_FM, MATRIX_FILE_1_3_FM_FIXED, "SLICE");
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_4_5_EM, MATRIX_FILE_4_5_EM_FIXED, "SLICE");
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_4_5_FM, MATRIX_FILE_4_5_FM_FIXED, "SLICE");
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_6_7_LBU_EM, MATRIX_FILE_6_7_LBU_EM_FIXED, "SLICE");
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_6_7_LBU_FM, MATRIX_FILE_6_7_LBU_FM_FIXED, "SLICE");
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_8_9_LBS_EM, MATRIX_FILE_8_9_LBS_EM_FIXED, "SLICE");
-		matrixFileCleaner.removeRowsUntilAndIncluding(MATRIX_FILE_8_9_LBS_FM, MATRIX_FILE_8_9_LBS_FM_FIXED, "SLICE");
+		
+		for (int i = 0; i < matrixFilesFM.size(); i++) {
+		    matrixFileCleaner.removeRowsUntilAndIncluding(matrixFilesFM.get(i).toString(), fixedMatrixFilesFM.get(i).toString(), "SLICE");
+		}
 
-		Network network = NetworkUtils.readNetwork(NETWORK_FILE);
+		for (int i = 0; i < matrixFilesEM.size(); i++) {
+		    matrixFileCleaner.removeRowsUntilAndIncluding(matrixFilesEM.get(i).toString(), fixedMatrixFilesEM.get(i).toString(), "SLICE");
+		}
+
+		Network network = NetworkUtils.readNetwork(networkFile.toString());
 		Population population = PopulationUtils.createPopulation(ConfigUtils.createConfig(), network);
 
 		Set<Id<Node>> centroidNodes = new HashSet<>();
@@ -105,40 +145,19 @@ public class CreatePopulation {
 
 		log.info("Number of centroids: " + centroidSystem.centoridCnt());
 
-		// Found in the matrix files. Value of time or vehicle type
-		String vot_veh_type_1_3 = "Tidsvarde1till3";
-		String vot_veh_type_4_5 = "Tidsvarde4till5";
-		String vot_veh_type_lbu = "Lbu";
-		String vot_veh_type_lbs = "Lbs";
-
-		// Parameters related to matrix file.
-		int startHour_FM = 6; // First hour in matrix-file
-		int startHour_EM = 14;
-		int binCnt = 4; // Number of hours in matrix-file
-		double samplingRate = 1.0; // The sampling rate is multiplied with the OD value
+		List<String> votVehTypes = Arrays.asList(vot_veh_type_1_3, vot_veh_type_4_5, vot_veh_type_lbu, vot_veh_type_lbs);
 
 		// Loading FM data
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_FM, binCnt, samplingRate, vot_veh_type_1_3,
-				MATRIX_FILE_1_3_FM_FIXED);
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_FM, binCnt, samplingRate, vot_veh_type_4_5,
-				MATRIX_FILE_4_5_FM_FIXED);
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_FM, binCnt, samplingRate, vot_veh_type_lbu,
-				MATRIX_FILE_6_7_LBU_FM_FIXED);
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_FM, binCnt, samplingRate, vot_veh_type_lbs,
-				MATRIX_FILE_8_9_LBS_FM_FIXED);
-		
-		// Loading EM data
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_EM, binCnt, samplingRate, vot_veh_type_1_3,
-				MATRIX_FILE_1_3_EM_FIXED);
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_EM, binCnt, samplingRate, vot_veh_type_4_5,
-				MATRIX_FILE_4_5_EM_FIXED);
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_EM, binCnt, samplingRate, vot_veh_type_lbu,
-				MATRIX_FILE_6_7_LBU_EM_FIXED);
-		loadMatricesAndFillPopulation(population, centroidSystem, startHour_EM, binCnt, samplingRate, vot_veh_type_lbs,
-				MATRIX_FILE_8_9_LBS_EM_FIXED);
+		for (int i = 0; i < fixedMatrixFilesFM.size(); i++) {
+		    loadMatricesAndFillPopulation(population, centroidSystem, startHour_FM, binCnt, samplingRate, votVehTypes.get(i), fixedMatrixFilesFM.get(i).toString());
+		}
 
-		String outputPopulationFile = "data/produced_matsim_files/dynameq_population_FM_EM.xml";
-		new PopulationWriter(population).write(outputPopulationFile);
+		// Loading EM data
+		for (int i = 0; i < fixedMatrixFilesEM.size(); i++) {
+		    loadMatricesAndFillPopulation(population, centroidSystem, startHour_EM, binCnt, samplingRate, votVehTypes.get(i), fixedMatrixFilesEM.get(i).toString());
+		}
+
+		new PopulationWriter(population).write(outputPopulationFile.toString());
 	}
 
 	// Note: A new ODMatrices object is created for every matrix file.
