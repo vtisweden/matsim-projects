@@ -18,6 +18,7 @@
   	<module>dynameq</module>
   	<module>emulation</module>
   	<module>greedo</module>
+	<module>samgods</module>
   </modules>
 
   <repositories>
