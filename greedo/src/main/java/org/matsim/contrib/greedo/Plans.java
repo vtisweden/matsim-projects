@@ -60,6 +60,18 @@ public class Plans {
 	 */
 	private final Map<Id<Person>, Integer> person2selectedPlanIndex = new LinkedHashMap<>();
 
+	// >>>>> NEW 2023-09-26 >>>>>
+
+	public Plans() {
+	}
+
+	public <P extends Plan> void putPlanAsSelected(final HasPlansAndId<P, Person> person, final P plan) {
+		this.personId2planList.put(person.getId(), Collections.singletonList(plan));
+		this.person2selectedPlanIndex.put(person.getId(), 0);
+	}
+
+	// <<<<< NEW 2023-09-26 <<<<<
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public Plans(final Population population) {
@@ -83,7 +95,7 @@ public class Plans {
 	public Set<Id<Person>> getPersonIdView() {
 		return Collections.unmodifiableSet(this.personId2planList.keySet());
 	}
-	
+
 	public void set(final Population population) {
 		for (Id<Person> personId : this.personId2planList.keySet()) {
 			final Person person = population.getPersons().get(personId);
@@ -124,7 +136,7 @@ public class Plans {
 		}
 		return sum;
 	}
-	
+
 	public int getPersonCnt() {
 		return this.personId2planList.size();
 	}
