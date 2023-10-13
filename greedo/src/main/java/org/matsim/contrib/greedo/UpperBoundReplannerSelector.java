@@ -145,6 +145,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			return Collections.emptySet();
 		}
 
+		final TransformedObjectiveFunction obj1 = new TransformedObjectiveFunction(this.quadraticDistanceTransformation,
+				this.populationDistance, personId2gap, replannerIds);
+
 		final Map<Id<Person>, Double> personId2bParam = new LinkedHashMap<>(personId2gap.size());
 		for (Id<Person> personId : personId2gap.keySet()) {
 			double b = 0.0;
@@ -209,10 +212,17 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 					deltaD2 = +b + a;
 				}
 
+				obj1.setSwitchingCandidate(candidateId, replannerIds.contains(candidateId), candidateGap);
+
 				// attention, now we maximize
 
 				final double oldQ = this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall);
 				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.effectiveEta(_Gall) * _Gall);
+
+				if (Math.abs(obj1.getDeltaQ(this.effectiveEta(_Gall) * _Gall) - (newQ - oldQ)) > 1e-8) {
+					throw new RuntimeException("deltaQ is " + (newQ - oldQ) + " but obj1 predicts "
+							+ obj1.getDeltaQ(this.effectiveEta(_Gall) * _Gall));
+				}
 
 				if (newQ > oldQ) {
 					_G = Math.max(0.0, _G + deltaG);
@@ -234,6 +244,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 					}
 					switched = true;
 
+					obj1.confirmSwitch(true);
+					
 					if (this.checkDistance) {
 						final double _Gchecked = personId2gap.entrySet().stream()
 								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
@@ -252,6 +264,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 							throw new RuntimeException(msg);
 						}
 					}
+				} else {
+					obj1.confirmSwitch(false);
 				}
 			}
 		}
