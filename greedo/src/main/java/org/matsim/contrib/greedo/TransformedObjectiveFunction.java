@@ -108,9 +108,17 @@ class TransformedObjectiveFunction {
 		}
 	}
 
-//	double getCurrentQ(final double gamma) {
-//		return this._Q(this._G, this._D2, gamma);
-//	}
+	Double getG() {
+		return this._G;
+	}
+	
+	Double getD2() {
+		return this._D2;
+	}
+	
+	double getQ(final double gamma) {
+		return this._Q(this._G, this._D2, gamma);
+	}
 
 //	double getCandidateQ(final double gamma) {
 //		return this._Q(this._G + this.deltaG, this._D2 + this.deltaD2, gamma);
