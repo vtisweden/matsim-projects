@@ -92,11 +92,14 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 	// >>> TESTING >>>
 
-	private Plans previousOldPlans = null;
-	private Plans previousNewPlans = null;
-	
-	private final AbstractReplannerSelector replannerReSelector;
+	private Plans alternativePlans = null;
+
+//	private Map<String, LinkTravelTimeCopy> previousMode2filteredTravelTimes = null;
+	private Map<Id<Person>, Double> previousPersonId2FilteredGap = null;
+	private AbstractPopulationDistance previousPopulationDistance = null;
 	private Set<Id<Person>> previousReplannerIds = null;
+
+//	private final AbstractReplannerSelector replannerReSelector;
 	private Double previousReplannerGapSum = null;
 
 	// <<< TESTING <<<
@@ -114,7 +117,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		this.persons = services.getScenario().getPopulation().getPersons().values();
 
 		this.replannerSelector = AbstractReplannerSelector.newReplannerSelector(this.greedoConfig);
-		this.replannerReSelector = AbstractReplannerSelector.newReplannerSelector(this.greedoConfig);
+//		this.replannerReSelector = AbstractReplannerSelector.newReplannerSelector(this.greedoConfig);
 
 		this.emulationErrorAnalyzer = new EmulationErrorAnalyzer();
 
@@ -335,64 +338,79 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 		EmulationEngine.ensureOnePlanPerPersonInScenario(this.services.getScenario(), false);
 		final Plans oldPlans = new Plans(this.services.getScenario().getPopulation());
-		
 
 		// >>>>> RECOMPUTE EVERYTHING AROUND THE OLD PLANS >>>>>
 
-		if (this.previousOldPlans != null) {
+		if (this.alternativePlans != null) {
 
-			final List<Map<Id<Person>, Double>> personId2oldScoreOverReplications = new ArrayList<>(
+			final TwoPointUpperBoundReplannerSelector twoPointSelector = new TwoPointUpperBoundReplannerSelector(
+					this.greedoConfig.newIterationToTargetReplanningRate(),
+					this.greedoConfig.newQuadraticDistanceTransformation(), this.greedoConfig.getUpperboundStepSize());
+
+			twoPointSelector.setPreviousReplanners(this.previousReplannerIds);
+
+			twoPointSelector.setFirstPoint(this.previousPersonId2FilteredGap, this.previousPopulationDistance);
+
+			// Below: Put the alternative setup as the second anchor point as the replanner
+			// selector.
+
+			final List<Map<Id<Person>, Double>> personId2currentScoreOverReplications = new ArrayList<>(
 					mode2travelTimesForEmulation.size());
-			this.previousOldPlans.set(this.services.getScenario().getPopulation());
-			this.emulateAgainstAllTravelTimes(personId2oldScoreOverReplications, null, true,
+			this.emulateAgainstAllTravelTimes(personId2currentScoreOverReplications, null, true,
 					mode2travelTimesForEmulation);
+			Plans currentPlans = new Plans(this.services.getScenario().getPopulation());
 
-			final List<Map<Id<Person>, Double>> personId2newScoreOverReplications = new ArrayList<>(
+			final List<Map<Id<Person>, Double>> personId2alternativeScoreOverReplications = new ArrayList<>(
 					mode2travelTimesForEmulation.size());
-			this.previousNewPlans.set(this.services.getScenario().getPopulation());
-			this.emulateAgainstAllTravelTimes(personId2newScoreOverReplications, null, true,
+			this.alternativePlans.set(this.services.getScenario().getPopulation());
+			this.emulateAgainstAllTravelTimes(personId2alternativeScoreOverReplications, null, true,
 					mode2travelTimesForEmulation);
+			this.alternativePlans = new Plans(this.services.getScenario().getPopulation());
 
-			// TODO extract function
-			final int lagCnt = personId2newScoreOverReplications.size();
+			final int lagCnt = personId2currentScoreOverReplications.size();
 			final double lagWeight = 1.0 / lagCnt;
 			final Map<Id<Person>, Double> personId2FilteredGap = new LinkedHashMap<>(this.personIds.size());
-			for (Id<Person> personId : personIds) {
+			for (Id<Person> personId : this.personIds) {
 				double filteredGap = 0.0;
 				for (int lag = 0; lag < lagCnt; lag++) {
-					filteredGap += lagWeight * (personId2newScoreOverReplications.get(lag).get(personId)
-							- personId2oldScoreOverReplications.get(lag).get(personId));
+					filteredGap += lagWeight * (personId2alternativeScoreOverReplications.get(lag).get(personId)
+							- personId2currentScoreOverReplications.get(lag).get(personId));
 				}
 				personId2FilteredGap.put(personId, filteredGap);
 			}
 
-			final AbstractPopulationDistance popDist = AbstractPopulationDistance.newPopulationDistance(
-					this.previousOldPlans, this.previousNewPlans, this.services.getScenario(), mode2filteredTravelTimes);
-			this.replannerReSelector.setDistanceToReplannedPopulation(popDist);
-			final Set<Id<Person>> replannerIds = this.replannerReSelector.selectReplanners(personId2FilteredGap,
-					this.replanIteration);
+			final AbstractPopulationDistance distanceFromCurrentPoint = AbstractPopulationDistance
+					.newPopulationDistance(currentPlans, this.alternativePlans, this.services.getScenario(),
+							mode2filteredTravelTimes);
+
+			twoPointSelector.setSecondPoint(personId2FilteredGap, distanceFromCurrentPoint);
+
+			// Now replan using two anchor points.
+
+			final Set<Id<Person>> replannerIds = twoPointSelector.selectReplanners(this.previousPersonId2FilteredGap, // TODO
+																														// UNUSED
+					this.replanIteration - 1 /* to recover previous iteration's conditions */);
 			final Set<Id<Person>> consistentReplannerIds = SetUtils.intersect(this.previousReplannerIds, replannerIds);
 
 			final int oldReplanners = this.previousReplannerIds.size();
 			final int newReplanners = replannerIds.size();
 			final int consistentReplanners = consistentReplannerIds.size();
 
-			final double newReplannerGapSum = replannerIds.stream().mapToDouble(id -> personId2FilteredGap.get(id))
-					.sum();
+			final double newReplannerGapSum = replannerIds.stream()
+					.mapToDouble(id -> this.previousPersonId2FilteredGap.get(id)).sum();
 
 			Hacks.append2file("replannerCheck.txt", oldReplanners + "\t" + newReplanners + "\t" + consistentReplanners
 					+ "\t" + this.previousReplannerGapSum + "\t" + newReplannerGapSum + "\n");
-			
+
 		} else {
 			Hacks.append2file("replannerCheck.txt",
 					"oldReplanners\tnewReplanners\tconsistentReplanners\toldReplannerGap\tnewReplannerGap\n");
 		}
 
 		// <<<<< RECOMPUTE EVERYTHING AROUND THE OLD PLANS <<<<<
-		
-		
+
 		oldPlans.set(this.services.getScenario().getPopulation());
-		
+
 		this.emulationErrorAnalyzer.setSimulatedScores(this.services.getScenario().getPopulation());
 		final EventsChecker emulatedEventsChecker;
 		if (this.greedoConfig.getCheckEmulatedAgentsCnt() > 0) {
@@ -400,13 +418,11 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		} else {
 			emulatedEventsChecker = null;
 		}
-		
+
 		final List<Map<Id<Person>, Double>> personId2oldScoreOverReplications = new ArrayList<>(
 				mode2travelTimesForEmulation.size());
 		this.emulateAgainstAllTravelTimes(personId2oldScoreOverReplications, emulatedEventsChecker, true,
 				mode2travelTimesForEmulation);
-		// final Plans oldPlans = new Plans(this.services.getScenario().getPopulation());
-		this.previousOldPlans = oldPlans;
 
 		this.emulationErrorAnalyzer.setEmulatedScores(personId2oldScoreOverReplications.get(0));
 		if (emulatedEventsChecker != null) {
@@ -420,8 +436,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		replanningEngine.replan(event.getIteration(), mode2travelTimesForReplanning);
 		this.emulateAgainstAllTravelTimes(personId2newScoreOverReplications, null, true, mode2travelTimesForEmulation);
 		final Plans newPlans = new Plans(event.getServices().getScenario().getPopulation());
-		this.previousNewPlans = newPlans;
-		
+
 		/*
 		 * (2) Compute intermediate statistics.
 		 */
@@ -454,20 +469,27 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 		final Set<Id<Person>> replannerIds = this.replannerSelector.selectReplanners(personId2FilteredGap,
 				this.replanIteration);
-		this.previousReplannerIds = replannerIds;
-		this.previousReplannerGapSum = replannerIds.stream().mapToDouble(id -> personId2FilteredGap.get(id)).sum();
 
+		this.alternativePlans = new Plans();
 		for (Person person : this.persons) {
 			if (replannerIds.contains(person.getId())) {
 				newPlans.set(person);
+				this.alternativePlans.copy(person.getId(), oldPlans);
 			} else {
 				oldPlans.set(person);
+				this.alternativePlans.copy(person.getId(), newPlans);
 			}
 		}
 
 		/*
 		 * (4) Postprocess.
 		 */
+
+		this.previousPersonId2FilteredGap = personId2FilteredGap;
+		this.previousPopulationDistance = popDist;
+
+		this.previousReplannerIds = replannerIds;
+		this.previousReplannerGapSum = replannerIds.stream().mapToDouble(id -> personId2FilteredGap.get(id)).sum();
 
 		this.emulationErrorAnalyzer.update(this.services.getScenario().getPopulation());
 		this.statsWriter.writeToFile(this);

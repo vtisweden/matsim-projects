@@ -55,7 +55,7 @@ abstract class AbstractReplannerSelector {
 
 	private Double meanFilteredGap = null;
 
-	private boolean hasReplannedBefore = false;
+	protected boolean hasReplannedBefore = false;
 
 	private Integer replanIteration = null;
 

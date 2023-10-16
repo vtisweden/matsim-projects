@@ -65,9 +65,14 @@ public class Plans {
 	public Plans() {
 	}
 
-	public <P extends Plan> void putPlanAsSelected(final HasPlansAndId<P, Person> person, final P plan) {
-		this.personId2planList.put(person.getId(), Collections.singletonList(plan));
-		this.person2selectedPlanIndex.put(person.getId(), 0);
+//	public <P extends Plan> void putPlanAsSelected(final HasPlansAndId<P, Person> person, final P plan) {
+//		this.personId2planList.put(person.getId(), Collections.singletonList(plan));
+//		this.person2selectedPlanIndex.put(person.getId(), 0);
+//	}
+
+	public void copy(final Id<Person> personId, final Plans sourcePlans) {
+		this.personId2planList.put(personId, Collections.singletonList(sourcePlans.getSelectedPlan(personId)));
+		this.person2selectedPlanIndex.put(personId, 0);
 	}
 
 	// <<<<< NEW 2023-09-26 <<<<<

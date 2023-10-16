@@ -85,8 +85,8 @@ class TransformedObjectiveFunction {
 	// -------------------- INTERNALS --------------------
 
 	private double _Q(final double _G, final double _D2, final double gamma) {
-		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
-		return (_G - gamma) / Math.max(this.eps, transformedD);
+		final double t = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
+		return (_G - gamma) / Math.max(this.eps, t);
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -111,11 +111,11 @@ class TransformedObjectiveFunction {
 	Double getG() {
 		return this._G;
 	}
-	
+
 	Double getD2() {
 		return this._D2;
 	}
-	
+
 	double getQ(final double gamma) {
 		return this._Q(this._G, this._D2, gamma);
 	}
