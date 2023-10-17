@@ -302,12 +302,6 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 	@Override
 	public void notifyReplanning(final ReplanningEvent event) {
 
-		/*
-		 * Iterations 0, 2, 4, ... do one-point replanning.
-		 * 
-		 * Iterations 1, 3, 5, ... do two-point replanning.
-		 */
-
 		if (this.replanIteration == null) {
 			this.replanIteration = 0;
 		} else {
@@ -359,7 +353,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 				mode2travelTimesForEmulation.size());
 		this.emulateAgainstAllTravelTimes(personId2oldScoreOverReplications, emulatedEventsChecker, true,
 				mode2travelTimesForEmulation);
-		final Plans oldPlans = new Plans(this.services.getScenario().getPopulation());
+		final Plans currentPlans = new Plans(this.services.getScenario().getPopulation());
 
 		this.emulationErrorAnalyzer.setEmulatedScores(personId2oldScoreOverReplications.get(0));
 		if (emulatedEventsChecker != null) {
@@ -367,7 +361,12 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		}
 
 		/*
-		 * (2) Replan. Two cases, see above.
+		 * (2) Replan.
+		 * 
+		 * Iterations 0, 2, 4, ... do one-point replanning.
+		 * 
+		 * Iterations 1, 3, 5, ... do two-point replanning.
+		 * 
 		 */
 
 		if (this.replanIteration % 2 == 0) {
@@ -378,7 +377,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 			final List<Map<Id<Person>, Double>> personId2newScoreOverReplications = new ArrayList<>(
 					mode2travelTimesForEmulation.size());
-			oldPlans.set(event.getServices().getScenario().getPopulation());
+			currentPlans.set(event.getServices().getScenario().getPopulation());
 			final EmulationEngine replanningEngine = this.emulationEngineProvider.get();
 			replanningEngine.setOverwriteTravelTimes(true);
 			replanningEngine.replan(event.getIteration(), mode2travelTimesForReplanning);
@@ -403,7 +402,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 				personId2FilteredGap.put(personId, filteredGap);
 			}
 
-			final AbstractPopulationDistance popDist = AbstractPopulationDistance.newPopulationDistance(oldPlans,
+			final AbstractPopulationDistance popDist = AbstractPopulationDistance.newPopulationDistance(currentPlans,
 					newPlans, this.services.getScenario(), mode2filteredTravelTimes);
 			this.replannerSelector.setDistanceToReplannedPopulation(popDist);
 
@@ -414,17 +413,16 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 			for (Person person : this.persons) {
 				if (replannerIds.contains(person.getId())) {
 					newPlans.set(person);
-					this.alternativePlans.copy(person.getId(), oldPlans);
+					this.alternativePlans.copy(person.getId(), currentPlans);
 				} else {
-					oldPlans.set(person);
+					currentPlans.set(person);
 					this.alternativePlans.copy(person.getId(), newPlans);
 				}
 			}
 
+			this.previousReplannerIds = replannerIds;
 			this.previousPersonId2FilteredGap = personId2FilteredGap;
 			this.previousPopulationDistance = popDist;
-
-			this.previousReplannerIds = replannerIds;
 			this.previousReplannerGapSum = replannerIds.stream().mapToDouble(id -> personId2FilteredGap.get(id)).sum();
 
 		} else {
@@ -444,7 +442,6 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 			this.alternativePlans.set(this.services.getScenario().getPopulation());
 			this.emulateAgainstAllTravelTimes(personId2alternativeScoreOverReplications, null, true,
 					mode2travelTimesForEmulation);
-			this.alternativePlans = new Plans(this.services.getScenario().getPopulation());
 
 			this.gap = personId2alternativeScoreOverReplications.get(0).values().stream().mapToDouble(s -> s).average()
 					.getAsDouble()
@@ -464,7 +461,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 			}
 
 			final AbstractPopulationDistance distanceFromCurrentPoint = AbstractPopulationDistance
-					.newPopulationDistance(oldPlans, this.alternativePlans, this.services.getScenario(),
+					.newPopulationDistance(currentPlans, this.alternativePlans, this.services.getScenario(),
 							mode2filteredTravelTimes);
 			twoPointSelector.setSecondPoint(personId2FilteredGap, distanceFromCurrentPoint);
 
@@ -476,17 +473,15 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 				if (replannerIds.contains(person.getId())) {
 					this.alternativePlans.set(person);
 				} else {
-					oldPlans.set(person);
+					currentPlans.set(person);
 				}
 			}
 
 			this.alternativePlans = null;
-
-			this.previousPersonId2FilteredGap = null;
-			this.previousPopulationDistance = null;
-
 			this.previousReplannerIds = null;
 			this.previousReplannerGapSum = null;
+			this.previousPersonId2FilteredGap = null;
+			this.previousPopulationDistance = null;
 
 //			final Set<Id<Person>> consistentReplannerIds = SetUtils.intersect(this.previousReplannerIds, replannerIds);
 //

@@ -136,7 +136,9 @@ class TwoPointUpperBoundReplannerSelector extends AbstractReplannerSelector {
 		 * (2) Repeatedly switch (non)replanners.
 		 */
 
-		final List<Id<Person>> allPersonIds = new LinkedList<>(this.personId2gap1.keySet());
+		// This is the counterpart of a line search, do not "branch out" by considering
+		// new switchers (relative to initial point 1).
+		final List<Id<Person>> allCandidateIds = new LinkedList<>(this.previousReplanners);
 		boolean switched = true;
 
 		while (switched) {
@@ -147,9 +149,9 @@ class TwoPointUpperBoundReplannerSelector extends AbstractReplannerSelector {
 //			}
 
 			switched = false;
-			Collections.shuffle(allPersonIds);
+			Collections.shuffle(allCandidateIds);
 
-			for (Id<Person> candidateId : allPersonIds) {
+			for (Id<Person> candidateId : allCandidateIds) {
 
 				obj1.setSwitchingCandidate(candidateId, replannerIds1.contains(candidateId),
 						this.personId2gap1.get(candidateId));
