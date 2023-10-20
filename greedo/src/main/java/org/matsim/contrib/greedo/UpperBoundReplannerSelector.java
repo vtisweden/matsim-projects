@@ -20,6 +20,7 @@
 package org.matsim.contrib.greedo;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	// -------------------- CONSTANTS --------------------
 
-//	private final double eps = 1e-8;
+	private final double eps = 1e-8;
 
-//	private final boolean checkDistance = true;
+	private final boolean checkDistance = true;
 
 	private final boolean logReplanningProcess = true;
 
@@ -55,7 +56,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	private AbstractPopulationDistance populationDistance = null;
 
-//	private Double initialGap = null;
+	private Double initialGap = null;
 
 	private Double sbaytiCounterpartGapThreshold = null;
 
@@ -83,9 +84,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		if (GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
 			return this.getTargetReplanningRate();
 		} else if (GreedoConfigGroup.UpperboundStepSize.RelativeToInitialGap.equals(this.stepSizeLogic)) {
-			throw new UnsupportedOperationException();
-			// return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap /
-			// currentGap);
+			return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap / currentGap);
 		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpart.equals(this.stepSizeLogic)) {
 			return (this.sbaytiCounterpartGapThreshold / currentGap);
 		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpartExact.equals(this.stepSizeLogic)) {
@@ -97,10 +96,10 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		}
 	}
 
-//	private double _Q(final double _G, final double _D2, final double epsilon) {
-//		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
-//		return (_G - epsilon) / Math.max(this.eps, transformedD);
-//	}
+	private double _Q(final double _G, final double _D2, final double epsilon) {
+		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
+		return (_G - epsilon) / Math.max(this.eps, transformedD);
+	}
 
 	// --------------- OVERRIDING OF AbstractReplannerSelector ---------------
 
@@ -146,18 +145,15 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			return Collections.emptySet();
 		}
 
-		final TransformedObjectiveFunction obj1 = new TransformedObjectiveFunction(this.quadraticDistanceTransformation,
-				this.populationDistance, personId2gap, replannerIds);
-
-//		final Map<Id<Person>, Double> personId2bParam = new LinkedHashMap<>(personId2gap.size());
-//		for (Id<Person> personId : personId2gap.keySet()) {
-//			double b = 0.0;
-//			for (Id<Person> replannerId : replannerIds) {
-//				b += this.populationDistance.getACoefficient(replannerId, personId)
-//						+ this.populationDistance.getACoefficient(personId, replannerId);
-//			}
-//			personId2bParam.put(personId, b);
-//		}
+		final Map<Id<Person>, Double> personId2bParam = new LinkedHashMap<>(personId2gap.size());
+		for (Id<Person> personId : personId2gap.keySet()) {
+			double b = 0.0;
+			for (Id<Person> replannerId : replannerIds) {
+				b += this.populationDistance.getACoefficient(replannerId, personId)
+						+ this.populationDistance.getACoefficient(personId, replannerId);
+			}
+			personId2bParam.put(personId, b);
+		}
 
 		final String logFile = "exact-replanning.log";
 		if (this.logReplanningProcess) {
@@ -167,18 +163,18 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		}
 
 		final double _Gall = personId2gap.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
-//		final double _D2all = personId2bParam.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
+		final double _D2all = personId2bParam.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
 
-//		if (this.initialGap == null) {
-//			this.initialGap = _Gall;
-//		}
+		if (this.initialGap == null) {
+			this.initialGap = _Gall;
+		}
 
 //		double _G = personId2gap.entrySet().stream().filter(e -> replannerIds.contains(e.getKey()))
 //				.mapToDouble(e -> e.getValue()).sum();
 //		double _D2 = 0.5 * personId2bParam.entrySet().stream().filter(e -> replannerIds.contains(e.getKey()))
 //				.mapToDouble(e -> e.getValue()).sum();
-//		double _G = replannerIds.stream().mapToDouble(r -> personId2gap.get(r)).sum();
-//		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
+		double _G = replannerIds.stream().mapToDouble(r -> personId2gap.get(r)).sum();
+		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
 
 		/*
 		 * (2) Repeatedly switch (non)replanners.
@@ -190,10 +186,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		while (switched) {
 
 			if (this.logReplanningProcess) {
-//				Hacks.append2file(logFile,
-//						_G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall) + "\n");
-				Hacks.append2file(logFile, obj1.getG() + "\t" + Math.sqrt(obj1.getD2()) + "\t"
-						+ obj1.getQ(this.effectiveEta(_Gall) * _Gall) + "\n");
+				Hacks.append2file(logFile,
+						_G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall) + "\n");
 			}
 
 			switched = false;
@@ -202,84 +196,70 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			for (Id<Person> candidateId : allPersonIds) {
 
 				final double candidateGap = personId2gap.get(candidateId);
-//				final double a = this.populationDistance.getACoefficient(candidateId, candidateId);
-//				final double b = personId2bParam.get(candidateId);
-//
-//				final double deltaG;
-//				final double deltaD2;
-//				if (replannerIds.contains(candidateId)) {
-//					deltaG = -candidateGap;
-//					deltaD2 = -b + a;
-//				} else /* candidate is NOT a replanner */ {
-//					deltaG = +candidateGap;
-//					deltaD2 = +b + a;
-//				}
+				final double a = this.populationDistance.getACoefficient(candidateId, candidateId);
+				final double b = personId2bParam.get(candidateId);
 
-				obj1.setSwitchingCandidate(candidateId, replannerIds.contains(candidateId), candidateGap);
+				final double deltaG;
+				final double deltaD2;
+				if (replannerIds.contains(candidateId)) {
+					deltaG = -candidateGap;
+					deltaD2 = -b + a;
+				} else /* candidate is NOT a replanner */ {
+					deltaG = +candidateGap;
+					deltaD2 = +b + a;
+				}
 
 				// attention, now we maximize
 
-//				final double oldQ = this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall);
-//				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.effectiveEta(_Gall) * _Gall);
-//
-//				if (Math.abs(obj1.getDeltaQ(this.effectiveEta(_Gall) * _Gall) - (newQ - oldQ)) > 1e-8) {
-//					throw new RuntimeException("deltaQ is " + (newQ - oldQ) + " but obj1 predicts "
-//							+ obj1.getDeltaQ(this.effectiveEta(_Gall) * _Gall));
-//				}
+				final double oldQ = this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall);
+				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.effectiveEta(_Gall) * _Gall);
 
-				final double deltaQ = obj1.getDeltaQ(this.effectiveEta(_Gall) * _Gall);
-				
-				if (deltaQ > 0) {
-//					if (newQ > oldQ) {
-//					_G = Math.max(0.0, _G + deltaG);
-//					_D2 = Math.max(0.0, _D2 + deltaD2);
+				if (newQ > oldQ) {
+					_G = Math.max(0.0, _G + deltaG);
+					_D2 = Math.max(0.0, _D2 + deltaD2);
 
-//					final double deltaSign;
+					final double deltaSign;
 					if (replannerIds.contains(candidateId)) {
 						replannerIds.remove(candidateId);
-//						deltaSign = -1.0;
+						deltaSign = -1.0;
 					} else /* candidate is NOT a replanner */ {
 						replannerIds.add(candidateId);
-//						deltaSign = +1.0;
+						deltaSign = +1.0;
 					}
-//					for (Id<Person> personId : personId2gap.keySet()) {
-//						final double deltaB = deltaSign
-//								* (this.populationDistance.getACoefficient(candidateId, personId)
-//										+ this.populationDistance.getACoefficient(personId, candidateId));
-//						personId2bParam.compute(personId, (id, b2) -> b2 + deltaB);
-//					}
-					
+					for (Id<Person> personId : personId2gap.keySet()) {
+						final double deltaB = deltaSign
+								* (this.populationDistance.getACoefficient(candidateId, personId)
+										+ this.populationDistance.getACoefficient(personId, candidateId));
+						personId2bParam.compute(personId, (id, b2) -> b2 + deltaB);
+					}
 					switched = true;
-					obj1.confirmSwitch(true);
 
-//					if (this.checkDistance) {
-//						final double _Gchecked = personId2gap.entrySet().stream()
-//								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
-//						final double _D2checkedB = 0.5 * personId2bParam.entrySet().stream()
-//								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
-//						final boolean gErr = Math.abs(_Gchecked - _G) > 1e-4;
-//						final boolean d2ErrB = Math.abs(_D2checkedB - _D2) > 1e-4;
-//						if (gErr || d2ErrB) {
-//							String msg = "";
-//							if (gErr) {
-//								msg += "\nrecursive _G = " + _G + ", but checked _G = " + _Gchecked;
-//							}
-//							if (d2ErrB) {
-//								msg += "\nrecursive _D2 = " + _D2 + ", but checked _D2(B) = " + _D2checkedB;
-//							}
-//							throw new RuntimeException(msg);
-//						}
-//					}
-				} else {
-					obj1.confirmSwitch(false);
+					if (this.checkDistance) {
+						final double _Gchecked = personId2gap.entrySet().stream()
+								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
+						final double _D2checkedB = 0.5 * personId2bParam.entrySet().stream()
+								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
+						final boolean gErr = Math.abs(_Gchecked - _G) > 1e-4;
+						final boolean d2ErrB = Math.abs(_D2checkedB - _D2) > 1e-4;
+						if (gErr || d2ErrB) {
+							String msg = "";
+							if (gErr) {
+								msg += "\nrecursive _G = " + _G + ", but checked _G = " + _Gchecked;
+							}
+							if (d2ErrB) {
+								msg += "\nrecursive _D2 = " + _D2 + ", but checked _D2(B) = " + _D2checkedB;
+							}
+							throw new RuntimeException(msg);
+						}
+					}
 				}
 			}
 		}
 
-//		if (this.logReplanningProcess) {
-//			Hacks.append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
-//			Hacks.append2file(logFile, "\n");
-//		}
+		if (this.logReplanningProcess) {
+			Hacks.append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
+			Hacks.append2file(logFile, "\n");
+		}
 
 		return replannerIds;
 	}

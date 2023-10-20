@@ -128,16 +128,15 @@ class TwoPointUpperBoundReplannerSelector extends AbstractReplannerSelector {
 //			Hacks.append2file(logFile, "G(lambda)\tD(lambda)\tQ(lambda)\n");
 //		}
 
-		final double _Gall1 = personId2gap1.entrySet().stream()
-				.mapToDouble(e -> Math.max(Double.NEGATIVE_INFINITY, e.getValue())).sum();
-		final double _Gall2 = personId2gap2.entrySet().stream()
-				.mapToDouble(e -> Math.max(Double.NEGATIVE_INFINITY, e.getValue())).sum();
+		// TODO Attention! Changed this to nonnegative-only.
+		final double _Gall1 = personId2gap1.entrySet().stream().mapToDouble(e -> Math.max(0.0, e.getValue())).sum();
+		final double _Gall2 = personId2gap2.entrySet().stream().mapToDouble(e -> Math.max(0.0, e.getValue())).sum();
 
 		/*
 		 * (2) Repeatedly switch (non)replanners.
 		 */
 
-		final List<Id<Person>> allCandidateIds = new LinkedList<>(this.personId2gap1.keySet());
+		final List<Id<Person>> allPersonIds = new LinkedList<>(this.personId2gap1.keySet());
 		boolean switched = true;
 
 		while (switched) {
@@ -148,9 +147,9 @@ class TwoPointUpperBoundReplannerSelector extends AbstractReplannerSelector {
 //			}
 
 			switched = false;
-			Collections.shuffle(allCandidateIds);
+			Collections.shuffle(allPersonIds);
 
-			for (Id<Person> candidateId : allCandidateIds) {
+			for (Id<Person> candidateId : allPersonIds) {
 
 				obj1.setSwitchingCandidate(candidateId, replannerIds1.contains(candidateId),
 						this.personId2gap1.get(candidateId));
@@ -160,7 +159,7 @@ class TwoPointUpperBoundReplannerSelector extends AbstractReplannerSelector {
 				// attention, now we maximize
 
 				final double gamma1 = this.effectiveEta(_Gall1) * _Gall1;
-				final double gamma2 = Math.max(0.0, gamma1 + (_Gall2 - _Gall1));
+				final double gamma2 = this.effectiveEta(_Gall2) * _Gall2;
 
 				Hacks.append2file("Q.txt", "gamma1 = " + gamma1 + ", gamma2 = " + gamma2 + "\n");
 				Hacks.append2file("Q.txt", "Q1 = " + obj1.getQ(gamma1) + ", deltaQ1 = " + obj1.getDeltaQ(gamma1)
