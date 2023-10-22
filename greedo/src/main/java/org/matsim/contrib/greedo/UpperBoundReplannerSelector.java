@@ -59,6 +59,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 	private Double initialGap = null;
 
 	private Double sbaytiCounterpartGapThreshold = null;
+	
+	private Double overrideEta = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -81,7 +83,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 //		} else {
 //			return this.getTargetReplanningRate();
 //		}
-		if (GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
+		if (this.overrideEta != null) {
+			return this.overrideEta;
+		} else if (GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
 			return this.getTargetReplanningRate();
 		} else if (GreedoConfigGroup.UpperboundStepSize.RelativeToInitialGap.equals(this.stepSizeLogic)) {
 			return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap / currentGap);
@@ -101,6 +105,10 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		return (_G - epsilon) / Math.max(this.eps, transformedD);
 	}
 
+	void setOverrideEta(final Double overrideEta) {
+		this.overrideEta = overrideEta;
+	}
+	
 	// --------------- OVERRIDING OF AbstractReplannerSelector ---------------
 
 	@Override
@@ -260,6 +268,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			Hacks.append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
 			Hacks.append2file(logFile, "\n");
 		}
+
+		this.moveSize = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
 
 		return replannerIds;
 	}

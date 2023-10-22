@@ -88,6 +88,14 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 	private final LinkedList<Map<String, LinkTravelTimeCopy>> listOfMode2travelTimes = new LinkedList<>();
 
+	// TESTING
+
+	private final RelativeAmbitionLevel ral = new RelativeAmbitionLevel(0.95);
+	private Double previousGapSum = null;
+	private Double previousFilteredGapSum = null;
+	private Double previousAnticipatedReductionSum = null;
+	private Double previousGeneralizedDistance = null;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	@Inject
@@ -205,6 +213,40 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 			@Override
 			public String value(GreedoReplanning data) {
 				return Statistic.toString(data.emulationErrorAnalyzer.getMeanAbsError());
+			}
+		});
+
+		this.statsWriter.addSearchStatistic(new Statistic<>() {
+			@Override
+			public String label() {
+				return "alpha";
+			}
+
+			@Override
+			public String value(GreedoReplanning data) {
+				return Statistic.toString(data.ral.getAlpha());
+			}
+		});
+		this.statsWriter.addSearchStatistic(new Statistic<>() {
+			@Override
+			public String label() {
+				return "beta";
+			}
+
+			@Override
+			public String value(GreedoReplanning data) {
+				return Statistic.toString(data.ral.getBeta());
+			}
+		});
+		this.statsWriter.addSearchStatistic(new Statistic<>() {
+			@Override
+			public String label() {
+				return "eta";
+			}
+
+			@Override
+			public String value(GreedoReplanning data) {
+				return Statistic.toString(data.ral.getEta());
 			}
 		});
 	}
@@ -374,6 +416,12 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 //			personId2filteredOldScore.put(personId, filteredOldScore);
 		}
 
+		final double filteredGapSum = personId2FilteredGap.values().stream().mapToDouble(g -> g).sum();
+		if (this.previousGeneralizedDistance != null) { // set only in the *2nd* iteration
+			this.ral.update(filteredGapSum, this.previousFilteredGapSum, this.previousAnticipatedReductionSum,
+					this.previousFilteredGapSum, this.previousGeneralizedDistance);
+		}
+
 		/*
 		 * (3) Identify re-planners.
 		 */
@@ -381,6 +429,12 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		final AbstractPopulationDistance popDist = AbstractPopulationDistance.newPopulationDistance(oldPlans, newPlans,
 				this.services.getScenario(), mode2filteredTravelTimes);
 		this.replannerSelector.setDistanceToReplannedPopulation(popDist);
+
+		// TODO Unchecked cast!
+		if (this.replanIteration >= 30) {
+			((UpperBoundReplannerSelector) this.replannerSelector)
+					.setOverrideEta(Math.max(1e-8, Math.min(1.0 - 1e-8, this.ral.getEta())));
+		}
 
 		final Set<Id<Person>> replannerIds = this.replannerSelector.selectReplanners(personId2FilteredGap,
 				this.replanIteration);
@@ -396,6 +450,12 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		/*
 		 * (4) Postprocess.
 		 */
+
+		this.previousGapSum = this.gap * this.personIds.size();
+		this.previousAnticipatedReductionSum = this.replannerSelector.getMeanReplannerFilteredGap()
+				* replannerIds.size();
+		this.previousFilteredGapSum = filteredGapSum;
+		this.previousGeneralizedDistance = this.replannerSelector.getMoveSize();
 
 		this.emulationErrorAnalyzer.update(this.services.getScenario().getPopulation());
 		this.statsWriter.writeToFile(this);

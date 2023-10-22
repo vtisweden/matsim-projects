@@ -58,6 +58,8 @@ abstract class AbstractReplannerSelector {
 	private boolean hasReplannedBefore = false;
 
 	private Integer replanIteration = null;
+	
+	protected Double moveSize = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -114,6 +116,10 @@ abstract class AbstractReplannerSelector {
 		return this.replanIteration;
 	}
 
+	Double getMoveSize() {
+		return this.moveSize;
+	}
+	
 	void setDistanceToReplannedPopulation(final AbstractPopulationDistance populationDistance) {
 		// default implementation does nothing
 	}
