@@ -29,13 +29,20 @@ import floetteroed.utilities.math.Vector;
  */
 class RelativeAmbitionLevel {
 
+	enum Mode {
+		original, timesT
+	};
+
+	private final Mode mode;
+
 	private final Regression regr;
 
 	private Double referenceGap = null;
 	private Double referenceDistance = null;
 
-	RelativeAmbitionLevel(final double inertia) {
+	RelativeAmbitionLevel(final double inertia, final Mode mode) {
 		this.regr = new Regression(inertia, 3);
+		this.mode = mode;
 	}
 
 	void update(double currentGap, double previousGap, double previousAnticipatedReduction, double previousFilteredGap,
@@ -46,13 +53,20 @@ class RelativeAmbitionLevel {
 		}
 		currentGap /= this.referenceGap;
 		previousGap /= this.referenceGap;
-		previousFilteredGap /= this.referenceGap;
 		previousAnticipatedReduction /= this.referenceGap;
 		previousGeneralizedDistance /= this.referenceDistance;
 
-		final Vector regrX = new Vector(previousAnticipatedReduction / previousGeneralizedDistance,
-				previousFilteredGap / previousGeneralizedDistance, 1.0);
-		this.regr.update(regrX, currentGap - previousGap);
+		if (Mode.original.equals(this.mode)) {
+			final Vector regrX = new Vector(previousAnticipatedReduction / previousGeneralizedDistance,
+					previousGap / previousGeneralizedDistance, 1.0);
+			this.regr.update(regrX, currentGap - previousGap);
+		} else if (Mode.timesT.equals(this.mode)) {
+			final Vector regrX = new Vector(previousAnticipatedReduction,
+					previousGap, 1.0);
+			this.regr.update(regrX, (currentGap - previousGap) * previousGeneralizedDistance);
+		} else {
+			throw new RuntimeException("Unknown mode " + this.mode);
+		}
 	}
 
 	double getAlpha() {
