@@ -24,11 +24,39 @@ package se.vti.samgods.logistics;
  * @author GunnarF
  *
  */
-public interface Location {
+public class Location {
 
-	public Object getId();
-	
-	public double getXCoord();
-	public double getYCoord();
-	
+	private final Object id;
+
+	public Location(final Object id) {
+		this.id = id;
+	}
+
+	public Object getId() {
+		return this.id;
+	}
+
+	public Double getXCoord() {
+		return null;
+	}
+
+	public Double getYCoord() {
+		return null;
+	}
+
+	@Override
+	public int hashCode() {
+		return this.getId().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof Location) {
+			final Location otherLocation = (Location) other;
+			return this.getId().equals(otherLocation.getId());
+		} else {
+			return false;
+		}
+	}
+
 }

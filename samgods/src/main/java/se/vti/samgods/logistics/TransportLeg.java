@@ -19,16 +19,14 @@
  */
 package se.vti.samgods.logistics;
 
+import se.vti.samgods.io.ChainChoiReader.TransportMode;
+
 /**
  * 
  * @author GunnarF
  *
  */
 public interface TransportLeg {
-
-	public enum TransportMode {Road, Rail, Sea, Air};
-	
-	public Object getId();
 
 	public Location getOrigin();
 

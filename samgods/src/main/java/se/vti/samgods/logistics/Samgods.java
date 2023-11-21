@@ -47,6 +47,10 @@ public interface Samgods {
 		public final int code;
 		public final String description;
 
+		public String twoDigitCode() {
+			return (this.code < 10) ? ("0" + this.code) : ("" + this.code);
+		}
+		
 		private Commodity(int code, String name) {
 			this.code = code;
 			this.description = name;

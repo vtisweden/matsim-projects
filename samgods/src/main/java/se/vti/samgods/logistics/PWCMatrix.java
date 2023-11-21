@@ -21,6 +21,9 @@ package se.vti.samgods.logistics;
 
 import java.util.Set;
 
+import floetteroed.utilities.Tuple;
+import se.vti.samgods.logistics.Samgods.Commodity;
+
 /**
  * 
  * @author GunnarF
@@ -30,6 +33,10 @@ public interface PWCMatrix {
 	
 	public Set<Location> getLocationsView();
 	
-	public double getTotalFreightDemand(Location origin, Location destination);
+	public double getTotalFreightDemand(final Tuple<Location, Location> od);
+	
+	public Commodity getCommodity();
+	
+	public double computeTotal_ton_yr();
 	
 }
