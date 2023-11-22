@@ -60,10 +60,6 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	private Double sbaytiCounterpartGapThreshold = null;
 
-	private Double overrideEta = null;
-
-	Double lastQ = null;
-
 	// -------------------- CONSTRUCTION --------------------
 
 	UpperBoundReplannerSelector(final Function<Integer, Double> iterationToEta,
@@ -85,9 +81,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 //		} else {
 //			return this.getTargetReplanningRate();
 //		}
-		if (this.overrideEta != null) {
-			return this.overrideEta;
-		} else if (GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
+		if (GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
 			return this.getTargetReplanningRate();
 		} else if (GreedoConfigGroup.UpperboundStepSize.RelativeToInitialGap.equals(this.stepSizeLogic)) {
 			return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap / currentGap);
@@ -102,44 +96,10 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		}
 	}
 
-//	private double _Q(final double _G, final double _D2, final double epsilon) {
-//		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
-//		return (_G - epsilon) / Math.max(this.eps, transformedD);
-//	}
-
-	private double _Q(final double _G, final double _D2, final double _Gall) {
+	private double _Q(final double _G, final double _D2, final double epsilon) {
 		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
-//		if (this.alpha != null) {
-//			return (this.alpha * _G + this.beta * _Gall + this.delta) / Math.max(this.eps, transformedD);
-//		} else 
-		{
-			final double gamma = this.effectiveEta(_Gall) * _Gall;
-			return (_G - gamma) / Math.max(this.eps, transformedD);
-		}
+		return (_G - epsilon) / Math.max(this.eps, transformedD);
 	}
-
-//	private final Random rnd = MatsimRandom.getRandom();
-//	void randomizeEta(final double fact) {
-//		this.overrideEta = this.getTargetReplanningRate() * (1.0 + fact * (2.0 * this.rnd.nextDouble() - 1.0));
-//	}
-
-	void setOverrideEta(final Double overrideEta) {
-		this.overrideEta = overrideEta;
-	}
-
-	Double getOverrideEta() {
-		return this.overrideEta;
-	}
-
-//	private final Double alpha = null;
-//	private Double beta = null;
-//	private Double delta = null;
-
-//	void setOverrideAlphaBetaDelta(final Double alpha, final Double beta, final Double delta) {
-//		this.alpha = alpha;
-//		this.beta = beta;
-//		this.delta = delta;
-//	}
 
 	// --------------- OVERRIDING OF AbstractReplannerSelector ---------------
 
@@ -152,36 +112,12 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 	private Integer sbaytiCnt = null;
 	private Double sbaytiGcrit = null;
 
-//	Double theta = null;
-//	Double _Theta = null;
-
 	@Override
 	Set<Id<Person>> selectReplannersHook(Map<Id<Person>, Double> personId2gap) {
-
-//		this.sigma = (1.0 - this.effectiveEta(Double.NaN))
-//				* personId2gap_ORIGINAL.values().stream().mapToDouble(g -> g).average().getAsDouble();
-//
-//		Map<Id<Person>, Double> personId2gap = new LinkedHashMap<>(personId2gap_ORIGINAL.size());
-//		for (Map.Entry<Id<Person>, Double> entry : personId2gap_ORIGINAL.entrySet()) {
-//			personId2gap.put(entry.getKey(), Math.max(0.0, entry.getValue() - this.sigma));
-//		}
-//		personId2gap_ORIGINAL = null;
-
-//		this.overrideEta = super.getTargetReplanningRate()
-//				* (1.0 + 0.1 * (2.0 * MatsimRandom.getRandom().nextDouble() - 1.0));
-//		this.overrideEta = Math.max(0.01, Math.min(0.99, this.overrideEta));
 
 //		// only consider strictly positive gaps
 //		final Map<Id<Person>, Double> personId2gap = personId2gap_POSSIBLY_NEGATIVE_GAPS.entrySet().stream().filter(e -> e.getValue() > 0.0)
 //				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-
-//		this.overrideEta = Math.max(0.0, 0.1 - this._Theta / personId2gap_ORIGINAL.values().stream().mapToDouble(g -> g).sum());
-//		
-//		Map<Id<Person>, Double> personId2gap = new LinkedHashMap<>(personId2gap_ORIGINAL.size());
-//		for (Map.Entry<Id<Person>, Double> entry : personId2gap_ORIGINAL.entrySet()) {
-//			personId2gap.put(entry.getKey(), entry.getValue() - this.theta);
-//		}
-//		personId2gap_ORIGINAL = null;
 
 		/*
 		 * (1) Initialize.
@@ -250,7 +186,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		while (switched) {
 
 			if (this.logReplanningProcess) {
-				Hacks.append2file(logFile, _G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, _Gall) + "\n");
+				Hacks.append2file(logFile,
+						_G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall) + "\n");
 			}
 
 			switched = false;
@@ -274,8 +211,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 				// attention, now we maximize
 
-				final double oldQ = this._Q(_G, _D2, _Gall);
-				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, _Gall);
+				final double oldQ = this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall);
+				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.effectiveEta(_Gall) * _Gall);
 
 				if (newQ > oldQ) {
 					_G = Math.max(0.0, _G + deltaG);
@@ -323,10 +260,6 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			Hacks.append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
 			Hacks.append2file(logFile, "\n");
 		}
-
-		this.moveSize = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
-
-		this.lastQ = this._Q(_G, _D2, _Gall); // TODO encapsulate lastQ
 
 		return replannerIds;
 	}
