@@ -17,30 +17,8 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.transportation;
 
-import java.util.LinkedList;
-import java.util.List;
-
-public class TransportChain {
-
-	private final LinkedList<TransportLeg> legs = new LinkedList<>();
-
-	public TransportChain() {
-
-	}
-
-	public void addLeg(final TransportLeg leg) {
-		if (this.legs.size() > 0) {
-			if (!this.legs.getLast().getDestination().equals(leg.getOrigin())) {
-				throw new IllegalArgumentException();
-			}
-		}
-		this.legs.add(leg);
-	}
-
-	public List<TransportLeg> getLegs() {
-		return this.legs;
-	}
+public class VehicleFleet {
 
 }

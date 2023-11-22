@@ -17,30 +17,38 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.transportation;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-public class TransportChain {
+import org.matsim.core.router.util.TravelDisutility;
 
-	private final LinkedList<TransportLeg> legs = new LinkedList<>();
+import se.vti.samgods.legacy.Samgods.Commodity;
 
-	public TransportChain() {
+/**
+ * This is a parameter container that is externally given or produced by a
+ * downstream consolidation model.
+ * 
+ * @author GunnarF
+ *
+ */
+public class TransportUnitCosts {
+
+	public static class TransportCostParameters {
 
 	}
 
-	public void addLeg(final TransportLeg leg) {
-		if (this.legs.size() > 0) {
-			if (!this.legs.getLast().getDestination().equals(leg.getOrigin())) {
-				throw new IllegalArgumentException();
-			}
-		}
-		this.legs.add(leg);
+	public static class TransshipmentCostParameters {
+
 	}
 
-	public List<TransportLeg> getLegs() {
-		return this.legs;
-	}
+	private final Map<Commodity, TransportCostParameters> commodity2transportCostParams = new LinkedHashMap<>(16);
 
+	private final Map<Commodity, TransshipmentCostParameters> commodity2transshipmentCostParams = new LinkedHashMap<>(
+			16);
+
+	public TravelDisutility createLinkLevelDisutility(Commodity commmodity) {
+		return null;
+	}
 }

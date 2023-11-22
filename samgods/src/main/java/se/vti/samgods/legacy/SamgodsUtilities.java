@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,17 +17,18 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
+
 package se.vti.samgods.legacy;
 
 import org.matsim.api.core.v01.network.Node;
 
 public class SamgodsUtilities {
 
-	private SamgodsUtilities() {		
+	private SamgodsUtilities() {
 	}
-	
+
 	public static Boolean isTransferPoint(final Node node) {
 		return (Boolean) node.getAttributes().getAttribute(SamgodsNetworkReader.NODE_IS_TERMINAL);
 	}
-	
+
 }

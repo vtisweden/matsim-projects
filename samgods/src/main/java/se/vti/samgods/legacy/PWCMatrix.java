@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
