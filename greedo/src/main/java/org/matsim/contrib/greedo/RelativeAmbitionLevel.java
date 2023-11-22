@@ -29,26 +29,23 @@ import floetteroed.utilities.math.Vector;
  */
 class RelativeAmbitionLevel {
 
-	enum Mode {
-		original, timesT
-	};
-
-	private final Mode mode;
+//	enum Mode {
+//		original, timesT, timesTcorr, twoParams
+//	};
 
 	private final Regression regr;
 
 	private Double referenceGap = null;
 	private Double referenceDistance = null;
 
-	RelativeAmbitionLevel(final double inertia, final Mode mode) {
-		this.regr = new Regression(inertia, 3);
-		this.mode = mode;
+	RelativeAmbitionLevel() {
+		this.regr = new Regression(0.95, 2);
 	}
 
 	void update(double currentGap, double previousGap, double previousAnticipatedReduction, double previousFilteredGap,
-			double previousGeneralizedDistance) {
+			double previousGeneralizedDistance, double previousEta) {
 		if (this.referenceGap == null) {
-			this.referenceGap = 0.1 * previousGap;
+			this.referenceGap = 1.0; // 0.1 * previousGap;
 			this.referenceDistance = 0.1 * previousGeneralizedDistance;
 		}
 		currentGap /= this.referenceGap;
@@ -56,17 +53,8 @@ class RelativeAmbitionLevel {
 		previousAnticipatedReduction /= this.referenceGap;
 		previousGeneralizedDistance /= this.referenceDistance;
 
-		if (Mode.original.equals(this.mode)) {
-			final Vector regrX = new Vector(previousAnticipatedReduction / previousGeneralizedDistance,
-					previousGap / previousGeneralizedDistance, 1.0);
-			this.regr.update(regrX, currentGap - previousGap);
-		} else if (Mode.timesT.equals(this.mode)) {
-			final Vector regrX = new Vector(previousAnticipatedReduction,
-					previousGap, 1.0);
-			this.regr.update(regrX, (currentGap - previousGap) * previousGeneralizedDistance);
-		} else {
-			throw new RuntimeException("Unknown mode " + this.mode);
-		}
+		final Vector regrX = new Vector(previousAnticipatedReduction / previousGeneralizedDistance, 1.0);
+		this.regr.update(regrX, currentGap - previousGap);
 	}
 
 	double getAlpha() {
@@ -74,14 +62,10 @@ class RelativeAmbitionLevel {
 	}
 
 	double getBeta() {
-		return this.regr.getCoefficients().get(1);
+		return 0.0; // this.regr.getCoefficients().get(1);
 	}
 
-	Double getEta() {
-		if (this.referenceGap == null) {
-			return null;
-		} else {
-			return -(this.getBeta() / this.getAlpha());
-		}
+	double getDelta() {
+		return this.regr.getCoefficients().get(1);
 	}
 }

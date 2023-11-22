@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.emulation.EmulationEngine;
+import org.matsim.contrib.greedo.shouldbeelsewhere.Hacks;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.MatsimServices;
 import org.matsim.core.controler.corelisteners.PlansReplanning;
@@ -90,17 +91,34 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 	// TESTING
 
-	private final RelativeAmbitionLevel ral = new RelativeAmbitionLevel(0.95, RelativeAmbitionLevel.Mode.original);
+//	private SimplestEndogeneousReplanningRate simpleLambda;
+//	private final RelativeAmbitionLevel ral = new RelativeAmbitionLevel();
+//	private final TransformedObjFctEstimator objFctEst = new TransformedObjFctEstimator(0.95);
+
+	private AmbitionGapSchedule ags = new AmbitionGapSchedule(10, -0.5, false);
+//	private ThreeBlockStepSize stepSize = new ThreeBlockStepSize(1);
+//	private TwoBlockStepSize twoBlockStepSize = new TwoBlockStepSize();	
+//	private NagurneyStepSize nagurney = new NagurneyStepSize();
+
 	private Double previousGapSum = null;
 	private Double previousAnticipatedReductionSum = null;
 //	private Double previousFilteredGapSum = null;
 //	private Double previousAnticipatedFilteredReductionSum = null;
 	private Double previousGeneralizedDistance = null;
+	private Double previousOverrideEta = null;
+
+	private Double previousMoverGapSum = null;
+
+	private Set<Id<Person>> previousReplannerIds = null;
+
+	private Double overrideEta = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	@Inject
 	GreedoReplanning(final Provider<EmulationEngine> emulationEngineProvider, final MatsimServices services) {
+
+		Hacks.append2file("regression.log", "deltaPsi\tPsi(lambda)\teta\tPsi\tt(lambda)\n");
 
 		this.greedoConfig = ConfigUtils.addOrGetModule(services.getConfig(), GreedoConfigGroup.class);
 		this.emulationEngineProvider = emulationEngineProvider;
@@ -108,6 +126,8 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 		this.personIds = services.getScenario().getPopulation().getPersons().keySet();
 		this.persons = services.getScenario().getPopulation().getPersons().values();
+
+//		this.simpleLambda = new SimplestEndogeneousReplanningRate(0.95, this.personIds.size());
 
 		this.replannerSelector = AbstractReplannerSelector.newReplannerSelector(this.greedoConfig);
 
@@ -250,62 +270,83 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 				return Statistic.toString(data.previousGeneralizedDistance);
 			}
 		});
-
+//		this.statsWriter.addSearchStatistic(new Statistic<>() {
+//			@Override
+//			public String label() {
+//				return "moverGap";
+//			}
+//
+//			@Override
+//			public String value(GreedoReplanning data) {
+//				return Statistic.toString(data.nagurney.getMoverGap());
+//			}
+//		});
+//		this.statsWriter.addSearchStatistic(new Statistic<>() {
+//			@Override
+//			public String label() {
+//				return "avgMoverGap";
+//			}
+//
+//			@Override
+//			public String value(GreedoReplanning data) {
+//				return Statistic.toString(data.nagurney.getAvgMoverGap());
+//			}
+//		});
+//
+//		this.statsWriter.addSearchStatistic(new Statistic<>() {
+//			@Override
+//			public String label() {
+//				return "stayerGap";
+//			}
+//
+//			@Override
+//			public String value(GreedoReplanning data) {
+//				return Statistic.toString(data.nagurney.getStayerGap());
+//			}
+//		});
+//		this.statsWriter.addSearchStatistic(new Statistic<>() {
+//			@Override
+//			public String label() {
+//				return "avgStayerGap";
+//			}
+//
+//			@Override
+//			public String value(GreedoReplanning data) {
+//				return Statistic.toString(data.nagurney.getAvgStayerGap());
+//			}
+//		});
+//
+//		this.statsWriter.addSearchStatistic(new Statistic<>() {
+//			@Override
+//			public String label() {
+//				return "lambda";
+//			}
+//
+//			@Override
+//			public String value(GreedoReplanning data) {
+//				return Statistic.toString(data.nagurney.getLambda());
+//			}
+//		});
+//		this.statsWriter.addSearchStatistic(new Statistic<>() {
+//			@Override
+//			public String label() {
+//				return "avgLambda";
+//			}
+//
+//			@Override
+//			public String value(GreedoReplanning data) {
+//				return Statistic.toString(data.nagurney.getAvgLambda());
+//			}
+//		});
 		this.statsWriter.addSearchStatistic(new Statistic<>() {
 			@Override
 			public String label() {
-				return "xAlpha";
+				return "rawEta";
 			}
 
 			@Override
 			public String value(GreedoReplanning data) {
-				return Statistic.toString(data.previousAnticipatedReductionSum / data.previousGeneralizedDistance);
-			}
-		});
-
-		this.statsWriter.addSearchStatistic(new Statistic<>() {
-			@Override
-			public String label() {
-				return "xBeta";
-			}
-
-			@Override
-			public String value(GreedoReplanning data) {
-				return Statistic.toString(data.previousGapSum / data.previousGeneralizedDistance);
-			}
-		});
-
-		this.statsWriter.addSearchStatistic(new Statistic<>() {
-			@Override
-			public String label() {
-				return "alpha";
-			}
-
-			@Override
-			public String value(GreedoReplanning data) {
-				return Statistic.toString(data.ral.getAlpha());
-			}
-		});
-		this.statsWriter.addSearchStatistic(new Statistic<>() {
-			@Override
-			public String label() {
-				return "beta";
-			}
-
-			@Override
-			public String value(GreedoReplanning data) {
-				return Statistic.toString(data.ral.getBeta());
-			}
-		});
-		this.statsWriter.addSearchStatistic(new Statistic<>() {
-			@Override
-			public String label() {
-				return "eta";
-			}
-
-			@Override
-			public String value(GreedoReplanning data) {
-				return Statistic.toString(data.ral.getEta());
+				return Statistic.toString(data.ags.getEta(data.replanIteration, false));
 			}
 		});
 	}
@@ -453,10 +494,27 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		 * (2) Compute intermediate statistics.
 		 */
 
+//		if (this.previousReplannerIds != null) {
+//			final double previousLambda = ((double) this.previousReplannerIds.size()) / this.personIds.size();
+//			final double moverGapSum = personId2newScoreOverReplications.get(0).entrySet().stream()
+//					.filter(e -> this.previousReplannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum()
+//					- personId2oldScoreOverReplications.get(0).entrySet().stream()
+//							.filter(e -> this.previousReplannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue())
+//							.sum();
+//			final double stayerGapSum = personId2newScoreOverReplications.get(0).entrySet().stream()
+//					.filter(e -> !this.previousReplannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum()
+//					- personId2oldScoreOverReplications.get(0).entrySet().stream()
+//							.filter(e -> !this.previousReplannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue())
+//							.sum();
+//			this.simpleLambda.update(previousLambda, moverGapSum, stayerGapSum);
+//		}
+
 		this.gap = personId2newScoreOverReplications.get(0).values().stream().mapToDouble(s -> s).average()
 				.getAsDouble()
 				- personId2oldScoreOverReplications.get(0).values().stream().mapToDouble(s -> s).average()
 						.getAsDouble();
+		
+		this.ags.registerGap(this.gap);
 
 		final int lagCnt = personId2newScoreOverReplications.size();
 		final double lagWeight = 1.0 / lagCnt;
@@ -478,25 +536,37 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		final double gapSum = this.gap * this.personIds.size();
 		final double filteredGapSum = personId2FilteredGap.values().stream().mapToDouble(g -> g).sum();
 
-		if (this.previousGeneralizedDistance != null) { // set not before the *2nd* iteration
-			this.ral.update(gapSum, this.previousGapSum, this.previousAnticipatedReductionSum, this.previousGapSum,
-					this.previousGeneralizedDistance);
-		}
-
 		/*
 		 * (3) Identify re-planners.
 		 */
+
+//		if (this.replanIteration < 30) {
+//			this.overrideEta = 1.0 / Math.sqrt(1 + this.replanIteration);
+//		} else {
+//			this.overrideEta += 0.01 * this.ral.getAlpha() * this.previousGeneralizedDistance;
+//		}
+//		double setEta = this.overrideEta * (1.0 + 0.1 * (2.0 * MatsimRandom.getRandom().nextDouble() - 1.0));
+//		double setEta = this.overrideEta;
+//		setEta = Math.max(0.01, Math.min(0.99, setEta));
 
 		final AbstractPopulationDistance popDist = AbstractPopulationDistance.newPopulationDistance(oldPlans, newPlans,
 				this.services.getScenario(), mode2filteredTravelTimes);
 		this.replannerSelector.setDistanceToReplannedPopulation(popDist);
 
-		// TODO Unchecked cast!
-		if (this.replanIteration >= 30) {
-			((UpperBoundReplannerSelector) this.replannerSelector)
-					.setOverrideEta(Math.max(1e-8, Math.min(1.0 - 1e-8, this.ral.getEta())));
-		}
+//		UpperBoundReplannerSelector ubSel = (UpperBoundReplannerSelector) this.replannerSelector;
+//		if (ubSel.theta == null || this.previousReplannerIds == null) {
+//			ubSel.theta = 0.0;
+//			ubSel._Theta = 0.0;
+//		} else {
+//			final double innoWeight = 0.05;
+//			ubSel.theta = (1.0 - innoWeight) * ubSel.theta
+//					+ innoWeight * this.previousMoverGapSum / this.previousReplannerIds.size();
+//			ubSel._Theta = (1.0 - innoWeight) * ubSel._Theta + innoWeight * this.previousMoverGapSum;
+//		}
 
+//		((UpperBoundReplannerSelector) this.replannerSelector).setOverrideEta(this.nagurney.getEta(true));
+		((UpperBoundReplannerSelector) this.replannerSelector).setOverrideEta(this.ags.getEta(this.replanIteration, true));
+		
 		final Set<Id<Person>> replannerIds = this.replannerSelector.selectReplanners(personId2FilteredGap,
 				this.replanIteration);
 
@@ -508,6 +578,39 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 			}
 		}
 
+//		this.previousMoverGapSum = personId2newScoreOverReplications.get(0).entrySet().stream()
+//				.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum()
+//				- personId2oldScoreOverReplications.get(0).entrySet().stream()
+//						.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
+
+//		{
+//			final double moverGapSum = personId2newScoreOverReplications.get(0).entrySet().stream()
+//					.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum()
+//					- personId2oldScoreOverReplications.get(0).entrySet().stream()
+//							.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
+//			final double stayerGapSum = personId2newScoreOverReplications.get(0).entrySet().stream()
+//					.filter(e -> !replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum()
+//					- personId2oldScoreOverReplications.get(0).entrySet().stream()
+//							.filter(e -> !replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
+//			this.nagurney.update(moverGapSum, stayerGapSum, this.replannerSelector.getRealizedReplanningRate());
+//		}
+		
+//		this.stepSize.update(this.gap);
+
+		this.previousReplannerIds = replannerIds;
+
+//		if (this.previousGeneralizedDistance != null) {
+//			Hacks.append2file("regression.log",
+//					(gapSum - this.previousGapSum) + "\t" + this.previousAnticipatedReductionSum + "\t"
+//							+ this.previousOverrideEta + "\t" + this.previousGapSum + "\t"
+//							+ this.previousGeneralizedDistance + "\n");
+//		}
+//
+//		if (this.previousGeneralizedDistance != null) { // set not before the *2nd* iteration
+//			this.ral.update(gapSum, this.previousGapSum, this.previousAnticipatedReductionSum, this.previousGapSum,
+//					this.previousGeneralizedDistance, this.previousOverrideEta);
+//		}
+
 		/*
 		 * (4) Postprocess.
 		 */
@@ -515,6 +618,9 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 //		this.previousFilteredGapSum = filteredGapSum;
 //		this.previousAnticipatedFilteredReductionSum = this.replannerSelector.getMeanReplannerFilteredGap()
 //				* replannerIds.size();
+
+		// TODO attention relies on overrideEta being a number!
+		this.previousOverrideEta = ((UpperBoundReplannerSelector) this.replannerSelector).getOverrideEta();
 
 		this.previousGapSum = gapSum;
 		this.previousAnticipatedReductionSum = personId2newScoreOverReplications.get(0).entrySet().stream()
@@ -526,4 +632,5 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		this.emulationErrorAnalyzer.update(this.services.getScenario().getPopulation());
 		this.statsWriter.writeToFile(this);
 	}
+
 }
