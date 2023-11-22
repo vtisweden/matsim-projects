@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,10 +17,12 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.io;
+package se.vti.samgods.legacy;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
@@ -30,6 +32,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
 
 import floetteroed.utilities.Units;
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
@@ -50,18 +53,29 @@ public class SamgodsNetworkReader {
 	private static final double bwdWaveSpeed_m_s = Units.M_S_PER_KM_H * 15.0;
 	private static final double rhoMax_veh_m = Units.VEH_M_PER_VEH_KM * 140.0;
 
-	public static final String NODE_ID = "Node";
-	public static final String NODE_X = "X";
-	public static final String NODE_Y = "Y";
-	public static final String NODE_MODE = "Mode";
-	public static final String NODE_IS_TERMINAL = "Transfer_point";
+	private static final String NODE_ID = "Node";
+	private static final String NODE_X = "X";
+	private static final String NODE_Y = "Y";
+	private static final String NODE_MODE = "Mode";
 
-	public static final String LINK_FROM_NODE = "From";
-	public static final String LINK_TO_NODE = "To";
-	public static final String LINK_MODE = "Mode";
-	public static final String LINK_LENGTH_KM = "Length_km";
-	public static final String LINK_MAXSPEED_KM_H = "Max_speed_km_per_hour";
-	public static final String LINK_CAPACITY_TRAINS_DAY = "Capacity_trains_per_day";
+	static final String NODE_IS_TERMINAL = "Transfer_point";
+
+	private static final String LINK_FROM_NODE = "From";
+	private static final String LINK_TO_NODE = "To";
+	private static final String LINK_MODE = "Mode";
+	private static final String LINK_LENGTH_KM = "Length_km";
+	private static final String LINK_MAXSPEED_KM_H = "Max_speed_km_per_hour";
+	private static final String LINK_CAPACITY_TRAINS_DAY = "Capacity_trains_per_day";
+
+	private static final Map<Samgods.TransportMode, String> samgodsMode2matsimMode;
+
+	static {
+		samgodsMode2matsimMode = new LinkedHashMap<>(4);
+		samgodsMode2matsimMode.put(Samgods.TransportMode.Road, TransportMode.car);
+		samgodsMode2matsimMode.put(Samgods.TransportMode.Rail, TransportMode.train);
+		samgodsMode2matsimMode.put(Samgods.TransportMode.Sea, TransportMode.ship);
+		samgodsMode2matsimMode.put(Samgods.TransportMode.Air, TransportMode.airplane);
+	}
 
 	// -------------------- MEMBERS --------------------
 
@@ -117,13 +131,13 @@ public class SamgodsNetworkReader {
 					final Double maxSpeed_m_s;
 					final Double capacity_veh_h;
 					final Integer lanes;
-					if (ChainChoiReader.TransportMode.Road.toString().equals(mode)) {
+					if (Samgods.TransportMode.Road.toString().equals(mode)) {
 						matsimMode = TransportMode.car;
 						maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						capacity_veh_h = Units.VEH_H_PER_VEH_S * rhoMax_veh_m * maxSpeed_m_s * bwdWaveSpeed_m_s
 								/ (maxSpeed_m_s + bwdWaveSpeed_m_s);
 						lanes = 2;
-					} else if (ChainChoiReader.TransportMode.Rail.toString().equals(mode)) {
+					} else if (Samgods.TransportMode.Rail.toString().equals(mode)) {
 						matsimMode = TransportMode.train;
 						maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						final Double capFromFile = this.getDoubleValue(LINK_CAPACITY_TRAINS_DAY);
@@ -134,7 +148,7 @@ public class SamgodsNetworkReader {
 							capacity_veh_h = 60.0;
 						}
 						lanes = 1;
-					} else if (ChainChoiReader.TransportMode.Sea.toString().equals(mode)) {
+					} else if (Samgods.TransportMode.Sea.toString().equals(mode)) {
 						matsimMode = TransportMode.ship;
 						if (maxSpeed_km_h != null) {
 							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
@@ -144,7 +158,7 @@ public class SamgodsNetworkReader {
 						}
 						capacity_veh_h = 60.0;
 						lanes = 1;
-					} else if (ChainChoiReader.TransportMode.Air.toString().equals(mode)) {
+					} else if (Samgods.TransportMode.Air.toString().equals(mode)) {
 						matsimMode = TransportMode.airplane;
 						if (maxSpeed_km_h != null) {
 							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
@@ -184,6 +198,17 @@ public class SamgodsNetworkReader {
 
 	public Network getNetwork() {
 		return this.network;
+	}
+
+	public Map<Samgods.TransportMode, Network> createUnimodalNetworks() {
+		final Map<Samgods.TransportMode, Network> mode2network = new LinkedHashMap<>(samgodsMode2matsimMode.size());
+		for (Map.Entry<Samgods.TransportMode, String> entry : samgodsMode2matsimMode.entrySet()) {
+			final Network unimodalNetwork = NetworkUtils.createNetwork();
+			unimodalNetwork.setCapacityPeriod(3600.0);
+			new TransportModeNetworkFilter(this.network).filter(unimodalNetwork, Collections.singleton(entry.getValue()));
+			mode2network.put(entry.getKey(), unimodalNetwork);			
+		}
+		return mode2network;
 	}
 
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------

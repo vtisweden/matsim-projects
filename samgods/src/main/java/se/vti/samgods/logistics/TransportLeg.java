@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,19 +19,33 @@
  */
 package se.vti.samgods.logistics;
 
-import se.vti.samgods.io.ChainChoiReader.TransportMode;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface TransportLeg {
+import floetteroed.utilities.Tuple;
+import se.vti.samgods.legacy.Samgods;
+import se.vti.samgods.legacy.Samgods.TransportMode;
 
-	public Location getOrigin();
+public class TransportLeg {
 
-	public Location getDestination();
-	
-	public TransportMode getMode();
+	private final Tuple<Id<Node>, Id<Node>> od;
+	private final Samgods.TransportMode mode;
+
+	public TransportLeg(final Id<Node> origin, final Id<Node> destination, final TransportMode mode) {
+		this.od = new Tuple<>(origin, destination);
+		this.mode = mode;
+	}
+
+	public Id<Node> getOrigin() {
+		return this.od.getA();
+	}
+
+	public Id<Node> getDestination() {
+		return this.od.getB();
+	}
+
+	public Samgods.TransportMode getMode() {
+		return this.mode;
+	}
 
 }

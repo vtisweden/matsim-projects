@@ -17,12 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.io;
-
-import static se.vti.samgods.io.ChainChoiReader.TransportMode.Air;
-import static se.vti.samgods.io.ChainChoiReader.TransportMode.Rail;
-import static se.vti.samgods.io.ChainChoiReader.TransportMode.Road;
-import static se.vti.samgods.io.ChainChoiReader.TransportMode.Sea;
+package se.vti.samgods.legacy;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,13 +28,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
+
 import floetteroed.utilities.Tuple;
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
-import se.vti.samgods.logistics.Location;
-import se.vti.samgods.logistics.PWCMatrix;
-import se.vti.samgods.logistics.Samgods;
+import se.vti.samgods.legacy.Samgods.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportLeg;
 
 /**
  * 
@@ -50,64 +47,60 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- CONSTANTS --------------------
 
-	public enum TransportMode {
-		Road, Rail, Sea, Air
-	};
-
 	private boolean verbose = false;
 
-	final static String Key = "Key";
-	final static String AnnualVolumeTonnes = "AnnualVolume_(Tonnes)";
-	final static String Prob = "Prob";
-	final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
-	final static String ChainType = "ChainType";
+	private final static String Key = "Key";
+	private final static String AnnualVolumeTonnes = "AnnualVolume_(Tonnes)";
+	private final static String Prob = "Prob";
+	private final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
+	private final static String ChainType = "ChainType";
 
-	final static String Orig = "Orig";
-	final static String Dest = "Dest";
-	final static String Orig2 = "Orig2";
-	final static String Orig3 = "Orig3";
-	final static String Orig4 = "Orig4";
-	final static String Orig5 = "Orig5";
-	final static List<List<String>> originsColumnsByChainLength = Arrays.asList(null, Arrays.asList(Orig),
+	private final static String Orig = "Orig";
+	private final static String Dest = "Dest";
+	private final static String Orig2 = "Orig2";
+	private final static String Orig3 = "Orig3";
+	private final static String Orig4 = "Orig4";
+	private final static String Orig5 = "Orig5";
+	private final static List<List<String>> originsColumnsByChainLength = Arrays.asList(null, Arrays.asList(Orig),
 			Arrays.asList(Orig, Orig2), Arrays.asList(Orig, Orig2, Orig3), Arrays.asList(Orig, Orig2, Orig3, Orig4),
 			Arrays.asList(Orig, Orig2, Orig3, Orig4, Orig5));
-	final static List<List<String>> destinationColumnsByChainLength = Arrays.asList(null, Arrays.asList(Dest),
+	private final static List<List<String>> destinationColumnsByChainLength = Arrays.asList(null, Arrays.asList(Dest),
 			Arrays.asList(Orig2, Dest), Arrays.asList(Orig2, Orig3, Dest), Arrays.asList(Orig2, Orig3, Orig4, Dest),
 			Arrays.asList(Orig2, Orig3, Orig4, Orig5, Dest));
 
-	final static Map<Character, TransportMode> code2mode;
+	private final static Map<Character, TransportMode> code2mode;
 
 	static {
 		code2mode = new LinkedHashMap<>();
-		code2mode.put('A', Road);
-		code2mode.put('X', Road);
-		code2mode.put('D', Rail);
-		code2mode.put('d', Rail);
-		code2mode.put('E', Rail);
-		code2mode.put('F', Rail);
-		code2mode.put('f', Rail);
-		code2mode.put('J', Sea);
-		code2mode.put('K', Sea);
-		code2mode.put('L', Sea);
-		code2mode.put('V', Sea);
-		code2mode.put('B', Road);
-		code2mode.put('C', Road);
-		code2mode.put('S', Road);
-		code2mode.put('c', Road);
-		code2mode.put('G', Rail);
-		code2mode.put('H', Rail);
-		code2mode.put('h', Rail);
-		code2mode.put('I', Rail);
-		code2mode.put('T', Rail);
-		code2mode.put('U', Rail);
-		code2mode.put('i', Rail);
-		code2mode.put('M', Sea);
-		code2mode.put('N', Sea);
-		code2mode.put('O', Sea);
-		code2mode.put('W', Sea);
-		code2mode.put('P', Sea);
-		code2mode.put('Q', Sea);
-		code2mode.put('R', Air);
+		code2mode.put('A', Samgods.TransportMode.Road);
+		code2mode.put('X', Samgods.TransportMode.Road);
+		code2mode.put('D', Samgods.TransportMode.Rail);
+		code2mode.put('d', Samgods.TransportMode.Rail);
+		code2mode.put('E', Samgods.TransportMode.Rail);
+		code2mode.put('F', Samgods.TransportMode.Rail);
+		code2mode.put('f', Samgods.TransportMode.Rail);
+		code2mode.put('J', Samgods.TransportMode.Sea);
+		code2mode.put('K', Samgods.TransportMode.Sea);
+		code2mode.put('L', Samgods.TransportMode.Sea);
+		code2mode.put('V', Samgods.TransportMode.Sea);
+		code2mode.put('B', Samgods.TransportMode.Road);
+		code2mode.put('C', Samgods.TransportMode.Road);
+		code2mode.put('S', Samgods.TransportMode.Road);
+		code2mode.put('c', Samgods.TransportMode.Road);
+		code2mode.put('G', Samgods.TransportMode.Rail);
+		code2mode.put('H', Samgods.TransportMode.Rail);
+		code2mode.put('h', Samgods.TransportMode.Rail);
+		code2mode.put('I', Samgods.TransportMode.Rail);
+		code2mode.put('T', Samgods.TransportMode.Rail);
+		code2mode.put('U', Samgods.TransportMode.Rail);
+		code2mode.put('i', Samgods.TransportMode.Rail);
+		code2mode.put('M', Samgods.TransportMode.Sea);
+		code2mode.put('N', Samgods.TransportMode.Sea);
+		code2mode.put('O', Samgods.TransportMode.Sea);
+		code2mode.put('W', Samgods.TransportMode.Sea);
+		code2mode.put('P', Samgods.TransportMode.Sea);
+		code2mode.put('Q', Samgods.TransportMode.Sea);
+		code2mode.put('R', Samgods.TransportMode.Air);
 	}
 //	public enum TransportChainType {
 //
@@ -132,22 +125,16 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- MEMBERS --------------------
 
-	private PWCMatrixImpl pwcMatrix = null;
+	private final PWCMatrix pwcMatrix;
 
-	private Map<Tuple<Location, Location>, List<TransportChain>> od2chains = null;
+	private final Map<Tuple<Id<Node>, Id<Node>>, List<TransportChain>> od2chains;
 
-	private Set<String> chainTypes = new LinkedHashSet<>();
+	private final Set<String> chainTypes = new LinkedHashSet<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChainChoiReader() {
-	}
-
-	// -------------------- IMPLEMENTATION --------------------
-
-	public void readChainChoiFile(final String fileName, final Samgods.Commodity commodity) {
-
-		this.pwcMatrix = new PWCMatrixImpl(commodity);
+	public ChainChoiReader(final String fileName, final Samgods.Commodity commodity) {
+		this.pwcMatrix = new PWCMatrix(commodity);
 		this.od2chains = new LinkedHashMap<>();
 
 		final TabularFileParser parser = new TabularFileParser();
@@ -160,8 +147,14 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		}
 	}
 
+	// -------------------- IMPLEMENTATION --------------------
+
 	public PWCMatrix getPWCMatrix() {
 		return this.pwcMatrix;
+	}
+	
+	public Map<Tuple<Id<Node>, Id<Node>>, List<TransportChain>> getOd2transportChains() {
+		return this.od2chains;
 	}
 
 	// ----- IMPLEMENTATION OF AbstractTabularFileHandlerWithHeaderLine -----
@@ -178,19 +171,19 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		final double volume_ton_yr = this.getDoubleValue(Prob) * this.getDoubleValue(AnnualVolumeTonnes);
 		final long origin = Long.parseLong(this.getStringValue(Orig));
 		final long destination = Long.parseLong(this.getStringValue(Dest));
-		final Tuple<Location, Location> od = new Tuple<>(new Location(origin), new Location(destination));
+		final Tuple<Id<Node>, Id<Node>> od = new Tuple<>(Id.createNodeId(origin), Id.createNodeId(destination));
 		this.pwcMatrix.add(od, volume_ton_yr);
 
 		final List<String> originColumns = originsColumnsByChainLength.get(chainType.length());
 		final List<String> destinationColumns = destinationColumnsByChainLength.get(chainType.length());
 
-		final TransportChainImpl transportChain = new TransportChainImpl();
+		final TransportChain transportChain = new TransportChain();
 		for (int i = 0; i < chainType.length(); i++) {
 			final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
 			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
 			final TransportMode mode = code2mode.get(chainType.charAt(i));
 			transportChain.addLeg(
-					new TransportLegImpl(new Location(intermedOrigin), new Location(intermedDestination), mode));
+					new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination), mode));
 		}
 		this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
 
@@ -207,13 +200,11 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	public static void main(String[] args) {
 
 		for (Samgods.Commodity commodity : Samgods.Commodity.values()) {
-			final ChainChoiReader reader = new ChainChoiReader();
-			reader.readChainChoiFile("./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out",
+			final ChainChoiReader reader = new ChainChoiReader("./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out",
 					commodity);
 			System.out.println(reader.pwcMatrix.getCommodity().twoDigitCode() + " " + commodity + ": "
 					+ Math.round(1e-6 * reader.getPWCMatrix().computeTotal_ton_yr()) + " mio.tons, between "
-					+ reader.pwcMatrix.getLocationsView().size() + " locations, chain types: "
-					+ reader.chainTypes);
+					+ reader.pwcMatrix.getLocationsView().size() + " locations, chain types: " + reader.chainTypes);
 		}
 	}
 

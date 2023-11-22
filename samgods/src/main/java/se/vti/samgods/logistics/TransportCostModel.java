@@ -19,7 +19,7 @@
  */
 package se.vti.samgods.logistics;
 
-import se.vti.samgods.logistics.Samgods.Commodity;
+import se.vti.samgods.legacy.Samgods.Commodity;
 
 /**
  * 

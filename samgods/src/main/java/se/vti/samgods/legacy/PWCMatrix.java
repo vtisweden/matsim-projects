@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.io;
+package se.vti.samgods.legacy;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -25,24 +25,25 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import floetteroed.utilities.Tuple;
-import se.vti.samgods.logistics.Location;
-import se.vti.samgods.logistics.PWCMatrix;
-import se.vti.samgods.logistics.Samgods.Commodity;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
 
-public class PWCMatrixImpl implements PWCMatrix {
+import floetteroed.utilities.Tuple;
+import se.vti.samgods.legacy.Samgods.Commodity;
+
+public class PWCMatrix {
 
 	// -------------------- MEMBERS --------------------
 
 	private final Commodity commodity;
 
-	private Map<Tuple<Location, Location>, Double> od2amount_ton_yr = new LinkedHashMap<>();
+	private Map<Tuple<Id<Node>, Id<Node>>, Double> od2amount_ton_yr = new LinkedHashMap<>();
 
-	private Set<Location> locations = new LinkedHashSet<>();
+	private Set<Id<Node>> locations = new LinkedHashSet<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public PWCMatrixImpl(final Commodity commodity) {
+	public PWCMatrix(final Commodity commodity) {
 		this.commodity = commodity;
 	}
 
@@ -54,7 +55,7 @@ public class PWCMatrixImpl implements PWCMatrix {
 		return this.commodity;
 	}
 	
-	public void add(final Tuple<Location, Location> od, final double amount_ton) {
+	public void add(final Tuple<Id<Node>, Id<Node>> od, final double amount_ton) {
 		this.locations.add(od.getA());
 		this.locations.add(od.getB());
 		this.od2amount_ton_yr.compute(od,
@@ -65,15 +66,11 @@ public class PWCMatrixImpl implements PWCMatrix {
 		return this.od2amount_ton_yr.values().stream().mapToDouble(v -> v).sum();
 	}
 
-	// -------------------- IMPLEMENTATION OF PWCMatrix --------------------
-
-	@Override
-	public Set<Location> getLocationsView() {
+	public Set<Id<Node>> getLocationsView() {
 		return Collections.unmodifiableSet(this.locations);
 	}
 
-	@Override
-	public double getTotalFreightDemand(final Tuple<Location, Location> od) {
+	public double getTotalFreightDemand(final Tuple<Id<Node>, Id<Node>> od) {
 		return this.od2amount_ton_yr.getOrDefault(od, 0.0);
 	}
 

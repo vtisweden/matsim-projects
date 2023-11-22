@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,15 +19,28 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.LinkedList;
 import java.util.List;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface TransportChain {
-	
-	public List<TransportLeg> getLegs();
-	
+public class TransportChain {
+
+	private final LinkedList<TransportLeg> legs = new LinkedList<>();
+
+	public TransportChain() {
+
+	}
+
+	public void addLeg(final TransportLeg leg) {
+		if (this.legs.size() > 0) {
+			if (!this.legs.getLast().getDestination().equals(leg.getOrigin())) {
+				throw new IllegalArgumentException();
+			}
+		}
+		this.legs.add(leg);
+	}
+
+	public List<TransportLeg> getLegs() {
+		return this.legs;
+	}
+
 }

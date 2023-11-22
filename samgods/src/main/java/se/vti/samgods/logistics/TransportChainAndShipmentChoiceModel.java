@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import se.vti.samgods.logistics.Samgods.Commodity;
+import se.vti.samgods.legacy.Samgods.Commodity;
 import se.vti.samgods.logistics.TransportCostModel.SingleShipmentCost;
 
 /**
