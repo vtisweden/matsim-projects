@@ -19,6 +19,46 @@
  */
 package se.vti.samgods.transportation;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.VehicleUtils;
+import org.matsim.vehicles.Vehicles;
+
+import se.vti.samgods.legacy.Samgods;
+
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class VehicleFleet {
+
+	// -------------------- MEMBERS --------------------
+
+	private final Vehicles vehicles;
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public VehicleFleet() {
+		this.vehicles = VehicleUtils.createVehiclesContainer();
+	}
+
+	public void createVehicleType(final String key, final Samgods.TransportMode transportMode,
+			final double capacity_ton) {
+
+		final Id<VehicleType> typeId = Id.create(key, VehicleType.class);
+		final VehicleType type = VehicleUtils.createVehicleType(typeId);
+		this.vehicles.addVehicleType(type);
+
+		final FreightVehicleAttributes freightAttributes = new FreightVehicleAttributes(transportMode, capacity_ton);
+		type.getAttributes().putAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME, freightAttributes);
+	}
+	
+	// -------------------- IMPLEMENTATION --------------------
+
+	public FreightVehicleAttributes getFreightVehicleAttributes(final Id<VehicleType> typeId) {
+		return (FreightVehicleAttributes) this.vehicles.getVehicleTypes().get(typeId).getAttributes()
+				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
+	}
 
 }
