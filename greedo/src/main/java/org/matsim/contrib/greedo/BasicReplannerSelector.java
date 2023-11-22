@@ -68,7 +68,7 @@ class BasicReplannerSelector extends AbstractReplannerSelector {
 			});
 		}
 
-		final int replannerCnt = Math.max(1, (int) (this.getTargetReplanningRate() * personIdAndGap.size()));
+		final int replannerCnt = Math.max(1, (int) (this.getTargetRelaxationRate() * personIdAndGap.size()));
 		final Set<Id<Person>> replannerIds = new LinkedHashSet<>(replannerCnt);
 		personIdAndGap.subList(0, replannerCnt).forEach(t -> replannerIds.add(t.getA()));
 

@@ -22,7 +22,6 @@ package org.matsim.contrib.greedo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +46,7 @@ abstract class AbstractReplannerSelector {
 
 	// -------------------- MEMBERS --------------------
 
-	private Double targetReplanningRate = null;
+	private Double targetRelaxationRate = null;
 
 	private Double realizedReplanningRate = null;
 
@@ -55,7 +54,7 @@ abstract class AbstractReplannerSelector {
 
 	private Double meanFilteredGap = null;
 
-	private boolean hasReplannedBefore = false;
+//	private boolean hasReplannedBefore = false;
 
 	private Integer replanIteration = null;
 
@@ -67,10 +66,7 @@ abstract class AbstractReplannerSelector {
 		} else if (GreedoConfigGroup.ReplannerIdentifierType.SBAYTI2007.equals(greedoConfig.getReplannerIdentifier())) {
 			return new BasicReplannerSelector(true, greedoConfig.newIterationToTargetReplanningRate());
 		} else if (GreedoConfigGroup.ReplannerIdentifierType.UPPERBOUND.equals(greedoConfig.getReplannerIdentifier())) {
-			return new UpperBoundReplannerSelector(greedoConfig.newIterationToTargetReplanningRate(),
-					greedoConfig.newQuadraticDistanceTransformation(),
-					// greedoConfig.getGapRelativeMSA()
-					greedoConfig.getUpperboundStepSize());
+			return new UpperBoundReplannerSelector(greedoConfig);
 		} else if (GreedoConfigGroup.ReplannerIdentifierType.DONOTHING.equals(greedoConfig.getReplannerIdentifier())) {
 			return new AbstractReplannerSelector(null) {
 				@Override
@@ -94,8 +90,8 @@ abstract class AbstractReplannerSelector {
 
 	// -------------------- PARTIAL IMPLEMENTATION --------------------
 
-	Double getTargetReplanningRate() {
-		return this.targetReplanningRate;
+	Double getTargetRelaxationRate() {
+		return this.targetRelaxationRate;
 	}
 
 	Double getRealizedReplanningRate() {
@@ -119,17 +115,10 @@ abstract class AbstractReplannerSelector {
 	}
 
 	Set<Id<Person>> selectReplanners(final Map<Id<Person>, Double> personId2filteredGap, final int replanIteration) {
-		this.replanIteration = replanIteration;
 
-		final Set<Id<Person>> replannerIds;
-		if (this.hasReplannedBefore) {
-			this.targetReplanningRate = this.iterationToStepSize.apply(replanIteration);
-			replannerIds = this.selectReplannersHook(personId2filteredGap);
-		} else {
-			this.targetReplanningRate = 1.0;
-			replannerIds = new LinkedHashSet<>(personId2filteredGap.keySet());
-			this.hasReplannedBefore = true;
-		}
+		this.replanIteration = replanIteration;
+		this.targetRelaxationRate = this.iterationToStepSize.apply(replanIteration);
+		final Set<Id<Person>> replannerIds = this.selectReplannersHook(personId2filteredGap);
 
 		this.meanFilteredGap = personId2filteredGap.values().stream().mapToDouble(g -> g).average().getAsDouble();
 		this.realizedReplanningRate = ((double) replannerIds.size()) / personId2filteredGap.size();

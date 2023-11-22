@@ -38,9 +38,9 @@ abstract class AbstractPopulationDistance {
 			final Map<String, ? extends TravelTime> mode2travelTime) {
 		final GreedoConfigGroup greedoConfig = ConfigUtils.addOrGetModule(scenario.getConfig(),
 				GreedoConfigGroup.class);
-		if (GreedoConfigGroup.PopulationDistanceType.Hamming.equals(greedoConfig.getPopulationDistance())) {
+		if (GreedoConfigGroup.PopulationDistanceType.HAMMING.equals(greedoConfig.getPopulationDistance())) {
 			return new HammingPopulationDistance();
-		} else if (GreedoConfigGroup.PopulationDistanceType.Kernel.equals(greedoConfig.getPopulationDistance())) {
+		} else if (GreedoConfigGroup.PopulationDistanceType.KERNEL.equals(greedoConfig.getPopulationDistance())) {
 			return new KernelPopulationDistance(pop1, pop2, scenario, mode2travelTime);
 		} else {
 			throw new RuntimeException("Unknown distance type: " + greedoConfig.getPopulationDistance());

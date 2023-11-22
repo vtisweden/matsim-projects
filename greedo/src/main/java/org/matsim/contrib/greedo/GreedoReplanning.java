@@ -133,12 +133,12 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		this.statsWriter.addSearchStatistic(new Statistic<>() {
 			@Override
 			public String label() {
-				return "TargetReplanningRate";
+				return "TargetRelaxationRate";
 			}
 
 			@Override
 			public String value(GreedoReplanning data) {
-				return Statistic.toString(data.replannerSelector.getTargetReplanningRate());
+				return Statistic.toString(data.replannerSelector.getTargetRelaxationRate());
 			}
 		});
 		this.statsWriter.addSearchStatistic(new Statistic<>() {

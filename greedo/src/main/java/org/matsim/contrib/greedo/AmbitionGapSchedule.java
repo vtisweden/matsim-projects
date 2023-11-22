@@ -68,7 +68,7 @@ class AmbitionGapSchedule {
 			final double meanGap = this.gaps.subList(0, iteration / 2).stream().mapToDouble(g -> g).average()
 					.getAsDouble();
 			if (this.initialGap == null) {
-				assert (iteration == 2 * this.warmupIterations);
+				assert (iteration == this.warmupIterations);
 				this.initialGap = meanGap;
 			}
 			eta = Math.pow(1.0 + iteration, this.iterationToLevelExponent) * (this.initialGap / meanGap);

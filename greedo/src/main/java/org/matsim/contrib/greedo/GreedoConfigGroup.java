@@ -101,20 +101,6 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-//	private boolean gapRelativeMSA = false;
-//
-//	@StringGetter("gapRelativeMSA")
-//	public boolean getGapRelativeMSA() {
-//		return this.gapRelativeMSA;
-//	}
-//
-//	@StringSetter("gapRelativeMSA")
-//	public void setGapRelativeMSA(boolean gapRelativeMSA) {
-//		this.gapRelativeMSA = gapRelativeMSA;
-//	}
-
-	//
-
 	private boolean useLinearDistance = true;
 
 	@StringGetter("useLinearDistance")
@@ -168,7 +154,7 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	private int maxMemory = 5;
+	private int maxMemory = 1;
 
 	@StringGetter("maxMemory")
 	public int getMaxMemory() {
@@ -182,30 +168,30 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	private double initialStepSizeFactor = 1.0;
+	private double initialRelaxationRate = 1.0;
 
-	@StringGetter("initialStepSizeFactor")
-	public double getInitialStepSizeFactor() {
-		return this.initialStepSizeFactor;
+	@StringGetter("initialRelaxationRate")
+	public double getInitialRelaxationRate() {
+		return this.initialRelaxationRate;
 	}
 
-	@StringSetter("initialStepSizeFactor")
-	public void setInitialStepSizeFactor(double initialStepSizeFactor) {
-		this.initialStepSizeFactor = initialStepSizeFactor;
+	@StringSetter("initialRelaxationRate")
+	public void setInitialRelaxationRate(double initialRelaxationRate) {
+		this.initialRelaxationRate = initialRelaxationRate;
 	}
 
 	//
 
-	private double replanningRateIterationExponent = -1.0;
+	private double relaxationRateIterationExponent = -1.0;
 
-	@StringGetter("replanningRateIterationExponent")
-	public double getReplanningRateIterationExponent() {
-		return this.replanningRateIterationExponent;
+	@StringGetter("relaxationRateIterationExponent")
+	public double getRelaxationRateIterationExponent() {
+		return this.relaxationRateIterationExponent;
 	}
 
-	@StringSetter("replanningRateIterationExponent")
-	public void setReplanningRateIterationExponent(double replanningRateIterationExponent) {
-		this.replanningRateIterationExponent = replanningRateIterationExponent;
+	@StringSetter("relaxationRateIterationExponent")
+	public void setRelaxationRateIterationExponent(double relaxationRateIterationExponent) {
+		this.relaxationRateIterationExponent = relaxationRateIterationExponent;
 	}
 
 	//
@@ -214,7 +200,7 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 		return new Function<>() {
 			@Override
 			public Double apply(Integer iteration) {
-				return initialStepSizeFactor * Math.pow(Math.max(1.0, iteration), replanningRateIterationExponent);
+				return initialRelaxationRate * Math.pow(Math.max(1.0, iteration), relaxationRateIterationExponent);
 			}
 		};
 	}
@@ -236,10 +222,10 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 	//
 
 	public static enum UpperboundStepSize {
-		Vanilla, RelativeToInitialGap, SbaytiCounterpart, SbaytiCounterpartExact
+		RELATIVE, ABSOLUTE
 	}
 
-	private UpperboundStepSize upperboundStepSize = UpperboundStepSize.Vanilla;
+	private UpperboundStepSize upperboundStepSize = UpperboundStepSize.ABSOLUTE;
 
 	@StringGetter("upperboundStepSize")
 	public UpperboundStepSize getUpperboundStepSize() {
@@ -253,11 +239,25 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	public static enum PopulationDistanceType {
-		Hamming, Kernel
+	private int upperboundWarmupIterations = 10;
+
+	@StringGetter("upperboundWarmupIterations")
+	public int getUpperboundWarumupIterations() {
+		return this.upperboundWarmupIterations;
 	}
 
-	private PopulationDistanceType populationDistance = PopulationDistanceType.Hamming;
+	@StringSetter("upperboundWarmupIterations")
+	public void setUpperboundWarumupIterations(final int upperboundWarumupIterations) {
+		this.upperboundWarmupIterations = upperboundWarumupIterations;
+	}
+
+	//
+
+	public static enum PopulationDistanceType {
+		HAMMING, KERNEL
+	}
+
+	private PopulationDistanceType populationDistance = PopulationDistanceType.KERNEL;
 
 	@StringGetter("populationDistance")
 	public PopulationDistanceType getPopulationDistance() {
