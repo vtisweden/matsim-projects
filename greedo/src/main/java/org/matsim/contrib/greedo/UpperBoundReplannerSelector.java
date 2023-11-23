@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * org.matsim.contrib.greedo
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
+
+import se.vti.utils.matsim.PopulationDistance;
 
 /**
  *

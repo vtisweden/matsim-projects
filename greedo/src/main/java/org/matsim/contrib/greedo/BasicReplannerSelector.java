@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * org.matsim.contrib.greedo
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 

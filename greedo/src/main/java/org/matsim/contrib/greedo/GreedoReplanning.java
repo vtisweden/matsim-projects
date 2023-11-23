@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * org.matsim.contrib.greedo
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -52,6 +52,9 @@ import com.google.inject.TypeLiteral;
 import floetteroed.utilities.statisticslogging.Statistic;
 import floetteroed.utilities.statisticslogging.StatisticsWriter;
 import floetteroed.utilities.statisticslogging.TimeStampStatistic;
+import se.vti.utils.matsim.LinkTravelTimeCopy;
+import se.vti.utils.matsim.Plans;
+import se.vti.utils.matsim.PopulationDistance;
 
 /**
  * @author Gunnar Flötteröd
@@ -379,7 +382,9 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		 */
 
 		final PopulationDistance popDist = new PopulationDistance(oldPlans, newPlans,
-				this.services.getScenario(), mode2filteredTravelTimes);
+				this.services.getScenario().getNetwork(), this.services.getConfig().qsim().getFlowCapFactor(),
+				mode2filteredTravelTimes, this.greedoConfig.getKernelHalftime_s(),
+				this.greedoConfig.getKernelThreshold());
 		this.replannerSelector.setDistanceToReplannedPopulation(popDist);
 
 		final Set<Id<Person>> replannerIds = this.replannerSelector.selectReplanners(personId2FilteredGap,
