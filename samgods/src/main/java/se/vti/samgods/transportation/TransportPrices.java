@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,16 +17,30 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.transportation;
 
-public interface ShipmentCost {
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
 
-	public double getTransportDuration_h();
+import se.vti.samgods.legacy.Samgods.Commodity;
+import se.vti.samgods.logistics.TransportLeg;
 
-	public double getTransportCost();
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public interface TransportPrices {
 
-	public double getCapitalCost();
+	public interface UnitPrice {
 
-	public double getValueDensity();
+		public Double getTransportPrice_1_ton();
+
+		public Double getTransportDuration_h();
+	}
+
+	public UnitPrice getUnitPrice(Commodity commodity, Id<Node> node);
+
+	public UnitPrice getUnitPrice(Commodity commodity, TransportLeg leg);
 
 }

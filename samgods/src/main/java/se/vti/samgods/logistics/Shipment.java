@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -31,15 +31,11 @@ public class Shipment {
 
 	private final double frequency_1_yr;
 
-	private final double monetaryValue;
-
-	public Shipment(Commodity commodity, TransportChain transportChain, double size_ton, double frequency_1_yr,
-			double monetaryValue) {
+	public Shipment(Commodity commodity, TransportChain transportChain, double size_ton, double frequency_1_yr) {
 		this.commodity = commodity;
 		this.transportChain = transportChain;
 		this.size_ton = size_ton;
 		this.frequency_1_yr = frequency_1_yr;
-		this.monetaryValue = monetaryValue;
 	}
 
 	public Commodity getCommmodity() {
@@ -57,9 +53,4 @@ public class Shipment {
 	public double getFrequency_1_yr() {
 		return this.frequency_1_yr;
 	}
-
-	public double getMonetaryValue() {
-		return this.monetaryValue;
-	}
-
 }

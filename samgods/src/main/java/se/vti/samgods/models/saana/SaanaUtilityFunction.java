@@ -22,18 +22,15 @@ package se.vti.samgods.models.saana;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
-
 import se.vti.samgods.legacy.Samgods;
 import se.vti.samgods.legacy.Samgods.Commodity;
 import se.vti.samgods.logistics.Shipment;
-import se.vti.samgods.logistics.ShipmentCost;
-import se.vti.samgods.logistics.TransportChainAndShipmentChoiceModel;
-import se.vti.samgods.logistics.TransportCostModel;
+import se.vti.samgods.logistics.ShipmentCostCalculator;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.transportation.TransportPrices;
+import se.vti.samgods.transportation.TransportPrices.UnitPrice;
 
-public class SaanaUtilityFunction implements TransportCostModel, TransportChainAndShipmentChoiceModel.UtilityFunction {
+public class SaanaUtilityFunction implements ShipmentCostCalculator, TransportChainAndShipmentChoiceModelImpl.UtilityFunction {
 
 	final boolean intitialTransshipmentCosts = true;
 	final boolean finalTransshipmentCosts = true;
@@ -55,8 +52,10 @@ public class SaanaUtilityFunction implements TransportCostModel, TransportChainA
 
 	private final Map<Samgods.Commodity, Betas> commodity2betas = new LinkedHashMap<>();
 
-	public SaanaUtilityFunction() {
-
+	private TransportPrices transportPrices;
+	
+	public SaanaUtilityFunction(TransportPrices transportPrices) {
+		this.transportPrices = transportPrices;
 	}
 
 	@Override
@@ -65,78 +64,43 @@ public class SaanaUtilityFunction implements TransportCostModel, TransportChainA
 		double transportCostSum = 0.0;
 		double durationSum_h = 0.0;
 		if (this.intitialTransshipmentCosts) {
-			final UnitCost initialTransshipmentCost = this.getUnitCost(shipment.getTransportChain().getOrigin());
-			transportCostSum += shipment.getSize_ton() * initialTransshipmentCost.getTransportCost_1_ton();
+			final UnitPrice initialTransshipmentCost = this.transportPrices.getUnitPrice(shipment.getCommmodity(),
+					shipment.getTransportChain().getOrigin());
+			transportCostSum += shipment.getSize_ton() * initialTransshipmentCost.getTransportPrice_1_ton();
 			durationSum_h += initialTransshipmentCost.getTransportDuration_h();
 		}
 		for (TransportLeg leg : shipment.getTransportChain().getLegs()) {
-			final UnitCost transportCost = this.getUnitCost(leg);
-			transportCostSum += shipment.getSize_ton() * transportCost.getTransportCost_1_ton();
+			final UnitPrice transportCost = this.transportPrices.getUnitPrice(shipment.getCommmodity(), leg);
+			transportCostSum += shipment.getSize_ton() * transportCost.getTransportPrice_1_ton();
 			durationSum_h = transportCost.getTransportDuration_h();
 			if (this.finalTransshipmentCosts
 					|| !shipment.getTransportChain().getDestination().equals(leg.getDestination())) {
-				final UnitCost transshipmentCost = this.getUnitCost(leg.getDestination());
-				transportCostSum += shipment.getSize_ton() * transshipmentCost.getTransportCost_1_ton();
+				final UnitPrice transshipmentCost = this.transportPrices.getUnitPrice(shipment.getCommmodity(), leg.getDestination());
+				transportCostSum += shipment.getSize_ton() * transshipmentCost.getTransportPrice_1_ton();
 				durationSum_h = transshipmentCost.getTransportDuration_h();
 			}
 		}
-		final double transportCost = transportCostSum;
-		final double duration_h = durationSum_h;
+
 		final double totalDuration_yr = durationSum_h / 24.0 / 365.0;
 		final double interShipmentDuration_yr = 1.0 / shipment.getFrequency_1_yr();
 
 		final Betas betas = this.commodity2betas.get(shipment.getCommmodity());
 
 		final double capitalCost = betas.carryingCostCoeff_1_yrTon * totalDuration_yr * shipment.getSize_ton();
-		final double valueDensity = betas.carryingCostCoeff_1_yrTon * interShipmentDuration_yr
-				* shipment.getSize_ton();
+		final double valueDensity = betas.carryingCostCoeff_1_yrTon * interShipmentDuration_yr * shipment.getSize_ton();
 
-		return new ShipmentCost() {
-
-			@Override
-			public double getTransportDuration_h() {
-				return duration_h;
-			}
-
-			@Override
-			public double getTransportCost() {
-				return transportCost;
-			}
-
-			@Override
-			public double getCapitalCost() {
-				return capitalCost;
-			}
-
-			@Override
-			public double getValueDensity() {
-				return valueDensity;
-			}
-		};
-	}
-
-	@Override
-	public UnitCost getUnitCost(Id<Node> node) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public UnitCost getUnitCost(TransportLeg leg) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+		return new ShipmentCost(durationSum_h, transportCostSum, capitalCost, valueDensity);	
+		}
 
 	@Override
 	public double computeUtility(Shipment shipment, ShipmentCost shipmentCost) {
 		final Betas betas = this.commodity2betas.get(shipment.getCommmodity());
-		double utility = betas.transportCostCoeff * shipmentCost.getTransportCost()
-				+ betas.inTransitCaptialCostCoeff * shipmentCost.getCapitalCost()
-				+ betas.valueDensityCoeff * shipmentCost.getValueDensity();
+		double utility = betas.transportCostCoeff * shipmentCost.transportCost
+				+ betas.inTransitCaptialCostCoeff * shipmentCost.capitalCost
+				+ betas.valueDensityCoeff * shipmentCost.valueDensity;
 		return utility;
 	}
 
-	@Override
 	public double getMonetaryValue_1_ton(Commodity commodity) {
 		// TODO Auto-generated method stub
 		return 0;

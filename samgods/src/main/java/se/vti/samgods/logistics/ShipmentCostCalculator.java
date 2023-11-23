@@ -19,31 +19,23 @@
  */
 package se.vti.samgods.logistics;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
+public interface ShipmentCostCalculator {
 
-import se.vti.samgods.legacy.Samgods.Commodity;
+	public class ShipmentCost {
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface TransportCostModel {
+		public final double transportDuration_h;
+		public final double transportCost;
+		public final double capitalCost;
+		public final double valueDensity;
 
-	public interface UnitCost {
-
-		public Double getTransportCost_1_ton();
-
-		public Double getTransportDuration_h();
+		public ShipmentCost(double transportDuration_h, double transportCost, double capitalCost, double valueDensity) {
+			this.transportDuration_h = transportDuration_h;
+			this.transportCost = transportCost;
+			this.capitalCost = capitalCost;
+			this.valueDensity = valueDensity;
+		}
 	}
 
-	public UnitCost getUnitCost(Id<Node> node);
-
-	public UnitCost getUnitCost(TransportLeg leg);
-
-	public double getMonetaryValue_1_ton(Commodity commodity);	
-	
 	public ShipmentCost computeCost(Shipment shipment);
 
 }

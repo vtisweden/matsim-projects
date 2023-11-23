@@ -30,7 +30,6 @@ public class TransportChain {
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
 
 	public TransportChain() {
-
 	}
 
 	public void addLeg(final TransportLeg leg) {

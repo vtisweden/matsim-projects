@@ -31,9 +31,12 @@ import se.vti.samgods.legacy.Samgods.TransportMode;
 public class TransportLeg {
 
 	private final Tuple<Id<Node>, Id<Node>> od;
+	
 	private final Samgods.TransportMode mode;
 
-	public TransportLeg(final Id<Node> origin, final Id<Node> destination, final TransportMode mode) {
+	private List<Node> route;
+	
+	public TransportLeg(Id<Node> origin, Id<Node> destination, TransportMode mode) {
 		this.od = new Tuple<>(origin, destination);
 		this.mode = mode;
 	}
@@ -50,8 +53,13 @@ public class TransportLeg {
 		return this.mode;
 	}
 	
-	public void setRoute(final List<Node> nodes) {
-		// TODO
+	public void setRoute(final List<Node> route) {
+		this.route = route;
 	}
+	
+	public List<Node> getRoute() {
+		return this.route;
+	}
+	
 
 }
