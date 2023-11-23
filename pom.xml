@@ -20,6 +20,7 @@
   	<module>greedo</module>
 	<module>samgods</module>
 	<module>utils</module>
+	<module>tramodby</module>
   </modules>
 
   <repositories>
