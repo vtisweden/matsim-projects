@@ -20,10 +20,15 @@
 package se.vti.samgods.transportation;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.router.util.TravelDisutility;
+import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.legacy.Samgods;
 
 /**
@@ -43,22 +48,50 @@ public class VehicleFleet {
 		this.vehicles = VehicleUtils.createVehiclesContainer();
 	}
 
-	public void createVehicleType(final String key, final Samgods.TransportMode transportMode,
-			final double capacity_ton) {
+	public FreightVehicleAttributes createVehicleType(final String key, final Samgods.TransportMode transportMode,
+			final double capacity_ton, final double speed_km_h) {
 
 		final Id<VehicleType> typeId = Id.create(key, VehicleType.class);
 		final VehicleType type = VehicleUtils.createVehicleType(typeId);
+		type.setMaximumVelocity(Units.M_S_PER_KM_H * speed_km_h);
 		this.vehicles.addVehicleType(type);
 
-		final FreightVehicleAttributes freightAttributes = new FreightVehicleAttributes(transportMode, capacity_ton);
-		type.getAttributes().putAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME, freightAttributes);
+		final FreightVehicleAttributes attributes = new FreightVehicleAttributes(transportMode, capacity_ton);
+		type.getAttributes().putAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME, attributes);
+		return attributes;
 	}
-	
+
 	// -------------------- IMPLEMENTATION --------------------
 
 	public FreightVehicleAttributes getFreightVehicleAttributes(final Id<VehicleType> typeId) {
 		return (FreightVehicleAttributes) this.vehicles.getVehicleTypes().get(typeId).getAttributes()
 				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
+	}
+
+	public FreightVehicleAttributes getFreightVehicleAttributes(final String key) {
+		return this.getFreightVehicleAttributes(Id.create(key, VehicleType.class));
+	}
+
+	public TravelDisutility createEmptyVehicleTravelDisutility(final String vehicleKey) {
+		final Id<VehicleType> vehicleTypeId = Id.create(vehicleKey, VehicleType.class);
+		final VehicleType vehicleType = this.vehicles.getVehicleTypes().get(vehicleTypeId);
+
+		return new TravelDisutility() {
+			@Override
+			public double getLinkMinimumTravelDisutility(Link link) {
+				final double length_km = Units.KM_PER_M * link.getLength();
+				final double speed_km_h = Units.KM_H_PER_M_S
+						* Math.min(link.getFreespeed(), vehicleType.getMaximumVelocity());
+				final double traveltime_h = length_km / speed_km_h;
+				final FreightVehicleAttributes attrs = getFreightVehicleAttributes(vehicleTypeId);
+				return attrs.getFixedCost_1_km() * length_km + attrs.getFixedCost_1_h() * traveltime_h;
+			}
+
+			@Override
+			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
+				return this.getLinkMinimumTravelDisutility(link);
+			}
+		};
 	}
 
 }

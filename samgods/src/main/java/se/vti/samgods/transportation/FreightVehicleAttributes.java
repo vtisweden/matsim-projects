@@ -27,7 +27,7 @@ import se.vti.samgods.legacy.Samgods;
  *
  */
 public class FreightVehicleAttributes {
-	
+
 	// -------------------- CONSTANTS --------------------
 
 	public static final String ATTRIBUTE_NAME = "freight";
@@ -58,40 +58,44 @@ public class FreightVehicleAttributes {
 	public Samgods.TransportMode getTransportMode() {
 		return this.transportMode;
 	}
-	
+
 	public double getCapacity_ton() {
 		return this.capacity_ton;
 	}
-	
+
 	public Double getFixedCost_1_h() {
 		return fixedCost_1_h;
 	}
 
-	public void setFixedCost_1_h(Double fixedCost_1_h) {
+	public FreightVehicleAttributes setFixedCost_1_h(Double fixedCost_1_h) {
 		this.fixedCost_1_h = fixedCost_1_h;
+		return this;
 	}
 
 	public Double getFixedCost_1_km() {
 		return fixedCost_1_km;
 	}
 
-	public void setFixedCost_1_km(Double fixedCost_1_km) {
+	public FreightVehicleAttributes setFixedCost_1_km(Double fixedCost_1_km) {
 		this.fixedCost_1_km = fixedCost_1_km;
+		return this;
 	}
 
 	public Double getUnitCost_1_hTon() {
 		return unitCost_1_hTon;
 	}
 
-	public void setUnitCost_1_hTon(Double unitCost_1_hTon) {
+	public FreightVehicleAttributes setUnitCost_1_hTon(Double unitCost_1_hTon) {
 		this.unitCost_1_hTon = unitCost_1_hTon;
+		return this;
 	}
 
 	public Double getUnitCost_1_kmTon() {
 		return unitCost_1_kmTon;
 	}
 
-	public void setUnitCost_1_kmTon(Double unitCost_1_kmTon) {
+	public FreightVehicleAttributes setUnitCost_1_kmTon(Double unitCost_1_kmTon) {
 		this.unitCost_1_kmTon = unitCost_1_kmTon;
+		return this;
 	}
 }

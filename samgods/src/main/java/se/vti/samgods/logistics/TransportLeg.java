@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.List;
+
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
@@ -46,6 +48,10 @@ public class TransportLeg {
 
 	public Samgods.TransportMode getMode() {
 		return this.mode;
+	}
+	
+	public void setRoute(final List<Node> nodes) {
+		// TODO
 	}
 
 }

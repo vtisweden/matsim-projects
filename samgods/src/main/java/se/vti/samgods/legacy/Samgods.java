@@ -115,6 +115,10 @@ public class Samgods {
 		return this.commodity2pwcMatrix.get(commodity);
 	}
 
+	public Map<Tuple<Id<Node>, Id<Node>>, List<TransportChain>> getTransportChains(Commodity commodity) {
+		return this.commodity2od2chains.get(commodity);
+	}
+
 	public List<TransportChain> getTransportChains(Commodity commodity, Id<Node> origin, Id<Node> destination) {
 		return this.commodity2od2chains.get(commodity).get(new Tuple<>(origin, destination));
 	}

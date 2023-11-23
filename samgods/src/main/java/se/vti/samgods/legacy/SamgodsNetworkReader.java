@@ -205,8 +205,9 @@ public class SamgodsNetworkReader {
 		for (Map.Entry<Samgods.TransportMode, String> entry : samgodsMode2matsimMode.entrySet()) {
 			final Network unimodalNetwork = NetworkUtils.createNetwork();
 			unimodalNetwork.setCapacityPeriod(3600.0);
-			new TransportModeNetworkFilter(this.network).filter(unimodalNetwork, Collections.singleton(entry.getValue()));
-			mode2network.put(entry.getKey(), unimodalNetwork);			
+			new TransportModeNetworkFilter(this.network).filter(unimodalNetwork,
+					Collections.singleton(entry.getValue()));
+			mode2network.put(entry.getKey(), unimodalNetwork);
 		}
 		return mode2network;
 	}
