@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,31 +19,47 @@
  */
 package se.vti.samgods.logistics;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
-
 import se.vti.samgods.legacy.Samgods.Commodity;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface TransportCostModel {
+public class Shipment {
 
-	public interface UnitCost {
+	private final Commodity commodity;
 
-		public Double getTransportCost_1_ton();
+	private final TransportChain transportChain;
 
-		public Double getTransportDuration_h();
+	private final double size_ton;
+
+	private final double frequency_1_yr;
+
+	private final double monetaryValue;
+
+	public Shipment(Commodity commodity, TransportChain transportChain, double size_ton, double frequency_1_yr,
+			double monetaryValue) {
+		this.commodity = commodity;
+		this.transportChain = transportChain;
+		this.size_ton = size_ton;
+		this.frequency_1_yr = frequency_1_yr;
+		this.monetaryValue = monetaryValue;
 	}
 
-	public UnitCost getUnitCost(Id<Node> node);
+	public Commodity getCommmodity() {
+		return this.commodity;
+	}
 
-	public UnitCost getUnitCost(TransportLeg leg);
+	public TransportChain getTransportChain() {
+		return this.transportChain;
+	}
 
-	public double getMonetaryValue_1_ton(Commodity commodity);	
-	
-	public ShipmentCost computeCost(Shipment shipment);
+	public double getSize_ton() {
+		return this.size_ton;
+	}
+
+	public double getFrequency_1_yr() {
+		return this.frequency_1_yr;
+	}
+
+	public double getMonetaryValue() {
+		return this.monetaryValue;
+	}
 
 }

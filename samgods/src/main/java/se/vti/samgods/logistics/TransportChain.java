@@ -22,6 +22,9 @@ package se.vti.samgods.logistics;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
+
 public class TransportChain {
 
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
@@ -42,5 +45,13 @@ public class TransportChain {
 	public List<TransportLeg> getLegs() {
 		return this.legs;
 	}
+	
+	public Id<Node> getOrigin() {
+		return this.legs.get(0).getOrigin();
+	}
 
+	public Id<Node> getDestination() {
+		return this.legs.get(this.legs.size() - 1).getDestination();
+	}
+	
 }

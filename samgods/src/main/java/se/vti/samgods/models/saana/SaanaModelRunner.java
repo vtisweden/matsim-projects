@@ -17,33 +17,17 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
-
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
-
-import se.vti.samgods.legacy.Samgods.Commodity;
+package se.vti.samgods.models.saana;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface TransportCostModel {
+public class SaanaModelRunner {
 
-	public interface UnitCost {
-
-		public Double getTransportCost_1_ton();
-
-		public Double getTransportDuration_h();
+	public static void main(String[] args) {
+		
 	}
-
-	public UnitCost getUnitCost(Id<Node> node);
-
-	public UnitCost getUnitCost(TransportLeg leg);
-
-	public double getMonetaryValue_1_ton(Commodity commodity);	
 	
-	public ShipmentCost computeCost(Shipment shipment);
-
 }

@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
+
 import se.vti.samgods.legacy.Samgods.Commodity;
-import se.vti.samgods.logistics.TransportCostModel.SingleShipmentCost;
 
 /**
  * 
@@ -32,6 +34,12 @@ import se.vti.samgods.logistics.TransportCostModel.SingleShipmentCost;
  *
  */
 public class TransportChainAndShipmentChoiceModel {
+
+	public interface UtilityFunction {
+
+		public double computeUtility(Shipment shipment, ShipmentCost shipmentCost);
+
+	}
 
 	public enum ShipmentSizeClass {
 
@@ -70,38 +78,33 @@ public class TransportChainAndShipmentChoiceModel {
 
 		public final ShipmentSizeClass shipmentSizeClass;
 
-		public final TransportChain transportChain;
+		public final Shipment shipment;
 
-		public final SingleShipmentCost singleShipmentCost;
+		public final ShipmentCost shipmentCost;
 
-		public final double frequency_1_yr;
+		public final double utility;
 
-		public Alternative(ShipmentSizeClass shipmentSizeClass, TransportChain transportChain,
-				SingleShipmentCost singleShipmentCost, final double shipmentFrequency_1_yr) {
+		public Alternative(final ShipmentSizeClass shipmentSizeClass, final Shipment shipment) {
 			this.shipmentSizeClass = shipmentSizeClass;
-			this.transportChain = transportChain;
-			this.singleShipmentCost = singleShipmentCost;
-			this.frequency_1_yr = shipmentFrequency_1_yr;
-		}
-
-		public double getTotalMonetaryCost() {
-			return this.singleShipmentCost.getMonetaryCost() * this.frequency_1_yr;
+			this.shipment = shipment;
+			this.shipmentCost = transportCostModel.computeCost(shipment);
+			this.utility = utilityFunction.computeUtility(shipment, shipmentCost);
 		}
 
 		@Override
 		public String toString() {
-			return this.shipmentSizeClass + "; " + this.transportChain.getLegs() + "; singleShipmentCost="
-					+ this.singleShipmentCost.getMonetaryCost() + "; frequency=" + this.frequency_1_yr + "; totalCost="
-					+ this.getTotalMonetaryCost();
-
+			return "TODO";
 		}
-
 	}
 
 	private final TransportCostModel transportCostModel;
 
-	public TransportChainAndShipmentChoiceModel(TransportCostModel transportCostModel) {
+	private final UtilityFunction utilityFunction;
+
+	public TransportChainAndShipmentChoiceModel(TransportCostModel transportCostModel,
+			UtilityFunction utilityFunction) {
 		this.transportCostModel = transportCostModel;
+		this.utilityFunction = utilityFunction;
 	}
 
 	public List<Alternative> createChoiceSet(List<TransportChain> transportChains, double totalShipmentSize_ton,
@@ -111,11 +114,13 @@ public class TransportChainAndShipmentChoiceModel {
 		for (ShipmentSizeClass sizeClass : ShipmentSizeClass.values()) {
 			if (totalShipmentSize_ton >= sizeClass.upperValue_ton) {
 				for (TransportChain transportChain : transportChains) {
-					final SingleShipmentCost costForOneLargeShipment = this.transportCostModel
-							.computeSingleShipmentCost(transportChain, commodity, sizeClass.upperValue_ton);
-					final double frequencyOfLargeShipments_1_yr = totalShipmentSize_ton / sizeClass.upperValue_ton;
-					result.add(new Alternative(sizeClass, transportChain, costForOneLargeShipment,
-							frequencyOfLargeShipments_1_yr));
+					final double shipmentSize_ton = sizeClass.upperValue_ton;
+					final double frequency_1_yr = totalShipmentSize_ton / shipmentSize_ton;
+					final double monetaryValue = shipmentSize_ton
+							* this.transportCostModel.getMonetaryValue_1_ton(commodity);
+					final Shipment shipment = new Shipment(commodity, transportChain, shipmentSize_ton, frequency_1_yr,
+							monetaryValue);
+					result.add(new Alternative(sizeClass, shipment));
 				}
 			}
 		}
@@ -127,31 +132,48 @@ public class TransportChainAndShipmentChoiceModel {
 		TransportChainAndShipmentChoiceModel model = new TransportChainAndShipmentChoiceModel(new TransportCostModel() {
 
 			@Override
-			public SingleShipmentCost computeSingleShipmentCost(TransportChain transportChain, Commodity commodity,
-					double shipmentSize_ton) {
-				return new SingleShipmentCost() {
+			public UnitCost getUnitCost(Id<Node> node) {
+				return null;
+			}
 
-					@Override
-					public TransportChain getTransportChain() {
-						return transportChain;
+			@Override
+			public UnitCost getUnitCost(TransportLeg leg) {
+				return null;
+			}
+
+			@Override
+			public double getMonetaryValue_1_ton(Commodity commodity) {
+				return 0.0;
+			}
+
+			@Override
+			public ShipmentCost computeCost(Shipment shipment) {
+				return new ShipmentCost() {
+					public double getTransportDuration_h() {
+						return 0.0;
 					}
 
-					@Override
-					public Commodity getCommmodity() {
-						return commodity;
+					public double getTransportCost() {
+						return 0.0;
 					}
 
-					@Override
-					public double getAmount_ton() {
-						return shipmentSize_ton;
+					public double getCapitalCost() {
+						return 0.0;
 					}
 
-					@Override
-					public double getMonetaryCost() {
-						return 1.0 / (shipmentSize_ton);
+					public double getValueDensity() {
+						return 0.0;
 					}
+
 				};
 			}
+		}, new UtilityFunction() {
+
+			@Override
+			public double computeUtility(Shipment shipment, ShipmentCost shipmentCost) {
+				return 0;
+			}
+
 		});
 
 		TransportChain testChain = new TransportChain() {
