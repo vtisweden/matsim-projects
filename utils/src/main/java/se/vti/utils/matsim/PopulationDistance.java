@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.greedo
+ * se.vti.utils
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package org.matsim.contrib.greedo;
+package se.vti.utils.matsim;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,14 +28,12 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Leg;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.PlanElement;
-import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.core.router.util.TravelTime;
 
@@ -44,7 +42,7 @@ import org.matsim.core.router.util.TravelTime;
  * @author Gunnar Flötteröd
  *
  */
-class PopulationDistance {
+public class PopulationDistance {
 
 	// -------------------- INNER CLASSES --------------------
 
@@ -64,7 +62,9 @@ class PopulationDistance {
 
 	private final double flowCapacityFactor;
 
-	private GreedoConfigGroup greedoConfig;
+	private final double kernelHalftime_s;
+
+	private final double kernelThreshold;
 
 	// -------------------- MEMBERS --------------------
 
@@ -72,13 +72,15 @@ class PopulationDistance {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	PopulationDistance(final Plans pop1, final Plans pop2, final Scenario scenario,
-			final Map<String, ? extends TravelTime> mode2travelTime) {
-		this.flowCapacityFactor = scenario.getConfig().qsim().getFlowCapFactor();
-		this.greedoConfig = ConfigUtils.addOrGetModule(scenario.getConfig(), GreedoConfigGroup.class);
+	public PopulationDistance(final Plans pop1, final Plans pop2, final Network network,
+			final double flowCapacityFactor, final Map<String, ? extends TravelTime> mode2travelTime,
+			final double kernelHalftime_s, final double kernelThreshold) {
+		this.flowCapacityFactor = flowCapacityFactor;
+		this.kernelHalftime_s = kernelHalftime_s;
+		this.kernelThreshold = kernelThreshold;
 
-		final Map<Link, List<LinkEntry>> link2entries1 = this.plans2linkEntries(pop1, scenario, mode2travelTime);
-		final Map<Link, List<LinkEntry>> link2entries2 = this.plans2linkEntries(pop2, scenario, mode2travelTime);
+		final Map<Link, List<LinkEntry>> link2entries1 = this.plans2linkEntries(pop1, network, mode2travelTime);
+		final Map<Link, List<LinkEntry>> link2entries2 = this.plans2linkEntries(pop2, network, mode2travelTime);
 
 		this.updateCoeffs(link2entries1, link2entries1, 1.0); // K(x,x) terms
 		this.updateCoeffs(link2entries1, link2entries2, -2.0); // K(x,y) terms
@@ -117,14 +119,14 @@ class PopulationDistance {
 		return result;
 	}
 
-	private Map<Link, List<LinkEntry>> plans2linkEntries(final Plans plans, final Scenario scenario,
+	private Map<Link, List<LinkEntry>> plans2linkEntries(final Plans plans, final Network network,
 			Map<String, ? extends TravelTime> mode2travelTime) {
 		final Map<Link, List<LinkEntry>> result = new LinkedHashMap<>();
 		for (Id<Person> personId : plans.getPersonIdView()) {
 			for (Leg leg : this.extractNetworkLegs(plans.getSelectedPlan(personId))) {
 				final TravelTime travelTime = mode2travelTime.get(leg.getMode());
 				double time_s = leg.getDepartureTime().seconds();
-				for (Link link : this.allLinksAsList((NetworkRoute) leg.getRoute(), scenario.getNetwork())) {
+				for (Link link : this.allLinksAsList((NetworkRoute) leg.getRoute(), network)) {
 					result.computeIfAbsent(link, l -> new ArrayList<>()).add(new LinkEntry(personId, time_s));
 					time_s += travelTime.getLinkTravelTime(link, time_s, null, null);
 				}
@@ -149,7 +151,7 @@ class PopulationDistance {
 			final Link link = e.getKey();
 
 			final double flowCap_veh_s = this.flowCapacityFactor * link.getCapacity() / link.getCapacityPeriod();
-			final double kernelMu_1_s = Math.log(2.0) / this.greedoConfig.getKernelHalftime_s();
+			final double kernelMu_1_s = Math.log(2.0) / this.kernelHalftime_s;
 			final double linkFact = fact * kernelMu_1_s / flowCap_veh_s;
 
 			final List<LinkEntry> entries1 = e.getValue();
@@ -159,7 +161,7 @@ class PopulationDistance {
 					for (LinkEntry entry2 : entries2) {
 						final double muTimesDelta = kernelMu_1_s * Math.abs(entry1.time_s - entry2.time_s);
 						final double kernel = Math.exp(-muTimesDelta) * (1.0 + muTimesDelta);
-						if (kernel >= this.greedoConfig.getKernelThreshold()) {
+						if (kernel >= this.kernelThreshold) {
 							this.addCoefficient(entry1.personId, entry2.personId, linkFact * kernel);
 						}
 					}
@@ -173,11 +175,19 @@ class PopulationDistance {
 				(id, coeff) -> coeff == null ? addend : coeff + addend);
 	}
 
-	double getACoefficient(final Id<Person> personId1, final Id<Person> personId2) {
+	// -------------------- IMPLEMENTATION --------------------
+
+	public double getACoefficient(final Id<Person> personId1, final Id<Person> personId2) {
 		if (this.personId2personId2aCoeff.containsKey(personId1)) {
 			return this.personId2personId2aCoeff.get(personId1).getOrDefault(personId2, 0.0);
 		} else {
 			return 0.0;
 		}
+	}
+
+	public double computeDistance() {
+		final double aSum = this.personId2personId2aCoeff.values().stream().flatMap(p2a -> p2a.values().stream())
+				.mapToDouble(a -> a).sum();
+		return Math.sqrt(Math.max(0.0, aSum));
 	}
 }

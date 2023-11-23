@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.utils
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package org.matsim.contrib.greedo;
+package se.vti.utils.matsim;
 
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
