@@ -19,6 +19,7 @@
   	<module>emulation</module>
   	<module>greedo</module>
 	<module>samgods</module>
+	<module>utilities</module>
   </modules>
 
   <repositories>
