@@ -378,7 +378,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		 * (3) Identify re-planners.
 		 */
 
-		final AbstractPopulationDistance popDist = AbstractPopulationDistance.newPopulationDistance(oldPlans, newPlans,
+		final PopulationDistance popDist = new PopulationDistance(oldPlans, newPlans,
 				this.services.getScenario(), mode2filteredTravelTimes);
 		this.replannerSelector.setDistanceToReplannedPopulation(popDist);
 

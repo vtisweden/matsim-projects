@@ -110,7 +110,7 @@ abstract class AbstractReplannerSelector {
 		return this.replanIteration;
 	}
 
-	void setDistanceToReplannedPopulation(final AbstractPopulationDistance populationDistance) {
+	void setDistanceToReplannedPopulation(final PopulationDistance populationDistance) {
 		// default implementation does nothing
 	}
 

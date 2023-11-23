@@ -19,6 +19,7 @@
  */
 package org.matsim.contrib.greedo;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -28,9 +29,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.contrib.greedo.shouldbeelsewhere.Hacks;
 
 /**
  *
@@ -53,7 +54,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	// -------------------- MEMBERS --------------------
 
-	private AbstractPopulationDistance populationDistance = null;
+	private PopulationDistance populationDistance = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -92,7 +93,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 	// --------------- OVERRIDING OF AbstractReplannerSelector ---------------
 
 	@Override
-	void setDistanceToReplannedPopulation(final AbstractPopulationDistance populationDistance) {
+	void setDistanceToReplannedPopulation(final PopulationDistance populationDistance) {
 		this.populationDistance = populationDistance;
 	}
 
@@ -122,9 +123,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 		final String logFile = "exact-replanning.log";
 		if (this.logReplanningProcess) {
-			Hacks.append2file(logFile, "strictly positive gaps: "
+			append2file(logFile, "strictly positive gaps: "
 					+ ((double) personId2gap.size()) / ((double) personId2gap.size()) + "\n");
-			Hacks.append2file(logFile, "G(lambda)\tD(lambda)\tQ(lambda)\n");
+			append2file(logFile, "G(lambda)\tD(lambda)\tQ(lambda)\n");
 		}
 
 		final double _Gall = personId2gap.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
@@ -145,7 +146,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		while (switched) {
 
 			if (this.logReplanningProcess) {
-				Hacks.append2file(logFile,
+				append2file(logFile,
 						_G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, this.eta() * _Gall) + "\n");
 			}
 
@@ -216,10 +217,23 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		}
 
 		if (this.logReplanningProcess) {
-			Hacks.append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
-			Hacks.append2file(logFile, "\n");
+			append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
+			append2file(logFile, "\n");
 		}
 
 		return replannerIds;
 	}
+	
+	public static void append2file(File file, String line) {
+		try {
+			FileUtils.writeStringToFile(file, line, true);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static void append2file(String fileName, String line) {
+		append2file(new File(fileName), line);
+	}
+
 }

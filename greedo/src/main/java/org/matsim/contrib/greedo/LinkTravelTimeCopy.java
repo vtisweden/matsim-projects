@@ -23,15 +23,17 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 
 import java.util.List;
+import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.contrib.greedo.shouldbeelsewhere.UpdatedDynamicData;
 import org.matsim.core.config.Config;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.Vehicle;
+
+import floetteroed.utilities.DynamicData;
 
 /**
  *
@@ -40,17 +42,45 @@ import org.matsim.vehicles.Vehicle;
  */
 public class LinkTravelTimeCopy implements TravelTime {
 
-	private final UpdatedDynamicData<Id<Link>> data_s;
+	@SuppressWarnings("serial")
+	private static class ModifiableDynamicData<K extends Object> extends DynamicData<K> {
+
+		ModifiableDynamicData(int startTime_s, int binSize_s, int binCnt) {
+			super(startTime_s, binSize_s, binCnt);
+		}
+
+		ModifiableDynamicData(final ModifiableDynamicData<K> parent) {
+			super(parent.getStartTime_s(), parent.getBinSize_s(), parent.getBinCnt());
+			this.add(parent, 1.0); // ensures deep copy of double[] data holding arrays
+		}
+
+		void multiply(final double factor) {
+			for (double[] series : this.data.values()) {
+				for (int i = 0; i < series.length; i++) {
+					series[i] *= factor;
+				}
+			}
+		}
+
+		void add(final ModifiableDynamicData<K> other, final double otherFactor) {
+			for (Map.Entry<K, double[]> otherEntry : other.data.entrySet()) {
+				final double[] otherSeries = otherEntry.getValue();
+				final double[] mySeries = this.getNonNullDataArray(otherEntry.getKey());
+				for (int i = 0; i < mySeries.length; i++) {
+					mySeries[i] += otherFactor * otherSeries[i];
+				}
+			}
+		}
+	}
+	
+	private final ModifiableDynamicData<Id<Link>> data_s;
 
 	public LinkTravelTimeCopy(final TravelTime travelTimes, final Config config, final Network network) {
-
-//		final TravelTime travelTimes = services.getLinkTravelTimes();
-//		final Config config = services.getConfig();
 
 		final int binSize_s = config.travelTimeCalculator().getTraveltimeBinSize();
 		final int binCnt = (int) ceil(((double) config.travelTimeCalculator().getMaxTime()) / binSize_s);
 
-		this.data_s = new UpdatedDynamicData<Id<Link>>(0, binSize_s, binCnt);
+		this.data_s = new ModifiableDynamicData<Id<Link>>(0, binSize_s, binCnt);
 
 		for (Link link : network.getLinks().values()) {
 			for (int bin = 0; bin < binCnt; bin++) {
@@ -61,7 +91,7 @@ public class LinkTravelTimeCopy implements TravelTime {
 	}
 
 	public LinkTravelTimeCopy(final LinkTravelTimeCopy parent) {
-		this.data_s = new UpdatedDynamicData<>(parent.data_s);
+		this.data_s = new ModifiableDynamicData<>(parent.data_s);
 	}
 
 	@Override
@@ -85,17 +115,6 @@ public class LinkTravelTimeCopy implements TravelTime {
 		result.multiply(weights.get(0));
 		for (int i = 1; i < addends.size(); i++) {
 			result.add(addends.get(i), weights.get(i));
-		}
-		return result;
-	}
-
-	// for testing
-	public double sum() {
-		double result = 0.0;
-		for (Id<Link> link : this.data_s.keySet()) {
-			for (int bin = 0; bin < this.data_s.getBinCnt(); bin++) {
-				result += this.data_s.getBinValue(link, bin);
-			}
 		}
 		return result;
 	}
