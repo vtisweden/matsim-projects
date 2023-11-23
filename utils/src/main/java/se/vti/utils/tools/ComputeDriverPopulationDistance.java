@@ -34,6 +34,11 @@ import se.vti.utils.matsim.Plans;
 import se.vti.utils.matsim.PopulationDistance;
 
 /**
+ * Requires that the compared populations contain the same individuals (i.e.
+ * same person id sets in both populations).
+ * 
+ * Requires that all plans have been routed on the network and that each
+ * person has a selected plan.
  * 
  * @author GunnarF
  *
@@ -42,12 +47,13 @@ public class ComputeDriverPopulationDistance {
 
 	public static void main(String[] args) {
 
-		// four command line parameter: two population files, one network file, one number reflecting the population sampling rate
+		// four command line parameter: two population files, one network file, one
+		// number reflecting the population sampling rate
 		Plans plans1 = new Plans(PopulationUtils.readPopulation(args[0]));
 		Plans plans2 = new Plans(PopulationUtils.readPopulation(args[1]));
 		Network network = NetworkUtils.readNetwork(args[2]);
 		double flowCapacityFactor = Double.parseDouble(args[3]);
-		
+
 		double kernelHalftime_s = 300.0;
 		double kernelThreshold = 0.05;
 
