@@ -36,7 +36,7 @@ import se.vti.utils.matsim.PopulationDistance;
 
 /**
  *
- * @author Gunnar Flötteröd
+ * @author GunnarF
  *
  */
 abstract class AbstractReplannerSelector {
@@ -54,8 +54,6 @@ abstract class AbstractReplannerSelector {
 	private Double meanReplannerFilteredGap = null;
 
 	private Double meanFilteredGap = null;
-
-//	private boolean hasReplannedBefore = false;
 
 	private Integer replanIteration = null;
 

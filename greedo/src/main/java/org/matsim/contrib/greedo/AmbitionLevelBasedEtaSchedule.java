@@ -26,11 +26,13 @@ import java.util.LinkedList;
  * @author GunnarF
  *
  */
-class AmbitionGapSchedule {
+class AmbitionLevelBasedEtaSchedule {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final int warmupIterations;
+	private final int minAverageIterations;
+
+	private final double averageFraction;
 
 	private final double iterationToLevelExponent;
 
@@ -42,14 +44,10 @@ class AmbitionGapSchedule {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	AmbitionGapSchedule(final int warmupIterations, final double iterationToLevelReductionExponent) {
-		if (warmupIterations < 2) {
-			throw new IllegalArgumentException("warmupIterations must be >= 2");
-		}
-		if (iterationToLevelReductionExponent > 0) {
-			throw new IllegalArgumentException("iterationToLevelReductionException must be non-positive");
-		}
-		this.warmupIterations = warmupIterations;
+	AmbitionLevelBasedEtaSchedule(final int minAverageIterations, final double averageFraction,
+			final double iterationToLevelReductionExponent) {
+		this.minAverageIterations = minAverageIterations;
+		this.averageFraction = averageFraction;
 		this.iterationToLevelExponent = iterationToLevelReductionExponent;
 	}
 
@@ -61,17 +59,17 @@ class AmbitionGapSchedule {
 
 	double getEta(final int iteration, final boolean constrain) {
 		final double etaMSA = Math.pow(1 + iteration, this.iterationToLevelExponent);
+		final int averageIts = (int) Math.max(1.0, this.averageFraction * iteration);
 		final double eta;
-		if (iteration < this.warmupIterations) {
+		if (averageIts < this.minAverageIterations) {
 			eta = etaMSA;
 		} else {
-			final double meanGap = this.gaps.subList(0, iteration / 2).stream().mapToDouble(g -> g).average()
+			final double meanGap = this.gaps.subList(0, averageIts).stream().mapToDouble(g -> g).average()
 					.getAsDouble();
 			if (this.initialGap == null) {
-				assert (iteration == this.warmupIterations);
 				this.initialGap = meanGap;
 			}
-			eta = Math.pow(1.0 + iteration, this.iterationToLevelExponent) * (this.initialGap / meanGap);
+			eta = etaMSA * (this.initialGap / meanGap);
 		}
 		if (constrain) {
 			return Math.max(0.0, Math.min(1.0, eta));
@@ -84,7 +82,7 @@ class AmbitionGapSchedule {
 
 	public static void main(String[] args) {
 
-		AmbitionGapSchedule ags = new AmbitionGapSchedule(10, -0.5);
+		AmbitionLevelBasedEtaSchedule ags = new AmbitionLevelBasedEtaSchedule(5, 0.5, -0.5);
 
 		System.out.println("gap\teta");
 		for (int it = 0; it < 1000; it++) {
@@ -94,9 +92,6 @@ class AmbitionGapSchedule {
 			ags.registerGap(gap);
 
 			System.out.println(gap + "\t" + ags.getEta(it, false));
-
 		}
-
 	}
-
 }

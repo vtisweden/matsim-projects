@@ -52,7 +52,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	private final Function<Double, Double> quadraticDistanceTransformation;
 
-	private final AmbitionGapSchedule ambitionGapSchedule;
+	private final AmbitionLevelBasedEtaSchedule ambitionGapSchedule;
 
 	// -------------------- MEMBERS --------------------
 
@@ -69,7 +69,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		});
 		this.quadraticDistanceTransformation = greedoConfig.newQuadraticDistanceTransformation();
 		if (GreedoConfigGroup.UpperboundStepSize.ABSOLUTE.equals(greedoConfig.getUpperboundStepSize())) {
-			this.ambitionGapSchedule = new AmbitionGapSchedule(greedoConfig.getUpperboundWarumupIterations(),
+			this.ambitionGapSchedule = new AmbitionLevelBasedEtaSchedule(
+					greedoConfig.getUpperboundMinimumAverageIterations(), greedoConfig.getUpperboundAverageFraction(),
 					greedoConfig.getRelaxationRateIterationExponent());
 		} else {
 			this.ambitionGapSchedule = null;
@@ -79,20 +80,21 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	// -------------------- INTERNALS --------------------
 
-	private double eta() {
-		if (this.ambitionGapSchedule != null) {
-			return this.ambitionGapSchedule.getEta(this.getReplanIteration(), true);
-		} else {
-			return this.getTargetRelaxationRate();
-		}
-	}
-
 	private double _Q(final double _G, final double _D2, final double epsilon) {
 		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
 		return (_G - epsilon) / Math.max(this.eps, transformedD);
 	}
 
 	// --------------- OVERRIDING OF AbstractReplannerSelector ---------------
+
+	@Override
+	Double getTargetRelaxationRate() {
+		if (this.ambitionGapSchedule != null) {
+			return this.ambitionGapSchedule.getEta(this.getReplanIteration(), true);
+		} else {
+			return super.getTargetRelaxationRate();
+		}
+	}
 
 	@Override
 	void setDistanceToReplannedPopulation(final PopulationDistance populationDistance) {
@@ -132,7 +134,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 		final double _Gall = personId2gap.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
 		final double _D2all = personId2bParam.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
-		
+
 		this.ambitionGapSchedule.registerGap(_Gall / personId2gap.size());
 
 		double _G = replannerIds.stream().mapToDouble(r -> personId2gap.get(r)).sum();
@@ -148,8 +150,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		while (switched) {
 
 			if (this.logReplanningProcess) {
-				append2file(logFile,
-						_G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, this.eta() * _Gall) + "\n");
+				append2file(logFile, _G + "\t" + Math.sqrt(_D2) + "\t"
+						+ this._Q(_G, _D2, this.getTargetRelaxationRate() * _Gall) + "\n");
 			}
 
 			switched = false;
@@ -173,8 +175,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 				// attention, now we maximize
 
-				final double oldQ = this._Q(_G, _D2, this.eta() * _Gall);
-				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.eta() * _Gall);
+				final double oldQ = this._Q(_G, _D2, this.getTargetRelaxationRate() * _Gall);
+				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.getTargetRelaxationRate() * _Gall);
 
 				if (newQ > oldQ) {
 					_G = Math.max(0.0, _G + deltaG);
@@ -225,17 +227,15 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 		return replannerIds;
 	}
-	
-	public static void append2file(File file, String line) {
+
+	// TODO below for testing
+
+	static void append2file(String fileName, String line) {
 		try {
-			FileUtils.writeStringToFile(file, line, true);
+			FileUtils.writeStringToFile(new File(fileName), line, true);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	public static void append2file(String fileName, String line) {
-		append2file(new File(fileName), line);
 	}
 
 }

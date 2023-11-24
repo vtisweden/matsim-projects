@@ -32,7 +32,7 @@ import org.matsim.core.utils.misc.StringUtils;
 
 /**
  *
- * @author Gunnar Flötteröd
+ * @author GunnarF
  *
  */
 public class GreedoConfigGroup extends ReflectiveConfigGroup {
@@ -206,20 +206,6 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 	}
 
 	//
-//
-//	private boolean useFilteredTravelTimeInPopulationDistance = true;
-//
-//	@StringGetter("useFilteredTravelTimeInPopulationDistance")
-//	public boolean getUseFilteredTravelTimeInPopulationDistance() {
-//		return this.useFilteredTravelTimeInPopulationDistance;
-//	}
-//
-//	@StringSetter("useFilteredTravelTimeInPopulationDistance")
-//	public void setUseFilteredTravelTimeInPopulationDistance(boolean useFilteredTravelTimeInPopulationDistance) {
-//		this.useFilteredTravelTimeInPopulationDistance = useFilteredTravelTimeInPopulationDistance;
-//	}
-
-	//
 
 	public static enum UpperboundStepSize {
 		RELATIVE, ABSOLUTE
@@ -239,16 +225,30 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	private int upperboundWarmupIterations = 10;
+	private double upperboundAverageFraction = 0.25;
 
-	@StringGetter("upperboundWarmupIterations")
-	public int getUpperboundWarumupIterations() {
-		return this.upperboundWarmupIterations;
+	@StringGetter("upperboundAverageFraction")
+	public double getUpperboundAverageFraction() {
+		return this.upperboundAverageFraction;
 	}
 
-	@StringSetter("upperboundWarmupIterations")
-	public void setUpperboundWarumupIterations(final int upperboundWarumupIterations) {
-		this.upperboundWarmupIterations = upperboundWarumupIterations;
+	@StringSetter("upperboundAverageFraction")
+	public void setUpperboundAverageFraction(double upperboundAverageFraction) {
+		this.upperboundAverageFraction = upperboundAverageFraction;
+	}
+
+	//
+
+	private int upperboundMinimumAverageIterations = 4;
+
+	@StringGetter("upperboundMinimumAverageIterations")
+	public int getUpperboundMinimumAverageIterations() {
+		return this.upperboundMinimumAverageIterations;
+	}
+
+	@StringSetter("upperboundMinimumAverageIterations")
+	public void setUpperboundMinimumAverageIterations(int upperboundMinimumAverageIterations) {
+		this.upperboundMinimumAverageIterations = upperboundMinimumAverageIterations;
 	}
 
 	//

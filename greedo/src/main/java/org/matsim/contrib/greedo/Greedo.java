@@ -41,7 +41,7 @@ import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule.Default
 
 /**
  *
- * @author Gunnar Flötteröd
+ * @author GunnarF
  *
  */
 public class Greedo {
@@ -58,44 +58,25 @@ public class Greedo {
 
 	private Config config = null;
 
-//	private final Map<String, Class<? extends ActivityEmulator>> actType2emulator = new LinkedHashMap<>();
-//
-//	private final Map<String, Class<? extends LegEmulator>> mode2emulator = new LinkedHashMap<>();
-//
-//	private final Map<String, Class<? extends LegDecomposer>> mode2decomposer = new LinkedHashMap<>();
-
 	private final EmulationParameters emulationParameters;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public Greedo() {
-//		// (atomic) activity emulation
-//		this.setActivityEmulator(DEFAULT, BasicActivityEmulator.class);
-//		// (atomic) leg emulation
-//		this.setEmulator(TransportMode.car, CarLegEmulator.class);
-//		this.setEmulator(DEFAULT, OnlyDepartureArrivalLegEmulator.class);
-//		// leg decomposition
-//		this.setDecomposer(DEFAULT, BasicLegDecomposer.class);
 		this.emulationParameters = new EmulationParameters();
 	}
 
 	// -------------------- WIRE GREEDO INTO MATSim --------------------
 
 	public void setActivityEmulator(String type, Class<? extends ActivityEmulator> clazz) {
-//		logger.info("Emulator for activity type " + type + " is of type " + clazz.getSimpleName());
-//		this.actType2emulator.put(type, clazz);
 		this.emulationParameters.setActivityEmulator(type, clazz);
 	}
 
 	public void setEmulator(String mode, Class<? extends LegEmulator> clazz) {
-//		logger.info("Emulator for mode " + mode + " is of type " + clazz.getSimpleName());
-//		this.mode2emulator.put(mode, clazz);
 		this.emulationParameters.setEmulator(mode, clazz);
 	}
 
 	public void addHandler(Class<? extends EmulationHandler> clazz) {
-//		logger.info("Decomposer for mode " + mode + " is of type " + clazz.getSimpleName());
-//		this.mode2decomposer.put(mode, clazz);
 		this.emulationParameters.addHandler(clazz);
 	}
 
@@ -235,14 +216,16 @@ public class Greedo {
 		for (AbstractModule module : this.getModules()) {
 			controler.addOverridingModule(module);
 		}
-		
-		final int checkEmulatedAgentsCnt = ConfigUtils.addOrGetModule(this.config, GreedoConfigGroup.class).getCheckEmulatedAgentsCnt();
+
+		final int checkEmulatedAgentsCnt = ConfigUtils.addOrGetModule(this.config, GreedoConfigGroup.class)
+				.getCheckEmulatedAgentsCnt();
 		if (checkEmulatedAgentsCnt > 0) {
-			EventsChecker.generateObservedPersonIds(controler.getScenario().getPopulation(), checkEmulatedAgentsCnt, "observedPersons.txt");
+			EventsChecker.generateObservedPersonIds(controler.getScenario().getPopulation(), checkEmulatedAgentsCnt,
+					"observedPersons.txt");
 			EventsChecker simulatedEventsChecker = new EventsChecker("observedPersons.txt", true);
 			controler.addControlerListener(simulatedEventsChecker);
 			controler.getEvents().addHandler(simulatedEventsChecker);
-		}		
+		}
 	}
 
 	public AbstractModule[] getModules() {
@@ -254,13 +237,6 @@ public class Greedo {
 				bind(PlansReplanning.class).to(GreedoReplanning.class);
 			}
 		};
-		return new AbstractModule[] { greedoModule,
-				// new EmulationModule(this.actType2emulator, this.mode2emulator,
-				// this.mode2decomposer) };
-				new EmulationModule(this.emulationParameters) };
-//						this.emulationParameters.getActType2emulatorView(),
-//						this.emulationParameters.getMode2emulatorView(),
-//						this.emulationParameters.getMode2decomposerView()) };
-		// this.actType2emulator, this.mode2emulator, this.mode2decomposer) };
+		return new AbstractModule[] { greedoModule, new EmulationModule(this.emulationParameters) };
 	}
 }
