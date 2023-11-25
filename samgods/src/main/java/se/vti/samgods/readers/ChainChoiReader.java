@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.legacy;
+package se.vti.samgods.readers;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -32,7 +32,9 @@ import org.matsim.api.core.v01.Id;
 
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
-import se.vti.samgods.legacy.Samgods.TransportMode;
+import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.PWCMatrix;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
@@ -71,35 +73,35 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	static {
 		code2mode = new LinkedHashMap<>();
-		code2mode.put('A', Samgods.TransportMode.Road);
-		code2mode.put('X', Samgods.TransportMode.Road);
-		code2mode.put('D', Samgods.TransportMode.Rail);
-		code2mode.put('d', Samgods.TransportMode.Rail);
-		code2mode.put('E', Samgods.TransportMode.Rail);
-		code2mode.put('F', Samgods.TransportMode.Rail);
-		code2mode.put('f', Samgods.TransportMode.Rail);
-		code2mode.put('J', Samgods.TransportMode.Sea);
-		code2mode.put('K', Samgods.TransportMode.Sea);
-		code2mode.put('L', Samgods.TransportMode.Sea);
-		code2mode.put('V', Samgods.TransportMode.Sea);
-		code2mode.put('B', Samgods.TransportMode.Road);
-		code2mode.put('C', Samgods.TransportMode.Road);
-		code2mode.put('S', Samgods.TransportMode.Road);
-		code2mode.put('c', Samgods.TransportMode.Road);
-		code2mode.put('G', Samgods.TransportMode.Rail);
-		code2mode.put('H', Samgods.TransportMode.Rail);
-		code2mode.put('h', Samgods.TransportMode.Rail);
-		code2mode.put('I', Samgods.TransportMode.Rail);
-		code2mode.put('T', Samgods.TransportMode.Rail);
-		code2mode.put('U', Samgods.TransportMode.Rail);
-		code2mode.put('i', Samgods.TransportMode.Rail);
-		code2mode.put('M', Samgods.TransportMode.Sea);
-		code2mode.put('N', Samgods.TransportMode.Sea);
-		code2mode.put('O', Samgods.TransportMode.Sea);
-		code2mode.put('W', Samgods.TransportMode.Sea);
-		code2mode.put('P', Samgods.TransportMode.Sea);
-		code2mode.put('Q', Samgods.TransportMode.Sea);
-		code2mode.put('R', Samgods.TransportMode.Air);
+		code2mode.put('A', SamgodsConstants.TransportMode.Road);
+		code2mode.put('X', SamgodsConstants.TransportMode.Road);
+		code2mode.put('D', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('d', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('E', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('F', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('f', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('J', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('K', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('L', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('V', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('B', SamgodsConstants.TransportMode.Road);
+		code2mode.put('C', SamgodsConstants.TransportMode.Road);
+		code2mode.put('S', SamgodsConstants.TransportMode.Road);
+		code2mode.put('c', SamgodsConstants.TransportMode.Road);
+		code2mode.put('G', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('H', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('h', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('I', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('T', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('U', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('i', SamgodsConstants.TransportMode.Rail);
+		code2mode.put('M', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('N', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('O', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('W', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('P', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('Q', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('R', SamgodsConstants.TransportMode.Air);
 	}
 //	public enum TransportChainType {
 //
@@ -132,7 +134,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChainChoiReader(final String fileName, final Samgods.Commodity commodity) {
+	public ChainChoiReader(final String fileName, final SamgodsConstants.Commodity commodity) {
 		this.pwcMatrix = new PWCMatrix(commodity);
 		this.od2chains = new LinkedHashMap<>();
 
@@ -198,7 +200,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	public static void main(String[] args) {
 
-		for (Samgods.Commodity commodity : Samgods.Commodity.values()) {
+		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 			final ChainChoiReader reader = new ChainChoiReader(
 					"./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out", commodity);
 			System.out.println(reader.pwcMatrix.getCommodity().twoDigitCode() + " " + commodity + ": "

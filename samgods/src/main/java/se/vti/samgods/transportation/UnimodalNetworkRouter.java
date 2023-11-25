@@ -33,7 +33,7 @@ import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.Vehicle;
 
-import se.vti.samgods.legacy.OD;
+import se.vti.samgods.OD;
 
 /**
  * 

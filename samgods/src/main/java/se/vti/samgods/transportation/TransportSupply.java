@@ -32,10 +32,10 @@ import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.vehicles.Vehicle;
 
-import se.vti.samgods.legacy.OD;
-import se.vti.samgods.legacy.Samgods;
-import se.vti.samgods.legacy.Samgods.Commodity;
-import se.vti.samgods.legacy.Samgods.TransportMode;
+import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
 
@@ -47,27 +47,36 @@ import se.vti.samgods.logistics.TransportLeg;
  */
 public class TransportSupply {
 
-	private static final Map<Samgods.TransportMode, String> samgodsMode2matsimMode;
+	// -------------------- CONSTANTS --------------------
+
+	private static final Map<SamgodsConstants.TransportMode, String> samgodsMode2matsimMode;
+
 	static {
 		samgodsMode2matsimMode = new LinkedHashMap<>(4);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Road, org.matsim.api.core.v01.TransportMode.car);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Rail, org.matsim.api.core.v01.TransportMode.train);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Sea, org.matsim.api.core.v01.TransportMode.ship);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Air, org.matsim.api.core.v01.TransportMode.airplane);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Road, org.matsim.api.core.v01.TransportMode.car);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Rail, org.matsim.api.core.v01.TransportMode.train);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Sea, org.matsim.api.core.v01.TransportMode.ship);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Air, org.matsim.api.core.v01.TransportMode.airplane);
 	}
 
-	private Network network = null;
+	// -------------------- MEMBERS --------------------
 
-	private VehicleFleet vehicleFleet = null;
-	
-	private Map<TransportMode, Network> mode2network = null;
+	private final Network network;
+
+	private final Map<TransportMode, Network> mode2network;
+
+	private final VehicleFleet vehicleFleet;
 
 	private Map<Commodity, Map<TransportMode, TransportPrice>> commodity2mode2prices = null;
 
-	public void setNetwork(Network network) {
+	// -------------------- CONSTRUCTION --------------------
+
+	public TransportSupply(Network network, VehicleFleet fleet) {
 		this.network = network;
+		this.vehicleFleet = fleet;
+
 		this.mode2network = new LinkedHashMap<>(samgodsMode2matsimMode.size());
-		for (Map.Entry<Samgods.TransportMode, String> entry : samgodsMode2matsimMode.entrySet()) {
+		for (Map.Entry<SamgodsConstants.TransportMode, String> entry : samgodsMode2matsimMode.entrySet()) {
 			final Network unimodalNetwork = NetworkUtils.createNetwork();
 			unimodalNetwork.setCapacityPeriod(3600.0);
 			new TransportModeNetworkFilter(this.network).filter(unimodalNetwork,
@@ -76,23 +85,31 @@ public class TransportSupply {
 		}
 	}
 
+	// -------------------- GETTERS --------------------
+
 	public Network getNetwork() {
 		return this.network;
 	}
-	
+
+	public Network getNetwork(SamgodsConstants.TransportMode transportMode) {
+		return this.mode2network.get(transportMode);
+	}
+
 	public VehicleFleet getVehicleFleet() {
 		return this.vehicleFleet;
 	}
 
-	public Network getNetwork(Samgods.TransportMode transportMode) {
-		return this.mode2network.get(transportMode);
+	public void setUnitPrice(Commodity commodity, TransportMode mode, TransportPrice price) {
+		this.commodity2mode2prices.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).put(mode, price);
 	}
 
 	public TransportPrice getUnitPrice(Commodity commodity, TransportMode mode) {
 		return this.commodity2mode2prices.get(commodity).get(mode);
 	}
 
-	public TravelDisutility createTravelDisutilityForAnonymousRouting(Commodity commodity, TransportMode mode) {
+	// -------------------- ROUTING --------------------
+
+	private TravelDisutility createTravelDisutilityForAnonymousRouting(Commodity commodity, TransportMode mode) {
 		final TransportPrice price = this.getUnitPrice(commodity, mode);
 		return new TravelDisutility() {
 
@@ -108,7 +125,6 @@ public class TransportSupply {
 		};
 	}
 
-	// TODO parallelize
 	public void routeAllLegs(Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains) {
 		final Map<TransportMode, UnimodalNetworkRouter> mode2router = new LinkedHashMap<>();
 		for (Map.Entry<Commodity, Map<OD, List<TransportChain>>> entry : commodity2od2chains.entrySet()) {

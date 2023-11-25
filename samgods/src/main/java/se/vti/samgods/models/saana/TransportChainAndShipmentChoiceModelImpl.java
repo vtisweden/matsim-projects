@@ -22,7 +22,7 @@ package se.vti.samgods.models.saana;
 import java.util.Arrays;
 import java.util.List;
 
-import se.vti.samgods.legacy.Samgods.Commodity;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.AbstractTransportChainAndShipmentChoiceModel;
 import se.vti.samgods.logistics.Shipment;
 import se.vti.samgods.logistics.ShipmentCostCalculator;

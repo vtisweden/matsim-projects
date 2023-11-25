@@ -29,9 +29,9 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
 import floetteroed.utilities.Tuple;
-import se.vti.samgods.legacy.OD;
-import se.vti.samgods.legacy.Samgods;
-import se.vti.samgods.legacy.Samgods.Commodity;
+import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 
 public class PWCMatrix {
 

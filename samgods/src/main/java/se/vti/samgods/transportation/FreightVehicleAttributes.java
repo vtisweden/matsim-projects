@@ -19,7 +19,7 @@
  */
 package se.vti.samgods.transportation;
 
-import se.vti.samgods.legacy.Samgods;
+import se.vti.samgods.SamgodsConstants;
 
 /**
  * 
@@ -32,7 +32,7 @@ public class FreightVehicleAttributes {
 
 	public static final String ATTRIBUTE_NAME = "freight";
 
-	private final Samgods.TransportMode transportMode;
+	private final SamgodsConstants.TransportMode transportMode;
 
 	private final double capacity_ton;
 
@@ -48,14 +48,14 @@ public class FreightVehicleAttributes {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FreightVehicleAttributes(final Samgods.TransportMode transportMode, final double capacity_ton) {
+	public FreightVehicleAttributes(final SamgodsConstants.TransportMode transportMode, final double capacity_ton) {
 		this.transportMode = transportMode;
 		this.capacity_ton = capacity_ton;
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
 
-	public Samgods.TransportMode getTransportMode() {
+	public SamgodsConstants.TransportMode getTransportMode() {
 		return this.transportMode;
 	}
 

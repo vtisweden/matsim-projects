@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.legacy;
+package se.vti.samgods.readers;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -38,6 +38,7 @@ import floetteroed.utilities.Units;
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileHandler;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
+import se.vti.samgods.SamgodsConstants;
 
 /**
  *
@@ -121,13 +122,13 @@ public class SamgodsNetworkReader {
 					final Double maxSpeed_m_s;
 					final Double capacity_veh_h;
 					final Integer lanes;
-					if (Samgods.TransportMode.Road.toString().equals(mode)) {
+					if (SamgodsConstants.TransportMode.Road.toString().equals(mode)) {
 						matsimMode = TransportMode.car;
 						maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						capacity_veh_h = Units.VEH_H_PER_VEH_S * rhoMax_veh_m * maxSpeed_m_s * bwdWaveSpeed_m_s
 								/ (maxSpeed_m_s + bwdWaveSpeed_m_s);
 						lanes = 2;
-					} else if (Samgods.TransportMode.Rail.toString().equals(mode)) {
+					} else if (SamgodsConstants.TransportMode.Rail.toString().equals(mode)) {
 						matsimMode = TransportMode.train;
 						maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						final Double capFromFile = this.getDoubleValue(LINK_CAPACITY_TRAINS_DAY);
@@ -138,7 +139,7 @@ public class SamgodsNetworkReader {
 							capacity_veh_h = 60.0;
 						}
 						lanes = 1;
-					} else if (Samgods.TransportMode.Sea.toString().equals(mode)) {
+					} else if (SamgodsConstants.TransportMode.Sea.toString().equals(mode)) {
 						matsimMode = TransportMode.ship;
 						if (maxSpeed_km_h != null) {
 							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
@@ -148,7 +149,7 @@ public class SamgodsNetworkReader {
 						}
 						capacity_veh_h = 60.0;
 						lanes = 1;
-					} else if (Samgods.TransportMode.Air.toString().equals(mode)) {
+					} else if (SamgodsConstants.TransportMode.Air.toString().equals(mode)) {
 						matsimMode = TransportMode.airplane;
 						if (maxSpeed_km_h != null) {
 							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;

@@ -22,7 +22,7 @@ package se.vti.samgods.logistics;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.vti.samgods.legacy.Samgods.Commodity;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.ShipmentCostCalculator.ShipmentCost;
 
 public abstract class AbstractTransportChainAndShipmentChoiceModel implements TransportChainAndShipmentChoiceModel {

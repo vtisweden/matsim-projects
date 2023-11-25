@@ -29,7 +29,7 @@ import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.legacy.Samgods;
+import se.vti.samgods.SamgodsConstants;
 
 /**
  * 
@@ -48,7 +48,7 @@ public class VehicleFleet {
 		this.vehicles = VehicleUtils.createVehiclesContainer();
 	}
 
-	public FreightVehicleAttributes createVehicleType(final String key, final Samgods.TransportMode transportMode,
+	public FreightVehicleAttributes createVehicleType(final String key, final SamgodsConstants.TransportMode transportMode,
 			final double capacity_ton, final double speed_km_h) {
 
 		final Id<VehicleType> typeId = Id.create(key, VehicleType.class);

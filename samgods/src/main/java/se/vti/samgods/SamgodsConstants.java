@@ -17,17 +17,14 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.legacy;
-
-import se.vti.samgods.logistics.TransportDemand;
-import se.vti.samgods.transportation.TransportSupply;
+package se.vti.samgods;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Samgods {
+public class SamgodsConstants {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -62,56 +59,55 @@ public class Samgods {
 			this.code = code;
 			this.description = name;
 		}
-
 	};
 
-	// -------------------- MEMBERS --------------------
-
-	private final TransportDemand transportDemand;
-
-	private final TransportSupply transportSupply;
-
-	// -------------------- CONSTRUCTION --------------------
-
-	public Samgods(TransportDemand transportDemand, TransportSupply transportSupply) {
-		this.transportDemand = transportDemand;
-		this.transportSupply = transportSupply;
-	}
-
-	public void loadNetwork(final String nodesFile, final String linksFile) {
-		final SamgodsNetworkReader reader = new SamgodsNetworkReader(nodesFile, linksFile);
-		this.transportSupply.setNetwork(reader.getNetwork());
-	}
-
-	public void loadChainChoiceFile(final String chainChoiFile, final Commodity commodity) {
-		final ChainChoiReader reader = new ChainChoiReader(chainChoiFile, commodity);
-		this.transportDemand.setPWCMatrix(commodity, reader.getPWCMatrix());
-		this.transportDemand.setTransportChains(commodity, reader.getOd2transportChains());
-	}
-
-	// -------------------- IMPLEMENTATION --------------------
-
-	public TransportDemand getTransportDemand() {
-		return this.transportDemand;
-	}
-
-	public TransportSupply getTransportSupply() {
-		return this.transportSupply;
-	}
+//	// -------------------- MEMBERS --------------------
+//
+//	private final TransportDemand transportDemand;
+//
+//	private final TransportSupply transportSupply;
+//
+//	// -------------------- CONSTRUCTION --------------------
+//
+//	public Samgods(TransportDemand transportDemand, TransportSupply transportSupply) {
+//		this.transportDemand = transportDemand;
+//		this.transportSupply = transportSupply;
+//	}
+//
+//	public void loadNetwork(final String nodesFile, final String linksFile) {
+//		final SamgodsNetworkReader reader = new SamgodsNetworkReader(nodesFile, linksFile);
+//		this.transportSupply.setNetwork(reader.getNetwork());
+//	}
+//
+//	public void loadChainChoiceFile(final String chainChoiFile, final Commodity commodity) {
+//		final ChainChoiReader reader = new ChainChoiReader(chainChoiFile, commodity);
+//		this.transportDemand.setPWCMatrix(commodity, reader.getPWCMatrix());
+//		this.transportDemand.setTransportChains(commodity, reader.getOd2transportChains());
+//	}
+//
+//	// -------------------- IMPLEMENTATION --------------------
+//
+//	public TransportDemand getTransportDemand() {
+//		return this.transportDemand;
+//	}
+//
+//	public TransportSupply getTransportSupply() {
+//		return this.transportSupply;
+//	}
 
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) {
 
-		Samgods samgods = new Samgods(null, null);
-
-		samgods.loadNetwork("./2023-06-01_basecase/node_table.csv", "./2023-06-01_basecase/link_table.csv");
-
-		for (Samgods.Commodity commodity : Samgods.Commodity.values()) {
-			System.out.println(commodity.description);
-			samgods.loadChainChoiceFile("./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out",
-					commodity);
-		}
+//		Samgods samgods = new Samgods(null, null);
+//
+//		samgods.loadNetwork("./2023-06-01_basecase/node_table.csv", "./2023-06-01_basecase/link_table.csv");
+//
+//		for (Samgods.Commodity commodity : Samgods.Commodity.values()) {
+//			System.out.println(commodity.description);
+//			samgods.loadChainChoiceFile("./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out",
+//					commodity);
+//		}
 
 	}
 

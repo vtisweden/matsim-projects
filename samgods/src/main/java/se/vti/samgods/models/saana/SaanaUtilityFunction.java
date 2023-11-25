@@ -22,8 +22,8 @@ package se.vti.samgods.models.saana;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import se.vti.samgods.legacy.Samgods;
-import se.vti.samgods.legacy.Samgods.Commodity;
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.Shipment;
 import se.vti.samgods.logistics.ShipmentCostCalculator;
 import se.vti.samgods.logistics.TransportLeg;
@@ -50,7 +50,7 @@ public class SaanaUtilityFunction implements ShipmentCostCalculator, TransportCh
 		}
 	}
 
-	private final Map<Samgods.Commodity, Betas> commodity2betas = new LinkedHashMap<>();
+	private final Map<SamgodsConstants.Commodity, Betas> commodity2betas = new LinkedHashMap<>();
 
 	private TransportPrice transportPrices;
 	

@@ -26,8 +26,8 @@ import java.util.Map;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.legacy.OD;
-import se.vti.samgods.legacy.Samgods.Commodity;
+import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants.Commodity;
 
 public class TransportDemand {
 
