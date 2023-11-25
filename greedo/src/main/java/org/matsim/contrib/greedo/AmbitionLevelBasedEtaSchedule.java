@@ -20,6 +20,7 @@
 package org.matsim.contrib.greedo;
 
 import java.util.LinkedList;
+import java.util.function.Function;
 
 /**
  * 
@@ -34,7 +35,7 @@ class AmbitionLevelBasedEtaSchedule {
 
 	private final double averageFraction;
 
-	private final double iterationToLevelExponent;
+	private final Function<Integer, Double> iterationToTargetRelaxationRate;
 
 	// -------------------- MEMBERS --------------------
 
@@ -45,10 +46,10 @@ class AmbitionLevelBasedEtaSchedule {
 	// -------------------- CONSTRUCTION --------------------
 
 	AmbitionLevelBasedEtaSchedule(final int minAverageIterations, final double averageFraction,
-			final double iterationToLevelReductionExponent) {
+			final Function<Integer, Double> iterationToTargetRelaxationRate) {
 		this.minAverageIterations = minAverageIterations;
 		this.averageFraction = averageFraction;
-		this.iterationToLevelExponent = iterationToLevelReductionExponent;
+		this.iterationToTargetRelaxationRate = iterationToTargetRelaxationRate;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -58,7 +59,7 @@ class AmbitionLevelBasedEtaSchedule {
 	}
 
 	double getEta(final int iteration, final boolean constrain) {
-		final double etaMSA = Math.pow(1 + iteration, this.iterationToLevelExponent);
+		final double etaMSA = this.iterationToTargetRelaxationRate.apply(iteration);
 		final int averageIts = (int) Math.max(1.0, this.averageFraction * iteration);
 		final double eta;
 		if (averageIts < this.minAverageIterations) {
@@ -82,7 +83,7 @@ class AmbitionLevelBasedEtaSchedule {
 
 	public static void main(String[] args) {
 
-		AmbitionLevelBasedEtaSchedule ags = new AmbitionLevelBasedEtaSchedule(5, 0.5, -0.5);
+		AmbitionLevelBasedEtaSchedule ags = new AmbitionLevelBasedEtaSchedule(5, 0.5, it -> Math.pow(1.0 + it, -0.5));
 
 		System.out.println("gap\teta");
 		for (int it = 0; it < 1000; it++) {

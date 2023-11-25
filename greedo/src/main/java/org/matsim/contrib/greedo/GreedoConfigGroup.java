@@ -200,7 +200,7 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 		return new Function<>() {
 			@Override
 			public Double apply(Integer iteration) {
-				return initialRelaxationRate * Math.pow(Math.max(1.0, iteration), relaxationRateIterationExponent);
+				return initialRelaxationRate * Math.pow(1.0 + iteration, relaxationRateIterationExponent);
 			}
 		};
 	}

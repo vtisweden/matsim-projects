@@ -61,17 +61,12 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 	// -------------------- CONSTRUCTION --------------------
 
 	UpperBoundReplannerSelector(final GreedoConfigGroup greedoConfig) {
-		super(new Function<Integer, Double>() {
-			@Override
-			public Double apply(final Integer k) {
-				return Math.pow(1.0 + k, greedoConfig.getRelaxationRateIterationExponent());
-			}
-		});
+		super(greedoConfig.newIterationToTargetReplanningRate());
 		this.quadraticDistanceTransformation = greedoConfig.newQuadraticDistanceTransformation();
 		if (GreedoConfigGroup.UpperboundStepSize.ABSOLUTE.equals(greedoConfig.getUpperboundStepSize())) {
 			this.ambitionGapSchedule = new AmbitionLevelBasedEtaSchedule(
 					greedoConfig.getUpperboundMinimumAverageIterations(), greedoConfig.getUpperboundAverageFraction(),
-					greedoConfig.getRelaxationRateIterationExponent());
+					greedoConfig.newIterationToTargetReplanningRate());
 		} else {
 			this.ambitionGapSchedule = null;
 		}
@@ -135,7 +130,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		final double _Gall = personId2gap.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
 		final double _D2all = personId2bParam.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
 
-		this.ambitionGapSchedule.registerGap(_Gall / personId2gap.size());
+		if (this.ambitionGapSchedule != null) {
+			this.ambitionGapSchedule.registerGap(_Gall / personId2gap.size());
+		}
 
 		double _G = replannerIds.stream().mapToDouble(r -> personId2gap.get(r)).sum();
 		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
