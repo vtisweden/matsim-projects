@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.legacy;
+package se.vti.samgods.logistics;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -29,6 +29,8 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
 import floetteroed.utilities.Tuple;
+import se.vti.samgods.legacy.OD;
+import se.vti.samgods.legacy.Samgods;
 import se.vti.samgods.legacy.Samgods.Commodity;
 
 public class PWCMatrix {
@@ -37,7 +39,7 @@ public class PWCMatrix {
 
 	private final Commodity commodity;
 
-	private Map<Tuple<Id<Node>, Id<Node>>, Double> od2amount_ton_yr = new LinkedHashMap<>();
+	private Map<OD, Double> od2amount_ton_yr = new LinkedHashMap<>();
 
 	private Set<Id<Node>> locations = new LinkedHashSet<>();
 
@@ -54,10 +56,10 @@ public class PWCMatrix {
 	public Commodity getCommodity() {
 		return this.commodity;
 	}
-	
-	public void add(final Tuple<Id<Node>, Id<Node>> od, final double amount_ton) {
-		this.locations.add(od.getA());
-		this.locations.add(od.getB());
+
+	public void add(final OD od, final double amount_ton) {
+		this.locations.add(od.origin);
+		this.locations.add(od.destination);
 		this.od2amount_ton_yr.compute(od,
 				(od2, prev_ton_yr) -> (prev_ton_yr == null) ? amount_ton : prev_ton_yr + amount_ton);
 	}

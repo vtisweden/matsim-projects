@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.legacy.Samgods;
-import se.vti.samgods.legacy.Samgods.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.UnimodalNetworkRouter;
@@ -47,7 +46,7 @@ public class RunBasicModel {
 		/*
 		 * Load a samgods scenario.
 		 */
-		final Samgods samgods = new Samgods();
+		final Samgods samgods = new Samgods(null, null);
 		samgods.loadNetwork("./2023-06-01_basecase/node_table.csv", "./2023-06-01_basecase/link_table.csv");
 		for (Samgods.Commodity commodity : consideredCommodities) {
 			log.info(commodity.description);
@@ -72,20 +71,20 @@ public class RunBasicModel {
 		 * Route all unimodal chain segments using representative vehicles.
 		 */
 		final Map<Samgods.TransportMode, UnimodalNetworkRouter> mode2router = new LinkedHashMap<>(4);
-		mode2router.put(TransportMode.Road, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Road),
-				fleet.createEmptyVehicleTravelDisutility("truck")));
-		mode2router.put(TransportMode.Rail, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Rail),
-				fleet.createEmptyVehicleTravelDisutility("train")));
-		mode2router.put(TransportMode.Sea, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Sea),
-				fleet.createEmptyVehicleTravelDisutility("ship")));
-		mode2router.put(TransportMode.Air, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Air),
-				fleet.createEmptyVehicleTravelDisutility("plane")));
+//		mode2router.put(TransportMode.Road, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Road),
+//				fleet.createEmptyVehicleTravelDisutility("truck")));
+//		mode2router.put(TransportMode.Rail, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Rail),
+//				fleet.createEmptyVehicleTravelDisutility("train")));
+//		mode2router.put(TransportMode.Sea, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Sea),
+//				fleet.createEmptyVehicleTravelDisutility("ship")));
+//		mode2router.put(TransportMode.Air, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Air),
+//				fleet.createEmptyVehicleTravelDisutility("plane")));
 
 		long ok = 0;
 		long fail = 0;
 		for (Samgods.Commodity commodity : consideredCommodities) {
 			log.info("Routing commodity " + commodity);
-			for (List<TransportChain> chains : samgods.getTransportChains(commodity).values()) {
+			for (List<TransportChain> chains : samgods.getTransportDemand().getTransportChains(commodity).values()) {
 				log.info("ok=" + ok + ", fail=" + fail);
 				for (TransportChain chain : chains) {
 					for (TransportLeg leg : chain.getLegs()) {

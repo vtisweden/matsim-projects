@@ -33,6 +33,8 @@ import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.Vehicle;
 
+import se.vti.samgods.legacy.OD;
+
 /**
  * 
  * @author GunnarF
@@ -54,6 +56,10 @@ public class UnimodalNetworkRouter {
 		});
 	}
 
+	public List<Node> route(final OD od) {
+		return this.route(od.origin, od.destination);
+	}
+
 	public List<Node> route(final Id<Node> fromNodeId, final Id<Node> toNodeId) {
 		final Node fromNode = this.network.getNodes().get(fromNodeId);
 		final Node toNode = this.network.getNodes().get(toNodeId);
@@ -61,7 +67,7 @@ public class UnimodalNetworkRouter {
 			Log.warn("Nonexisting od-pair from " + fromNodeId + " to " + toNodeId);
 			return null;
 		} else {
-		return this.router.calcLeastCostPath(fromNode, toNode, 0, null, null).nodes;
+			return this.router.calcLeastCostPath(fromNode, toNode, 0, null, null).nodes;
 		}
 	}
 

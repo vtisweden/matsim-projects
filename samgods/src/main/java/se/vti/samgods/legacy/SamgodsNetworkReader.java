@@ -67,16 +67,6 @@ public class SamgodsNetworkReader {
 	private static final String LINK_MAXSPEED_KM_H = "Max_speed_km_per_hour";
 	private static final String LINK_CAPACITY_TRAINS_DAY = "Capacity_trains_per_day";
 
-	private static final Map<Samgods.TransportMode, String> samgodsMode2matsimMode;
-
-	static {
-		samgodsMode2matsimMode = new LinkedHashMap<>(4);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Road, TransportMode.car);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Rail, TransportMode.train);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Sea, TransportMode.ship);
-		samgodsMode2matsimMode.put(Samgods.TransportMode.Air, TransportMode.airplane);
-	}
-
 	// -------------------- MEMBERS --------------------
 
 	private final Network network;
@@ -198,18 +188,6 @@ public class SamgodsNetworkReader {
 
 	public Network getNetwork() {
 		return this.network;
-	}
-
-	public Map<Samgods.TransportMode, Network> createUnimodalNetworks() {
-		final Map<Samgods.TransportMode, Network> mode2network = new LinkedHashMap<>(samgodsMode2matsimMode.size());
-		for (Map.Entry<Samgods.TransportMode, String> entry : samgodsMode2matsimMode.entrySet()) {
-			final Network unimodalNetwork = NetworkUtils.createNetwork();
-			unimodalNetwork.setCapacityPeriod(3600.0);
-			new TransportModeNetworkFilter(this.network).filter(unimodalNetwork,
-					Collections.singleton(entry.getValue()));
-			mode2network.put(entry.getKey(), unimodalNetwork);
-		}
-		return mode2network;
 	}
 
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------

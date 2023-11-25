@@ -17,56 +17,32 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
-
-import java.util.List;
+package se.vti.samgods.transportation;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.legacy.OD;
-import se.vti.samgods.legacy.Samgods;
-import se.vti.samgods.legacy.Samgods.TransportMode;
+import se.vti.samgods.logistics.TransportLeg;
 
-public class TransportLeg {
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public interface TransportPrice {
 
-	private final OD od;
+	public interface UnitPrice {
 
-	private final Samgods.TransportMode mode;
+		public Double getTransportPrice_1_ton();
 
-	private List<Node> route;
-
-	public TransportLeg(OD od, TransportMode mode) {
-		this.od = od;
-		this.mode = mode;
+		public Double getTransportDuration_h();
 	}
 
-	public TransportLeg(Id<Node> origin, Id<Node> destination, TransportMode mode) {
-		this(new OD(origin, destination), mode);
-	}
+	public UnitPrice getUnitTransshipmentPrice(Id<Node> node);
 
-	public Id<Node> getOrigin() {
-		return this.od.origin;
-	}
+	public UnitPrice getUnitPrice(TransportLeg leg);
 
-	public Id<Node> getDestination() {
-		return this.od.destination;
-	}
-
-	public OD getOD() {
-		return this.od;
-	}
-
-	public Samgods.TransportMode getMode() {
-		return this.mode;
-	}
-
-	public void setRoute(final List<Node> route) {
-		this.route = route;
-	}
-
-	public List<Node> getRoute() {
-		return this.route;
-	}
+	public UnitPrice getUnitPrice(Id<Link> link);
 
 }

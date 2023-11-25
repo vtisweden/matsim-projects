@@ -17,30 +17,34 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation;
+package se.vti.samgods.legacy;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.legacy.Samgods.Commodity;
-import se.vti.samgods.logistics.TransportLeg;
+public class OD {
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface TransportPrices {
+	public final Id<Node> origin;
+	public final Id<Node> destination;
 
-	public interface UnitPrice {
-
-		public Double getTransportPrice_1_ton();
-
-		public Double getTransportDuration_h();
+	public OD(Id<Node> origin, Id<Node> destination) {
+		this.origin = origin;
+		this.destination = destination;
 	}
 
-	public UnitPrice getUnitPrice(Commodity commodity, Id<Node> node);
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof OD) {
+			final OD otherOD = (OD) other;
+			return (this.origin.equals(otherOD.origin) && (this.destination.equals(otherOD.destination)));
+		} else {
+			return false;
+		}
+	}
 
-	public UnitPrice getUnitPrice(Commodity commodity, TransportLeg leg);
+	@Override
+	public int hashCode() {
+		return this.origin.hashCode() + 31 * this.destination.hashCode();
+	}
 
 }

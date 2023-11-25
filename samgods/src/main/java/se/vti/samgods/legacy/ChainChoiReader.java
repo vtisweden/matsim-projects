@@ -29,12 +29,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
 
-import floetteroed.utilities.Tuple;
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.legacy.Samgods.TransportMode;
+import se.vti.samgods.logistics.PWCMatrix;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
 
@@ -127,7 +126,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private final PWCMatrix pwcMatrix;
 
-	private final Map<Tuple<Id<Node>, Id<Node>>, List<TransportChain>> od2chains;
+	private final Map<OD, List<TransportChain>> od2chains;
 
 	private final Set<String> chainTypes = new LinkedHashSet<>();
 
@@ -152,8 +151,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	public PWCMatrix getPWCMatrix() {
 		return this.pwcMatrix;
 	}
-	
-	public Map<Tuple<Id<Node>, Id<Node>>, List<TransportChain>> getOd2transportChains() {
+
+	public Map<OD, List<TransportChain>> getOd2transportChains() {
 		return this.od2chains;
 	}
 
@@ -171,7 +170,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		final double volume_ton_yr = this.getDoubleValue(Prob) * this.getDoubleValue(AnnualVolumeTonnes);
 		final long origin = Long.parseLong(this.getStringValue(Orig));
 		final long destination = Long.parseLong(this.getStringValue(Dest));
-		final Tuple<Id<Node>, Id<Node>> od = new Tuple<>(Id.createNodeId(origin), Id.createNodeId(destination));
+		final OD od = new OD(Id.createNodeId(origin), Id.createNodeId(destination));
 		this.pwcMatrix.add(od, volume_ton_yr);
 
 		final List<String> originColumns = originsColumnsByChainLength.get(chainType.length());
@@ -200,8 +199,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	public static void main(String[] args) {
 
 		for (Samgods.Commodity commodity : Samgods.Commodity.values()) {
-			final ChainChoiReader reader = new ChainChoiReader("./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out",
-					commodity);
+			final ChainChoiReader reader = new ChainChoiReader(
+					"./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out", commodity);
 			System.out.println(reader.pwcMatrix.getCommodity().twoDigitCode() + " " + commodity + ": "
 					+ Math.round(1e-6 * reader.getPWCMatrix().computeTotal_ton_yr()) + " mio.tons, between "
 					+ reader.pwcMatrix.getLocationsView().size() + " locations, chain types: " + reader.chainTypes);

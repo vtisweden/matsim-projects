@@ -19,16 +19,8 @@
  */
 package se.vti.samgods.legacy;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.network.Node;
-
-import floetteroed.utilities.Tuple;
-import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportDemand;
+import se.vti.samgods.transportation.TransportSupply;
 
 /**
  * 
@@ -75,59 +67,43 @@ public class Samgods {
 
 	// -------------------- MEMBERS --------------------
 
-	private Map<Commodity, PWCMatrix> commodity2pwcMatrix = new LinkedHashMap<>(16);
+	private final TransportDemand transportDemand;
 
-	private Map<Commodity, Map<Tuple<Id<Node>, Id<Node>>, List<TransportChain>>> commodity2od2chains = new LinkedHashMap<>(
-			16);
-
-	private Network network = null;
-
-	private Map<TransportMode, Network> mode2network = null;
+	private final TransportSupply transportSupply;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Samgods() {
+	public Samgods(TransportDemand transportDemand, TransportSupply transportSupply) {
+		this.transportDemand = transportDemand;
+		this.transportSupply = transportSupply;
 	}
 
 	public void loadNetwork(final String nodesFile, final String linksFile) {
 		final SamgodsNetworkReader reader = new SamgodsNetworkReader(nodesFile, linksFile);
-		this.network = reader.getNetwork();
-		this.mode2network = reader.createUnimodalNetworks();
+		this.transportSupply.setNetwork(reader.getNetwork());
 	}
 
 	public void loadChainChoiceFile(final String chainChoiFile, final Commodity commodity) {
 		final ChainChoiReader reader = new ChainChoiReader(chainChoiFile, commodity);
-		this.commodity2pwcMatrix.put(commodity, reader.getPWCMatrix());
-		this.commodity2od2chains.put(commodity, reader.getOd2transportChains());
+		this.transportDemand.setPWCMatrix(commodity, reader.getPWCMatrix());
+		this.transportDemand.setTransportChains(commodity, reader.getOd2transportChains());
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public Network getNetwork() {
-		return this.network;
+	public TransportDemand getTransportDemand() {
+		return this.transportDemand;
 	}
 
-	public Network getNetwork(final TransportMode mode) {
-		return this.mode2network.get(mode);
-	}
-
-	public PWCMatrix getPWCMatrix(final Commodity commodity) {
-		return this.commodity2pwcMatrix.get(commodity);
-	}
-
-	public Map<Tuple<Id<Node>, Id<Node>>, List<TransportChain>> getTransportChains(Commodity commodity) {
-		return this.commodity2od2chains.get(commodity);
-	}
-
-	public List<TransportChain> getTransportChains(Commodity commodity, Id<Node> origin, Id<Node> destination) {
-		return this.commodity2od2chains.get(commodity).get(new Tuple<>(origin, destination));
+	public TransportSupply getTransportSupply() {
+		return this.transportSupply;
 	}
 
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) {
 
-		Samgods samgods = new Samgods();
+		Samgods samgods = new Samgods(null, null);
 
 		samgods.loadNetwork("./2023-06-01_basecase/node_table.csv", "./2023-06-01_basecase/link_table.csv");
 
