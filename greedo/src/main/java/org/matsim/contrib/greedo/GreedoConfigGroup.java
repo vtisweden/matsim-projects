@@ -253,24 +253,6 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	public static enum PopulationDistanceType {
-		HAMMING, KERNEL
-	}
-
-	private PopulationDistanceType populationDistance = PopulationDistanceType.KERNEL;
-
-	@StringGetter("populationDistance")
-	public PopulationDistanceType getPopulationDistance() {
-		return this.populationDistance;
-	}
-
-	@StringSetter("populationDistance")
-	public void setPopulationDistance(final PopulationDistanceType populationDistance) {
-		this.populationDistance = populationDistance;
-	}
-
-	//
-
 	public static enum ReplannerIdentifierType {
 		IID, SBAYTI2007, UPPERBOUND, DONOTHING
 	}
