@@ -22,6 +22,11 @@ package se.vti.samgods;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class OD {
 
 	public final Id<Node> origin;

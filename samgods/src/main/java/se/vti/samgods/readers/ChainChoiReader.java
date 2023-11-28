@@ -110,7 +110,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 //		ADKL(6, true, Road, Rail, Sea, Sea), AJ(7, true, Road, Sea), AJA(8, true, Road, Sea, Road),
 //		AJDA(9, true, Road, Sea, Rail, Road), AJdX(10, true, Road, Sea, Rail, Road), AKL(11, true, Road, Sea, Sea);
 //
-//		// TODO continue here. right reduction? -> see also comment in handler
+//		// continue here. right reduction? -> see also comment in handler
 //
 //		public final int number;
 //		public final boolean container;
