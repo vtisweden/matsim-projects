@@ -22,10 +22,10 @@ package se.vti.samgods.transportation;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
@@ -40,17 +40,21 @@ public class TransportPrices {
 
 	public interface LinkPrices {
 
-		public double getPrice_1_ton(Id<Link> link);
+		public double getPrice_1_ton(Link link);
 
-		public double getDuration_h(Id<Link> link);
+		public default double getDuration_h(Link link) {
+			return Units.H_PER_S * Math.max(1.0, (link.getLength() / link.getFreespeed()));
+		}
 
 	}
 
 	public interface NodePrices {
 
-		public double getPrice_1_ton(Id<Node> nodeId, TransportMode fromNode, TransportMode toMode);
+		public double getPrice_1_ton(Node nodeId, TransportMode fromNode, TransportMode toMode);
 
-		public double getDuration_h(Id<Node> nodeId, TransportMode fromNode, TransportMode toMode);
+		public default double getDuration_h(Node nodeId, TransportMode fromNode, TransportMode toMode) {
+			return 0.0;
+		}
 
 	}
 

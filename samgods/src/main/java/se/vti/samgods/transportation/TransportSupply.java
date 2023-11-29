@@ -38,6 +38,7 @@ import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * Packages the supply (carrier) side of the freight transport system.
@@ -106,32 +107,31 @@ public class TransportSupply {
 
 	// -------------------- ROUTING --------------------
 
-	public void routeAllLegs(Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains) {
+	public void route(Commodity commodity, Map<OD, List<TransportChain>> od2chains) {
 		final Map<TransportMode, UnimodalNetworkRouter> mode2router = new LinkedHashMap<>();
-		for (Map.Entry<Commodity, Map<OD, List<TransportChain>>> entry : commodity2od2chains.entrySet()) {
-			final Commodity commodity = entry.getKey();
-			mode2router.clear();
-			for (List<TransportChain> chains : entry.getValue().values()) {
-				for (TransportChain chain : chains) {
-					for (TransportLeg leg : chain.getLegs()) {
-						final UnimodalNetworkRouter router = mode2router.computeIfAbsent(leg.getMode(),
-								l -> new UnimodalNetworkRouter(this.getNetwork(), new TravelDisutility() {
-									private final TransportPrices.LinkPrices lp = transportPrices
-											.getLinkPrices(commodity, leg.getMode());
+		int i = 0;
+		for (List<TransportChain> chains : od2chains.values()) {
+			System.out.println("Routing chain " + (++i) + " of " + od2chains.size());
+			for (TransportChain chain : chains) {
+				for (TransportLeg leg : chain.getLegs()) {
+					final UnimodalNetworkRouter router = mode2router.computeIfAbsent(leg.getMode(),
+							l -> new UnimodalNetworkRouter(this.getNetwork(leg.getMode()), new TravelDisutility() {
+								private final TransportPrices.LinkPrices lp = transportPrices.getLinkPrices(commodity,
+										leg.getMode());
 
-									@Override
-									public double getLinkMinimumTravelDisutility(Link link) {
-										return this.lp.getPrice_1_ton(link.getId());
-									}
+								@Override
+								public double getLinkMinimumTravelDisutility(Link link) {
+									return this.lp.getPrice_1_ton(link);
+								}
 
-									@Override
-									public double getLinkTravelDisutility(Link link, double time, Person person,
-											Vehicle vehicle) {
-										return this.getLinkMinimumTravelDisutility(link);
-									}
-								}));
-						leg.setRoute(router.route(leg.getOD()));
-					}
+								@Override
+								public double getLinkTravelDisutility(Link link, double time, Person person,
+										Vehicle vehicle) {
+									return this.getLinkMinimumTravelDisutility(link);
+								}
+							}));
+					leg.setRoute(router.route(leg.getOD()));
+//					System.out.println("  leg with #entries = " + leg.getRoute().size());
 				}
 			}
 		}

@@ -27,6 +27,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.router.AStarLandmarksFactory;
 import org.matsim.core.router.DijkstraFactory;
 import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelDisutility;
@@ -47,11 +48,11 @@ public class UnimodalNetworkRouter {
 
 	public UnimodalNetworkRouter(final Network network, final TravelDisutility disutility) {
 		this.network = network;
-		DijkstraFactory factory = new DijkstraFactory();
+		AStarLandmarksFactory factory = new AStarLandmarksFactory(1);
 		this.router = factory.createPathCalculator(network, disutility, new TravelTime() {
 			@Override
 			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
-				return 1; // not sure if this works with zero tt
+				return 0;
 			}
 		});
 	}
@@ -70,9 +71,4 @@ public class UnimodalNetworkRouter {
 			return this.router.calcLeastCostPath(fromNode, toNode, 0, null, null).nodes;
 		}
 	}
-
-	public List<Node> route(final Node fromNode, final Node toNode) {
-		return this.router.calcLeastCostPath(fromNode, toNode, 0, null, null).nodes;
-	}
-
 }

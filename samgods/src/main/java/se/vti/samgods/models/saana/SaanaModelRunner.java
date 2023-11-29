@@ -19,6 +19,24 @@
  */
 package se.vti.samgods.models.saana;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Node;
+
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.TransportDemand;
+import se.vti.samgods.readers.ChainChoiReader;
+import se.vti.samgods.readers.SamgodsNetworkReader;
+import se.vti.samgods.transportation.TransportPrices;
+import se.vti.samgods.transportation.TransportPrices.LinkPrices;
+import se.vti.samgods.transportation.TransportPrices.NodePrices;
+import se.vti.samgods.transportation.TransportSupply;
+
 /**
  * 
  * @author GunnarF
@@ -26,8 +44,87 @@ package se.vti.samgods.models.saana;
  */
 public class SaanaModelRunner {
 
+	static Logger log = Logger.getLogger(SaanaModelRunner.class);
+
 	public static void main(String[] args) {
-		
+
+		log.info("STARTED ...");
+
+		final List<SamgodsConstants.Commodity> consideredCommodities = Arrays
+				.asList(SamgodsConstants.Commodity.values()).subList(0, 2);
+
+		/*
+		 * PREPARE DEMAND
+		 */
+		final TransportDemand demand = new TransportDemand();
+		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+			log.info("Loading " + commodity.description);
+			final ChainChoiReader commodityReader = new ChainChoiReader(
+					"./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out", commodity);
+			demand.setPWCMatrix(commodity, commodityReader.getPWCMatrix());
+			demand.setTransportChains(commodity, commodityReader.getOd2transportChains());
+		}
+
+		/*
+		 * PREPARE SUPPLY
+		 */
+
+		final LinkPrices roadPrices = new LinkPrices() {
+			@Override
+			public double getPrice_1_ton(Link link) {
+				return 2000.0 * getDuration_h(link);
+			}
+		};
+
+		final LinkPrices railPrices = new LinkPrices() {
+			@Override
+			public double getPrice_1_ton(Link link) {
+				return 1000.0 * getDuration_h(link);
+			}
+		};
+
+		final LinkPrices seaPrices = new LinkPrices() {
+			@Override
+			public double getPrice_1_ton(Link link) {
+				return 500.0 * getDuration_h(link);
+			}
+		};
+
+		final LinkPrices airPrices = new LinkPrices() {
+			@Override
+			public double getPrice_1_ton(Link link) {
+				return 10000.0 * getDuration_h(link);
+			}
+		};
+
+		final NodePrices nodePrices = new NodePrices() {
+			@Override
+			public double getPrice_1_ton(Node nodeId, TransportMode fromNode, TransportMode toMode) {
+				return 0.01;
+			}
+		};
+
+		final TransportPrices transportPrices = new TransportPrices();
+		for (Commodity commodity : consideredCommodities) {
+			transportPrices.setLinkPrices(commodity, TransportMode.Road, roadPrices);
+			transportPrices.setLinkPrices(commodity, TransportMode.Rail, railPrices);
+			transportPrices.setLinkPrices(commodity, TransportMode.Sea, seaPrices);
+			transportPrices.setLinkPrices(commodity, TransportMode.Air, airPrices);
+		}
+
+		final SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
+				"./2023-06-01_basecase/link_table.csv");
+
+		final TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null, transportPrices);
+
+		/*
+		 * PREPARE DEMAND/SUPPLY INTERACTIONS
+		 */
+		for (Commodity commodity : consideredCommodities) {
+			supply.route(commodity, demand.getTransportChains(commodity));
+		}
+
+		log.info("... DONE");
 	}
-	
+
 }

@@ -31,7 +31,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.UnimodalNetworkRouter;
-import se.vti.samgods.transportation.VehicleFleet;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 public class RunBasicModel {
 
