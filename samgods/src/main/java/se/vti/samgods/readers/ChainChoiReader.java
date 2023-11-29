@@ -186,6 +186,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			transportChain.addLeg(
 					new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination), mode));
 		}
+		transportChain.mergeLegs(); // TODO ATTENTION!
 		this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
 
 		if (this.verbose) {

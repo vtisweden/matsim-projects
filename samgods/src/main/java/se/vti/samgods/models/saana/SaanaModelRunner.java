@@ -21,14 +21,17 @@ package se.vti.samgods.models.saana;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.readers.ChainChoiReader;
 import se.vti.samgods.readers.SamgodsNetworkReader;
@@ -121,6 +124,7 @@ public class SaanaModelRunner {
 		 * PREPARE DEMAND/SUPPLY INTERACTIONS
 		 */
 		for (Commodity commodity : consideredCommodities) {
+						
 			supply.route(commodity, demand.getTransportChains(commodity));
 		}
 
