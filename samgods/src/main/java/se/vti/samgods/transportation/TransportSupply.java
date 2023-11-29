@@ -67,13 +67,14 @@ public class TransportSupply {
 
 	private final VehicleFleet vehicleFleet;
 
-	private Map<Commodity, Map<TransportMode, TransportPrice>> commodity2mode2prices = null;
+	private final TransportPrices transportPrices;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public TransportSupply(Network network, VehicleFleet fleet) {
+	public TransportSupply(Network network, VehicleFleet fleet, TransportPrices transportPrices) {
 		this.network = network;
 		this.vehicleFleet = fleet;
+		this.transportPrices = transportPrices;
 
 		this.mode2network = new LinkedHashMap<>(samgodsMode2matsimMode.size());
 		for (Map.Entry<SamgodsConstants.TransportMode, String> entry : samgodsMode2matsimMode.entrySet()) {
@@ -99,31 +100,11 @@ public class TransportSupply {
 		return this.vehicleFleet;
 	}
 
-	public void setUnitPrice(Commodity commodity, TransportMode mode, TransportPrice price) {
-		this.commodity2mode2prices.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).put(mode, price);
-	}
-
-	public TransportPrice getUnitPrice(Commodity commodity, TransportMode mode) {
-		return this.commodity2mode2prices.get(commodity).get(mode);
+	public TransportPrices getTransportPrice() {
+		return this.transportPrices;
 	}
 
 	// -------------------- ROUTING --------------------
-
-	private TravelDisutility createTravelDisutilityForAnonymousRouting(Commodity commodity, TransportMode mode) {
-		final TransportPrice price = this.getUnitPrice(commodity, mode);
-		return new TravelDisutility() {
-
-			@Override
-			public double getLinkMinimumTravelDisutility(Link link) {
-				return price.getUnitPrice(link.getId()).getTransportPrice_1_ton();
-			}
-
-			@Override
-			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-				return this.getLinkMinimumTravelDisutility(link);
-			}
-		};
-	}
 
 	public void routeAllLegs(Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains) {
 		final Map<TransportMode, UnimodalNetworkRouter> mode2router = new LinkedHashMap<>();
@@ -133,9 +114,22 @@ public class TransportSupply {
 			for (List<TransportChain> chains : entry.getValue().values()) {
 				for (TransportChain chain : chains) {
 					for (TransportLeg leg : chain.getLegs()) {
-						UnimodalNetworkRouter router = mode2router.computeIfAbsent(leg.getMode(),
-								l -> new UnimodalNetworkRouter(this.getNetwork(),
-										this.createTravelDisutilityForAnonymousRouting(commodity, leg.getMode())));
+						final UnimodalNetworkRouter router = mode2router.computeIfAbsent(leg.getMode(),
+								l -> new UnimodalNetworkRouter(this.getNetwork(), new TravelDisutility() {
+									private final TransportPrices.LinkPrices lp = transportPrices
+											.getLinkPrices(commodity, leg.getMode());
+
+									@Override
+									public double getLinkMinimumTravelDisutility(Link link) {
+										return this.lp.getPrice_1_ton(link.getId());
+									}
+
+									@Override
+									public double getLinkTravelDisutility(Link link, double time, Person person,
+											Vehicle vehicle) {
+										return this.getLinkMinimumTravelDisutility(link);
+									}
+								}));
 						leg.setRoute(router.route(leg.getOD()));
 					}
 				}

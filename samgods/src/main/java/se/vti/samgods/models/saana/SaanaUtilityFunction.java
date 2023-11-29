@@ -26,9 +26,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.Shipment;
 import se.vti.samgods.logistics.ShipmentCostCalculator;
-import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.TransportPrice;
-import se.vti.samgods.transportation.TransportPrice.UnitPrice;
+import se.vti.samgods.transportation.TransportPrices;
 
 public class SaanaUtilityFunction implements ShipmentCostCalculator, TransportChainAndShipmentChoiceModelImpl.UtilityFunction {
 
@@ -52,9 +50,9 @@ public class SaanaUtilityFunction implements ShipmentCostCalculator, TransportCh
 
 	private final Map<SamgodsConstants.Commodity, Betas> commodity2betas = new LinkedHashMap<>();
 
-	private TransportPrice transportPrices;
+	private TransportPrices transportPrices;
 	
-	public SaanaUtilityFunction(TransportPrice transportPrices) {
+	public SaanaUtilityFunction(TransportPrices transportPrices) {
 		this.transportPrices = transportPrices;
 	}
 
