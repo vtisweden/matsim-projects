@@ -57,26 +57,26 @@ public class TransportChain {
 	}
 
 	// FIXME Simplifies away transshipments within the same mode.
-	public void mergeLegs() {
-		if (this.legs.size() == 0) {
-			return;
-		}
-		final LinkedList<TransportLeg> mergedLegs = new LinkedList<>();
-
-		TransportMode currentMode = this.legs.getFirst().getMode();
-		Id<Node> currentOrigin = this.legs.getFirst().getOrigin();
-		for (TransportLeg nextLeg : this.legs) {
-			if (!nextLeg.getMode().equals(currentMode)) {
-				mergedLegs.add(new TransportLeg(new OD(currentOrigin, nextLeg.getOrigin()), currentMode));
-				currentOrigin = nextLeg.getOrigin();
-				currentMode = nextLeg.getMode();
-			}
-		}
-		mergedLegs.add(new TransportLeg(new OD(currentOrigin, this.legs.getLast().getDestination()),
-				this.legs.getLast().getMode()));
-		
-		this.legs.clear();
-		this.legs.addAll(mergedLegs);
-	}
+//	public void mergeLegs() {
+//		if (this.legs.size() == 0) {
+//			return;
+//		}
+//		final LinkedList<TransportLeg> mergedLegs = new LinkedList<>();
+//
+//		TransportMode currentMode = this.legs.getFirst().getMode();
+//		Id<Node> currentOrigin = this.legs.getFirst().getOrigin();
+//		for (TransportLeg nextLeg : this.legs) {
+//			if (!nextLeg.getMode().equals(currentMode)) {
+//				mergedLegs.add(new TransportLeg(new OD(currentOrigin, nextLeg.getOrigin()), currentMode));
+//				currentOrigin = nextLeg.getOrigin();
+//				currentMode = nextLeg.getMode();
+//			}
+//		}
+//		mergedLegs.add(new TransportLeg(new OD(currentOrigin, this.legs.getLast().getDestination()),
+//				this.legs.getLast().getMode()));
+//		
+//		this.legs.clear();
+//		this.legs.addAll(mergedLegs);
+//	}
 
 }

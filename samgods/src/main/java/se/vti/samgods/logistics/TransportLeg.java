@@ -22,6 +22,7 @@ package se.vti.samgods.logistics;
 import java.util.List;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
@@ -34,15 +35,18 @@ public class TransportLeg {
 
 	private final SamgodsConstants.TransportMode mode;
 
-	private List<Node> route;
+	private final char samgodsMode;
 
-	public TransportLeg(OD od, TransportMode mode) {
+	private List<Link> route;
+
+	public TransportLeg(OD od, TransportMode mode, char samgodsMode) {
 		this.od = od;
 		this.mode = mode;
+		this.samgodsMode = samgodsMode;
 	}
 
-	public TransportLeg(Id<Node> origin, Id<Node> destination, TransportMode mode) {
-		this(new OD(origin, destination), mode);
+	public TransportLeg(Id<Node> origin, Id<Node> destination, TransportMode mode, char samgodsMode) {
+		this(new OD(origin, destination), mode, samgodsMode);
 	}
 
 	public Id<Node> getOrigin() {
@@ -61,11 +65,15 @@ public class TransportLeg {
 		return this.mode;
 	}
 
-	public void setRoute(final List<Node> route) {
+	public char getSamgodsMode() {
+		return this.samgodsMode;
+	}
+
+	public void setRoute(final List<Link> route) {
 		this.route = route;
 	}
 
-	public List<Node> getRoute() {
+	public List<Link> getRoute() {
 		return this.route;
 	}
 

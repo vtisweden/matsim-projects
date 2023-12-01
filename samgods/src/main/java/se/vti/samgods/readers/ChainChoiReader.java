@@ -182,11 +182,10 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		for (int i = 0; i < chainType.length(); i++) {
 			final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
 			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
-			final TransportMode mode = code2mode.get(chainType.charAt(i));
-			transportChain.addLeg(
-					new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination), mode));
+			final char samgodsMode = chainType.charAt(i);
+			transportChain.addLeg(new TransportLeg(Id.createNodeId(intermedOrigin),
+					Id.createNodeId(intermedDestination), code2mode.get(samgodsMode), samgodsMode));
 		}
-		transportChain.mergeLegs(); // TODO ATTENTION!
 		this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
 
 		if (this.verbose) {

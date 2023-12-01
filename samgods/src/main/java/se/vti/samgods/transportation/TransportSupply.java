@@ -34,6 +34,7 @@ import org.matsim.vehicles.Vehicle;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.TransportPrices;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
@@ -111,7 +112,7 @@ public class TransportSupply {
 		final Map<TransportMode, UnimodalNetworkRouter> mode2router = new LinkedHashMap<>();
 		int i = 0;
 		for (List<TransportChain> chains : od2chains.values()) {
-			System.out.println("Routing chain " + (++i) + " of " + od2chains.size());
+//			System.out.println("Routing chain " + (++i) + " of " + od2chains.size());
 			for (TransportChain chain : chains) {
 				for (TransportLeg leg : chain.getLegs()) {
 					final UnimodalNetworkRouter router = mode2router.computeIfAbsent(leg.getMode(),

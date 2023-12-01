@@ -28,7 +28,6 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.router.AStarLandmarksFactory;
-import org.matsim.core.router.DijkstraFactory;
 import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
@@ -57,18 +56,18 @@ public class UnimodalNetworkRouter {
 		});
 	}
 
-	public List<Node> route(final OD od) {
+	public List<Link> route(final OD od) {
 		return this.route(od.origin, od.destination);
 	}
 
-	public List<Node> route(final Id<Node> fromNodeId, final Id<Node> toNodeId) {
+	public List<Link> route(final Id<Node> fromNodeId, final Id<Node> toNodeId) {
 		final Node fromNode = this.network.getNodes().get(fromNodeId);
 		final Node toNode = this.network.getNodes().get(toNodeId);
 		if (fromNode == null || toNode == null) {
 			Log.warn("Nonexisting od-pair from " + fromNodeId + " to " + toNodeId);
 			return null;
 		} else {
-			return this.router.calcLeastCostPath(fromNode, toNode, 0, null, null).nodes;
+			return this.router.calcLeastCostPath(fromNode, toNode, 0, null, null).links;
 		}
 	}
 }

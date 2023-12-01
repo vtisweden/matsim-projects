@@ -22,6 +22,8 @@ package se.vti.samgods.models.saana;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Link;
@@ -31,13 +33,13 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.TransportPrices;
+import se.vti.samgods.TransportPrices.LinkPrices;
+import se.vti.samgods.TransportPrices.NodePrices;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.readers.ChainChoiReader;
 import se.vti.samgods.readers.SamgodsNetworkReader;
-import se.vti.samgods.transportation.TransportPrices;
-import se.vti.samgods.transportation.TransportPrices.LinkPrices;
-import se.vti.samgods.transportation.TransportPrices.NodePrices;
 import se.vti.samgods.transportation.TransportSupply;
 
 /**
@@ -50,6 +52,8 @@ public class SaanaModelRunner {
 	static Logger log = Logger.getLogger(SaanaModelRunner.class);
 
 	public static void main(String[] args) {
+
+		final double odSamplingRate = 0.01; // TODO below one only for testing
 
 		log.info("STARTED ...");
 
@@ -123,12 +127,23 @@ public class SaanaModelRunner {
 		/*
 		 * PREPARE DEMAND/SUPPLY INTERACTIONS
 		 */
+		Random rnd = new Random();
 		for (Commodity commodity : consideredCommodities) {
-						
-			supply.route(commodity, demand.getTransportChains(commodity));
+
+			// Only for testing: reduce the number of OD pairs to be processed.
+			final Map<OD, List<TransportChain>> od2chains = demand.getTransportChains(commodity).entrySet().stream()
+					.filter(e -> rnd.nextDouble() < odSamplingRate)
+					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+
+			log.info("Routing " + commodity.description + "...");
+			supply.route(commodity, od2chains);
+			log.info("Simplifying " + commodity.description + "...");
+			log.info("  number of chains before: " + od2chains.values().stream().flatMap(l -> l.stream()).count());
+			(new SaanaTransportChainReducer()).reduce(od2chains);
+			log.info("  number of chains after: " + od2chains.values().stream().flatMap(l -> l.stream()).count());
+			demand.setTransportChains(commodity, od2chains);
 		}
 
 		log.info("... DONE");
 	}
-
 }
