@@ -60,7 +60,7 @@ class AmbitionLevelBasedEtaSchedule {
 
 	double getEta(final int iteration, final boolean constrain) {
 		final double etaMSA = this.iterationToTargetRelaxationRate.apply(iteration);
-		final int averageIts = (int) Math.max(1.0, this.averageFraction * iteration);
+		final int averageIts = (int) (this.averageFraction * iteration + 1e-3);
 		final double eta;
 		if (averageIts < this.minAverageIterations) {
 			eta = etaMSA;

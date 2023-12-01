@@ -70,7 +70,6 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		} else {
 			this.ambitionGapSchedule = null;
 		}
-
 	}
 
 	// -------------------- INTERNALS --------------------
