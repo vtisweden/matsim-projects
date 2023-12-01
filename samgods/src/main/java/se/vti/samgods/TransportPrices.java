@@ -50,9 +50,9 @@ public class TransportPrices {
 
 	public interface NodePrices {
 
-		public double getPrice_1_ton(Node nodeId, TransportMode fromNode, TransportMode toMode);
+		public double getPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode);
 
-		public default double getDuration_h(Node nodeId, TransportMode fromNode, TransportMode toMode) {
+		public default double getDuration_h(Node node, TransportMode fromMode, TransportMode toMode) {
 			return 0.0;
 		}
 

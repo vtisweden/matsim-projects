@@ -104,9 +104,9 @@ public class SaanaModelRunner {
 			}
 		};
 
-		final NodePrices nodePrices = new NodePrices() {
+		final NodePrices transshipmentPrices = new NodePrices() {
 			@Override
-			public double getPrice_1_ton(Node nodeId, TransportMode fromNode, TransportMode toMode) {
+			public double getPrice_1_ton(Node nodeId, TransportMode fromMode, TransportMode toMode) {
 				return 0.01;
 			}
 		};
