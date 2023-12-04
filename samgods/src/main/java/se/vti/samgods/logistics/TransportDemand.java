@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
@@ -35,7 +36,7 @@ public class TransportDemand {
 
 	private Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains = new LinkedHashMap<>(
 			16);
-
+	
 	public void setPWCMatrix(Commodity commodity, PWCMatrix matrix) {
 		this.commodity2pwcMatrix.put(commodity, matrix);
 	}

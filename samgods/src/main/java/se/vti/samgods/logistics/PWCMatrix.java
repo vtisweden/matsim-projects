@@ -72,6 +72,10 @@ public class PWCMatrix {
 		return Collections.unmodifiableSet(this.locations);
 	}
 
+	public int getRelationsCnt() {
+		return this.od2amount_ton_yr.size();
+	}
+	
 	public double getTotalFreightDemand(final Tuple<Id<Node>, Id<Node>> od) {
 		return this.od2amount_ton_yr.getOrDefault(od, 0.0);
 	}

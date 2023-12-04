@@ -45,6 +45,8 @@ public class TransportPrices {
 		public default double getDuration_h(Link link) {
 			return Units.H_PER_S * Math.max(1.0, (link.getLength() / link.getFreespeed()));
 		}
+		
+		public LinkPrices deepCopy();
 
 	}
 
@@ -55,6 +57,8 @@ public class TransportPrices {
 		public default double getDuration_h(Node node, TransportMode fromMode, TransportMode toMode) {
 			return 0.0;
 		}
+
+		public NodePrices deepCopy();
 
 	}
 

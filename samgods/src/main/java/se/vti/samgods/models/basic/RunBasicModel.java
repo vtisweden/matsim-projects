@@ -30,7 +30,7 @@ import org.matsim.api.core.v01.network.Node;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.UnimodalNetworkRouter;
+import se.vti.samgods.transportation.NetworkRouter;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 public class RunBasicModel {
@@ -70,7 +70,7 @@ public class RunBasicModel {
 		/*
 		 * Route all unimodal chain segments using representative vehicles.
 		 */
-		final Map<SamgodsConstants.TransportMode, UnimodalNetworkRouter> mode2router = new LinkedHashMap<>(4);
+		final Map<SamgodsConstants.TransportMode, NetworkRouter> mode2router = new LinkedHashMap<>(4);
 //		mode2router.put(TransportMode.Road, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Road),
 //				fleet.createEmptyVehicleTravelDisutility("truck")));
 //		mode2router.put(TransportMode.Rail, new UnimodalNetworkRouter(samgods.getNetwork(TransportMode.Rail),
