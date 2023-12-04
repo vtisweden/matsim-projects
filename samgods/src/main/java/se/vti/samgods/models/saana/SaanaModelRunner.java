@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
@@ -60,7 +61,7 @@ public class SaanaModelRunner {
 		log.info("STARTED ...");
 
 		final List<SamgodsConstants.Commodity> consideredCommodities = Arrays
-				.asList(SamgodsConstants.Commodity.values()); // .subList(0, 1);
+				.asList(SamgodsConstants.Commodity.values()).subList(0, 1);
 
 		/*
 		 * PREPARE DEMAND
@@ -117,11 +118,14 @@ public class SaanaModelRunner {
 		List<Commodity> commodities = new LinkedList<>();
 		List<Long> chainsBefore = new LinkedList<>();
 		List<Long> chainsAfter = new LinkedList<>();
-		List<Long> failures = new LinkedList<>();
-		List<Long> successes = new LinkedList<>();
-		List<Long> linkCounts = new LinkedList<>();
+//		List<Long> failures = new LinkedList<>();
+//		List<Long> successes = new LinkedList<>();
+		List<AtomicLong> legCounts = new LinkedList<>();
+		List<AtomicLong> linkCounts = new LinkedList<>();
+		List<Map<TransportMode, Long>> mode2routingErrors = new LinkedList<>();
 
 		Random rnd = new Random();
+
 		for (Commodity commodity : consideredCommodities) {
 
 			// Only for testing: reduce the number of OD pairs to be processed.
@@ -134,9 +138,9 @@ public class SaanaModelRunner {
 			router.route(commodity, od2chains);
 
 			commodities.add(commodity);
-			failures.add(router.getFailures());
-			successes.add(router.getSuccesses());
-			linkCounts.add(router.getLinkCnt());
+			linkCounts.add(router.routedLinkCnt);
+			legCounts.add(router.routedLegCnt);
+			mode2routingErrors.add(router.mode2LegRoutingFailures);
 
 			chainsBefore.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
 			(new SaanaTransportChainReducer()).reduce(od2chains);
@@ -148,10 +152,12 @@ public class SaanaModelRunner {
 		for (int i = 0; i < commodities.size(); i++) {
 			System.out.println(commodities.get(i));
 			System.out.println("  chains before: " + chainsBefore.get(i));
-			System.out.println("  chains after:  " + chainsAfter.get(i));
-			System.out.println("  failures:    " + failures.get(i));
-			System.out.println("  successes:   " + successes.get(i));
-			System.out.println("  found links: " + linkCounts.get(i));
+			System.out.println("  chains after: " + chainsAfter.get(i));
+			System.out.println("  found legs: " + legCounts.get(i));
+			System.out.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
+			for (Map.Entry<TransportMode, Long> entry : mode2routingErrors.get(i).entrySet()) {
+				System.out.println("  failures with mode " + entry.getKey() + ": " + entry.getValue());
+			}
 		}
 
 		log.info("... DONE");

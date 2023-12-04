@@ -25,9 +25,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -57,81 +60,81 @@ import se.vti.samgods.logistics.TransportLeg;
  */
 public class NetworkRouter {
 
+	/**
+	 * Helper class for parallel routing, operates only on its own members.
+	 * 
+	 * @author GunnarF
+	 *
+	 */
 	class RoutingThread implements Runnable {
+
+		private final Iterable<TransportChain> chains;
 
 		private final Map<TransportMode, Network> mode2network;
 		private final Map<TransportMode, LeastCostPathCalculator> mode2router;
-		private final Iterable<TransportChain> chains;
 
-		private long successes = 0;
-		private long failures = 0;
-		private long linkCnt = 0;
+		RoutingThread(final Iterable<TransportChain> chains, final Network network,
+				final Map<TransportMode, TravelDisutility> mode2disutility, final int threads) {
 
-		RoutingThread(Network network, Map<TransportMode, TravelDisutility> mode2disutility,
-				Iterable<TransportChain> chains, int threads) {
+			// Contents of this datastructure are iterated over and modified (routes added).
+			this.chains = chains;
 
+			// Local copies of datastructures used in parallel routing.
+			this.mode2network = new LinkedHashMap<>(SamgodsConstants.TransportMode.values().length);
+			this.mode2router = new LinkedHashMap<>(SamgodsConstants.TransportMode.values().length);
 			final AStarLandmarksFactory factory = new AStarLandmarksFactory(threads);
-
-			this.mode2network = new LinkedHashMap<>(TransportSupply.samgodsMode2matsimMode.size());
-			this.mode2router = new LinkedHashMap<>(TransportSupply.samgodsMode2matsimMode.size());
-			for (Map.Entry<SamgodsConstants.TransportMode, String> entry : TransportSupply.samgodsMode2matsimMode
-					.entrySet()) {
-				final Network subNetwork = NetworkUtils.createNetwork();
-				new TransportModeNetworkFilter(network).filter(subNetwork, Collections.singleton(entry.getValue()));
-				final LeastCostPathCalculator router = factory.createPathCalculator(subNetwork,
-						mode2disutility.get(entry.getKey()), new TravelTime() {
+			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+				final Network unimodalNetwork = this.createUnimodalNetwork(network, mode);
+				this.mode2network.put(mode, unimodalNetwork);
+				final LeastCostPathCalculator router = factory.createPathCalculator(unimodalNetwork,
+						mode2disutility.get(mode), new TravelTime() {
 							@Override
 							public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
 								return 0;
 							}
 						});
-				this.mode2network.put(entry.getKey(), subNetwork);
-				this.mode2router.put(entry.getKey(), router);
+				this.mode2router.put(mode, router);
 			}
-			this.chains = chains;
+		}
+
+		private Network createUnimodalNetwork(final Network network, SamgodsConstants.TransportMode samgodsMode) {
+			final Set<String> matsimModes = Collections
+					.singleton(TransportSupply.samgodsMode2matsimMode.get(samgodsMode));
+			final Network unimodalNetwork = NetworkUtils.createNetwork();
+			new TransportModeNetworkFilter(network).filter(unimodalNetwork, matsimModes);
+			return unimodalNetwork;
 		}
 
 		@Override
 		public void run() {
 			for (TransportChain chain : this.chains) {
 				for (TransportLeg leg : chain.getLegs()) {
-					Map<Id<Node>, ? extends Node> nodes = this.mode2network.get(leg.getMode()).getNodes();
-					Node from = nodes.get(leg.getOrigin());
-					Node to = nodes.get(leg.getDestination());
+					final Map<Id<Node>, ? extends Node> nodes = this.mode2network.get(leg.getMode()).getNodes();
+					final Node from = nodes.get(leg.getOrigin());
+					final Node to = nodes.get(leg.getDestination());
 					if ((from != null) && (to != null)) {
-						List<Link> links =this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null, null).links; 
-						leg.setRoute(
-								links);
-						this.successes++;
-						this.linkCnt += links.size();
+						List<Link> links = this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null,
+								null).links;
+						leg.setRoute(links);
+						routedLegCnt.addAndGet(1);
+						routedLinkCnt.addAndGet(links.size());
 					} else {
-						this.failures++;
+						mode2LegRoutingFailures.compute(leg.getMode(), (m, c) -> ((c == null) ? 1 : (c + 1)));
 					}
 				}
 			}
 		}
 	}
 
+	// TODO only for testing
+	public AtomicLong routedLegCnt = new AtomicLong(0);
+	public AtomicLong routedLinkCnt = new AtomicLong(0);
+	public Map<TransportMode, Long> mode2LegRoutingFailures = new ConcurrentHashMap<>();
+
 	private final Network network;
 
 	private final TransportPrices prices;
 
-	private long failures = 0;
-	private long successes = 0;
-	private long linkCnt = 0;
-	
-	public long getFailures() {
-		return this.failures;
-	}
-	
-	public long getSuccesses() {
-		return this.successes;
-	}
-	
-	public long getLinkCnt() {
-		return this.linkCnt;
-	}
-	
 	public NetworkRouter(Network network, TransportPrices prices) {
 		this.network = network;
 		this.prices = prices;
@@ -144,17 +147,16 @@ public class NetworkRouter {
 		final long chainsPerThread = chainCnt / threadCnt;
 
 		final ExecutorService threadPool = Executors.newFixedThreadPool(threadCnt);
-		final List<RoutingThread> allThreads = new LinkedList<>();
-		
+
 		final Iterator<List<TransportChain>> chainListIterator = od2chains.values().iterator();
 		for (int thread = 0; thread < threadCnt; thread++) {
 
-			List<TransportChain> jobs = new LinkedList<>();
+			final List<TransportChain> jobs = new LinkedList<>();
 			while (chainListIterator.hasNext() && ((jobs.size() < chainsPerThread) || (thread == threadCnt - 1))) {
 				jobs.addAll(chainListIterator.next());
 			}
 
-			Map<TransportMode, TravelDisutility> mode2disutility = new LinkedHashMap<>();
+			final Map<TransportMode, TravelDisutility> mode2disutility = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
 				TravelDisutility disutility = new TravelDisutility() {
 					private final TransportPrices.LinkPrices lp = prices.getLinkPrices(commodity, mode).deepCopy();
@@ -172,8 +174,7 @@ public class NetworkRouter {
 				mode2disutility.put(mode, disutility);
 			}
 
-			RoutingThread routingThread = new RoutingThread(this.network, mode2disutility, jobs, threadCnt);
-			allThreads.add(routingThread);
+			RoutingThread routingThread = new RoutingThread(jobs, this.network, mode2disutility, threadCnt);
 			threadPool.execute(routingThread);
 		}
 
@@ -183,12 +184,6 @@ public class NetworkRouter {
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return;
-		}
-		
-		for (RoutingThread terminatedThread : allThreads) {
-			this.failures += terminatedThread.failures;
-			this.successes += terminatedThread.successes;
-			this.linkCnt += terminatedThread.linkCnt;
 		}
 	}
 }
