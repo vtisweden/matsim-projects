@@ -27,8 +27,6 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
@@ -43,6 +41,8 @@ import se.vti.samgods.readers.ChainChoiReader;
 import se.vti.samgods.readers.SamgodsNetworkReader;
 import se.vti.samgods.transportation.NetworkRouter;
 import se.vti.samgods.transportation.TransportSupply;
+import se.vti.samgods.transportation.pricing.NoTransshipmentPrices;
+import se.vti.samgods.transportation.pricing.ProportionalLinkPrices;
 
 /**
  * 
@@ -52,40 +52,6 @@ import se.vti.samgods.transportation.TransportSupply;
 public class SaanaModelRunner {
 
 	static Logger log = Logger.getLogger(SaanaModelRunner.class);
-
-	static class ProportionalLinkPrices implements LinkPrices {
-
-		private final double price_1_tonM;
-
-		ProportionalLinkPrices(double price_1_tonKm) {
-			this.price_1_tonM = 0.001 * price_1_tonKm;
-		}
-
-		@Override
-		public double getPrice_1_ton(Link link) {
-			return 1e-8 + this.price_1_tonM * link.getLength();
-		}
-
-		@Override
-		public LinkPrices deepCopy() {
-			return new ProportionalLinkPrices(1000.0 * this.price_1_tonM);
-		}
-
-	}
-
-	static class NoTransshipmentPrices implements NodePrices {
-
-		@Override
-		public double getPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode) {
-			return 0;
-		}
-
-		@Override
-		public NodePrices deepCopy() {
-			return new NoTransshipmentPrices();
-		}
-
-	}
 
 	public static void main(String[] args) {
 
@@ -147,14 +113,14 @@ public class SaanaModelRunner {
 		/*
 		 * PREPARE DEMAND/SUPPLY INTERACTIONS
 		 */
-		
+
 		List<Commodity> commodities = new LinkedList<>();
 		List<Long> chainsBefore = new LinkedList<>();
 		List<Long> chainsAfter = new LinkedList<>();
 		List<Long> failures = new LinkedList<>();
 		List<Long> successes = new LinkedList<>();
 		List<Long> linkCounts = new LinkedList<>();
-		
+
 		Random rnd = new Random();
 		for (Commodity commodity : consideredCommodities) {
 
@@ -171,7 +137,6 @@ public class SaanaModelRunner {
 			failures.add(router.getFailures());
 			successes.add(router.getSuccesses());
 			linkCounts.add(router.getLinkCnt());
-			
 
 			chainsBefore.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
 			(new SaanaTransportChainReducer()).reduce(od2chains);
@@ -188,7 +153,7 @@ public class SaanaModelRunner {
 			System.out.println("  successes:   " + successes.get(i));
 			System.out.println("  found links: " + linkCounts.get(i));
 		}
-		
+
 		log.info("... DONE");
 	}
 }
