@@ -21,6 +21,8 @@ package se.vti.samgods.transportation.pricing;
 
 import org.matsim.api.core.v01.network.Link;
 
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportPrices;
 import se.vti.samgods.TransportPrices.LinkPrices;
 
@@ -31,16 +33,21 @@ import se.vti.samgods.TransportPrices.LinkPrices;
  */
 public class ProportionalLinkPrices implements TransportPrices.LinkPrices {
 
+	private final Commodity commodity;
+	private final TransportMode mode;
+
 	private final double price_1_tonM;
 	private final double linkPriceEps; // to avoid zero edge costs in router
 
-	public ProportionalLinkPrices(double price_1_tonKm, double linkPriceEps) {
+	public ProportionalLinkPrices(Commodity commodity, TransportMode mode, double price_1_tonKm, double linkPriceEps) {
+		this.commodity = commodity;
+		this.mode = mode;
 		this.price_1_tonM = 0.001 * price_1_tonKm;
 		this.linkPriceEps = linkPriceEps;
 	}
 
-	public ProportionalLinkPrices(double price_1_tonKm) {
-		this(price_1_tonKm, 1e-8);
+	public ProportionalLinkPrices(Commodity commodity, TransportMode mode, double price_1_tonKm) {
+		this(commodity, mode, price_1_tonKm, 1e-8);
 	}
 
 	@Override
@@ -50,7 +57,17 @@ public class ProportionalLinkPrices implements TransportPrices.LinkPrices {
 
 	@Override
 	public LinkPrices deepCopy() {
-		return new ProportionalLinkPrices(1000.0 * this.price_1_tonM, this.linkPriceEps);
+		return new ProportionalLinkPrices(this.commodity, this.mode, 1000.0 * this.price_1_tonM, this.linkPriceEps);
+	}
+
+	@Override
+	public Commodity getCommodity() {
+		return this.commodity;
+	}
+
+	@Override
+	public TransportMode getMode() {
+		return this.mode;
 	}
 
 }

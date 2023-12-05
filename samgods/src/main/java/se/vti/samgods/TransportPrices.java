@@ -40,25 +40,31 @@ public class TransportPrices {
 
 	public interface LinkPrices {
 
-		public double getPrice_1_ton(Link link);
+		Commodity getCommodity();
 
-		public default double getDuration_h(Link link) {
+		TransportMode getMode();
+
+		double getPrice_1_ton(Link link);
+
+		default double getDuration_h(Link link) {
 			return Units.H_PER_S * Math.max(1.0, (link.getLength() / link.getFreespeed()));
 		}
-		
-		public LinkPrices deepCopy();
+
+		LinkPrices deepCopy();
 
 	}
 
 	public interface NodePrices {
 
-		public double getPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode);
+		Commodity getCommodity();
 
-		public default double getDuration_h(Node node, TransportMode fromMode, TransportMode toMode) {
+		double getPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode);
+
+		default double getDuration_h(Node node, TransportMode fromMode, TransportMode toMode) {
 			return 0.0;
 		}
 
-		public NodePrices deepCopy();
+		NodePrices deepCopy();
 
 	}
 
@@ -76,9 +82,10 @@ public class TransportPrices {
 
 	// -------------------- SETTERS AND GETTERS --------------------
 
-	public void setLinkPrices(Commodity commodity, TransportMode mode, LinkPrices prices) {
+	public void addLinkPrices(LinkPrices prices) {
 		this.commodity2mode2linkPrices
-				.computeIfAbsent(commodity, c -> new LinkedHashMap<>(TransportMode.values().length)).put(mode, prices);
+				.computeIfAbsent(prices.getCommodity(), c -> new LinkedHashMap<>(TransportMode.values().length))
+				.put(prices.getMode(), prices);
 	}
 
 	public LinkPrices getLinkPrices(Commodity commodity, TransportMode mode) {
@@ -90,8 +97,8 @@ public class TransportPrices {
 		}
 	}
 
-	public void setNodePrices(Commodity commodity, NodePrices prices) {
-		this.commodity2nodePrices.put(commodity, prices);
+	public void addNodePrices(NodePrices prices) {
+		this.commodity2nodePrices.put(prices.getCommodity(), prices);
 	}
 
 	public NodePrices getNodePrices(Commodity commodity) {

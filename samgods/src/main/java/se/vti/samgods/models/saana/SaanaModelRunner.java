@@ -94,24 +94,25 @@ public class SaanaModelRunner {
 		for (Commodity commodity : consideredCommodities) {
 			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
 		}
-		
+
 		/*
 		 * PREPARE SUPPLY
 		 */
 
-		final LinkPrices roadPrices = new ProportionalLinkPrices(2000.0);
-		final LinkPrices railPrices = new ProportionalLinkPrices(1000.0);
-		final LinkPrices seaPrices = new ProportionalLinkPrices(500.0);
-		final LinkPrices airPrices = new ProportionalLinkPrices(10000.0);
-		final NodePrices transshipmentPrices = new NoTransshipmentPrices();
-
 		final TransportPrices transportPrices = new TransportPrices();
 		for (Commodity commodity : consideredCommodities) {
-			transportPrices.setLinkPrices(commodity, TransportMode.Road, roadPrices);
-			transportPrices.setLinkPrices(commodity, TransportMode.Rail, railPrices);
-			transportPrices.setLinkPrices(commodity, TransportMode.Sea, seaPrices);
-			transportPrices.setLinkPrices(commodity, TransportMode.Air, airPrices);
-			transportPrices.setNodePrices(commodity, transshipmentPrices);
+
+			final LinkPrices roadPrices = new ProportionalLinkPrices(commodity, TransportMode.Road, 2000.0);
+			final LinkPrices railPrices = new ProportionalLinkPrices(commodity, TransportMode.Rail, 1000.0);
+			final LinkPrices seaPrices = new ProportionalLinkPrices(commodity, TransportMode.Sea, 500.0);
+			final LinkPrices airPrices = new ProportionalLinkPrices(commodity, TransportMode.Air, 10000.0);
+			final NodePrices transshipmentPrices = new NoTransshipmentPrices(commodity);
+
+			transportPrices.addLinkPrices(roadPrices);
+			transportPrices.addLinkPrices(railPrices);
+			transportPrices.addLinkPrices(seaPrices);
+			transportPrices.addLinkPrices(airPrices);
+			transportPrices.addNodePrices(transshipmentPrices);
 		}
 
 		final SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
@@ -126,8 +127,6 @@ public class SaanaModelRunner {
 		List<Commodity> commodities = new LinkedList<>();
 		List<Long> chainsBefore = new LinkedList<>();
 		List<Long> chainsAfter = new LinkedList<>();
-//		List<Long> failures = new LinkedList<>();
-//		List<Long> successes = new LinkedList<>();
 		List<AtomicLong> legCounts = new LinkedList<>();
 		List<AtomicLong> linkCounts = new LinkedList<>();
 		List<Map<TransportMode, Set<Id<Node>>>> mode2routingErrors = new LinkedList<>();

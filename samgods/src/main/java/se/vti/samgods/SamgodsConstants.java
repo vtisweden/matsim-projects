@@ -27,7 +27,7 @@ package se.vti.samgods;
 public class SamgodsConstants {
 
 	public static enum TransportMode {
-		Road, Rail, Sea, Air
+		Road, Rail, Sea /* Sea includes Ferry */, Air
 	};
 
 	public static enum Commodity {

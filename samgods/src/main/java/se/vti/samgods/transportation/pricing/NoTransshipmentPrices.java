@@ -21,6 +21,7 @@ package se.vti.samgods.transportation.pricing;
 
 import org.matsim.api.core.v01.network.Node;
 
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportPrices.NodePrices;
 
@@ -29,11 +30,19 @@ import se.vti.samgods.TransportPrices.NodePrices;
  * @author GunnarF
  *
  */
-public class NoTransshipmentPrices implements NodePrices{
+public class NoTransshipmentPrices implements NodePrices {
 
-	public NoTransshipmentPrices() {		
+	private final Commodity commodity;
+
+	public NoTransshipmentPrices(Commodity commodity) {
+		this.commodity = commodity;
 	}
-	
+
+	@Override
+	public Commodity getCommodity() {
+		return this.commodity;
+	}
+
 	@Override
 	public double getPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode) {
 		return 0;
@@ -41,7 +50,7 @@ public class NoTransshipmentPrices implements NodePrices{
 
 	@Override
 	public NodePrices deepCopy() {
-		return new NoTransshipmentPrices();
+		return new NoTransshipmentPrices(this.commodity);
 	}
 
 }
