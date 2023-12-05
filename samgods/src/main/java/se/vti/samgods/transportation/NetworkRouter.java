@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -119,7 +120,14 @@ public class NetworkRouter {
 						routedLegCnt.addAndGet(1);
 						routedLinkCnt.addAndGet(links.size());
 					} else {
-						mode2LegRoutingFailures.compute(leg.getMode(), (m, c) -> ((c == null) ? 1 : (c + 1)));
+						if (from == null) {
+							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+									.add(leg.getOrigin());
+						}
+						if (to == null) {
+							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+									.add(leg.getDestination());
+						}
 					}
 				}
 			}
@@ -129,7 +137,7 @@ public class NetworkRouter {
 	// TODO only for testing
 	public AtomicLong routedLegCnt = new AtomicLong(0);
 	public AtomicLong routedLinkCnt = new AtomicLong(0);
-	public Map<TransportMode, Long> mode2LegRoutingFailures = new ConcurrentHashMap<>();
+	public Map<TransportMode, Set<Id<Node>>> mode2LegRoutingFailures = new ConcurrentHashMap<>();
 
 	private final Network network;
 

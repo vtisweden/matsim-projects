@@ -21,8 +21,6 @@ package se.vti.samgods.readers;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
@@ -32,7 +30,6 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
 
 import floetteroed.utilities.Units;
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
@@ -139,7 +136,7 @@ public class SamgodsNetworkReader {
 							capacity_veh_h = 60.0;
 						}
 						lanes = 1;
-					} else if (SamgodsConstants.TransportMode.Sea.toString().equals(mode)) {
+					} else if (SamgodsConstants.TransportMode.Sea.toString().equals(mode) || "Ferry".equals(mode)) {
 						matsimMode = TransportMode.ship;
 						if (maxSpeed_km_h != null) {
 							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;

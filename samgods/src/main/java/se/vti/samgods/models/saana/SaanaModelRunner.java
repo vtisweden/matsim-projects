@@ -24,10 +24,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
@@ -37,6 +40,7 @@ import se.vti.samgods.TransportPrices;
 import se.vti.samgods.TransportPrices.LinkPrices;
 import se.vti.samgods.TransportPrices.NodePrices;
 import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportChainUtils;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.readers.ChainChoiReader;
 import se.vti.samgods.readers.SamgodsNetworkReader;
@@ -61,7 +65,7 @@ public class SaanaModelRunner {
 		log.info("STARTED ...");
 
 		final List<SamgodsConstants.Commodity> consideredCommodities = Arrays
-				.asList(SamgodsConstants.Commodity.values()).subList(0, 1);
+				.asList(SamgodsConstants.Commodity.values()); // .subList(0, 1);
 
 		/*
 		 * PREPARE DEMAND
@@ -87,6 +91,10 @@ public class SaanaModelRunner {
 //		System.out.println("exiting");
 //		System.exit(0);
 
+		for (Commodity commodity : consideredCommodities) {
+			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
+		}
+		
 		/*
 		 * PREPARE SUPPLY
 		 */
@@ -122,7 +130,7 @@ public class SaanaModelRunner {
 //		List<Long> successes = new LinkedList<>();
 		List<AtomicLong> legCounts = new LinkedList<>();
 		List<AtomicLong> linkCounts = new LinkedList<>();
-		List<Map<TransportMode, Long>> mode2routingErrors = new LinkedList<>();
+		List<Map<TransportMode, Set<Id<Node>>>> mode2routingErrors = new LinkedList<>();
 
 		Random rnd = new Random();
 
@@ -154,9 +162,10 @@ public class SaanaModelRunner {
 			System.out.println("  chains before: " + chainsBefore.get(i));
 			System.out.println("  chains after: " + chainsAfter.get(i));
 			System.out.println("  found legs: " + legCounts.get(i));
-			System.out.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
-			for (Map.Entry<TransportMode, Long> entry : mode2routingErrors.get(i).entrySet()) {
-				System.out.println("  failures with mode " + entry.getKey() + ": " + entry.getValue());
+			System.out
+					.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
+			for (Map.Entry<TransportMode, Set<Id<Node>>> entry : mode2routingErrors.get(i).entrySet()) {
+				System.out.println("  failures with mode " + entry.getKey() + " at nodes: " + entry.getValue());
 			}
 		}
 

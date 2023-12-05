@@ -19,10 +19,18 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
+
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
@@ -33,6 +41,71 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 public class TransportChainUtils {
 
 	private TransportChainUtils() {
+	}
+
+	public static class TransportChainStats {
+
+		public final Commodity commodity;
+
+		private int originCnt = 0;
+		private int destinationCnt = 0;
+		private int odCnt = 0;
+
+		public TransportChainStats(Commodity commodity) {
+			this.commodity = commodity;
+		}
+
+	}
+
+	public static void computeTransportChainStats(Commodity commodity, Map<OD, List<TransportChain>> od2chains) {
+
+		for (Map.Entry<OD, List<TransportChain>> entry : od2chains.entrySet()) {
+			OD od = entry.getKey();
+			for (TransportChain chain : entry.getValue()) {
+				chain.getOrigin();
+				chain.getDestination();
+				for (TransportLeg leg : chain.getLegs()) {
+					leg.getMode();
+					leg.getOrigin();
+					leg.getDestination();
+					leg.getRoute();
+
+				}
+
+			}
+		}
+
+	}
+
+	// SO FAR USED BELOW
+
+	public static void reduceToMainModeLegs(Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains) {
+		commodity2od2chains.values().stream().forEach(m -> reduceToMainModeLegs(m.values()));
+	}
+
+	public static void reduceToMainModeLegs(Collection<List<TransportChain>> collectionOfChains) {
+		collectionOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegs(c));
+	}
+
+	public static void reduceToMainModeLegs(TransportChain chain) {
+		if (chain.getLegs().size() < 2) {
+			return;
+		}
+
+		final List<TransportLeg> newLegs = new LinkedList<TransportLeg>();
+		Id<Node> currentOrigin = chain.getOrigin();
+		TransportMode currentMode = chain.getLegs().get(0).getMode();
+		for (TransportLeg leg : chain.getLegs()) {
+			if (!leg.getMode().equals(currentMode)) {
+				newLegs.add(new TransportLeg(currentOrigin, leg.getOrigin(), currentMode, '?'));
+				currentOrigin = leg.getOrigin();
+				currentMode = leg.getMode();
+			}
+		}
+		newLegs.add(new TransportLeg(currentOrigin, chain.getDestination(), currentMode, '?'));
+
+		chain.getLegs().clear();
+		chain.getLegs().addAll(newLegs);
 	}
 
 	public static double computeLength_m(TransportLeg leg) {
