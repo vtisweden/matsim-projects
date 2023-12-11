@@ -84,7 +84,7 @@ public class SamgodsPriceReader {
 				@Override
 				public void startCurrentDataRow() {
 					final String from = this.getStringValue("fromMode");
-					final String to = this.getStringValue("fromMode");
+					final String to = this.getStringValue("toMode");
 					final double price_ton = this.getDoubleValue("prisPerTon");
 					final Commodity commodity = Commodity.values()[this.getIntValue("varugrupp") - 1];
 
@@ -116,7 +116,7 @@ public class SamgodsPriceReader {
 				@Override
 				public void startCurrentDataRow() {
 					final String from = this.getStringValue("fromMode");
-					final String to = this.getStringValue("fromMode");
+					final String to = this.getStringValue("toMode");
 					final double duration_min = this.getDoubleValue("tid");
 					final Commodity commodity = Commodity.values()[this.getIntValue("varugrupp") - 1];
 
@@ -173,9 +173,12 @@ public class SamgodsPriceReader {
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) {
+		System.out.println("STARTED ...");
 
-		// TODO CONTINUE HERE
-		
+		SamgodsPriceReader reader = new SamgodsPriceReader("./2023-06-01_basecase/LinkPrices.csv",
+				"./2023-06-01_basecase/NodePrices.csv", "./2023-06-01_basecase/NodeTimes.csv");
+		System.out.println(reader.getTransportPrices());
+
+		System.out.println("... DONE");
 	}
-
 }

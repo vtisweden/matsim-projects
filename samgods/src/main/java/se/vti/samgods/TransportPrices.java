@@ -119,4 +119,18 @@ public class TransportPrices<S extends ShipmentPrices, T extends TransshipmentPr
 	public T getTransshipmentPrices(Commodity commodity) {
 		return this.commodity2transshipmentPrices.get(commodity);
 	}
+
+	@Override
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+		for (Map<TransportMode, S> mode2shipmentPrices : this.commodity2mode2shipmentPrices.values()) {
+			for (S shipmentPrices : mode2shipmentPrices.values()) {
+				result.append(shipmentPrices);
+			}
+		}
+		for (TransshipmentPrices transshipmentPrices : this.commodity2transshipmentPrices.values()) {
+			result.append(transshipmentPrices);
+		}
+		return result.toString();
+	}
 }

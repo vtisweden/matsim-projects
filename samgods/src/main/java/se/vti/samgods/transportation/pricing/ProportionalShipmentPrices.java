@@ -126,12 +126,25 @@ public class ProportionalShipmentPrices implements TransportPrices.ShipmentPrice
 
 	@Override
 	public ShipmentPrices deepCopy() {
-		final ProportionalShipmentPrices child = new ProportionalShipmentPrices(this.commodity, this.mode, this.linkPriceEps);
+		final ProportionalShipmentPrices child = new ProportionalShipmentPrices(this.commodity, this.mode,
+				this.linkPriceEps);
 		child.setMovePrice_1_kmH(1000.0 * this.movePrice_1_tonM);
 		child.setLoadingPrice_1_ton(this.loadingPrice_1_ton);
 		child.setUnloadingPrice_1_ton(this.unloadingPrice_1_ton);
 		child.setLoadingDuration_min(this.loadingDuration_min);
 		child.setUnloadingDuration_min(this.unloadingDuration_min);
 		return child;
+	}
+
+	@Override
+	public String toString() {
+		final StringBuffer result = new StringBuffer(
+				"Transport prices for commodity " + this.commodity + ", mode " + this.mode + "\n");
+		result.append("  move price [per ton] = " + 1000.0 * this.movePrice_1_tonM + "\n");
+		result.append("  loading price [per ton] = " + this.loadingPrice_1_ton + "\n");
+		result.append("  unloading price [per ton] = " + this.unloadingPrice_1_ton + "\n");
+		result.append("  loading duration [min] = " + this.loadingDuration_min + "\n");
+		result.append("  unloading duration [min] = " + this.unloadingDuration_min + "\n");
+		return result.toString();
 	}
 }

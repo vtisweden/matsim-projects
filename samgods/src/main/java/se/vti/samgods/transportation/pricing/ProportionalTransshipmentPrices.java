@@ -88,4 +88,27 @@ public class ProportionalTransshipmentPrices implements TransshipmentPrices {
 		}
 		return result;
 	}
+
+	@Override
+	public String toString() {
+		final StringBuffer result = new StringBuffer(
+				"Transshipment prices/durations for commodity " + this.commodity + "\n");
+		for (Map.Entry<TransportMode, Map<TransportMode, Double>> e : this.mode2mode2price_1_ton.entrySet()) {
+			final TransportMode fromMode = e.getKey();
+			for (Map.Entry<TransportMode, Double> e2 : e.getValue().entrySet()) {
+				final TransportMode toMode = e2.getKey();
+				final double price_1_ton = e2.getValue();
+				result.append("  price [per ton] " + fromMode + "->" + toMode + ": " + price_1_ton + "\n");
+			}
+		}
+		for (Map.Entry<TransportMode, Map<TransportMode, Double>> e : this.mode2mode2duration_min.entrySet()) {
+			final TransportMode fromMode = e.getKey();
+			for (Map.Entry<TransportMode, Double> e2 : e.getValue().entrySet()) {
+				final TransportMode toMode = e2.getKey();
+				final double duration_min = e2.getValue();
+				result.append("  duration [min] " + fromMode + "->" + toMode + ": " + duration_min + "\n");
+			}
+		}
+		return result.toString();
+	}
 }

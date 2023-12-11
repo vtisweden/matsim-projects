@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
@@ -79,6 +81,11 @@ public class TransportChainUtils {
 
 	// SO FAR USED BELOW
 
+	public static Set<TransportMode> extractUsedModes(Collection<List<TransportChain>> collectionOfChains) {
+		return collectionOfChains.stream().flatMap(l -> l.stream()).flatMap(c -> c.getLegs().stream())
+				.map(l -> l.getMode()).collect(Collectors.toSet());
+	}
+
 	public static void reduceToMainModeLegs(Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains) {
 		commodity2od2chains.values().stream().forEach(m -> reduceToMainModeLegs(m.values()));
 	}
@@ -91,7 +98,6 @@ public class TransportChainUtils {
 		if (chain.getLegs().size() < 2) {
 			return;
 		}
-
 		final List<TransportLeg> newLegs = new LinkedList<TransportLeg>();
 		Id<Node> currentOrigin = chain.getOrigin();
 		TransportMode currentMode = chain.getLegs().get(0).getMode();

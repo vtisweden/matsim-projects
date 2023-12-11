@@ -51,6 +51,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportPrices;
+import se.vti.samgods.TransportPrices.ShipmentPrices;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
 
@@ -81,14 +82,16 @@ public class NetworkRouter {
 			this.chains = chains;
 
 			// Local copies of datastructures used in parallel routing.
-			this.mode2network = new LinkedHashMap<>(SamgodsConstants.TransportMode.values().length);
-			this.mode2router = new LinkedHashMap<>(SamgodsConstants.TransportMode.values().length);
+			this.mode2network = new LinkedHashMap<>(mode2disutility.size());
+			this.mode2router = new LinkedHashMap<>(mode2disutility.size());
 			final AStarLandmarksFactory factory = new AStarLandmarksFactory(threads);
-			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+			for (Map.Entry<SamgodsConstants.TransportMode, TravelDisutility> e : mode2disutility.entrySet()) {
+				final TransportMode mode = e.getKey();
+				final TravelDisutility disutility = e.getValue();
 				final Network unimodalNetwork = this.createUnimodalNetwork(network, mode);
 				this.mode2network.put(mode, unimodalNetwork);
-				final LeastCostPathCalculator router = factory.createPathCalculator(unimodalNetwork,
-						mode2disutility.get(mode), new TravelTime() {
+				final LeastCostPathCalculator router = factory.createPathCalculator(unimodalNetwork, disutility,
+						new TravelTime() {
 							@Override
 							public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
 								return 0;
@@ -110,25 +113,32 @@ public class NetworkRouter {
 		public void run() {
 			for (TransportChain chain : this.chains) {
 				for (TransportLeg leg : chain.getLegs()) {
-					final Map<Id<Node>, ? extends Node> nodes = this.mode2network.get(leg.getMode()).getNodes();
-					final Node from = nodes.get(leg.getOrigin());
-					final Node to = nodes.get(leg.getDestination());
-					if ((from != null) && (to != null)) {
-						List<Link> links = this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null,
-								null).links;
-						leg.setRoute(links);
-						routedLegCnt.addAndGet(1);
-						routedLinkCnt.addAndGet(links.size());
-					} else {
-						if (from == null) {
-							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
-									.add(leg.getOrigin());
-						}
-						if (to == null) {
-							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
-									.add(leg.getDestination());
-						}
+					Map<Id<Node>, ? extends Node> nodes;
+					try {
+						nodes = this.mode2network.get(leg.getMode()).getNodes();
+					} catch (Exception e) {
+						e.printStackTrace();
+						System.exit(0);
+						nodes = null;
 					}
+						final Node from = nodes.get(leg.getOrigin());
+						final Node to = nodes.get(leg.getDestination());
+						if ((from != null) && (to != null)) {
+							List<Link> links = this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null,
+									null).links;
+							leg.setRoute(links);
+							routedLegCnt.addAndGet(1);
+							routedLinkCnt.addAndGet(links.size());
+						} else {
+							if (from == null) {
+								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+										.add(leg.getOrigin());
+							}
+							if (to == null) {
+								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+										.add(leg.getDestination());
+							}
+						}
 				}
 			}
 		}
@@ -141,9 +151,9 @@ public class NetworkRouter {
 
 	private final Network network;
 
-	private final TransportPrices prices;
+	private final TransportPrices<?, ?> prices;
 
-	public NetworkRouter(Network network, TransportPrices prices) {
+	public NetworkRouter(Network network, TransportPrices<?, ?> prices) {
 		this.network = network;
 		this.prices = prices;
 	}
@@ -166,23 +176,26 @@ public class NetworkRouter {
 
 			final Map<TransportMode, TravelDisutility> mode2disutility = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				TravelDisutility disutility = new TravelDisutility() {
-					private final TransportPrices.ShipmentPrices lp = prices.getShipmentPrices(commodity, mode).deepCopy();
+				final ShipmentPrices shipmentPrices = this.prices.getShipmentPrices(commodity, mode);
+				if (shipmentPrices != null) {
+					final TravelDisutility disutility = new TravelDisutility() {
+						private final TransportPrices.ShipmentPrices lp = shipmentPrices.deepCopy();
 
-					@Override
-					public double getLinkMinimumTravelDisutility(Link link) {
-						return this.lp.getMovePrice_1_ton(link);
-					}
+						@Override
+						public double getLinkMinimumTravelDisutility(Link link) {
+							return this.lp.getMovePrice_1_ton(link);
+						}
 
-					@Override
-					public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-						return this.getLinkMinimumTravelDisutility(link);
-					}
-				};
-				mode2disutility.put(mode, disutility);
+						@Override
+						public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
+							return this.getLinkMinimumTravelDisutility(link);
+						}
+					};
+					mode2disutility.put(mode, disutility);
+				}
 			}
 
-			RoutingThread routingThread = new RoutingThread(jobs, this.network, mode2disutility, threadCnt);
+			final RoutingThread routingThread = new RoutingThread(jobs, this.network, mode2disutility, threadCnt);
 			threadPool.execute(routingThread);
 		}
 
