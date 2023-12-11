@@ -20,45 +20,74 @@
 package se.vti.samgods.transportation.pricing;
 
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportPrices;
-import se.vti.samgods.TransportPrices.LinkPrices;
+import se.vti.samgods.TransportPrices.ShipmentPrices;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ProportionalLinkPrices implements TransportPrices.LinkPrices {
+public class ProportionalLinkPrices implements TransportPrices.ShipmentPrices {
+
+	// -------------------- CONSTANTS --------------------
 
 	private final Commodity commodity;
 	private final TransportMode mode;
 
-	private final double price_1_tonM;
 	private final double linkPriceEps; // to avoid zero edge costs in router
 
-	public ProportionalLinkPrices(Commodity commodity, TransportMode mode, double price_1_tonKm, double linkPriceEps) {
+	// -------------------- MEMBERS --------------------
+
+	private Double movePrice_1_tonM = null;
+
+	private Double loadingPrice_1_ton = null;
+
+	private Double unloadingPrice_1_ton = null;
+
+	private Double loadingDuration_min = null;
+
+	private Double unloadingDuration_min = null;
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public ProportionalLinkPrices(Commodity commodity, TransportMode mode) {
+		this(commodity, mode, 1e-8);
+	}
+
+	public ProportionalLinkPrices(Commodity commodity, TransportMode mode, double linkPriceEps) {
 		this.commodity = commodity;
 		this.mode = mode;
-		this.price_1_tonM = 0.001 * price_1_tonKm;
 		this.linkPriceEps = linkPriceEps;
 	}
 
-	public ProportionalLinkPrices(Commodity commodity, TransportMode mode, double price_1_tonKm) {
-		this(commodity, mode, price_1_tonKm, 1e-8);
+	// -------------------- SETTERS --------------------
+
+	public void setMovePrice_1_kmH(double movePrice_1_tonKm) {
+		this.movePrice_1_tonM = 0.001 * movePrice_1_tonKm;
 	}
 
-	@Override
-	public double getPrice_1_ton(Link link) {
-		return this.linkPriceEps + this.price_1_tonM * link.getLength();
+	public void setLoadingPrice_1_ton(double price_1_ton) {
+		this.loadingPrice_1_ton = price_1_ton;
 	}
 
-	@Override
-	public LinkPrices deepCopy() {
-		return new ProportionalLinkPrices(this.commodity, this.mode, 1000.0 * this.price_1_tonM, this.linkPriceEps);
+	public void setUnloadingPrice_1_ton(double price_1_ton) {
+		this.unloadingPrice_1_ton = price_1_ton;
 	}
+
+	public void setLoadingDuration_min(double duration_min) {
+		this.loadingDuration_min = duration_min;
+	}
+
+	public void setUnloadingDuration_min(double duration_min) {
+		this.unloadingDuration_min = duration_min;
+	}
+
+	// -------------------- IMPLEMENTATION OF ShipmentPrices --------------------
 
 	@Override
 	public Commodity getCommodity() {
@@ -70,4 +99,39 @@ public class ProportionalLinkPrices implements TransportPrices.LinkPrices {
 		return this.mode;
 	}
 
+	@Override
+	public double getMovePrice_1_ton(Link link) {
+		return Math.max(this.linkPriceEps, this.movePrice_1_tonM * link.getLength());
+	}
+
+	@Override
+	public double getLoadingPrice_1_ton(Node node) {
+		return this.loadingPrice_1_ton;
+	}
+
+	@Override
+	public double getLoadingDuration_min(Node node) {
+		return this.loadingDuration_min;
+	}
+
+	@Override
+	public double getUnloadingPrice_1_ton(Node node) {
+		return this.unloadingPrice_1_ton;
+	}
+
+	@Override
+	public double getUnloadingDuration_min(Node node) {
+		return this.unloadingDuration_min;
+	}
+
+	@Override
+	public ShipmentPrices deepCopy() {
+		final ProportionalLinkPrices child = new ProportionalLinkPrices(this.commodity, this.mode, this.linkPriceEps);
+		child.setMovePrice_1_kmH(1000.0 * this.movePrice_1_tonM);
+		child.setLoadingPrice_1_ton(this.loadingPrice_1_ton);
+		child.setUnloadingPrice_1_ton(this.unloadingPrice_1_ton);
+		child.setLoadingDuration_min(this.loadingDuration_min);
+		child.setUnloadingDuration_min(this.unloadingDuration_min);
+		return child;
+	}
 }

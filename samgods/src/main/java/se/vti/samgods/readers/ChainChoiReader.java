@@ -103,26 +103,6 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		code2mode.put('Q', SamgodsConstants.TransportMode.Sea);
 		code2mode.put('R', SamgodsConstants.TransportMode.Air);
 	}
-//	public enum TransportChainType {
-//
-//		A(1, true, Road), ADA(2, true, Road, Rail, Road), AdA(3, true, Road, Rail, Road),
-//		ADJA(4, true, Road, Rail, Sea, Road), ADJDA(5, true, Road, Rail, Sea, Rail, Road),
-//		ADKL(6, true, Road, Rail, Sea, Sea), AJ(7, true, Road, Sea), AJA(8, true, Road, Sea, Road),
-//		AJDA(9, true, Road, Sea, Rail, Road), AJdX(10, true, Road, Sea, Rail, Road), AKL(11, true, Road, Sea, Sea);
-//
-//		// continue here. right reduction? -> see also comment in handler
-//
-//		public final int number;
-//		public final boolean container;
-//		public final List<TransportMode> modesView;
-//
-//		private TransportChainType(final int number, final boolean container, final TransportMode... transportModes) {
-//			this.number = number;
-//			this.container = container;
-//			this.modesView = Collections.unmodifiableList(Arrays.asList(transportModes));
-//		}
-//
-//	};
 
 	// -------------------- MEMBERS --------------------
 

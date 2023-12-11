@@ -167,11 +167,11 @@ public class NetworkRouter {
 			final Map<TransportMode, TravelDisutility> mode2disutility = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
 				TravelDisutility disutility = new TravelDisutility() {
-					private final TransportPrices.LinkPrices lp = prices.getLinkPrices(commodity, mode).deepCopy();
+					private final TransportPrices.ShipmentPrices lp = prices.getShipmentPrices(commodity, mode).deepCopy();
 
 					@Override
 					public double getLinkMinimumTravelDisutility(Link link) {
-						return this.lp.getPrice_1_ton(link);
+						return this.lp.getMovePrice_1_ton(link);
 					}
 
 					@Override

@@ -19,27 +19,13 @@
  */
 package se.vti.samgods.transportation;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.population.Person;
-import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
-import org.matsim.core.router.util.TravelDisutility;
-import org.matsim.vehicles.Vehicle;
 
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportPrices;
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
@@ -66,8 +52,6 @@ public class TransportSupply {
 
 	private final Network network;
 
-//	private final Map<TransportMode, Network> mode2network;
-
 	private final VehicleFleet vehicleFleet;
 
 	private final TransportPrices transportPrices;
@@ -78,15 +62,6 @@ public class TransportSupply {
 		this.network = network;
 		this.vehicleFleet = fleet;
 		this.transportPrices = transportPrices;
-
-//		this.mode2network = new LinkedHashMap<>(samgodsMode2matsimMode.size());
-//		for (Map.Entry<SamgodsConstants.TransportMode, String> entry : samgodsMode2matsimMode.entrySet()) {
-//			final Network unimodalNetwork = NetworkUtils.createNetwork();
-//			unimodalNetwork.setCapacityPeriod(3600.0);
-//			new TransportModeNetworkFilter(this.network).filter(unimodalNetwork,
-//					Collections.singleton(entry.getValue()));
-//			this.mode2network.put(entry.getKey(), unimodalNetwork);
-//		}
 	}
 
 	// -------------------- GETTERS --------------------
@@ -95,10 +70,6 @@ public class TransportSupply {
 		return this.network;
 	}
 
-//	public Network getNetwork(SamgodsConstants.TransportMode transportMode) {
-//		return this.mode2network.get(transportMode);
-//	}
-
 	public VehicleFleet getVehicleFleet() {
 		return this.vehicleFleet;
 	}
@@ -106,7 +77,5 @@ public class TransportSupply {
 	public TransportPrices getTransportPrice() {
 		return this.transportPrices;
 	}
-
-	// -------------------- ROUTING --------------------
 
 }

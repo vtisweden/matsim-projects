@@ -23,14 +23,14 @@ import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportPrices.NodePrices;
+import se.vti.samgods.TransportPrices.TransshipmentPrices;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class NoTransshipmentPrices implements NodePrices {
+public class NoTransshipmentPrices implements TransshipmentPrices {
 
 	private final Commodity commodity;
 
@@ -44,13 +44,19 @@ public class NoTransshipmentPrices implements NodePrices {
 	}
 
 	@Override
-	public double getPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode) {
+	public double getTransshipmentPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode) {
 		return 0;
 	}
 
 	@Override
-	public NodePrices deepCopy() {
+	public TransshipmentPrices deepCopy() {
 		return new NoTransshipmentPrices(this.commodity);
+	}
+
+	@Override
+	public double getTransshipmentDuration_min(Node node, TransportMode fromMode, TransportMode toMode) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 }

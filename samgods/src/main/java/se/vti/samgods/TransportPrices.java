@@ -38,42 +38,49 @@ public class TransportPrices {
 
 	// -------------------- CONSTANTS --------------------
 
-	public interface LinkPrices {
+	public interface ShipmentPrices {
 
 		Commodity getCommodity();
 
 		TransportMode getMode();
 
-		double getPrice_1_ton(Link link);
+		double getMovePrice_1_ton(Link link);
 
-		default double getDuration_h(Link link) {
+		default double getMoveDuration_h(Link link) {
 			return Units.H_PER_S * Math.max(1.0, (link.getLength() / link.getFreespeed()));
 		}
 
-		LinkPrices deepCopy();
+		double getLoadingPrice_1_ton(Node node);
+
+		double getUnloadingPrice_1_ton(Node node);
+
+		double getLoadingDuration_min(Node node);
+
+		double getUnloadingDuration_min(Node node);
+
+		ShipmentPrices deepCopy();
 
 	}
 
-	public interface NodePrices {
+	public interface TransshipmentPrices {
 
 		Commodity getCommodity();
 
-		double getPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode);
+		double getTransshipmentPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode);
 
-		default double getDuration_h(Node node, TransportMode fromMode, TransportMode toMode) {
-			return 0.0;
-		}
+		double getTransshipmentDuration_min(Node node, TransportMode fromMode, TransportMode toMode);
 
-		NodePrices deepCopy();
+		TransshipmentPrices deepCopy();
 
 	}
 
 	// -------------------- MEMBERS --------------------
 
-	private final Map<Commodity, Map<TransportMode, LinkPrices>> commodity2mode2linkPrices = new LinkedHashMap<>(
+	private final Map<Commodity, Map<TransportMode, ShipmentPrices>> commodity2mode2shipmentPrices = new LinkedHashMap<>(
 			Commodity.values().length);
 
-	private final Map<Commodity, NodePrices> commodity2nodePrices = new LinkedHashMap<>(Commodity.values().length);
+	private final Map<Commodity, TransshipmentPrices> commodity2transshipmentPrices = new LinkedHashMap<>(
+			Commodity.values().length);
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -82,14 +89,14 @@ public class TransportPrices {
 
 	// -------------------- SETTERS AND GETTERS --------------------
 
-	public void addLinkPrices(LinkPrices prices) {
-		this.commodity2mode2linkPrices
+	public void addShipmentPrices(ShipmentPrices prices) {
+		this.commodity2mode2shipmentPrices
 				.computeIfAbsent(prices.getCommodity(), c -> new LinkedHashMap<>(TransportMode.values().length))
 				.put(prices.getMode(), prices);
 	}
 
-	public LinkPrices getLinkPrices(Commodity commodity, TransportMode mode) {
-		Map<TransportMode, LinkPrices> mode2linkMap = this.commodity2mode2linkPrices.get(commodity);
+	public ShipmentPrices getShipmentPrices(Commodity commodity, TransportMode mode) {
+		Map<TransportMode, ShipmentPrices> mode2linkMap = this.commodity2mode2shipmentPrices.get(commodity);
 		if (mode2linkMap != null) {
 			return mode2linkMap.get(mode);
 		} else {
@@ -97,11 +104,11 @@ public class TransportPrices {
 		}
 	}
 
-	public void addNodePrices(NodePrices prices) {
-		this.commodity2nodePrices.put(prices.getCommodity(), prices);
+	public void addTransshipmentPrices(TransshipmentPrices prices) {
+		this.commodity2transshipmentPrices.put(prices.getCommodity(), prices);
 	}
 
-	public NodePrices getNodePrices(Commodity commodity) {
-		return this.commodity2nodePrices.get(commodity);
+	public TransshipmentPrices getTransshipmentPrices(Commodity commodity) {
+		return this.commodity2transshipmentPrices.get(commodity);
 	}
 }
