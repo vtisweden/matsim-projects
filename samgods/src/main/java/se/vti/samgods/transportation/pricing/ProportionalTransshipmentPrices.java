@@ -33,7 +33,7 @@ import se.vti.samgods.TransportPrices.TransshipmentPrices;
  * @author GunnarF
  *
  */
-public class ProportionalNodePrices implements TransshipmentPrices {
+public class ProportionalTransshipmentPrices implements TransshipmentPrices {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -46,7 +46,7 @@ public class ProportionalNodePrices implements TransshipmentPrices {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ProportionalNodePrices(final Commodity commodity) {
+	public ProportionalTransshipmentPrices(final Commodity commodity) {
 		this.commodity = commodity;
 	}
 
@@ -79,7 +79,7 @@ public class ProportionalNodePrices implements TransshipmentPrices {
 
 	@Override
 	public TransshipmentPrices deepCopy() {
-		ProportionalNodePrices result = new ProportionalNodePrices(this.commodity);
+		ProportionalTransshipmentPrices result = new ProportionalTransshipmentPrices(this.commodity);
 		for (Map.Entry<TransportMode, Map<TransportMode, Double>> entry : this.mode2mode2price_1_ton.entrySet()) {
 			result.mode2mode2price_1_ton.put(entry.getKey(), new LinkedHashMap<>(entry.getValue()));
 		}

@@ -28,13 +28,15 @@ import org.matsim.api.core.v01.network.Node;
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.TransportPrices.ShipmentPrices;
+import se.vti.samgods.TransportPrices.TransshipmentPrices;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class TransportPrices {
+public class TransportPrices<S extends ShipmentPrices, T extends TransshipmentPrices> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -76,27 +78,33 @@ public class TransportPrices {
 
 	// -------------------- MEMBERS --------------------
 
-	private final Map<Commodity, Map<TransportMode, ShipmentPrices>> commodity2mode2shipmentPrices = new LinkedHashMap<>(
-			Commodity.values().length);
+	private final Map<Commodity, Map<TransportMode, S>> commodity2mode2shipmentPrices;
 
-	private final Map<Commodity, TransshipmentPrices> commodity2transshipmentPrices = new LinkedHashMap<>(
-			Commodity.values().length);
+	private final Map<Commodity, T> commodity2transshipmentPrices;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportPrices() {
+		this.commodity2mode2shipmentPrices = new LinkedHashMap<>(Commodity.values().length);
+		this.commodity2transshipmentPrices = new LinkedHashMap<>(Commodity.values().length);
 	}
+
+//	public TransportPrices(Map<Commodity, Map<TransportMode, ShipmentPrices>> commodity2mode2shipmentPrices,
+//			Map<Commodity, TransshipmentPrices> commodity2transshipmentPrices) {
+//		this.commodity2mode2shipmentPrices = commodity2mode2shipmentPrices;
+//		this.commodity2transshipmentPrices = commodity2transshipmentPrices;
+//	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
 
-	public void addShipmentPrices(ShipmentPrices prices) {
+	public void addShipmentPrices(S prices) {
 		this.commodity2mode2shipmentPrices
 				.computeIfAbsent(prices.getCommodity(), c -> new LinkedHashMap<>(TransportMode.values().length))
 				.put(prices.getMode(), prices);
 	}
 
-	public ShipmentPrices getShipmentPrices(Commodity commodity, TransportMode mode) {
-		Map<TransportMode, ShipmentPrices> mode2linkMap = this.commodity2mode2shipmentPrices.get(commodity);
+	public S getShipmentPrices(Commodity commodity, TransportMode mode) {
+		Map<TransportMode, S> mode2linkMap = this.commodity2mode2shipmentPrices.get(commodity);
 		if (mode2linkMap != null) {
 			return mode2linkMap.get(mode);
 		} else {
@@ -104,11 +112,11 @@ public class TransportPrices {
 		}
 	}
 
-	public void addTransshipmentPrices(TransshipmentPrices prices) {
+	public void addTransshipmentPrices(T prices) {
 		this.commodity2transshipmentPrices.put(prices.getCommodity(), prices);
 	}
 
-	public TransshipmentPrices getTransshipmentPrices(Commodity commodity) {
+	public T getTransshipmentPrices(Commodity commodity) {
 		return this.commodity2transshipmentPrices.get(commodity);
 	}
 }

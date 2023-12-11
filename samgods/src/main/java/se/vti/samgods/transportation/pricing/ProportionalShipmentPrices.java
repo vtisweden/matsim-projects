@@ -32,7 +32,7 @@ import se.vti.samgods.TransportPrices.ShipmentPrices;
  * @author GunnarF
  *
  */
-public class ProportionalLinkPrices implements TransportPrices.ShipmentPrices {
+public class ProportionalShipmentPrices implements TransportPrices.ShipmentPrices {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -55,11 +55,11 @@ public class ProportionalLinkPrices implements TransportPrices.ShipmentPrices {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ProportionalLinkPrices(Commodity commodity, TransportMode mode) {
+	public ProportionalShipmentPrices(Commodity commodity, TransportMode mode) {
 		this(commodity, mode, 1e-8);
 	}
 
-	public ProportionalLinkPrices(Commodity commodity, TransportMode mode, double linkPriceEps) {
+	public ProportionalShipmentPrices(Commodity commodity, TransportMode mode, double linkPriceEps) {
 		this.commodity = commodity;
 		this.mode = mode;
 		this.linkPriceEps = linkPriceEps;
@@ -126,7 +126,7 @@ public class ProportionalLinkPrices implements TransportPrices.ShipmentPrices {
 
 	@Override
 	public ShipmentPrices deepCopy() {
-		final ProportionalLinkPrices child = new ProportionalLinkPrices(this.commodity, this.mode, this.linkPriceEps);
+		final ProportionalShipmentPrices child = new ProportionalShipmentPrices(this.commodity, this.mode, this.linkPriceEps);
 		child.setMovePrice_1_kmH(1000.0 * this.movePrice_1_tonM);
 		child.setLoadingPrice_1_ton(this.loadingPrice_1_ton);
 		child.setUnloadingPrice_1_ton(this.unloadingPrice_1_ton);

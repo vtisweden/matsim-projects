@@ -20,8 +20,6 @@
 package se.vti.samgods.readers;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -30,8 +28,9 @@ import floetteroed.utilities.tabularfileparser.TabularFileHandler;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.transportation.pricing.ProportionalLinkPrices;
-import se.vti.samgods.transportation.pricing.ProportionalNodePrices;
+import se.vti.samgods.TransportPrices;
+import se.vti.samgods.transportation.pricing.ProportionalShipmentPrices;
+import se.vti.samgods.transportation.pricing.ProportionalTransshipmentPrices;
 
 /**
  * 
@@ -46,11 +45,13 @@ public class SamgodsPriceReader {
 
 	// -------------------- MEMBERS --------------------
 
-	private final Map<Commodity, Map<TransportMode, ProportionalLinkPrices>> commodity2mode2shipmentPrices = new LinkedHashMap<>(
-			Commodity.values().length);
+//	private final Map<Commodity, Map<TransportMode, ProportionalLinkPrices>> commodity2mode2shipmentPrices = new LinkedHashMap<>(
+//			Commodity.values().length);
+//
+//	private final Map<Commodity, ProportionalNodePrices> commodity2transshipmentPrices = new LinkedHashMap<>(
+//			Commodity.values().length);
 
-	private final Map<Commodity, ProportionalNodePrices> commodity2transshipmentPrices = new LinkedHashMap<>(
-			Commodity.values().length);
+	private final TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = new TransportPrices<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -64,7 +65,7 @@ public class SamgodsPriceReader {
 					final TransportMode mode = TransportMode.valueOf(this.getStringValue("mainMode"));
 					final double price_1_tonKm = this.getDoubleValue("prisPerKmOchTon");
 					final Commodity commodity = Commodity.values()[this.getIntValue("varugrupp") - 1];
-					getOrShipmentCreatePrices(commodity, mode).setMovePrice_1_kmH(price_1_tonKm);
+					getOrCreateShipmentCreatePrices(commodity, mode).setMovePrice_1_kmH(price_1_tonKm);
 				}
 			};
 			final TabularFileParser parser = new TabularFileParser();
@@ -88,10 +89,10 @@ public class SamgodsPriceReader {
 					final Commodity commodity = Commodity.values()[this.getIntValue("varugrupp") - 1];
 
 					if ("Zone".equals(from)) {
-						getOrShipmentCreatePrices(commodity, TransportMode.valueOf(to))
+						getOrCreateShipmentCreatePrices(commodity, TransportMode.valueOf(to))
 								.setLoadingPrice_1_ton(price_ton);
 					} else if ("Zone".equals(to)) {
-						getOrShipmentCreatePrices(commodity, TransportMode.valueOf(from))
+						getOrCreateShipmentCreatePrices(commodity, TransportMode.valueOf(from))
 								.setUnloadingPrice_1_ton(price_ton);
 					} else {
 						getOrCreateTransshipmentPrices(commodity).setPrice_1_ton(TransportMode.valueOf(from),
@@ -120,10 +121,10 @@ public class SamgodsPriceReader {
 					final Commodity commodity = Commodity.values()[this.getIntValue("varugrupp") - 1];
 
 					if ("Zone".equals(from)) {
-						getOrShipmentCreatePrices(commodity, TransportMode.valueOf(to))
+						getOrCreateShipmentCreatePrices(commodity, TransportMode.valueOf(to))
 								.setLoadingDuration_min(duration_min);
 					} else if ("Zone".equals(to)) {
-						getOrShipmentCreatePrices(commodity, TransportMode.valueOf(from))
+						getOrCreateShipmentCreatePrices(commodity, TransportMode.valueOf(from))
 								.setUnloadingDuration_min(duration_min);
 					} else {
 						getOrCreateTransshipmentPrices(commodity).setDuration_min(TransportMode.valueOf(from),
@@ -145,16 +146,36 @@ public class SamgodsPriceReader {
 
 	// -------------------- INTERNALS --------------------
 
-	ProportionalLinkPrices getOrShipmentCreatePrices(Commodity commodity, TransportMode mode) {
-		return this.commodity2mode2shipmentPrices.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
-				.computeIfAbsent(mode, m -> new ProportionalLinkPrices(commodity, mode));
+	ProportionalShipmentPrices getOrCreateShipmentCreatePrices(Commodity commodity, TransportMode mode) {
+		ProportionalShipmentPrices result = this.transportPrices.getShipmentPrices(commodity, mode);
+		if (result == null) {
+			result = new ProportionalShipmentPrices(commodity, mode);
+			this.transportPrices.addShipmentPrices(result);
+		}
+		return result;
 	}
 
-	ProportionalNodePrices getOrCreateTransshipmentPrices(Commodity commodity) {
-		return this.commodity2transshipmentPrices.computeIfAbsent(commodity,
-				c -> new ProportionalNodePrices(commodity));
+	ProportionalTransshipmentPrices getOrCreateTransshipmentPrices(Commodity commodity) {
+		ProportionalTransshipmentPrices result = this.transportPrices.getTransshipmentPrices(commodity);
+		if (result == null) {
+			result = new ProportionalTransshipmentPrices(commodity);
+			this.transportPrices.addTransshipmentPrices(result);
+		}
+		return result;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
+
+	public TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> getTransportPrices() {
+		return this.transportPrices;
+	}
+
+	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
+
+	public static void main(String[] args) {
+
+		// TODO CONTINUE HERE
+		
+	}
 
 }
