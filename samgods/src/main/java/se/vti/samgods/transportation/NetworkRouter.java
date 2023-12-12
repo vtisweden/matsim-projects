@@ -183,7 +183,7 @@ public class NetworkRouter {
 
 						@Override
 						public double getLinkMinimumTravelDisutility(Link link) {
-							return this.lp.getMovePrice_1_ton(link);
+							return this.lp.getMovePrice_1_ton(link.getId());
 						}
 
 						@Override

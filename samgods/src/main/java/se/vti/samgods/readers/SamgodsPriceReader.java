@@ -22,6 +22,7 @@ package se.vti.samgods.readers;
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.network.Network;
 
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileHandler;
@@ -51,12 +52,16 @@ public class SamgodsPriceReader {
 //	private final Map<Commodity, ProportionalNodePrices> commodity2transshipmentPrices = new LinkedHashMap<>(
 //			Commodity.values().length);
 
-	private final TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = new TransportPrices<>();
+	private final Network network;
 
+	private final TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = new TransportPrices<>();
+	
 	// -------------------- CONSTRUCTION --------------------
 
-	public SamgodsPriceReader(String linkPriceFile, String nodePriceFile, String nodeDurationFile) {
+	public SamgodsPriceReader(Network network, String linkPriceFile, String nodePriceFile, String nodeDurationFile) {
 
+		this.network = network;
+		
 		{
 			log.info("Loading samgods shipment (link) prices: " + linkPriceFile);
 			final TabularFileHandler handler = new AbstractTabularFileHandlerWithHeaderLine() {
@@ -149,7 +154,7 @@ public class SamgodsPriceReader {
 	ProportionalShipmentPrices getOrCreateShipmentCreatePrices(Commodity commodity, TransportMode mode) {
 		ProportionalShipmentPrices result = this.transportPrices.getShipmentPrices(commodity, mode);
 		if (result == null) {
-			result = new ProportionalShipmentPrices(commodity, mode);
+			result = new ProportionalShipmentPrices(this.network, commodity, mode);
 			this.transportPrices.addShipmentPrices(result);
 		}
 		return result;
@@ -170,15 +175,4 @@ public class SamgodsPriceReader {
 		return this.transportPrices;
 	}
 
-	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
-
-	public static void main(String[] args) {
-		System.out.println("STARTED ...");
-
-		SamgodsPriceReader reader = new SamgodsPriceReader("./2023-06-01_basecase/LinkPrices.csv",
-				"./2023-06-01_basecase/NodePrices.csv", "./2023-06-01_basecase/NodeTimes.csv");
-		System.out.println(reader.getTransportPrices());
-
-		System.out.println("... DONE");
-	}
 }

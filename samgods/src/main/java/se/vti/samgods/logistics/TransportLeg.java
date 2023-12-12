@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.matsim.api.core.v01.Id;
@@ -42,7 +43,9 @@ public class TransportLeg {
 
 	private final char samgodsMode;
 
-	private List<Link> route;
+	private List<Link> route = null;
+	private Double length_m = null;
+	private Double duration_s = null;
 
 	public TransportLeg(OD od, TransportMode mode, char samgodsMode) {
 		this.od = od;
@@ -75,11 +78,25 @@ public class TransportLeg {
 	}
 
 	public void setRoute(final List<Link> route) {
-		this.route = route;
+		this.route = Collections.unmodifiableList(route);
+		this.length_m = 0.0;
+		this.duration_s = 0.0;
+		for (Link link : route) {
+			this.length_m += link.getLength();
+			this.duration_s += link.getLength() / link.getFreespeed();
+		}
 	}
 
-	public List<Link> getRoute() {
+	public List<Link> getRouteView() {
 		return this.route;
+	}
+
+	public double getLength_m() {
+		return this.length_m;
+	}
+
+	public double getDuration_s() {
+		return this.duration_s;
 	}
 
 }

@@ -22,6 +22,7 @@ package se.vti.samgods;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
@@ -46,19 +47,17 @@ public class TransportPrices<S extends ShipmentPrices, T extends TransshipmentPr
 
 		TransportMode getMode();
 
-		double getMovePrice_1_ton(Link link);
+		double getMovePrice_1_ton(Id<Link> link);
 
-		default double getMoveDuration_h(Link link) {
-			return Units.H_PER_S * Math.max(1.0, (link.getLength() / link.getFreespeed()));
-		}
+		double getMoveDuration_min(Id<Link> link);
 
-		double getLoadingPrice_1_ton(Node node);
+		double getLoadingPrice_1_ton(Id<Node> node);
 
-		double getUnloadingPrice_1_ton(Node node);
+		double getUnloadingPrice_1_ton(Id<Node> node);
 
-		double getLoadingDuration_min(Node node);
+		double getLoadingDuration_min(Id<Node> node);
 
-		double getUnloadingDuration_min(Node node);
+		double getUnloadingDuration_min(Id<Node> node);
 
 		ShipmentPrices deepCopy();
 
@@ -68,9 +67,9 @@ public class TransportPrices<S extends ShipmentPrices, T extends TransshipmentPr
 
 		Commodity getCommodity();
 
-		double getTransshipmentPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode);
+		double getTransshipmentPrice_1_ton(Id<Node> node, TransportMode fromMode, TransportMode toMode);
 
-		double getTransshipmentDuration_min(Node node, TransportMode fromMode, TransportMode toMode);
+		double getTransshipmentDuration_min(Id<Node> node, TransportMode fromMode, TransportMode toMode);
 
 		TransshipmentPrices deepCopy();
 

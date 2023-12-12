@@ -22,6 +22,7 @@ package se.vti.samgods.transportation.pricing;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -68,12 +69,12 @@ public class ProportionalTransshipmentPrices implements TransshipmentPrices {
 	}
 
 	@Override
-	public double getTransshipmentPrice_1_ton(Node node, TransportMode fromMode, TransportMode toMode) {
+	public double getTransshipmentPrice_1_ton(Id<Node> nodeId, TransportMode fromMode, TransportMode toMode) {
 		return this.mode2mode2price_1_ton.computeIfAbsent(fromMode, m -> new LinkedHashMap<>()).get(toMode);
 	}
 
 	@Override
-	public double getTransshipmentDuration_min(Node node, TransportMode fromMode, TransportMode toMode) {
+	public double getTransshipmentDuration_min(Id<Node> nodeId, TransportMode fromMode, TransportMode toMode) {
 		return this.mode2mode2duration_min.computeIfAbsent(fromMode, m -> new LinkedHashMap<>()).get(toMode);
 	}
 

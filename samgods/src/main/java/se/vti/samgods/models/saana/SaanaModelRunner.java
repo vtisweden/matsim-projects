@@ -78,17 +78,24 @@ public class SaanaModelRunner {
 			demand.setTransportChains(commodity, commodityReader.getOd2transportChains());
 		}
 
-//		for (Commodity commodity : consideredCommodities) {
-//			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
-//		}
+		for (Commodity commodity : consideredCommodities) {
+			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
+		}
 
 		/*
-		 * INITIALIZE PRICES
+		 * PREPARE SUPPLY
 		 */
-		final SamgodsPriceReader priceReader = new SamgodsPriceReader("./2023-06-01_basecase/LinkPrices.csv",
-				"./2023-06-01_basecase/NodePrices.csv", "./2023-06-01_basecase/NodeTimes.csv");
+
+		final SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
+				"./2023-06-01_basecase/link_table.csv");
+
+		final SamgodsPriceReader priceReader = new SamgodsPriceReader(networkReader.getNetwork(),
+				"./2023-06-01_basecase/LinkPrices.csv", "./2023-06-01_basecase/NodePrices.csv",
+				"./2023-06-01_basecase/NodeTimes.csv");
 		final TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = priceReader
 				.getTransportPrices();
+
+		final TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null, transportPrices);
 
 		// FIXME >>> This is a hack to test despite of dubious air prices >>>
 		for (Commodity commodity : SamgodsConstants.Commodity.values()) {
@@ -96,7 +103,7 @@ public class SaanaModelRunner {
 			if (airPrices == null) {
 				final ProportionalShipmentPrices actualAirPrices = transportPrices
 						.getShipmentPrices(Commodity.AIR, TransportMode.Air).deepCopy();
-				airPrices = new ProportionalShipmentPrices(commodity, TransportMode.Air);
+				airPrices = new ProportionalShipmentPrices(supply.getNetwork(), commodity, TransportMode.Air);
 				airPrices.setLoadingDuration_min(actualAirPrices.getLoadingDuration_min());
 				airPrices.setLoadingPrice_1_ton(actualAirPrices.getLoadingPrice_1_ton());
 				airPrices.setMovePrice_1_kmH(actualAirPrices.getMovePrice_1_tonM());
@@ -106,15 +113,6 @@ public class SaanaModelRunner {
 			}
 		}
 		// FIXME <<< This is a hack to test despite of dubious air prices <<<
-
-		/*
-		 * PREPARE SUPPLY
-		 */
-
-		final SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
-				"./2023-06-01_basecase/link_table.csv");
-
-		final TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null, transportPrices);
 
 		/*
 		 * PREPARE DEMAND/SUPPLY INTERACTIONS

@@ -70,7 +70,7 @@ public class TransportChainUtils {
 					leg.getMode();
 					leg.getOrigin();
 					leg.getDestination();
-					leg.getRoute();
+					leg.getRouteView();
 
 				}
 
@@ -115,10 +115,10 @@ public class TransportChainUtils {
 	}
 
 	public static double computeLength_m(TransportLeg leg) {
-		if (leg.getRoute() == null) {
+		if (leg.getRouteView() == null) {
 			return 0.0;
 		} else {
-			return leg.getRoute().stream().mapToDouble(l -> l.getLength()).sum();
+			return leg.getRouteView().stream().mapToDouble(l -> l.getLength()).sum();
 		}
 	}
 
