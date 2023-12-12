@@ -24,26 +24,26 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.jfree.util.Log;
-
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportChainUtils;
-import se.vti.samgods.readers.TransportChainsReducer;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class SaanaTransportChainReducer extends TransportChainsReducer {
+public class SaanaTransportChainReducer {
 
 	public SaanaTransportChainReducer() {
 	}
 
-	@Override
+	public void reduce(final Map<OD, List<TransportChain>> od2chains) {
+		od2chains.entrySet().stream().forEach(e -> this.reduce(e.getKey(), e.getValue()));
+	}
+
 	public void reduce(final OD od, final List<TransportChain> chains) {
 //		Log.info("  chains before: " + chains.size());
 		final Map<TransportMode, TransportChain> mode2representativeChain = new LinkedHashMap<>(

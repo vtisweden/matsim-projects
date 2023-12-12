@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -22,17 +22,23 @@ package se.vti.samgods.models.saana;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.TransportPrices;
+import se.vti.samgods.TransportPrices.ShipmentPrices;
+import se.vti.samgods.TransportPrices.TransshipmentPrices;
 import se.vti.samgods.logistics.Shipment;
+import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction;
 import se.vti.samgods.logistics.choicemodel.UtilityFunction;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class SaanaUtilityFunction implements ShipmentCostFunction, UtilityFunction {
-
-	final boolean intitialTransshipmentCosts = true;
-	final boolean finalTransshipmentCosts = true;
 
 	class Betas {
 		final double transportCostCoeff;
@@ -51,9 +57,9 @@ public class SaanaUtilityFunction implements ShipmentCostFunction, UtilityFuncti
 
 	private final Map<SamgodsConstants.Commodity, Betas> commodity2betas = new LinkedHashMap<>();
 
-	private TransportPrices transportPrices;
-	
-	public SaanaUtilityFunction(TransportPrices transportPrices) {
+	private TransportPrices<?, ?> transportPrices;
+
+	public SaanaUtilityFunction(TransportPrices<?, ?> transportPrices) {
 		this.transportPrices = transportPrices;
 	}
 
@@ -62,23 +68,38 @@ public class SaanaUtilityFunction implements ShipmentCostFunction, UtilityFuncti
 
 		double transportCostSum = 0.0;
 		double durationSum_h = 0.0;
-//		if (this.intitialTransshipmentCosts) {
-//			final UnitPrice initialTransshipmentCost = this.transportPrices.getUnitPrice(shipment.getCommmodity(),
-//					shipment.getTransportChain().getOrigin());
-//			transportCostSum += shipment.getSize_ton() * initialTransshipmentCost.getTransportPrice_1_ton();
-//			durationSum_h += initialTransshipmentCost.getTransportDuration_h();
-//		}
-//		for (TransportLeg leg : shipment.getTransportChain().getLegs()) {
-//			final UnitPrice transportCost = this.transportPrices.getUnitPrice(shipment.getCommmodity(), leg);
-//			transportCostSum += shipment.getSize_ton() * transportCost.getTransportPrice_1_ton();
-//			durationSum_h = transportCost.getTransportDuration_h();
-//			if (this.finalTransshipmentCosts
-//					|| !shipment.getTransportChain().getDestination().equals(leg.getDestination())) {
-//				final UnitPrice transshipmentCost = this.transportPrices.getUnitPrice(shipment.getCommmodity(), leg.getDestination());
-//				transportCostSum += shipment.getSize_ton() * transshipmentCost.getTransportPrice_1_ton();
-//				durationSum_h = transshipmentCost.getTransportDuration_h();
-//			}
-//		}
+
+		// loading
+		final ShipmentPrices initialShipmentPrices = this.transportPrices.getShipmentPrices(shipment.getCommmodity(),
+				shipment.getTransportChain().getLegs().get(0).getMode());
+		transportCostSum += shipment.getSize_ton() * initialShipmentPrices.getLoadingPrice_1_ton(null);
+		durationSum_h += Units.H_PER_MIN * initialShipmentPrices.getLoadingDuration_min(null);
+
+		for (TransportLeg leg : shipment.getTransportChain().getLegs()) {
+
+			// move along a leg
+			// TODO EACH LEG MAY HAVE MULTIPLE LINKS
+			final ShipmentPrices shipmentPrices = this.transportPrices.getShipmentPrices(shipment.getCommmodity(),
+					leg.getMode());
+			transportCostSum += shipment.getSize_ton() * shipmentPrices.getMovePrice_1_ton(null);
+			durationSum_h = shipmentPrices.getMoveDuration_h(null);
+
+			// transshipment, unless last
+			if (!shipment.getTransportChain().getDestination().equals(leg.getDestination())) {
+				final TransshipmentPrices transshipmentPrices = this.transportPrices
+						.getTransshipmentPrices(shipment.getCommmodity());
+				transportCostSum += shipment.getSize_ton()
+						* transshipmentPrices.getTransshipmentPrice_1_ton(null, null, null);
+				durationSum_h = Units.H_PER_MIN * transshipmentPrices.getTransshipmentDuration_min(null, null, null);
+			}
+		}
+
+		// unloading
+		final ShipmentPrices finalShipmentPrices = this.transportPrices.getShipmentPrices(shipment.getCommmodity(),
+				shipment.getTransportChain().getLegs().get(shipment.getTransportChain().getLegs().size() - 1)
+						.getMode());
+		transportCostSum += shipment.getSize_ton() * finalShipmentPrices.getUnloadingPrice_1_ton(null);
+		durationSum_h += Units.H_PER_MIN * initialShipmentPrices.getUnloadingDuration_min(null);
 
 		final double totalDuration_yr = durationSum_h / 24.0 / 365.0;
 		final double interShipmentDuration_yr = 1.0 / shipment.getFrequency_1_yr();
@@ -88,8 +109,8 @@ public class SaanaUtilityFunction implements ShipmentCostFunction, UtilityFuncti
 		final double capitalCost = betas.carryingCostCoeff_1_yrTon * totalDuration_yr * shipment.getSize_ton();
 		final double valueDensity = betas.carryingCostCoeff_1_yrTon * interShipmentDuration_yr * shipment.getSize_ton();
 
-		return new ShipmentCost(durationSum_h, transportCostSum, capitalCost, valueDensity);	
-		}
+		return new ShipmentCost(durationSum_h, transportCostSum, capitalCost, valueDensity);
+	}
 
 	@Override
 	public double computeUtility(Shipment shipment, ShipmentCost shipmentCost) {

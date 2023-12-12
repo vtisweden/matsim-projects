@@ -19,15 +19,11 @@
  */
 package se.vti.samgods.models.saana;
 
-import java.util.Arrays;
 import java.util.List;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.Shipment;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.logistics.choicemodel.Alternative;
-import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
 import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction;
 import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction.ShipmentCost;
 import se.vti.samgods.logistics.choicemodel.SizeClass;
