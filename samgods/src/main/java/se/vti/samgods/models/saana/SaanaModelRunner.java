@@ -90,8 +90,22 @@ public class SaanaModelRunner {
 		final TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = priceReader
 				.getTransportPrices();
 
-//		System.out.println(transportPrices);
-//		System.exit(0);
+		// FIXME >>> This is a hack to test despite of dubious air prices >>>
+		for (Commodity commodity : SamgodsConstants.Commodity.values()) {
+			ProportionalShipmentPrices airPrices = transportPrices.getShipmentPrices(commodity, TransportMode.Air);
+			if (airPrices == null) {
+				final ProportionalShipmentPrices actualAirPrices = transportPrices
+						.getShipmentPrices(Commodity.AIR, TransportMode.Air).deepCopy();
+				airPrices = new ProportionalShipmentPrices(commodity, TransportMode.Air);
+				airPrices.setLoadingDuration_min(actualAirPrices.getLoadingDuration_min());
+				airPrices.setLoadingPrice_1_ton(actualAirPrices.getLoadingPrice_1_ton());
+				airPrices.setMovePrice_1_kmH(actualAirPrices.getMovePrice_1_tonM());
+				airPrices.setUnloadingDuration_min(actualAirPrices.getUnloadingDuration_min());
+				airPrices.setUnloadingPrice_1_ton(actualAirPrices.getUnloadingPrice_1_ton());
+				transportPrices.addShipmentPrices(airPrices);
+			}
+		}
+		// FIXME <<< This is a hack to test despite of dubious air prices <<<
 
 		/*
 		 * PREPARE SUPPLY
@@ -124,8 +138,7 @@ public class SaanaModelRunner {
 
 			log.info("Routing " + commodity.description + ", which uses the following modes: "
 					+ TransportChainUtils.extractUsedModes(od2chains.values()));
-			System.exit(0);
-			
+
 			NetworkRouter router = new NetworkRouter(supply.getNetwork(), supply.getTransportPrice());
 			router.route(commodity, od2chains);
 

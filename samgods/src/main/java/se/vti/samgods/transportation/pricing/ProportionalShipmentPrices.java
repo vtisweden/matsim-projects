@@ -25,7 +25,6 @@ import org.matsim.api.core.v01.network.Node;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportPrices;
-import se.vti.samgods.TransportPrices.ShipmentPrices;
 
 /**
  * 
@@ -37,6 +36,7 @@ public class ProportionalShipmentPrices implements TransportPrices.ShipmentPrice
 	// -------------------- CONSTANTS --------------------
 
 	private final Commodity commodity;
+	
 	private final TransportMode mode;
 
 	private final double linkPriceEps; // to avoid zero edge costs in router
@@ -125,7 +125,7 @@ public class ProportionalShipmentPrices implements TransportPrices.ShipmentPrice
 	}
 
 	@Override
-	public ShipmentPrices deepCopy() {
+	public ProportionalShipmentPrices deepCopy() {
 		final ProportionalShipmentPrices child = new ProportionalShipmentPrices(this.commodity, this.mode,
 				this.linkPriceEps);
 		child.setMovePrice_1_kmH(1000.0 * this.movePrice_1_tonM);
@@ -146,5 +146,25 @@ public class ProportionalShipmentPrices implements TransportPrices.ShipmentPrice
 		result.append("  loading duration [min] = " + this.loadingDuration_min + "\n");
 		result.append("  unloading duration [min] = " + this.unloadingDuration_min + "\n");
 		return result.toString();
+	}
+
+	public Double getMovePrice_1_tonM() {
+		return movePrice_1_tonM;
+	}
+
+	public Double getLoadingPrice_1_ton() {
+		return loadingPrice_1_ton;
+	}
+
+	public Double getUnloadingPrice_1_ton() {
+		return unloadingPrice_1_ton;
+	}
+
+	public Double getLoadingDuration_min() {
+		return loadingDuration_min;
+	}
+
+	public Double getUnloadingDuration_min() {
+		return unloadingDuration_min;
 	}
 }

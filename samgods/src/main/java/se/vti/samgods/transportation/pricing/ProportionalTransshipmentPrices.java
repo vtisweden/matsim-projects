@@ -78,7 +78,7 @@ public class ProportionalTransshipmentPrices implements TransshipmentPrices {
 	}
 
 	@Override
-	public TransshipmentPrices deepCopy() {
+	public ProportionalTransshipmentPrices deepCopy() {
 		ProportionalTransshipmentPrices result = new ProportionalTransshipmentPrices(this.commodity);
 		for (Map.Entry<TransportMode, Map<TransportMode, Double>> entry : this.mode2mode2price_1_ton.entrySet()) {
 			result.mode2mode2price_1_ton.put(entry.getKey(), new LinkedHashMap<>(entry.getValue()));
