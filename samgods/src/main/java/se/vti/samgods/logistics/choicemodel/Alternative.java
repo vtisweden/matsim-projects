@@ -17,51 +17,42 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.logistics.choicemodel;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.logistics.Shipment;
+import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction.ShipmentCost;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Shipment {
+public class Alternative {
 
-	// -------------------- CONSTANTS --------------------
+	// -------------------- PUBLIC CONSTANTS --------------------
 
-	private final Commodity commodity;
+	public final SizeClass sizeClass;
 
-	private final TransportChain transportChain;
+	public final Shipment shipment;
 
-	private final double size_ton;
+	public final ShipmentCost cost;
 
-	private final double frequency_1_yr;
+	public final double utility;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Shipment(Commodity commodity, TransportChain transportChain, double size_ton, double frequency_1_yr) {
-		this.commodity = commodity;
-		this.transportChain = transportChain;
-		this.size_ton = size_ton;
-		this.frequency_1_yr = frequency_1_yr;
+	public Alternative(final SizeClass sizeClass, final Shipment shipment, final ShipmentCost cost,
+			final double utility) {
+		this.sizeClass = sizeClass;
+		this.shipment = shipment;
+		this.cost = cost;
+		this.utility = utility;
 	}
 
-	// -------------------- GETTERS --------------------
+	// -------------------- IMPLEMENTATION --------------------
 
-	public Commodity getCommmodity() {
-		return this.commodity;
-	}
-
-	public TransportChain getTransportChain() {
-		return this.transportChain;
-	}
-
-	public double getSize_ton() {
-		return this.size_ton;
-	}
-
-	public double getFrequency_1_yr() {
-		return this.frequency_1_yr;
+	@Override
+	public String toString() {
+		return "TODO";
 	}
 }

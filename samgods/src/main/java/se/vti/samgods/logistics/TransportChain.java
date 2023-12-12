@@ -28,6 +28,11 @@ import org.matsim.api.core.v01.network.Node;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class TransportChain {
 
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();

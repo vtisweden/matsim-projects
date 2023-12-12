@@ -23,12 +23,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.TransportPrices;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.TransportPrices;
 import se.vti.samgods.logistics.Shipment;
-import se.vti.samgods.logistics.ShipmentCostCalculator;
+import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction;
+import se.vti.samgods.logistics.choicemodel.UtilityFunction;
 
-public class SaanaUtilityFunction implements ShipmentCostCalculator, TransportChainAndShipmentChoiceModelImpl.UtilityFunction {
+public class SaanaUtilityFunction implements ShipmentCostFunction, UtilityFunction {
 
 	final boolean intitialTransshipmentCosts = true;
 	final boolean finalTransshipmentCosts = true;

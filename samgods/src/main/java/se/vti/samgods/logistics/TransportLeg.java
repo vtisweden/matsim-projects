@@ -29,6 +29,11 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class TransportLeg {
 
 	private final OD od;

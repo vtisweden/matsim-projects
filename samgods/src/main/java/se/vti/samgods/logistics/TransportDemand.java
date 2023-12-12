@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -24,27 +24,40 @@ import java.util.List;
 import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class TransportDemand {
 
-	private Map<Commodity, PWCMatrix> commodity2pwcMatrix = new LinkedHashMap<>(16);
+	// -------------------- MEMBERS --------------------
+
+	private Map<Commodity, PWCMatrix> commodity2pwcMatrix = new LinkedHashMap<>(Commodity.values().length);
 
 	private Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains = new LinkedHashMap<>(
-			16);
-	
+			Commodity.values().length);
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public TransportDemand() {
+	}
+
+	// -------------------- SETTERS AND GETTERS --------------------
+
 	public void setPWCMatrix(Commodity commodity, PWCMatrix matrix) {
 		this.commodity2pwcMatrix.put(commodity, matrix);
 	}
-	
+
 	public void setTransportChains(Commodity commodity, Map<OD, List<TransportChain>> chains) {
 		this.commodity2od2chains.put(commodity, chains);
 	}
-	
+
 	public PWCMatrix getPWCMatrix(final Commodity commodity) {
 		return this.commodity2pwcMatrix.get(commodity);
 	}
@@ -60,6 +73,5 @@ public class TransportDemand {
 	public List<TransportChain> getTransportChains(Commodity commodity, Id<Node> origin, Id<Node> destination) {
 		return this.getTransportChains(commodity, new OD(origin, destination));
 	}
-
 
 }

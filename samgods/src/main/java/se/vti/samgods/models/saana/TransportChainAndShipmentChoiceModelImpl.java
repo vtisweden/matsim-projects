@@ -23,19 +23,22 @@ import java.util.Arrays;
 import java.util.List;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.logistics.AbstractTransportChainAndShipmentChoiceModel;
 import se.vti.samgods.logistics.Shipment;
-import se.vti.samgods.logistics.ShipmentCostCalculator;
-import se.vti.samgods.logistics.ShipmentCostCalculator.ShipmentCost;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.logistics.choicemodel.Alternative;
+import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
+import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction;
+import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction.ShipmentCost;
+import se.vti.samgods.logistics.choicemodel.SizeClass;
+import se.vti.samgods.logistics.choicemodel.UtilityFunction;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class TransportChainAndShipmentChoiceModelImpl extends AbstractTransportChainAndShipmentChoiceModel {
+public class TransportChainAndShipmentChoiceModelImpl {
 
 	private enum ShipmentSizeClass implements SizeClass {
 
@@ -76,25 +79,25 @@ public class TransportChainAndShipmentChoiceModelImpl extends AbstractTransportC
 		}
 	};
 
-	public TransportChainAndShipmentChoiceModelImpl(ShipmentCostCalculator costCalculator,
+	public TransportChainAndShipmentChoiceModelImpl(ShipmentCostFunction costCalculator,
 			UtilityFunction utilityFunction) {
-		super(costCalculator, utilityFunction);
+//		super(costCalculator, utilityFunction);
 	}
 
-	@Override
-	protected SizeClass[] allSizeClasses() {
-		return ShipmentSizeClass.values();
-	}
+//	@Override
+//	protected SizeClass[] allSizeClasses() {
+//		return ShipmentSizeClass.values();
+//	}
 
-	@Override
-	public Shipment chooseShipment(Commodity commodity, double totalAmount_ton, List<TransportChain> transportChains) {
-		return null;
-	}
+//	@Override
+//	public Shipment chooseShipment(Commodity commodity, double totalAmount_ton, List<TransportChain> transportChains) {
+//		return null;
+//	}
 
 	public static void main(String[] args) {
 
 		TransportChainAndShipmentChoiceModelImpl model = new TransportChainAndShipmentChoiceModelImpl(
-				new ShipmentCostCalculator() {
+				new ShipmentCostFunction() {
 					@Override
 					public ShipmentCost computeCost(Shipment shipment) {
 						return null;
@@ -116,8 +119,8 @@ public class TransportChainAndShipmentChoiceModelImpl extends AbstractTransportC
 			}
 		};
 
-		for (Alternative alt : model.createChoiceSet(Arrays.asList(testChain), 10000, null)) {
-			System.out.println(alt);
-		}
+//		for (Alternative alt : model.createChoiceSet(Arrays.asList(testChain), 10000, null)) {
+//			System.out.println(alt);
+//		}
 	}
 }

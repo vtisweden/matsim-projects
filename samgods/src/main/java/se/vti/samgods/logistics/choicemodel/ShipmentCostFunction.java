@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,14 +17,32 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.logistics.choicemodel;
 
-import java.util.List;
+import se.vti.samgods.logistics.Shipment;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public interface ShipmentCostFunction {
 
-public interface TransportChainAndShipmentChoiceModel {
+	public class ShipmentCost {
 
-	public Shipment chooseShipment(Commodity commodity, double totalAmount_ton, List<TransportChain> transportChains);
+		public final double transportDuration_h;
+		public final double transportCost;
+		public final double capitalCost;
+		public final double valueDensity;
+
+		public ShipmentCost(double transportDuration_h, double transportCost, double capitalCost, double valueDensity) {
+			this.transportDuration_h = transportDuration_h;
+			this.transportCost = transportCost;
+			this.capitalCost = capitalCost;
+			this.valueDensity = valueDensity;
+		}
+	}
+
+	public ShipmentCost computeCost(Shipment shipment);
 
 }
