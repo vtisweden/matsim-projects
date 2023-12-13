@@ -51,6 +51,12 @@ public class Alternative<C extends ShipmentCost> {
 
 	@Override
 	public String toString() {
-		return "TODO";
+		StringBuffer result = new StringBuffer();
+		result.append("commodity " + shipment.getCommmodity() + " of total size "
+				+ this.shipment.getFrequency_1_yr() * this.shipment.getSize_ton() + "ton in relation "
+				+ shipment.getTransportChain().getOrigin() + "/" + shipment.getTransportChain().getDestination()
+				+ ": ");
+		result.append("shipmentSizeClass " + sizeClass + ", chain " + shipment.getModeSequence());
+		return result.toString();
 	}
 }

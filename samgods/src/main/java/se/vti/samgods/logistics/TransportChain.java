@@ -19,13 +19,13 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
@@ -59,6 +59,14 @@ public class TransportChain {
 
 	public Id<Node> getDestination() {
 		return this.legs.get(this.legs.size() - 1).getDestination();
+	}
+
+	public List<TransportMode> getModeSequence() {
+		final List<TransportMode> result = new ArrayList<>(this.legs.size());
+		for (TransportLeg leg : this.legs) {
+			result.add(leg.getMode());
+		}		
+		return result;
 	}
 
 	// FIXME Simplifies away transshipments within the same mode.

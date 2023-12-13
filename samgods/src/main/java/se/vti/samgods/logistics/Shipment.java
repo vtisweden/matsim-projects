@@ -19,7 +19,11 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
@@ -55,6 +59,14 @@ public class Shipment {
 
 	public TransportChain getTransportChain() {
 		return this.transportChain;
+	}
+
+	public List<TransportMode> getModeSequence() {
+		final List<TransportMode> result = new ArrayList<>(this.transportChain.getLegs().size());
+		for (TransportLeg leg : this.transportChain.getLegs()) {
+			result.add(leg.getMode());
+		}
+		return result;
 	}
 
 	public double getSize_ton() {

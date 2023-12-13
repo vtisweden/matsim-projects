@@ -50,6 +50,7 @@ public class BasicShipmentCostFunction implements ShipmentCostFunction<BasicShip
 		final TransportLeg lastLeg = shipment.getTransportChain().getLegs()
 				.get(shipment.getTransportChain().getLegs().size() - 1);
 
+		TransportLeg previousLeg = null;
 		for (int i = 0; i < shipment.getTransportChain().getLegs().size(); i++) {
 			final TransportLeg leg = shipment.getTransportChain().getLegs().get(i);
 			final ShipmentPrices shipmentPrices = this.transportPrices.getShipmentPrices(shipment.getCommmodity(),
@@ -68,18 +69,22 @@ public class BasicShipmentCostFunction implements ShipmentCostFunction<BasicShip
 			}
 
 			if (leg != lastLeg) {
+				if (previousLeg != null) {
 				// transshipment
 				final TransshipmentPrices transshipmentPrices = this.transportPrices
 						.getTransshipmentPrices(shipment.getCommmodity());
-				transportCostSum += shipment.getSize_ton()
-						* transshipmentPrices.getTransshipmentPrice_1_ton(null, null, null);
-				durationSum_min = transshipmentPrices.getTransshipmentDuration_min(null, null, null);
+				transportCostSum += shipment.getSize_ton() * transshipmentPrices.getTransshipmentPrice_1_ton(
+						previousLeg.getDestination(), previousLeg.getMode(), leg.getMode());
+				durationSum_min = transshipmentPrices.getTransshipmentDuration_min(previousLeg.getDestination(),
+						previousLeg.getMode(), leg.getMode());
+				}
 			} else {
 				// unloading
 				transportCostSum += shipment.getSize_ton()
 						* shipmentPrices.getUnloadingPrice_1_ton(leg.getDestination());
 				durationSum_min += shipmentPrices.getUnloadingDuration_min(leg.getDestination());
 			}
+			previousLeg = leg;
 		}
 
 		return new BasicShipmentCost(Units.H_PER_MIN * durationSum_min, transportCostSum);

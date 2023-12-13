@@ -74,7 +74,7 @@ public class TransportSupply {
 		return this.vehicleFleet;
 	}
 
-	public TransportPrices getTransportPrice() {
+	public TransportPrices getTransportPrices() {
 		return this.transportPrices;
 	}
 

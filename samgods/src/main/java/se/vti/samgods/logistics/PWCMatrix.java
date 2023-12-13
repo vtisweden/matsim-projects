@@ -30,7 +30,6 @@ import org.matsim.api.core.v01.network.Node;
 
 import floetteroed.utilities.Tuple;
 import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 
 public class PWCMatrix {
@@ -75,9 +74,13 @@ public class PWCMatrix {
 	public int getRelationsCnt() {
 		return this.od2amount_ton_yr.size();
 	}
-	
+
 	public double getTotalFreightDemand(final Tuple<Id<Node>, Id<Node>> od) {
 		return this.od2amount_ton_yr.getOrDefault(od, 0.0);
+	}
+
+	public Map<OD, Double> getOd2AmountView() {
+		return Collections.unmodifiableMap(this.od2amount_ton_yr);
 	}
 
 }

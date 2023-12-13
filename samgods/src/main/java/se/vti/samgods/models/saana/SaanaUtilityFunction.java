@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,44 +17,23 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods;
+package se.vti.samgods.models.saana;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
+import se.vti.samgods.logistics.Shipment;
+import se.vti.samgods.logistics.choicemodel.ShipmentUtilityFunction;
+import se.vti.samgods.transportation.pricing.BasicShipmentCost;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class OD {
-
-	public final Id<Node> origin;
-	public final Id<Node> destination;
-
-	public OD(Id<Node> origin, Id<Node> destination) {
-		this.origin = origin;
-		this.destination = destination;
-	}
+class SaanaUtilityFunction implements ShipmentUtilityFunction<BasicShipmentCost>{
 
 	@Override
-	public boolean equals(Object other) {
-		if (other instanceof OD) {
-			final OD otherOD = (OD) other;
-			return (this.origin.equals(otherOD.origin) && (this.destination.equals(otherOD.destination)));
-		} else {
-			return false;
-		}
-	}
-
-	@Override
-	public int hashCode() {
-		return this.origin.hashCode() + 31 * this.destination.hashCode();
-	}
-	
-	@Override
-	public String toString() {
-		return this.origin + "/" + this.destination;
+	public double computeUtility(Shipment shipment, BasicShipmentCost shipmentCost) {
+		// TODO just for testing
+		return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr();
 	}
 
 }

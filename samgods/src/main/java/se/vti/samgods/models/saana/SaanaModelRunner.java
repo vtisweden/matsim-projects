@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
+import org.matsim.core.gbl.MatsimRandom;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
@@ -39,11 +40,16 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportChainUtils;
 import se.vti.samgods.logistics.TransportDemand;
+import se.vti.samgods.logistics.choicemodel.Alternative;
+import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
+import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
 import se.vti.samgods.readers.ChainChoiReader;
 import se.vti.samgods.readers.SamgodsNetworkReader;
 import se.vti.samgods.readers.SamgodsPriceReader;
 import se.vti.samgods.transportation.NetworkRouter;
 import se.vti.samgods.transportation.TransportSupply;
+import se.vti.samgods.transportation.pricing.BasicShipmentCost;
+import se.vti.samgods.transportation.pricing.BasicShipmentCostFunction;
 import se.vti.samgods.transportation.pricing.ProportionalShipmentPrices;
 import se.vti.samgods.transportation.pricing.ProportionalTransshipmentPrices;
 import se.vti.samgods.transportation.pricing.TransportPrices;
@@ -64,7 +70,7 @@ public class SaanaModelRunner {
 		log.info("STARTED ...");
 
 		final List<SamgodsConstants.Commodity> consideredCommodities = Arrays
-				.asList(SamgodsConstants.Commodity.values()).subList(0, 1);
+				.asList(SamgodsConstants.Commodity.values()).subList(1, 2);
 
 		/*
 		 * PREPARE DEMAND
@@ -83,7 +89,7 @@ public class SaanaModelRunner {
 				TransportChainUtils.removeChainsWithMode(demand.getTransportChains(commodity).values(),
 						TransportMode.Air);
 			}
-			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
+//			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
 		}
 
 		/*
@@ -124,7 +130,7 @@ public class SaanaModelRunner {
 			log.info("Routing " + commodity.description + ", which uses the following modes: "
 					+ TransportChainUtils.extractUsedModes(od2chains.values()));
 
-			NetworkRouter router = new NetworkRouter(supply.getNetwork(), supply.getTransportPrice());
+			NetworkRouter router = new NetworkRouter(supply.getNetwork(), supply.getTransportPrices());
 			router.route(commodity, od2chains);
 
 			commodities.add(commodity);
@@ -132,24 +138,51 @@ public class SaanaModelRunner {
 			legCounts.add(router.routedLegCnt);
 			mode2routingErrors.add(router.mode2LegRoutingFailures);
 
-			chainsBefore.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
-			(new SaanaTransportChainReducer()).reduce(od2chains);
-			chainsAfter.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
-			demand.setTransportChains(commodity, od2chains);
+//			chainsBefore.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
+//			(new SaanaTransportChainReducer()).reduce(od2chains);
+//			chainsAfter.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
+//			demand.setTransportChains(commodity, od2chains);
 		}
 
-		System.out.println();
-		for (int i = 0; i < commodities.size(); i++) {
-			System.out.println(commodities.get(i));
-			System.out.println("  chains before: " + chainsBefore.get(i));
-			System.out.println("  chains after: " + chainsAfter.get(i));
-			System.out.println("  found legs: " + legCounts.get(i));
-			System.out
-					.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
-			for (Map.Entry<TransportMode, Set<Id<Node>>> entry : mode2routingErrors.get(i).entrySet()) {
-				System.out.println("  failures with mode " + entry.getKey() + " at nodes: " + entry.getValue());
+//		System.out.println();
+//		for (int i = 0; i < commodities.size(); i++) {
+//			System.out.println(commodities.get(i));
+//			System.out.println("  chains before: " + chainsBefore.get(i));
+//			System.out.println("  chains after: " + chainsAfter.get(i));
+//			System.out.println("  found legs: " + legCounts.get(i));
+//			System.out
+//					.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
+//			for (Map.Entry<TransportMode, Set<Id<Node>>> entry : mode2routingErrors.get(i).entrySet()) {
+//				System.out.println("  failures with mode " + entry.getKey() + " at nodes: " + entry.getValue());
+//			}
+//		}
+
+		// >>> CHOICE
+
+		BasicShipmentCostFunction costFunction = new BasicShipmentCostFunction(supply.getTransportPrices());
+		SaanaUtilityFunction utilityFunction = new SaanaUtilityFunction();
+		ChoiceSetGenerator<BasicShipmentCost> choiceSetGenerator = new ChoiceSetGenerator<>(costFunction,
+				utilityFunction, SaanaShipmentSizeClass.values());
+		ChoiceModelUtils choiceModel = new ChoiceModelUtils(MatsimRandom.getRandom());
+		for (Commodity commodity : commodities) {
+			for (Map.Entry<OD, Double> e : demand.getPWCMatrix(commodity).getOd2AmountView().entrySet()) {
+				OD od = e.getKey();
+				double amount_ton = e.getValue();
+				List<TransportChain> chains = demand.getTransportChains(commodity, od);
+				if (chains.size() > 0) {
+					List<Alternative<BasicShipmentCost>> alternatives = choiceSetGenerator.createChoiceSet(chains,
+							amount_ton, commodity);
+					Alternative<BasicShipmentCost> choice = choiceModel.choose(alternatives, utilityFunction);
+					System.out.println(choice);
+				} else {
+					System.out.println("No transport chains for commodity " + commodity + " in OD pair " + od + ", "
+							+ amount_ton + " not assigned.");
+				}
+
 			}
 		}
+
+		// <<< CHOICE
 
 		log.info("... DONE");
 	}
