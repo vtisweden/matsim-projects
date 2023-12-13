@@ -50,10 +50,10 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportPrices;
-import se.vti.samgods.TransportPrices.ShipmentPrices;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.transportation.pricing.TransportPrices;
+import se.vti.samgods.transportation.pricing.TransportPrices.ShipmentPrices;
 
 /**
  * 

@@ -19,15 +19,10 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
-import se.vti.samgods.logistics.Shipment;
+public interface ShipmentCost {
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface ShipmentCostFunction<C extends ShipmentCost> {
+	public double getMonetaryCost();
 
-	public C computeCost(Shipment shipment);
+	public double getDuration_h();
 
 }

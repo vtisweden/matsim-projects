@@ -36,7 +36,6 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportPrices;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportChainUtils;
 import se.vti.samgods.logistics.TransportDemand;
@@ -47,6 +46,7 @@ import se.vti.samgods.transportation.NetworkRouter;
 import se.vti.samgods.transportation.TransportSupply;
 import se.vti.samgods.transportation.pricing.ProportionalShipmentPrices;
 import se.vti.samgods.transportation.pricing.ProportionalTransshipmentPrices;
+import se.vti.samgods.transportation.pricing.TransportPrices;
 
 /**
  * 
@@ -79,6 +79,10 @@ public class SaanaModelRunner {
 		}
 
 		for (Commodity commodity : consideredCommodities) {
+			if (!Commodity.AIR.equals(commodity)) {
+				TransportChainUtils.removeChainsWithMode(demand.getTransportChains(commodity).values(),
+						TransportMode.Air);
+			}
 			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
 		}
 
@@ -96,23 +100,6 @@ public class SaanaModelRunner {
 				.getTransportPrices();
 
 		final TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null, transportPrices);
-
-		// FIXME >>> This is a hack to test despite of dubious air prices >>>
-		for (Commodity commodity : SamgodsConstants.Commodity.values()) {
-			ProportionalShipmentPrices airPrices = transportPrices.getShipmentPrices(commodity, TransportMode.Air);
-			if (airPrices == null) {
-				final ProportionalShipmentPrices actualAirPrices = transportPrices
-						.getShipmentPrices(Commodity.AIR, TransportMode.Air).deepCopy();
-				airPrices = new ProportionalShipmentPrices(supply.getNetwork(), commodity, TransportMode.Air);
-				airPrices.setLoadingDuration_min(actualAirPrices.getLoadingDuration_min());
-				airPrices.setLoadingPrice_1_ton(actualAirPrices.getLoadingPrice_1_ton());
-				airPrices.setMovePrice_1_kmH(actualAirPrices.getMovePrice_1_tonM());
-				airPrices.setUnloadingDuration_min(actualAirPrices.getUnloadingDuration_min());
-				airPrices.setUnloadingPrice_1_ton(actualAirPrices.getUnloadingPrice_1_ton());
-				transportPrices.addShipmentPrices(airPrices);
-			}
-		}
-		// FIXME <<< This is a hack to test despite of dubious air prices <<<
 
 		/*
 		 * PREPARE DEMAND/SUPPLY INTERACTIONS

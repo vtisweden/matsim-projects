@@ -19,7 +19,9 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,6 +82,23 @@ public class TransportChainUtils {
 	}
 
 	// SO FAR USED BELOW
+
+	public static void removeChainsWithMode(Collection<List<TransportChain>> collectionOfListOfChains,
+			TransportMode mode) {
+		for (List<TransportChain> testedChains : collectionOfListOfChains) {
+			List<TransportChain> chainsToRemove = new ArrayList<>();
+			for (TransportChain chain : testedChains) {
+				boolean foundMode = false;
+				for (Iterator<TransportLeg> it = chain.getLegs().iterator(); it.hasNext() && !foundMode;) {
+					if (it.next().getMode().equals(mode)) {
+						chainsToRemove.add(chain);
+						foundMode = true;
+					}
+				}
+			}
+			testedChains.removeAll(chainsToRemove);
+		}
+	}
 
 	public static Set<TransportMode> extractUsedModes(Collection<List<TransportChain>> collectionOfChains) {
 		return collectionOfChains.stream().flatMap(l -> l.stream()).flatMap(c -> c.getLegs().stream())

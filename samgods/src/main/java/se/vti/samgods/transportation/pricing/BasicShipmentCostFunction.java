@@ -17,63 +17,31 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.models.saana;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
+package se.vti.samgods.transportation.pricing;
 
 import org.matsim.api.core.v01.network.Link;
 
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.TransportPrices;
-import se.vti.samgods.TransportPrices.ShipmentPrices;
-import se.vti.samgods.TransportPrices.TransshipmentPrices;
+import floetteroed.utilities.Units;
 import se.vti.samgods.logistics.Shipment;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction;
-import se.vti.samgods.logistics.choicemodel.UtilityFunction;
+import se.vti.samgods.transportation.pricing.TransportPrices.ShipmentPrices;
+import se.vti.samgods.transportation.pricing.TransportPrices.TransshipmentPrices;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class SaanaCostAndUtilityFunction implements ShipmentCostFunction, UtilityFunction {
-
-	// -------------------- INNER CLASS --------------------
-
-	class Betas {
-		final double transportCostCoeff;
-		final double inTransitCaptialCostCoeff;
-		final double valueDensityCoeff;
-		final double carryingCostCoeff_1_yrTon;
-
-		Betas(double transportCostCoeff, final double beta_yearlyInTransitCaptialCost, final double beta_valueDensity,
-				final double carryingCostCoeff) {
-			this.transportCostCoeff = transportCostCoeff;
-			this.inTransitCaptialCostCoeff = beta_yearlyInTransitCaptialCost;
-			this.valueDensityCoeff = beta_valueDensity;
-			this.carryingCostCoeff_1_yrTon = carryingCostCoeff;
-		}
-	}
-
-	// -------------------- MEMBERS --------------------
+public class BasicShipmentCostFunction implements ShipmentCostFunction<BasicShipmentCost> {
 
 	private final TransportPrices<?, ?> transportPrices;
 
-	// TODO empty
-	private final Map<SamgodsConstants.Commodity, Betas> commodity2betas = new LinkedHashMap<>();
-
-	// -------------------- CONSTRUCTION --------------------
-
-	public SaanaCostAndUtilityFunction(TransportPrices<?, ?> transportPrices) {
+	public BasicShipmentCostFunction(TransportPrices<?, ?> transportPrices) {
 		this.transportPrices = transportPrices;
 	}
 
-	// --------------- IMPLEMENTATION OF ShipmentCostFunction ---------------
-
-	@Override
-	public ShipmentCost computeCost(final Shipment shipment) {
+	public BasicShipmentCost computeCost(final Shipment shipment) {
 
 		double transportCostSum = 0.0;
 		double durationSum_min = 0.0;
@@ -88,12 +56,12 @@ public class SaanaCostAndUtilityFunction implements ShipmentCostFunction, Utilit
 					leg.getMode());
 
 			if (leg == firstLeg) {
+				// loading
 				transportCostSum += shipment.getSize_ton() * shipmentPrices.getLoadingPrice_1_ton(leg.getOrigin());
 				durationSum_min += shipmentPrices.getLoadingDuration_min(leg.getOrigin());
 			}
 
 			// move along a leg
-
 			for (Link link : leg.getRouteView()) {
 				transportCostSum += shipment.getSize_ton() * shipmentPrices.getMovePrice_1_ton(link.getId());
 				durationSum_min = shipmentPrices.getMoveDuration_min(link.getId());
@@ -107,31 +75,13 @@ public class SaanaCostAndUtilityFunction implements ShipmentCostFunction, Utilit
 						* transshipmentPrices.getTransshipmentPrice_1_ton(null, null, null);
 				durationSum_min = transshipmentPrices.getTransshipmentDuration_min(null, null, null);
 			} else {
+				// unloading
 				transportCostSum += shipment.getSize_ton()
 						* shipmentPrices.getUnloadingPrice_1_ton(leg.getDestination());
 				durationSum_min += shipmentPrices.getUnloadingDuration_min(leg.getDestination());
 			}
 		}
 
-		final double totalDuration_yr = durationSum_min / 60.0 / 24.0 / 365.0;
-		final double interShipmentDuration_yr = 1.0 / shipment.getFrequency_1_yr();
-
-		final Betas betas = this.commodity2betas.get(shipment.getCommmodity());
-
-		final double capitalCost = betas.carryingCostCoeff_1_yrTon * totalDuration_yr * shipment.getSize_ton();
-		final double valueDensity = betas.carryingCostCoeff_1_yrTon * interShipmentDuration_yr * shipment.getSize_ton();
-
-		return new ShipmentCost(durationSum_min / 60.0, transportCostSum, capitalCost, valueDensity);
-	}
-
-	// -------------------- IMPLEMENTATION OF UtilityFunction --------------------
-
-	@Override
-	public double computeUtility(Shipment shipment, ShipmentCost shipmentCost) {
-		final Betas betas = this.commodity2betas.get(shipment.getCommmodity());
-		double utility = betas.transportCostCoeff * shipmentCost.transportCost
-				+ betas.inTransitCaptialCostCoeff * shipmentCost.capitalCost
-				+ betas.valueDensityCoeff * shipmentCost.valueDensity;
-		return utility;
+		return new BasicShipmentCost(Units.H_PER_MIN * durationSum_min, transportCostSum);
 	}
 }

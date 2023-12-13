@@ -29,9 +29,9 @@ import floetteroed.utilities.tabularfileparser.TabularFileHandler;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportPrices;
 import se.vti.samgods.transportation.pricing.ProportionalShipmentPrices;
 import se.vti.samgods.transportation.pricing.ProportionalTransshipmentPrices;
+import se.vti.samgods.transportation.pricing.TransportPrices;
 
 /**
  * 

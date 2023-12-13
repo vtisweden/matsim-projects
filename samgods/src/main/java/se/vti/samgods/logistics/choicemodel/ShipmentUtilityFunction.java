@@ -26,8 +26,8 @@ import se.vti.samgods.logistics.Shipment;
  * @author GunnarF
  *
  */
-public interface ShipmentCostFunction<C extends ShipmentCost> {
+public interface ShipmentUtilityFunction<C extends ShipmentCost> {
 
-	public C computeCost(Shipment shipment);
+	double computeUtility(Shipment shipment, C shipmentCost);
 
 }

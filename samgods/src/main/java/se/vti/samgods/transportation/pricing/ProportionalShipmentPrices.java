@@ -27,7 +27,6 @@ import org.matsim.api.core.v01.network.Node;
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportPrices;
 
 /**
  * 

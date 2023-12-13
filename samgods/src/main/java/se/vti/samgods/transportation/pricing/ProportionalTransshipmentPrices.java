@@ -27,7 +27,7 @@ import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportPrices.TransshipmentPrices;
+import se.vti.samgods.transportation.pricing.TransportPrices.TransshipmentPrices;
 
 /**
  * 

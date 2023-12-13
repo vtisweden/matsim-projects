@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods;
+package se.vti.samgods.transportation.pricing;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,11 +26,10 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportPrices.ShipmentPrices;
-import se.vti.samgods.TransportPrices.TransshipmentPrices;
+import se.vti.samgods.transportation.pricing.TransportPrices.ShipmentPrices;
+import se.vti.samgods.transportation.pricing.TransportPrices.TransshipmentPrices;
 
 /**
  * 

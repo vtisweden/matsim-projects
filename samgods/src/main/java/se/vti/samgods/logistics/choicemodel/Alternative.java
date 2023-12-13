@@ -20,14 +20,13 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import se.vti.samgods.logistics.Shipment;
-import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction.ShipmentCost;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Alternative {
+public class Alternative<C extends ShipmentCost> {
 
 	// -------------------- PUBLIC CONSTANTS --------------------
 
@@ -35,14 +34,13 @@ public class Alternative {
 
 	public final Shipment shipment;
 
-	public final ShipmentCost cost;
+	public final C cost;
 
 	public final double utility;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Alternative(final SizeClass sizeClass, final Shipment shipment, final ShipmentCost cost,
-			final double utility) {
+	public Alternative(final SizeClass sizeClass, final Shipment shipment, final C cost, final double utility) {
 		this.sizeClass = sizeClass;
 		this.shipment = shipment;
 		this.cost = cost;

@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.samgods
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,13 +17,33 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics.choicemodel;
+package se.vti.samgods.transportation.pricing;
 
-import se.vti.samgods.logistics.Shipment;
-import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction.ShipmentCost;
+import se.vti.samgods.logistics.choicemodel.ShipmentCost;
 
-public interface UtilityFunction {
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public class BasicShipmentCost implements ShipmentCost {
 
-	double computeUtility(Shipment shipment, ShipmentCost shipmentCost);
+	private final double duration_h;
+	private final double monetaryCost;
+
+	public BasicShipmentCost(double duration_h, double monetaryCost) {
+		this.duration_h = duration_h;
+		this.monetaryCost = monetaryCost;
+	}
+
+	@Override
+	public double getMonetaryCost() {
+		return this.monetaryCost;
+	}
+
+	@Override
+	public double getDuration_h() {
+		return this.duration_h;
+	}
 
 }

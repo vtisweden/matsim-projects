@@ -25,27 +25,26 @@ import java.util.List;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.Shipment;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction.ShipmentCost;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ChoiceSetGenerator {
+public class ChoiceSetGenerator<C extends ShipmentCost> {
 
 	// -------------------- MEMBERS --------------------
 
-	private final ShipmentCostFunction costCalculator;
+	private final ShipmentCostFunction<C> costCalculator;
 
-	private final UtilityFunction utilityFunction;
+	private final ShipmentUtilityFunction<C> utilityFunction;
 
 	private final SizeClass[] allSizeClasses;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChoiceSetGenerator(final ShipmentCostFunction costCalculator, final UtilityFunction utilityFunction,
-			final SizeClass[] allSizeClasses) {
+	public ChoiceSetGenerator(final ShipmentCostFunction<C> costCalculator,
+			final ShipmentUtilityFunction<C> utilityFunction, final SizeClass[] allSizeClasses) {
 		this.costCalculator = costCalculator;
 		this.utilityFunction = utilityFunction;
 		this.allSizeClasses = allSizeClasses;
@@ -53,17 +52,17 @@ public class ChoiceSetGenerator {
 
 	// -------------------- PARTIAL IMPLEMENTATION --------------------
 
-	public List<Alternative> createChoiceSet(final List<TransportChain> transportChains,
+	public List<Alternative<C>> createChoiceSet(final List<TransportChain> transportChains,
 			final double totalShipmentSize_ton, final Commodity commodity) {
-		final ArrayList<Alternative> result = new ArrayList<>(transportChains.size() * this.allSizeClasses.length);
+		final ArrayList<Alternative<C>> result = new ArrayList<>(transportChains.size() * this.allSizeClasses.length);
 		for (SizeClass sizeClass : this.allSizeClasses) {
 			if (totalShipmentSize_ton >= sizeClass.getUpperValue_ton()) {
 				for (TransportChain transportChain : transportChains) {
 					final double shipmentSize_ton = sizeClass.getUpperValue_ton();
 					final double frequency_1_yr = totalShipmentSize_ton / shipmentSize_ton;
 					final Shipment shipment = new Shipment(commodity, transportChain, shipmentSize_ton, frequency_1_yr);
-					final ShipmentCost shipmentCost = this.costCalculator.computeCost(shipment);
-					result.add(new Alternative(sizeClass, shipment, shipmentCost,
+					final C shipmentCost = this.costCalculator.computeCost(shipment);
+					result.add(new Alternative<>(sizeClass, shipment, shipmentCost,
 							this.utilityFunction.computeUtility(shipment, shipmentCost)));
 				}
 			}

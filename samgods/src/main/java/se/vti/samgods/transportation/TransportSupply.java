@@ -25,8 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.TransportPrices;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.pricing.TransportPrices;
 
 /**
  * Packages the supply (carrier) side of the freight transport system.
