@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -45,6 +46,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.handler.EventHandler;
+import org.matsim.core.gbl.MatsimRandom;
 import org.matsim.core.population.PersonUtils;
 import org.matsim.core.replanning.ReplanningContext;
 import org.matsim.core.replanning.StrategyManager;
@@ -81,6 +83,8 @@ public class EmulationEngine {
 
 	private boolean overwriteTravelTimes = false;
 
+//	private boolean sampleTravelTimePerAgent = false;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	@Inject
@@ -107,6 +111,14 @@ public class EmulationEngine {
 		return this.overwriteTravelTimes;
 	}
 
+//	public void setSampleTravelTimePerAgent(final boolean sampleTravelTimePerAgent) {
+//		this.sampleTravelTimePerAgent = sampleTravelTimePerAgent;
+//	}
+//
+//	public boolean getSampleTravelTimePerAgent() {
+//		return sampleTravelTimePerAgent;
+//	}
+
 	// -------------------- STATIC UTILITIES --------------------
 
 	public static void selectBestPlans(final Population population) {
@@ -131,13 +143,61 @@ public class EmulationEngine {
 
 	// -------------------- IMPLEMENTATION --------------------
 
+	public static Map<Person, Map<String, ? extends TravelTime>> createPerson2mode2travelTime(
+			final Collection<? extends Person> persons, Map<String, ? extends TravelTime> mode2travelTime) {
+		final Map<Person, Map<String, ? extends TravelTime>> result = new ConcurrentHashMap<>(persons.size());
+		for (Person person : persons) {
+			result.put(person, mode2travelTime);
+		}
+		return result;
+	}
+
+	public static Map<Person, Integer> createPerson2ttIndex(final Collection<? extends Person> persons,
+			final int indexCnt, final boolean samplePerPerson) {
+		final Map<Person, Integer> result = new LinkedHashMap<>(persons.size());
+		int index = MatsimRandom.getRandom().nextInt(indexCnt);
+		for (Person person : persons) {
+			if (samplePerPerson) {
+				index = MatsimRandom.getRandom().nextInt(indexCnt);
+			}
+			result.put(person, index);
+		}
+		return result;
+	}
+
+	public static Map<Person, Map<String, ? extends TravelTime>> createPerson2mode2travelTime(
+			final Map<Person, Integer> person2index, final List<Map<String, ? extends TravelTime>> allMode2travelTime) {
+		final Map<Person, Map<String, ? extends TravelTime>> result = new ConcurrentHashMap<>(person2index.size());
+		for (Map.Entry<Person, Integer> e : person2index.entrySet()) {
+			result.put(e.getKey(), allMode2travelTime.get(e.getValue()));
+		}
+		return result;
+	}
+
+	public static Map<Person, Map<String, ? extends TravelTime>> createPerson2mode2travelTime(
+			final Collection<? extends Person> persons,
+			final List<Map<String, ? extends TravelTime>> allMode2travelTime, final boolean samplePerPerson) {
+//		final Map<Person, Map<String, ? extends TravelTime>> result = new ConcurrentHashMap<>(persons.size());
+//		int index = MatsimRandom.getRandom().nextInt(allMode2travelTime.size());
+//		for (Person person : persons) {
+//			if (samplePerPerson) {
+//				index = MatsimRandom.getRandom().nextInt(allMode2travelTime.size());
+//			}
+//			result.put(person, allMode2travelTime.get(index));
+//		}
+//		return result;
+		final Map<Person, Integer> person2ttIndex = createPerson2ttIndex(persons, allMode2travelTime.size(),
+				samplePerPerson);
+		return createPerson2mode2travelTime(person2ttIndex, allMode2travelTime);
+	}
+
 	public void replan(final int matsimIteration,
-			// final TravelTime carTravelTime,
-			final Map<String, ? extends TravelTime> mode2travelTime) {
+			final Map<Person, Map<String, ? extends TravelTime>> person2mode2travelTime) {
+
 		final ReplanningContext replanningContext = this.replanningContextProvider.get();
 
 		removeUnselectedPlans(this.scenario.getPopulation());
-		this.emulate(matsimIteration, mode2travelTime, null);
+		this.emulate(matsimIteration, person2mode2travelTime, null);
 
 		for (int i = 0; i < this.ierConfig.getIterationsPerCycle(); i++) {
 
@@ -147,12 +207,12 @@ public class EmulationEngine {
 			logger.info("[[Suppressing logging while running StrategyManager.]]");
 			final Level originalLogLevel = Logger.getLogger("org.matsim").getLevel();
 			Logger.getLogger("org.matsim").setLevel(Level.ERROR);
-			
+
 			this.strategyManager.run(this.scenario.getPopulation(), replanningContext);
 
 			Logger.getLogger("org.matsim").setLevel(originalLogLevel);
-			
-			this.emulate(matsimIteration, mode2travelTime, null);
+
+			this.emulate(matsimIteration, person2mode2travelTime, null);
 			selectBestPlans(this.scenario.getPopulation());
 			removeUnselectedPlans(this.scenario.getPopulation());
 
@@ -161,17 +221,21 @@ public class EmulationEngine {
 		}
 	}
 
-	public void emulate(int iteration, final Map<String, ? extends TravelTime> mode2travelTime, EventHandler eventsHandler) {
-		this.emulate(this.scenario.getPopulation().getPersons().values(), iteration, mode2travelTime, eventsHandler);
-	}
+//	public void emulate(int iteration, 
+//			final Map<Person, Map<String, ? extends TravelTime>> person2mode2travelTime,
+//			EventHandler eventsHandler) {
+//		this.emulate(this.scenario.getPopulation().getPersons().values(), iteration, 
+//				person2mode2travelTime, 
+//				eventsHandler);
+//	}
 
-	public void emulate(Collection<? extends Person> persons, int iteration,
-			final Map<String, ? extends TravelTime> mode2travelTime, final EventHandler eventsHandler) {
+	public void emulate(int iteration, final Map<Person, Map<String, ? extends TravelTime>> person2mode2travelTime,
+			final EventHandler eventsHandler) {
 
-		Iterator<? extends Person> personIterator = persons.iterator();
+		Iterator<? extends Person> personIterator = person2mode2travelTime.keySet().iterator();
 		List<Thread> threads = new LinkedList<>();
 
-		long totalNumberOfPersons = persons.size();
+		long totalNumberOfPersons = person2mode2travelTime.size();
 		AtomicLong processedNumberOfPersons = new AtomicLong(0);
 		AtomicBoolean finished = new AtomicBoolean(false);
 
@@ -219,9 +283,10 @@ public class EmulationEngine {
 
 					// Emulate batch.
 					for (Person person : batch.values()) {
-						planEmulator.emulate(person, person.getSelectedPlan(), // eventsManager,
-								mode2travelTime, eventsHandler, this.emulationHandlerProvider, iteration, eventsManager,
-								events2score, this.overwriteTravelTimes);
+						planEmulator.emulate(person, person.getSelectedPlan(),
+								// mode2travelTime,
+								person2mode2travelTime.get(person), eventsHandler, this.emulationHandlerProvider,
+								iteration, eventsManager, events2score, this.overwriteTravelTimes);
 					}
 
 					events2score.finish();
