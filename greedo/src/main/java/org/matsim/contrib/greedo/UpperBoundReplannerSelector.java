@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.greedo
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,7 +19,6 @@
  */
 package org.matsim.contrib.greedo;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -29,11 +28,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
-
-import se.vti.utils.matsim.PopulationDistance;
+import org.matsim.contrib.greedo.shouldbeelsewhere.Hacks;
 
 /**
  *
@@ -52,27 +49,52 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	private final Function<Double, Double> quadraticDistanceTransformation;
 
-	private final AmbitionLevelBasedEtaSchedule ambitionGapSchedule;
+	// private final boolean gapRelativeMSA;
+	final GreedoConfigGroup.UpperboundStepSize stepSizeLogic;
 
 	// -------------------- MEMBERS --------------------
 
-	private PopulationDistance populationDistance = null;
+	private AbstractPopulationDistance populationDistance = null;
+
+	private Double initialGap = null;
+
+	private Double sbaytiCounterpartGapThreshold = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	UpperBoundReplannerSelector(final GreedoConfigGroup greedoConfig) {
-		super(greedoConfig.newIterationToTargetReplanningRate());
-		this.quadraticDistanceTransformation = greedoConfig.newQuadraticDistanceTransformation();
-		if (GreedoConfigGroup.UpperboundStepSize.ABSOLUTE.equals(greedoConfig.getUpperboundStepSize())) {
-			this.ambitionGapSchedule = new AmbitionLevelBasedEtaSchedule(
-					greedoConfig.getUpperboundMinimumAverageIterations(), greedoConfig.getUpperboundAverageFraction(),
-					greedoConfig.newIterationToTargetReplanningRate());
-		} else {
-			this.ambitionGapSchedule = null;
-		}
+	UpperBoundReplannerSelector(final Function<Integer, Double> iterationToEta,
+			final Function<Double, Double> quadraticDistanceTransformation,
+			final GreedoConfigGroup.UpperboundStepSize stepSizeLogic
+	// final boolean gapRelativeMSA
+	) {
+		super(iterationToEta);
+		this.quadraticDistanceTransformation = quadraticDistanceTransformation;
+		// this.gapRelativeMSA = gapRelativeMSA;
+		this.stepSizeLogic = stepSizeLogic;
 	}
 
 	// -------------------- INTERNALS --------------------
+
+	private double effectiveEta(final double currentGap) {
+//		if (this.gapRelativeMSA) {
+//			return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap / currentGap);
+//		} else {
+//			return this.getTargetReplanningRate();
+//		}
+		if (GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
+			return this.getTargetReplanningRate();
+		} else if (GreedoConfigGroup.UpperboundStepSize.RelativeToInitialGap.equals(this.stepSizeLogic)) {
+			return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap / currentGap);
+		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpart.equals(this.stepSizeLogic)) {
+			return (this.sbaytiCounterpartGapThreshold / currentGap);
+		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpartExact.equals(this.stepSizeLogic)) {
+
+			return (this.sbaytiGsum - this.sbaytiGcrit * this.sbaytiCnt) / currentGap;
+
+		} else {
+			throw new RuntimeException("Unknown step size logic: " + this.stepSizeLogic);
+		}
+	}
 
 	private double _Q(final double _G, final double _D2, final double epsilon) {
 		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
@@ -82,30 +104,44 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 	// --------------- OVERRIDING OF AbstractReplannerSelector ---------------
 
 	@Override
-	Double getTargetRelaxationRate() {
-		if (this.ambitionGapSchedule != null) {
-			return this.ambitionGapSchedule.getEta(this.getReplanIteration(), true);
-		} else {
-			return super.getTargetRelaxationRate();
-		}
-	}
-
-	@Override
-	void setDistanceToReplannedPopulation(final PopulationDistance populationDistance) {
+	void setDistanceToReplannedPopulation(final AbstractPopulationDistance populationDistance) {
 		this.populationDistance = populationDistance;
 	}
 
+	private Double sbaytiGsum = null;
+	private Integer sbaytiCnt = null;
+	private Double sbaytiGcrit = null;
+
 	@Override
 	Set<Id<Person>> selectReplannersHook(Map<Id<Person>, Double> personId2gap) {
+
+//		// only consider strictly positive gaps
+//		final Map<Id<Person>, Double> personId2gap = personId2gap_POSSIBLY_NEGATIVE_GAPS.entrySet().stream().filter(e -> e.getValue() > 0.0)
+//				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
 		/*
 		 * (1) Initialize.
 		 */
 
+		if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpart.equals(this.stepSizeLogic)) {
+			final BasicReplannerSelector sbaytiSelector = new BasicReplannerSelector(true, this.iterationToStepSize);
+			this.sbaytiCounterpartGapThreshold = sbaytiSelector
+					.selectReplanners(personId2gap, this.getReplanIteration()).stream()
+					.mapToDouble(id -> personId2gap.get(id)).sum();
+
+		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpartExact.equals(this.stepSizeLogic)) {
+			final BasicReplannerSelector sbaytiSelector = new BasicReplannerSelector(true, this.iterationToStepSize);
+			final Set<Id<Person>> sbaytiReplanners = sbaytiSelector.selectReplanners(personId2gap,
+					this.getReplanIteration());
+			this.sbaytiGsum = sbaytiReplanners.stream().mapToDouble(id -> personId2gap.get(id)).sum();
+			this.sbaytiGcrit = sbaytiReplanners.stream().mapToDouble(id -> personId2gap.get(id)).min().getAsDouble();
+			this.sbaytiCnt = sbaytiReplanners.size();
+		}
+
+		// Start with a maximum amount of replanning gap.
 		final Set<Id<Person>> replannerIds = personId2gap.entrySet().stream().filter(e -> e.getValue() > 0.0)
 				.map(e -> e.getKey()).collect(Collectors.toSet());
 		if (replannerIds.size() == 0) {
-			// Zero gap, we have reached convergence.
 			return Collections.emptySet();
 		}
 
@@ -121,18 +157,22 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 		final String logFile = "exact-replanning.log";
 		if (this.logReplanningProcess) {
-			append2file(logFile, "strictly positive gaps: "
+			Hacks.append2file(logFile, "strictly positive gaps: "
 					+ ((double) personId2gap.size()) / ((double) personId2gap.size()) + "\n");
-			append2file(logFile, "G(lambda)\tD(lambda)\tQ(lambda)\n");
+			Hacks.append2file(logFile, "G(lambda)\tD(lambda)\tQ(lambda)\n");
 		}
 
 		final double _Gall = personId2gap.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
 		final double _D2all = personId2bParam.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
 
-		if (this.ambitionGapSchedule != null) {
-			this.ambitionGapSchedule.registerGap(_Gall / personId2gap.size());
+		if (this.initialGap == null) {
+			this.initialGap = _Gall;
 		}
 
+//		double _G = personId2gap.entrySet().stream().filter(e -> replannerIds.contains(e.getKey()))
+//				.mapToDouble(e -> e.getValue()).sum();
+//		double _D2 = 0.5 * personId2bParam.entrySet().stream().filter(e -> replannerIds.contains(e.getKey()))
+//				.mapToDouble(e -> e.getValue()).sum();
 		double _G = replannerIds.stream().mapToDouble(r -> personId2gap.get(r)).sum();
 		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
 
@@ -146,8 +186,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		while (switched) {
 
 			if (this.logReplanningProcess) {
-				append2file(logFile, _G + "\t" + Math.sqrt(_D2) + "\t"
-						+ this._Q(_G, _D2, this.getTargetRelaxationRate() * _Gall) + "\n");
+				Hacks.append2file(logFile,
+						_G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall) + "\n");
 			}
 
 			switched = false;
@@ -171,8 +211,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 				// attention, now we maximize
 
-				final double oldQ = this._Q(_G, _D2, this.getTargetRelaxationRate() * _Gall);
-				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.getTargetRelaxationRate() * _Gall);
+				final double oldQ = this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall);
+				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.effectiveEta(_Gall) * _Gall);
 
 				if (newQ > oldQ) {
 					_G = Math.max(0.0, _G + deltaG);
@@ -217,21 +257,10 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		}
 
 		if (this.logReplanningProcess) {
-			append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
-			append2file(logFile, "\n");
+			Hacks.append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
+			Hacks.append2file(logFile, "\n");
 		}
 
 		return replannerIds;
 	}
-
-	// TODO below for testing
-
-	static void append2file(String fileName, String line) {
-		try {
-			FileUtils.writeStringToFile(new File(fileName), line, true);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 }

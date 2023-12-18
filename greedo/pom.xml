@@ -46,12 +46,6 @@
 
 	  	<dependency>
 			<groupId>se.vti.matsim-projects</groupId>
-			<artifactId>utils</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-
-	  	<dependency>
-			<groupId>se.vti.matsim-projects</groupId>
 			<artifactId>emulation</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>

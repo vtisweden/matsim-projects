@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.greedo
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -22,6 +22,7 @@ package org.matsim.contrib.greedo;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
@@ -51,6 +52,11 @@ class EmulationErrorAnalyzer {
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
+
+	public void setEmulatedScores(final Population population) {
+		this.personId2emulatedScore = population.getPersons().entrySet().stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getSelectedPlan().getScore()));
+	}
 
 	public void setEmulatedScores(final Map<Id<Person>, Double> personId2emulatedScore) {
 		this.personId2emulatedScore = new LinkedHashMap<>(personId2emulatedScore);

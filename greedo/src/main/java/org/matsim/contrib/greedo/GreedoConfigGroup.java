@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.greedo
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -32,7 +32,7 @@ import org.matsim.core.utils.misc.StringUtils;
 
 /**
  *
- * @author GunnarF
+ * @author Gunnar Flötteröd
  *
  */
 public class GreedoConfigGroup extends ReflectiveConfigGroup {
@@ -101,6 +101,20 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
+//	private boolean gapRelativeMSA = false;
+//
+//	@StringGetter("gapRelativeMSA")
+//	public boolean getGapRelativeMSA() {
+//		return this.gapRelativeMSA;
+//	}
+//
+//	@StringSetter("gapRelativeMSA")
+//	public void setGapRelativeMSA(boolean gapRelativeMSA) {
+//		this.gapRelativeMSA = gapRelativeMSA;
+//	}
+
+	//
+
 	private boolean useLinearDistance = true;
 
 	@StringGetter("useLinearDistance")
@@ -154,7 +168,7 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	private int maxMemory = 1;
+	private int maxMemory = 5;
 
 	@StringGetter("maxMemory")
 	public int getMaxMemory() {
@@ -168,30 +182,30 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	private double initialRelaxationRate = 1.0;
+	private double initialStepSizeFactor = 1.0;
 
-	@StringGetter("initialRelaxationRate")
-	public double getInitialRelaxationRate() {
-		return this.initialRelaxationRate;
+	@StringGetter("initialStepSizeFactor")
+	public double getInitialStepSizeFactor() {
+		return this.initialStepSizeFactor;
 	}
 
-	@StringSetter("initialRelaxationRate")
-	public void setInitialRelaxationRate(double initialRelaxationRate) {
-		this.initialRelaxationRate = initialRelaxationRate;
+	@StringSetter("initialStepSizeFactor")
+	public void setInitialStepSizeFactor(double initialStepSizeFactor) {
+		this.initialStepSizeFactor = initialStepSizeFactor;
 	}
 
 	//
 
-	private double relaxationRateIterationExponent = -1.0;
+	private double replanningRateIterationExponent = -1.0;
 
-	@StringGetter("relaxationRateIterationExponent")
-	public double getRelaxationRateIterationExponent() {
-		return this.relaxationRateIterationExponent;
+	@StringGetter("replanningRateIterationExponent")
+	public double getReplanningRateIterationExponent() {
+		return this.replanningRateIterationExponent;
 	}
 
-	@StringSetter("relaxationRateIterationExponent")
-	public void setRelaxationRateIterationExponent(double relaxationRateIterationExponent) {
-		this.relaxationRateIterationExponent = relaxationRateIterationExponent;
+	@StringSetter("replanningRateIterationExponent")
+	public void setReplanningRateIterationExponent(double replanningRateIterationExponent) {
+		this.replanningRateIterationExponent = replanningRateIterationExponent;
 	}
 
 	//
@@ -200,18 +214,32 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 		return new Function<>() {
 			@Override
 			public Double apply(Integer iteration) {
-				return initialRelaxationRate * Math.pow(1.0 + iteration, relaxationRateIterationExponent);
+				return initialStepSizeFactor * Math.pow(Math.max(1.0, iteration), replanningRateIterationExponent);
 			}
 		};
 	}
 
 	//
+//
+//	private boolean useFilteredTravelTimeInPopulationDistance = true;
+//
+//	@StringGetter("useFilteredTravelTimeInPopulationDistance")
+//	public boolean getUseFilteredTravelTimeInPopulationDistance() {
+//		return this.useFilteredTravelTimeInPopulationDistance;
+//	}
+//
+//	@StringSetter("useFilteredTravelTimeInPopulationDistance")
+//	public void setUseFilteredTravelTimeInPopulationDistance(boolean useFilteredTravelTimeInPopulationDistance) {
+//		this.useFilteredTravelTimeInPopulationDistance = useFilteredTravelTimeInPopulationDistance;
+//	}
+
+	//
 
 	public static enum UpperboundStepSize {
-		RELATIVE, ABSOLUTE
+		Vanilla, RelativeToInitialGap, SbaytiCounterpart, SbaytiCounterpartExact
 	}
 
-	private UpperboundStepSize upperboundStepSize = UpperboundStepSize.ABSOLUTE;
+	private UpperboundStepSize upperboundStepSize = UpperboundStepSize.Vanilla;
 
 	@StringGetter("upperboundStepSize")
 	public UpperboundStepSize getUpperboundStepSize() {
@@ -225,30 +253,20 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-	private double upperboundAverageFraction = 0.25;
-
-	@StringGetter("upperboundAverageFraction")
-	public double getUpperboundAverageFraction() {
-		return this.upperboundAverageFraction;
+	public static enum PopulationDistanceType {
+		Hamming, Kernel
 	}
 
-	@StringSetter("upperboundAverageFraction")
-	public void setUpperboundAverageFraction(double upperboundAverageFraction) {
-		this.upperboundAverageFraction = upperboundAverageFraction;
+	private PopulationDistanceType populationDistance = PopulationDistanceType.Hamming;
+
+	@StringGetter("populationDistance")
+	public PopulationDistanceType getPopulationDistance() {
+		return this.populationDistance;
 	}
 
-	//
-
-	private int upperboundMinimumAverageIterations = 4;
-
-	@StringGetter("upperboundMinimumAverageIterations")
-	public int getUpperboundMinimumAverageIterations() {
-		return this.upperboundMinimumAverageIterations;
-	}
-
-	@StringSetter("upperboundMinimumAverageIterations")
-	public void setUpperboundMinimumAverageIterations(int upperboundMinimumAverageIterations) {
-		this.upperboundMinimumAverageIterations = upperboundMinimumAverageIterations;
+	@StringSetter("populationDistance")
+	public void setPopulationDistance(final PopulationDistanceType populationDistance) {
+		this.populationDistance = populationDistance;
 	}
 
 	//
