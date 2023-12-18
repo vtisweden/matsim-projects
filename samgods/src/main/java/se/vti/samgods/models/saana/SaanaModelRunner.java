@@ -19,31 +19,23 @@
  */
 package se.vti.samgods.models.saana;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
-import org.matsim.core.gbl.MatsimRandom;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.Shipment;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportChainUtils;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.choicemodel.Alternative;
 import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
 import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
+import se.vti.samgods.logistics.choicemodel.ShipmentUtilityFunction;
 import se.vti.samgods.readers.ChainChoiReader;
 import se.vti.samgods.readers.SamgodsNetworkReader;
 import se.vti.samgods.readers.SamgodsPriceReader;
@@ -66,142 +58,103 @@ public class SaanaModelRunner {
 
 	public static void main(String[] args) {
 
-		final double odSamplingRate = 0.01; // TODO below one only for testing
-
 		log.info("STARTED ...");
 
-		final List<SamgodsConstants.Commodity> consideredCommodities = Arrays
-				.asList(SamgodsConstants.Commodity.values()).subList(0, 1);
+		/*
+		 * For testing: Consider only subsets of all OD relations and commodity types.
+		 */
+		double odSamplingRate = 0.01; // one percent of all shipment relations
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values())
+				.subList(0, 15); // omit AIR
 
 		/*
-		 * PREPARE DEMAND
+		 * Load transport demand from "ChainChoi" files into a demand container object
+		 * that encapsulates PWC matrices and transport chains.
 		 */
-		final TransportDemand demand = new TransportDemand();
+		TransportDemand demand = new TransportDemand();
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			log.info("Loading " + commodity.description);
-			final ChainChoiReader commodityReader = new ChainChoiReader(
+			ChainChoiReader commodityReader = new ChainChoiReader(
 					"./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out", commodity);
 			demand.setPWCMatrix(commodity, commodityReader.getPWCMatrix());
 			demand.setTransportChains(commodity, commodityReader.getOd2transportChains());
 		}
 
+		/*
+		 * Processing of logistic transport chains. Here: Take out all air
+		 * transportation and merge detailed (sub-mode) based transport legs into
+		 * coarser, main-mode based episodes.
+		 */
 		for (Commodity commodity : consideredCommodities) {
 			if (!Commodity.AIR.equals(commodity)) {
-				TransportChainUtils.removeChainsWithMode(demand.getTransportChains(commodity).values(),
-						TransportMode.Air);
+				TransportChainUtils.removeChainsByLegCondition(demand.getTransportChains(commodity).values(),
+						l -> TransportMode.Air.equals(l.getMode()));
 			}
-//			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
+			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
 		}
 
 		/*
-		 * PREPARE SUPPLY
+		 * Load transport supply: network and (yet to be specified, not needed for
+		 * logistic choices) vehicle fleet. Put everything into a supply container.
 		 */
-
-		final SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
+		SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
 				"./2023-06-01_basecase/link_table.csv");
+		TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null);
 
-		final SamgodsPriceReader priceReader = new SamgodsPriceReader(networkReader.getNetwork(),
+		/*
+		 * Load transport prices. These prices will later come out of downstream
+		 * consolidation and vehicle flow models. For standalone testing, we read fixed
+		 * prices from a file.
+		 */
+		SamgodsPriceReader priceReader = new SamgodsPriceReader(networkReader.getNetwork(),
 				"./2023-06-01_basecase/LinkPrices.csv", "./2023-06-01_basecase/NodePrices.csv",
 				"./2023-06-01_basecase/NodeTimes.csv");
-		final TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = priceReader
+		TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = priceReader
 				.getTransportPrices();
 
-		final TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null, transportPrices);
+		/*
+		 * Compute routes for all network transport episodes and attach them to the
+		 * corresponding transport chains.
+		 */
+		for (Commodity commodity : consideredCommodities) {
+			demand.downsample(commodity, odSamplingRate); // for testing only
+			NetworkRouter router = new NetworkRouter(supply.getNetwork(), transportPrices);
+			router.route(commodity, demand.getTransportChains(commodity));
+		}
 
 		/*
-		 * PREPARE DEMAND/SUPPLY INTERACTIONS
+		 * Compose a logistics choice model (of transport chain and shipment size).
+		 * Modular and decoupled from downstream consolidation and transport models. The
+		 * resulting choice model depends on what modules are composed, below is an
+		 * example.
 		 */
-
-//		List<Commodity> commodities = new LinkedList<>();
-//		List<Long> chainsBefore = new LinkedList<>();
-//		List<Long> chainsAfter = new LinkedList<>();
-		List<AtomicLong> legCounts = new LinkedList<>();
-		List<AtomicLong> linkCounts = new LinkedList<>();
-		List<Map<TransportMode, Set<Id<Node>>>> mode2routingErrors = new LinkedList<>();
-
-		Random rnd = new Random();
-
-		for (Commodity commodity : consideredCommodities) {
-
-			// >>>>> Only for testing: reduce the number of OD pairs to be processed.
-			final Map<OD, List<TransportChain>> downsampledOd2chains = demand.getTransportChains(commodity).entrySet().stream()
-					.filter(e -> rnd.nextDouble() < odSamplingRate)
-					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-			demand.getTransportChains(commodity).clear();
-			demand.getTransportChains(commodity).putAll(downsampledOd2chains);
-			// <<<<< Only for testing: reduce the number of OD pairs to be processed.
-
-			log.info("Routing " + commodity.description + ", which uses the following modes: "
-					+ TransportChainUtils.extractUsedModes(demand.getTransportChains(commodity).values()));
-
-			NetworkRouter router = new NetworkRouter(supply.getNetwork(), supply.getTransportPrices());
-			router.route(commodity, demand.getTransportChains(commodity));
-
-//			commodities.add(commodity);
-			linkCounts.add(router.routedLinkCnt);
-			legCounts.add(router.routedLegCnt);
-			mode2routingErrors.add(router.mode2LegRoutingFailures);
-
-//			chainsBefore.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
-//			(new SaanaTransportChainReducer()).reduce(od2chains);
-//			chainsAfter.add(od2chains.values().stream().flatMap(l -> l.stream()).count());
-//			demand.setTransportChains(commodity, od2chains);
-		}
-
-		System.out.println();
-		for (int i = 0; i < consideredCommodities.size(); i++) {
-			System.out.println(consideredCommodities.get(i));
-//			System.out.println("  chains before: " + chainsBefore.get(i));
-//			System.out.println("  chains after: " + chainsAfter.get(i));
-			System.out.println("  found legs: " + legCounts.get(i));
-			System.out
-					.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
-			for (Map.Entry<TransportMode, Set<Id<Node>>> entry : mode2routingErrors.get(i).entrySet()) {
-				System.out.println("  failures with mode " + entry.getKey() + " at nodes: " + entry.getValue());
+		// (Monetary) shipment cost, given its characteristics and transport prices.
+		BasicShipmentCostFunction costFunction = new BasicShipmentCostFunction(transportPrices);
+		// (Choice model) shipment utility, given its properties and (monetary) cost.
+		ShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new ShipmentUtilityFunction<>() {
+			public double computeUtility(Shipment shipment, BasicShipmentCost shipmentCost) {
+				return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr(); // for testing
 			}
-		}
-
-		// >>> REMOVE TransportChains without routing information
-
-		ArrayList<TransportChain> removedChains = new ArrayList<>();
-		for (Commodity commodity : consideredCommodities) {
-			System.out.println(commodity);
-			removedChains.addAll(TransportChainUtils.removeChainsByLegCondition(
-					demand.getTransportChains(commodity).values(), l -> !l.getOrigin().equals(l.getDestination())
-							&& (l.getRouteView() == null || l.getRouteView().size() == 0)));
-		}
-
-		// >>> CHOICE
-
-		BasicShipmentCostFunction costFunction = new BasicShipmentCostFunction(supply.getTransportPrices());
-		SaanaUtilityFunction utilityFunction = new SaanaUtilityFunction();
+		};
+		// Create choice sets by combining transport chains and shipment sizes.
 		ChoiceSetGenerator<BasicShipmentCost> choiceSetGenerator = new ChoiceSetGenerator<>(costFunction,
 				utilityFunction, SaanaShipmentSizeClass.values());
-		ChoiceModelUtils choiceModel = new ChoiceModelUtils(MatsimRandom.getRandom());
+		// Basic choice model functionality
+		ChoiceModelUtils choiceModel = new ChoiceModelUtils();
+
+		/*
+		 * Using the functionality specified above, simulate concrete logistic choices.
+		 */
 		for (Commodity commodity : consideredCommodities) {
-			double lostDemand_ton_yr = 0;
-//			for (Map.Entry<OD, Double> e : demand.getPWCMatrix(commodity).getOd2AmountView().entrySet()) {
-			for (Map.Entry<OD, List<TransportChain>> e : demand.getTransportChains(commodity).entrySet()) {
-				OD od = e.getKey();
-				double amount_ton_yr = demand.getPWCMatrix(commodity).getOd2AmountView().get(od);
+			for (OD od : demand.getTransportChains(commodity).keySet()) {
+				double amount_ton_yr = demand.getPWCMatrix(commodity).getOd2Amount_ton_yr().get(od);
 				List<TransportChain> chains = demand.getTransportChains(commodity, od);
-				if (chains != null && chains.size() > 0) {
-					List<Alternative<BasicShipmentCost>> alternatives = choiceSetGenerator.createChoiceSet(chains,
-							amount_ton_yr, commodity);
-					Alternative<BasicShipmentCost> choice = choiceModel.choose(alternatives, utilityFunction);
-					System.out.println(choice);
-				} else {
-					System.out.println("No transport chains for commodity " + commodity + " in OD pair " + od + ", "
-							+ amount_ton_yr + " not assigned.");
-					lostDemand_ton_yr += amount_ton_yr;
-				}
-
+				List<Alternative<BasicShipmentCost>> alternatives = choiceSetGenerator.createChoiceSet(chains,
+						amount_ton_yr, commodity);
+				Alternative<BasicShipmentCost> choice = choiceModel.choose(alternatives, utilityFunction);
+				System.out.println(choice);
 			}
-			System.out.println("Total demand = " + demand.getPWCMatrix(commodity).computeTotal_ton_yr());
-			System.out.println("Lost demand = " + lostDemand_ton_yr);
 		}
-
-		// <<< CHOICE
 
 		log.info("... DONE");
 	}

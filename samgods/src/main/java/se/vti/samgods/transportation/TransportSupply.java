@@ -26,7 +26,6 @@ import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
-import se.vti.samgods.transportation.pricing.TransportPrices;
 
 /**
  * Packages the supply (carrier) side of the freight transport system.
@@ -54,14 +53,11 @@ public class TransportSupply {
 
 	private final VehicleFleet vehicleFleet;
 
-	private final TransportPrices transportPrices;
-
 	// -------------------- CONSTRUCTION --------------------
 
-	public TransportSupply(Network network, VehicleFleet fleet, TransportPrices transportPrices) {
+	public TransportSupply(Network network, VehicleFleet fleet) {
 		this.network = network;
 		this.vehicleFleet = fleet;
-		this.transportPrices = transportPrices;
 	}
 
 	// -------------------- GETTERS --------------------
@@ -73,9 +69,4 @@ public class TransportSupply {
 	public VehicleFleet getVehicleFleet() {
 		return this.vehicleFleet;
 	}
-
-	public TransportPrices getTransportPrices() {
-		return this.transportPrices;
-	}
-
 }

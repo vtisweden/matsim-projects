@@ -37,6 +37,10 @@ public class ChoiceModelUtils {
 
 	private final Random rnd;
 
+	public ChoiceModelUtils() {
+		this.rnd = new Random();
+	}
+
 	public ChoiceModelUtils(final Random rnd) {
 		this.rnd = rnd;
 	}

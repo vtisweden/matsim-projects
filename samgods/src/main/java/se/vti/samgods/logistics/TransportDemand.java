@@ -22,6 +22,9 @@ package se.vti.samgods.logistics;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
@@ -72,6 +75,14 @@ public class TransportDemand {
 
 	public List<TransportChain> getTransportChains(Commodity commodity, Id<Node> origin, Id<Node> destination) {
 		return this.getTransportChains(commodity, new OD(origin, destination));
+	}
+
+	public void downsample(Commodity commodity, final double samplingRate) {
+		final Random rnd = new Random();
+		final Set<OD> downsampledODs = this.getTransportChains(commodity).keySet().stream()
+				.filter(k -> rnd.nextDouble() < samplingRate).collect(Collectors.toSet());
+		this.getTransportChains(commodity).keySet().retainAll(downsampledODs);
+		this.getPWCMatrix(commodity).getOd2Amount_ton_yr().keySet().retainAll(downsampledODs);
 	}
 
 }

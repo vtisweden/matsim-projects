@@ -38,9 +38,9 @@ public class PWCMatrix {
 
 	private final Commodity commodity;
 
-	private Map<OD, Double> od2amount_ton_yr = new LinkedHashMap<>();
+	private final Map<OD, Double> od2amount_ton_yr = new LinkedHashMap<>();
 
-	private Set<Id<Node>> locations = new LinkedHashSet<>();
+	private final Set<Id<Node>> locations = new LinkedHashSet<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -79,8 +79,8 @@ public class PWCMatrix {
 		return this.od2amount_ton_yr.getOrDefault(od, 0.0);
 	}
 
-	public Map<OD, Double> getOd2AmountView() {
-		return Collections.unmodifiableMap(this.od2amount_ton_yr);
+	public Map<OD, Double> getOd2Amount_ton_yr() {
+		return this.od2amount_ton_yr;
 	}
 
 }

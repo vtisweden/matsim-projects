@@ -46,23 +46,6 @@ public class TransportChainUtils {
 	private TransportChainUtils() {
 	}
 
-	public static void removeChainsWithMode(final Collection<List<TransportChain>> collectionOfListOfChains,
-			final TransportMode mode) {
-		for (List<TransportChain> testedChains : collectionOfListOfChains) {
-			List<TransportChain> chainsToRemove = new ArrayList<>();
-			for (TransportChain chain : testedChains) {
-				boolean foundMode = false;
-				for (Iterator<TransportLeg> it = chain.getLegs().iterator(); it.hasNext() && !foundMode;) {
-					if (it.next().getMode().equals(mode)) {
-						chainsToRemove.add(chain);
-						foundMode = true;
-					}
-				}
-			}
-			testedChains.removeAll(chainsToRemove);
-		}
-	}
-
 	public static Set<TransportMode> extractUsedModes(final Collection<List<TransportChain>> collectionOfListOfChains) {
 		return collectionOfListOfChains.stream().flatMap(l -> l.stream()).flatMap(c -> c.getLegs().stream())
 				.map(l -> l.getMode()).collect(Collectors.toSet());
@@ -107,13 +90,8 @@ public class TransportChainUtils {
 		System.out.println();
 	}
 
-	// TODO use above
-	public static List<TransportChain> removeChainsByLegCondition(
-			final Collection<List<TransportChain>> collectionOfListOfChains,
+	public static void removeChainsByLegCondition(final Collection<List<TransportChain>> collectionOfListOfChains,
 			final Function<TransportLeg, Boolean> removeCondition) {
-		long totalProcessed = 0;
-		long totalRemoved = 0;
-		final List<TransportChain> allRemovedChains = new ArrayList<>();
 		for (List<TransportChain> testedListOfChains : collectionOfListOfChains) {
 			List<TransportChain> chainsToRemove = new ArrayList<>();
 			for (TransportChain chain : testedListOfChains) {
@@ -121,19 +99,13 @@ public class TransportChainUtils {
 				for (Iterator<TransportLeg> it = chain.getLegs().iterator(); it.hasNext() && !remove;) {
 					TransportLeg leg = it.next();
 					if (removeCondition.apply(leg)) {
-						System.out.println(leg.getRouteView());
 						chainsToRemove.add(chain);
 						remove = true;
 					}
 				}
 			}
-			totalProcessed += testedListOfChains.size();
-			totalRemoved += chainsToRemove.size();
-			System.out.println(totalRemoved + " out of " + totalProcessed);
 			testedListOfChains.removeAll(chainsToRemove);
-			allRemovedChains.addAll(chainsToRemove);
 		}
-		return allRemovedChains;
 	}
 
 	// TODO CHECKED UNTIL HERE
