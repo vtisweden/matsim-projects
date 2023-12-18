@@ -121,24 +121,30 @@ public class NetworkRouter {
 						System.exit(0);
 						nodes = null;
 					}
-						final Node from = nodes.get(leg.getOrigin());
-						final Node to = nodes.get(leg.getDestination());
-						if ((from != null) && (to != null)) {
-							List<Link> links = this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null,
-									null).links;
-							leg.setRoute(links);
-							routedLegCnt.addAndGet(1);
-							routedLinkCnt.addAndGet(links.size());
-						} else {
-							if (from == null) {
-								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
-										.add(leg.getOrigin());
-							}
-							if (to == null) {
-								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
-										.add(leg.getDestination());
-							}
+					final Node from = nodes.get(leg.getOrigin());
+					final Node to = nodes.get(leg.getDestination());
+					if ((from != null) && (to != null)) {
+						List<Link> links = this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null,
+								null).links;
+						leg.setRoute(links);
+						routedLegCnt.addAndGet(1);
+						routedLinkCnt.addAndGet(links.size());
+//						for (Link link : links) {
+//							System.out.print(link.getId() + " ");
+//						}
+//						System.out.println();
+					} else {
+						if (from == null) {
+							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+									.add(leg.getOrigin());
+//							System.out.println("NO ORIGIN");
 						}
+						if (to == null) {
+							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+									.add(leg.getDestination());
+//							System.out.println("NO DESTINATION");
+						}
+					}
 				}
 			}
 		}

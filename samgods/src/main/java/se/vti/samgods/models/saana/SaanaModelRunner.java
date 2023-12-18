@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.models.saana;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,12 +66,12 @@ public class SaanaModelRunner {
 
 	public static void main(String[] args) {
 
-		final double odSamplingRate = 1.0; // TODO below one only for testing
+		final double odSamplingRate = 0.01; // TODO below one only for testing
 
 		log.info("STARTED ...");
 
 		final List<SamgodsConstants.Commodity> consideredCommodities = Arrays
-				.asList(SamgodsConstants.Commodity.values()).subList(1, 2);
+				.asList(SamgodsConstants.Commodity.values()).subList(0, 1);
 
 		/*
 		 * PREPARE DEMAND
@@ -111,9 +112,9 @@ public class SaanaModelRunner {
 		 * PREPARE DEMAND/SUPPLY INTERACTIONS
 		 */
 
-		List<Commodity> commodities = new LinkedList<>();
-		List<Long> chainsBefore = new LinkedList<>();
-		List<Long> chainsAfter = new LinkedList<>();
+//		List<Commodity> commodities = new LinkedList<>();
+//		List<Long> chainsBefore = new LinkedList<>();
+//		List<Long> chainsAfter = new LinkedList<>();
 		List<AtomicLong> legCounts = new LinkedList<>();
 		List<AtomicLong> linkCounts = new LinkedList<>();
 		List<Map<TransportMode, Set<Id<Node>>>> mode2routingErrors = new LinkedList<>();
@@ -122,18 +123,21 @@ public class SaanaModelRunner {
 
 		for (Commodity commodity : consideredCommodities) {
 
-			// Only for testing: reduce the number of OD pairs to be processed.
-			final Map<OD, List<TransportChain>> od2chains = demand.getTransportChains(commodity).entrySet().stream()
+			// >>>>> Only for testing: reduce the number of OD pairs to be processed.
+			final Map<OD, List<TransportChain>> downsampledOd2chains = demand.getTransportChains(commodity).entrySet().stream()
 					.filter(e -> rnd.nextDouble() < odSamplingRate)
 					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+			demand.getTransportChains(commodity).clear();
+			demand.getTransportChains(commodity).putAll(downsampledOd2chains);
+			// <<<<< Only for testing: reduce the number of OD pairs to be processed.
 
 			log.info("Routing " + commodity.description + ", which uses the following modes: "
-					+ TransportChainUtils.extractUsedModes(od2chains.values()));
+					+ TransportChainUtils.extractUsedModes(demand.getTransportChains(commodity).values()));
 
 			NetworkRouter router = new NetworkRouter(supply.getNetwork(), supply.getTransportPrices());
-			router.route(commodity, od2chains);
+			router.route(commodity, demand.getTransportChains(commodity));
 
-			commodities.add(commodity);
+//			commodities.add(commodity);
 			linkCounts.add(router.routedLinkCnt);
 			legCounts.add(router.routedLegCnt);
 			mode2routingErrors.add(router.mode2LegRoutingFailures);
@@ -144,18 +148,28 @@ public class SaanaModelRunner {
 //			demand.setTransportChains(commodity, od2chains);
 		}
 
-//		System.out.println();
-//		for (int i = 0; i < commodities.size(); i++) {
-//			System.out.println(commodities.get(i));
+		System.out.println();
+		for (int i = 0; i < consideredCommodities.size(); i++) {
+			System.out.println(consideredCommodities.get(i));
 //			System.out.println("  chains before: " + chainsBefore.get(i));
 //			System.out.println("  chains after: " + chainsAfter.get(i));
-//			System.out.println("  found legs: " + legCounts.get(i));
-//			System.out
-//					.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
-//			for (Map.Entry<TransportMode, Set<Id<Node>>> entry : mode2routingErrors.get(i).entrySet()) {
-//				System.out.println("  failures with mode " + entry.getKey() + " at nodes: " + entry.getValue());
-//			}
-//		}
+			System.out.println("  found legs: " + legCounts.get(i));
+			System.out
+					.println("  found links per leg: " + linkCounts.get(i).longValue() / legCounts.get(i).longValue());
+			for (Map.Entry<TransportMode, Set<Id<Node>>> entry : mode2routingErrors.get(i).entrySet()) {
+				System.out.println("  failures with mode " + entry.getKey() + " at nodes: " + entry.getValue());
+			}
+		}
+
+		// >>> REMOVE TransportChains without routing information
+
+		ArrayList<TransportChain> removedChains = new ArrayList<>();
+		for (Commodity commodity : consideredCommodities) {
+			System.out.println(commodity);
+			removedChains.addAll(TransportChainUtils.removeChainsByLegCondition(
+					demand.getTransportChains(commodity).values(), l -> !l.getOrigin().equals(l.getDestination())
+							&& (l.getRouteView() == null || l.getRouteView().size() == 0)));
+		}
 
 		// >>> CHOICE
 
@@ -164,22 +178,27 @@ public class SaanaModelRunner {
 		ChoiceSetGenerator<BasicShipmentCost> choiceSetGenerator = new ChoiceSetGenerator<>(costFunction,
 				utilityFunction, SaanaShipmentSizeClass.values());
 		ChoiceModelUtils choiceModel = new ChoiceModelUtils(MatsimRandom.getRandom());
-		for (Commodity commodity : commodities) {
-			for (Map.Entry<OD, Double> e : demand.getPWCMatrix(commodity).getOd2AmountView().entrySet()) {
+		for (Commodity commodity : consideredCommodities) {
+			double lostDemand_ton_yr = 0;
+//			for (Map.Entry<OD, Double> e : demand.getPWCMatrix(commodity).getOd2AmountView().entrySet()) {
+			for (Map.Entry<OD, List<TransportChain>> e : demand.getTransportChains(commodity).entrySet()) {
 				OD od = e.getKey();
-				double amount_ton = e.getValue();
+				double amount_ton_yr = demand.getPWCMatrix(commodity).getOd2AmountView().get(od);
 				List<TransportChain> chains = demand.getTransportChains(commodity, od);
-				if (chains.size() > 0) {
+				if (chains != null && chains.size() > 0) {
 					List<Alternative<BasicShipmentCost>> alternatives = choiceSetGenerator.createChoiceSet(chains,
-							amount_ton, commodity);
+							amount_ton_yr, commodity);
 					Alternative<BasicShipmentCost> choice = choiceModel.choose(alternatives, utilityFunction);
 					System.out.println(choice);
 				} else {
 					System.out.println("No transport chains for commodity " + commodity + " in OD pair " + od + ", "
-							+ amount_ton + " not assigned.");
+							+ amount_ton_yr + " not assigned.");
+					lostDemand_ton_yr += amount_ton_yr;
 				}
 
 			}
+			System.out.println("Total demand = " + demand.getPWCMatrix(commodity).computeTotal_ton_yr());
+			System.out.println("Lost demand = " + lostDemand_ton_yr);
 		}
 
 		// <<< CHOICE

@@ -27,14 +27,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
@@ -47,44 +46,8 @@ public class TransportChainUtils {
 	private TransportChainUtils() {
 	}
 
-	public static class TransportChainStats {
-
-		public final Commodity commodity;
-
-		private int originCnt = 0;
-		private int destinationCnt = 0;
-		private int odCnt = 0;
-
-		public TransportChainStats(Commodity commodity) {
-			this.commodity = commodity;
-		}
-
-	}
-
-	public static void computeTransportChainStats(Commodity commodity, Map<OD, List<TransportChain>> od2chains) {
-
-		for (Map.Entry<OD, List<TransportChain>> entry : od2chains.entrySet()) {
-			OD od = entry.getKey();
-			for (TransportChain chain : entry.getValue()) {
-				chain.getOrigin();
-				chain.getDestination();
-				for (TransportLeg leg : chain.getLegs()) {
-					leg.getMode();
-					leg.getOrigin();
-					leg.getDestination();
-					leg.getRouteView();
-
-				}
-
-			}
-		}
-
-	}
-
-	// SO FAR USED BELOW
-
-	public static void removeChainsWithMode(Collection<List<TransportChain>> collectionOfListOfChains,
-			TransportMode mode) {
+	public static void removeChainsWithMode(final Collection<List<TransportChain>> collectionOfListOfChains,
+			final TransportMode mode) {
 		for (List<TransportChain> testedChains : collectionOfListOfChains) {
 			List<TransportChain> chainsToRemove = new ArrayList<>();
 			for (TransportChain chain : testedChains) {
@@ -100,20 +63,16 @@ public class TransportChainUtils {
 		}
 	}
 
-	public static Set<TransportMode> extractUsedModes(Collection<List<TransportChain>> collectionOfChains) {
-		return collectionOfChains.stream().flatMap(l -> l.stream()).flatMap(c -> c.getLegs().stream())
+	public static Set<TransportMode> extractUsedModes(final Collection<List<TransportChain>> collectionOfListOfChains) {
+		return collectionOfListOfChains.stream().flatMap(l -> l.stream()).flatMap(c -> c.getLegs().stream())
 				.map(l -> l.getMode()).collect(Collectors.toSet());
 	}
 
-	public static void reduceToMainModeLegs(Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains) {
-		commodity2od2chains.values().stream().forEach(m -> reduceToMainModeLegs(m.values()));
+	public static void reduceToMainModeLegs(final Collection<List<TransportChain>> collectionOfListOfChains) {
+		collectionOfListOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegs(c));
 	}
 
-	public static void reduceToMainModeLegs(Collection<List<TransportChain>> collectionOfChains) {
-		collectionOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegs(c));
-	}
-
-	public static void reduceToMainModeLegs(TransportChain chain) {
+	public static void reduceToMainModeLegs(final TransportChain chain) {
 		if (chain.getLegs().size() < 2) {
 			return;
 		}
@@ -128,10 +87,56 @@ public class TransportChainUtils {
 			}
 		}
 		newLegs.add(new TransportLeg(currentOrigin, chain.getDestination(), currentMode, '?'));
-
 		chain.getLegs().clear();
 		chain.getLegs().addAll(newLegs);
 	}
+
+	public static void reduceToMainModeLegsVerbose(final Collection<List<TransportChain>> collectionOfListOfChains) {
+		collectionOfListOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegsVerbose(c));
+	}
+
+	public static void reduceToMainModeLegsVerbose(final TransportChain chain) {
+		for (TransportLeg leg : chain.getLegs()) {
+			System.out.print(leg.getMode() + " ");
+		}
+		reduceToMainModeLegs(chain);
+		System.out.print(" -->  ");
+		for (TransportLeg leg : chain.getLegs()) {
+			System.out.print(leg.getMode() + " ");
+		}
+		System.out.println();
+	}
+
+	// TODO use above
+	public static List<TransportChain> removeChainsByLegCondition(
+			final Collection<List<TransportChain>> collectionOfListOfChains,
+			final Function<TransportLeg, Boolean> removeCondition) {
+		long totalProcessed = 0;
+		long totalRemoved = 0;
+		final List<TransportChain> allRemovedChains = new ArrayList<>();
+		for (List<TransportChain> testedListOfChains : collectionOfListOfChains) {
+			List<TransportChain> chainsToRemove = new ArrayList<>();
+			for (TransportChain chain : testedListOfChains) {
+				boolean remove = false;
+				for (Iterator<TransportLeg> it = chain.getLegs().iterator(); it.hasNext() && !remove;) {
+					TransportLeg leg = it.next();
+					if (removeCondition.apply(leg)) {
+						System.out.println(leg.getRouteView());
+						chainsToRemove.add(chain);
+						remove = true;
+					}
+				}
+			}
+			totalProcessed += testedListOfChains.size();
+			totalRemoved += chainsToRemove.size();
+			System.out.println(totalRemoved + " out of " + totalProcessed);
+			testedListOfChains.removeAll(chainsToRemove);
+			allRemovedChains.addAll(chainsToRemove);
+		}
+		return allRemovedChains;
+	}
+
+	// TODO CHECKED UNTIL HERE
 
 	public static double computeLength_m(TransportLeg leg) {
 		if (leg.getRouteView() == null) {
