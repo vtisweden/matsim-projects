@@ -25,11 +25,20 @@
 	</repositories>
 
 	<dependencies>
+		<!--
 		<dependency>
 			<groupId>com.github.gunnarfloetteroed.java</groupId>
 			<artifactId>utilities</artifactId>
 			<version>2020-08-27_snapshot</version>
 		</dependency>		
+		-->
+		
+		<dependency>
+			<groupId>se.vti.matsim-projects</groupId>
+			<artifactId>utils</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
