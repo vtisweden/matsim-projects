@@ -47,6 +47,10 @@ public class RoundTrip<L> {
 	public int size() {
 		return this.locations.size();
 	}
+	
+	public List<L> locationsCopy() {
+		return new ArrayList<>(this.locations);
+	}
 
 	public L getLocation(int i) {
 		return this.locations.get(i);
@@ -57,8 +61,8 @@ public class RoundTrip<L> {
 	}
 
 	public void add(int i, L location, double duration_s) {
-		this.locations.add(location);
-		this.durations_s.add(duration_s);
+		this.locations.add(i, location);
+		this.durations_s.add(i, duration_s);
 	}
 
 	public void remove(int i) {
