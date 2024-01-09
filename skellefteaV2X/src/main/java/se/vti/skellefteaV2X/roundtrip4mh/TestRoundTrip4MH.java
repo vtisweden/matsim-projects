@@ -52,9 +52,9 @@ public class TestRoundTrip4MH {
 
 		final Random rnd = new Random();
 
-		final RoundTripScenario<Integer> scenario = new RoundTripScenario<>();
+		final RoundTripScenario<Integer> scenario = new RoundTripScenario<>(4);
 		for (int i = 1; i <= 3; i++) {
-			scenario.getAllLocations().add(i);
+			scenario.addLocation(i);
 		}
 
 		RoundTripProposal<Integer> proposal = new RoundTripProposal<>(scenario);
@@ -111,20 +111,6 @@ public class TestRoundTrip4MH {
 		algo.addStateProcessor(prn);
 		algo.setMsgInterval(10000);
 		algo.run(totalIts);
-
-//		System.out.println();
-//		System.out.println("from\tto\trealized\tpredicted\t(realized/predicted)");
-//		for (RoundTrip<Integer> from : proposal.state2visitCnt.keySet()) {
-//			for (RoundTrip<Integer> to : proposal.state2visitCnt.keySet()) {
-//				Tuple<RoundTrip<Integer>, RoundTrip<Integer>> tuple = new Tuple<>(from, to);
-//				double cnt = proposal.state2visitCnt.get(from);
-//				double realized = proposal.transition2proposedCnt.getOrDefault(tuple, 0.) / cnt;
-//				double predicted = proposal.transition2proposedProbaSum.getOrDefault(tuple, 0.) / cnt;
-//				if (realized > 0 || predicted > 0) {
-//					System.out.println(from + "\t" + to + "\t" + realized + "\t" + predicted + "\t" + (realized / predicted));
-//				}
-//			}
-//		}
 
 		System.out.println("... DONE");
 	}

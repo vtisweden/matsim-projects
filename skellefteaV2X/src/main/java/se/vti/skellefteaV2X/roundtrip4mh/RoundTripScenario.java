@@ -19,8 +19,10 @@
  */
 package se.vti.skellefteaV2X.roundtrip4mh;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Random;
+import java.util.List;
 import java.util.Set;
 
 import floetteroed.utilities.Units;
@@ -33,25 +35,34 @@ import floetteroed.utilities.Units;
  */
 public class RoundTripScenario<L> {
 
-	private final double analysisPeriod_s = Units.S_PER_D;
+	private final int maxLength;
+	private final double analysisPeriod_s;
 
-	private final int maxLength = 4;
-	
 	private final Set<L> allLocations = new LinkedHashSet<>();
-	
-	public RoundTripScenario() {		
+
+	public RoundTripScenario(int maxLength, double analysisPeriod_s) {
+		this.maxLength = maxLength;
+		this.analysisPeriod_s = analysisPeriod_s;
 	}
 
-	public Set<L> getAllLocations() {
-		return this.allLocations;
+	public RoundTripScenario(int maxLength) {
+		this(maxLength, Units.S_PER_D);
 	}
-	
-	public double getAnalysisPeriod_s() {
-		return this.analysisPeriod_s;
+
+	public void addLocation(L location) {
+		this.allLocations.add(location);
 	}
 
 	public int getMaxLength() {
 		return this.maxLength;
 	}
-	
+
+	public double getAnalysisPeriod_s() {
+		return this.analysisPeriod_s;
+	}
+
+	public List<L> getAllLocationsListView() {
+		return Collections.unmodifiableList(new ArrayList<>(this.allLocations));
+	}
+
 }

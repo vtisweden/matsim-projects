@@ -47,7 +47,7 @@ public class RoundTrip<L> {
 	public int size() {
 		return this.locations.size();
 	}
-	
+
 	public List<L> locationsCopy() {
 		return new ArrayList<>(this.locations);
 	}
@@ -70,11 +70,11 @@ public class RoundTrip<L> {
 
 	public L getPredecessorLocation(int i) {
 		return this.locations.get(this.predecessorIndex(i));
-	}	
+	}
 
 	public L getSuccessorLocation(int i) {
 		return this.locations.get(this.successorIndex(i));
-	}	
+	}
 
 	public L getLocation(int i) {
 		return this.locations.get(i);
@@ -97,22 +97,7 @@ public class RoundTrip<L> {
 	public RoundTrip<L> deepCopy() {
 		return new RoundTrip<L>(new ArrayList<>(this.locations), new ArrayList<>(this.durations_s));
 	}
-	
-//	@Override
-//	public boolean equals(Object other) {
-//		if (other instanceof RoundTrip) {
-//			RoundTrip<?> otherRoundTrip = (RoundTrip<?>) other;
-//			return this.locations.equals(otherRoundTrip.locations) && this.durations_s.equals(otherRoundTrip.durations_s);
-//		} else {
-//			return false;
-//		}
-//	}
-//	
-//	@Override
-//	public int hashCode() {
-//		return this.locations.hashCode() + 31 * this.durations_s.hashCode();
-//	}
-	
+
 	@Override
 	public String toString() {
 		return this.locations.stream().map(l -> l.toString()).collect(Collectors.joining(","));

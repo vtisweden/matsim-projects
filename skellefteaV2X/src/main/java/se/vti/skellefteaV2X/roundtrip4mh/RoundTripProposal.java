@@ -45,7 +45,7 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	public RoundTripProposal(RoundTripScenario<L> scenario) {
 		this.scenario = scenario;
-		this.allLocations = Collections.unmodifiableList(new ArrayList<>(scenario.getAllLocations()));
+		this.allLocations = scenario.getAllLocationsListView();
 	}
 
 	// INTERNALS
