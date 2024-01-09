@@ -44,11 +44,8 @@ public class TestRoundTrip4MH {
 		return sum;
 	}
 
-	public static void main(String[] args) {
-
+	static void testLocations() {
 		final int totalIts = 10 * 1000 * 1000;
-
-		System.out.println("STARTED ...");
 
 		final Random rnd = new Random();
 
@@ -111,7 +108,19 @@ public class TestRoundTrip4MH {
 		algo.addStateProcessor(prn);
 		algo.setMsgInterval(10000);
 		algo.run(totalIts);
+	}
 
+	static void testDurations() {
+		
+		// TODO continue here
+		
+	}
+	
+	public static void main(String[] args) {
+		System.out.println("STARTED ...");
+		
+		testLocations();
+		
 		System.out.println("... DONE");
 	}
 
