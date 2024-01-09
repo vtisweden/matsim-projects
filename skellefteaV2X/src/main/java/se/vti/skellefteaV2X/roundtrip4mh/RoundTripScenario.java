@@ -34,6 +34,8 @@ import floetteroed.utilities.Units;
 public class RoundTripScenario<L> {
 
 	private final double analysisPeriod_s = Units.S_PER_D;
+
+	private final int maxLength = 4;
 	
 	private final Set<L> allLocations = new LinkedHashSet<>();
 	
@@ -46,6 +48,10 @@ public class RoundTripScenario<L> {
 	
 	public double getAnalysisPeriod_s() {
 		return this.analysisPeriod_s;
+	}
+
+	public int getMaxLength() {
+		return this.maxLength;
 	}
 	
 }

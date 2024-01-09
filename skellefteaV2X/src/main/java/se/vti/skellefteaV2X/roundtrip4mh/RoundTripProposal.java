@@ -39,8 +39,6 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	private final Random rnd = new Random();
 
-	private final int maxLength = 4;
-
 	private final RoundTripScenario<L> scenario;
 
 	private final List<L> allLocations;
@@ -52,10 +50,6 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// INTERNALS
 
-	private L randomLocation() {
-		return this.allLocations.get(this.rnd.nextInt(this.allLocations.size()));
-	}
-
 	private class PossibleTransitions {
 
 		private List<List<L>> possibleInserts;
@@ -64,6 +58,10 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 		private List<Integer> possibleRemoveIndices;
 		private List<Integer> possibleFlipIndices;
 
+		private final double insertProba;
+		private final double removeProba;
+		private final double flipProba;
+
 		PossibleTransitions(RoundTrip<L> state) {
 
 			this.possibleInserts = new ArrayList<>(state.size() + 1);
@@ -71,6 +69,10 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 			this.possibleInsertIndices = new ArrayList<>(state.size() + 1);
 			this.possibleRemoveIndices = new ArrayList<>(state.size());
 			this.possibleFlipIndices = new ArrayList<>(state.size());
+
+			double insertIndicator = 0.0;
+			double removeIndicator = 0.0;
+			double flipIndicator = 0.0;
 
 			for (int i = 0; i < state.size(); i++) {
 
@@ -81,7 +83,7 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 				// analyze inserts
 
 				final List<L> localInserts;
-				if (state.size() == maxLength) {
+				if (state.size() == scenario.getMaxLength()) {
 					localInserts = Collections.emptyList();
 				} else {
 					localInserts = new ArrayList<>(allLocations);
@@ -91,12 +93,14 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 				this.possibleInserts.add(localInserts);
 				if (localInserts.size() > 0) {
 					this.possibleInsertIndices.add(i);
+					insertIndicator = 1.0;
 				}
 
 				// analyze removes
 
 				if ((state.size() > 1) && (state.size() <= 3 || !pred.equals(succ))) {
 					this.possibleRemoveIndices.add(i);
+					removeIndicator = 1.0;
 				}
 
 				// analyze flips
@@ -110,13 +114,14 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 				this.possibleFlips.add(localFlips);
 				if (localFlips.size() > 0) {
 					this.possibleFlipIndices.add(i);
+					flipIndicator = 1.0;
 				}
 			}
 
 			// analyze append-inserts at end of list
 
 			final List<L> lastInserts;
-			if (state.size() == maxLength) {
+			if (state.size() == scenario.getMaxLength()) {
 				lastInserts = Collections.emptyList();
 			} else {
 				lastInserts = new ArrayList<>(allLocations);
@@ -126,33 +131,27 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 			this.possibleInserts.add(lastInserts);
 			if (lastInserts.size() > 0) {
 				this.possibleInsertIndices.add(state.size());
+				insertIndicator = 1.0;
 			}
-		}
 
-		boolean canInsert() {
-			return this.possibleInsertIndices.size() > 0;
-		}
+			// derived quantities
 
-		boolean canRemove() {
-			return this.possibleRemoveIndices.size() > 0;
-		}
+			this.insertProba = insertIndicator / (insertIndicator + removeIndicator + flipIndicator);
+			this.removeProba = removeIndicator / (insertIndicator + removeIndicator + flipIndicator);
+			this.flipProba = flipIndicator / (insertIndicator + removeIndicator + flipIndicator);
 
-		boolean canFlip() {
-			return this.possibleFlipIndices.size() > 0;
 		}
 
 		double insertProba() {
-			return (canInsert() ? 1. : 0.)
-					/ ((canInsert() ? 1. : 0.) + (canRemove() ? 1. : 0.) + (canFlip() ? 1. : 0.));
+			return this.insertProba;
 		}
 
 		double removeProba() {
-			return (canRemove() ? 1. : 0.)
-					/ ((canInsert() ? 1. : 0.) + (canRemove() ? 1. : 0.) + (canFlip() ? 1. : 0.));
+			return this.removeProba;
 		}
 
 		double flipProba() {
-			return (canFlip() ? 1. : 0.) / ((canInsert() ? 1. : 0.) + (canRemove() ? 1. : 0.) + (canFlip() ? 1. : 0.));
+			return this.flipProba;
 		}
 
 		private <X> X draw(List<X> list) {
@@ -180,23 +179,23 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 		}
 
 		double concreteInsertProba(int index) {
-			return this.insertProba() * 1.0 / this.possibleInsertIndices.size()
-					/ this.possibleInserts.get(index).size();
+			return this.insertProba() / this.possibleInsertIndices.size() / this.possibleInserts.get(index).size();
 		}
 
 		double concreteRemoveProba() {
-			return this.removeProba() * 1.0 / this.possibleRemoveIndices.size();
+			return this.removeProba() / this.possibleRemoveIndices.size();
 		}
 
 		double concreteFlipProba(int index) {
-			return this.flipProba() * 1.0 / this.possibleFlipIndices.size() / this.possibleFlips.get(index).size();
+			return this.flipProba() / this.possibleFlipIndices.size() / this.possibleFlips.get(index).size();
 		}
-
 	}
+
+	// IMPLEMENTATION OF INTERFACE
 
 	@Override
 	public RoundTrip<L> newInitialState() {
-		return new RoundTrip<L>(Arrays.asList(this.randomLocation()),
+		return new RoundTrip<L>(Arrays.asList(this.allLocations.get(this.rnd.nextInt(this.allLocations.size()))),
 				Arrays.asList(this.scenario.getAnalysisPeriod_s()));
 	}
 
@@ -253,12 +252,9 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 			return new MHTransition<RoundTrip<L>>(state, newState, fwdLogProba, bwdLogProba);
 
 		} else {
-
-			// RETIME
-
-			throw new RuntimeException();
-			// TODO ignore for the time being
+			
+			// TODO other than round trip operations
+			return null;
 		}
-
 	}
 }

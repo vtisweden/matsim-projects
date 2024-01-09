@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import floetteroed.utilities.Tuple;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 import se.vti.utils.misc.metropolishastings.MHWeight;
