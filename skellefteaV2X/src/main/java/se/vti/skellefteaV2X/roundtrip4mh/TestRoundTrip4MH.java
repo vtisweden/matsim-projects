@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import floetteroed.utilities.Tuple;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 import se.vti.utils.misc.metropolishastings.MHWeight;
@@ -44,11 +45,10 @@ public class TestRoundTrip4MH {
 		return sum;
 	}
 
-
 	public static void main(String[] args) {
 
 		final int totalIts = 10 * 1000 * 1000;
-		
+
 		System.out.println("STARTED ...");
 
 		final Random rnd = new Random();
@@ -62,13 +62,12 @@ public class TestRoundTrip4MH {
 
 		MHWeight<RoundTrip<Integer>> weight = new MHWeight<>() {
 
-			boolean correct = true;
 			double occurrenceOfSum[] = new double[] { 0, 1, 1, 3, 2, 2, 8, 4, 6, 4, 2 };
 
 			@Override
 			public double logWeight(RoundTrip<Integer> state) {
-				int sum = sum(state);
-				return -0.1 * sum + (this.correct ? Math.log(1.0 / this.occurrenceOfSum[sum]) : 0.0);
+				final int sum = sum(state);
+				return -0.0 * sum - Math.log(this.occurrenceOfSum[sum]);
 			}
 
 		};
@@ -79,7 +78,7 @@ public class TestRoundTrip4MH {
 			long[] sumHist = new long[11];
 
 			Map<List<Integer>, Long> seq2cnt = new LinkedHashMap<>();
-			
+
 			@Override
 			public void start() {
 			}
@@ -89,7 +88,7 @@ public class TestRoundTrip4MH {
 				if (it++ > totalIts / 4) {
 					this.sumHist[sum(state)]++;
 					List<Integer> locations = state.locationsCopy();
-					this.seq2cnt.compute(locations, (locs, cnt) -> cnt == null ? 1 : cnt + 1);					
+					this.seq2cnt.compute(locations, (locs, cnt) -> cnt == null ? 1 : cnt + 1);
 				}
 			}
 
@@ -113,6 +112,20 @@ public class TestRoundTrip4MH {
 		algo.addStateProcessor(prn);
 		algo.setMsgInterval(10000);
 		algo.run(totalIts);
+
+//		System.out.println();
+//		System.out.println("from\tto\trealized\tpredicted\t(realized/predicted)");
+//		for (RoundTrip<Integer> from : proposal.state2visitCnt.keySet()) {
+//			for (RoundTrip<Integer> to : proposal.state2visitCnt.keySet()) {
+//				Tuple<RoundTrip<Integer>, RoundTrip<Integer>> tuple = new Tuple<>(from, to);
+//				double cnt = proposal.state2visitCnt.get(from);
+//				double realized = proposal.transition2proposedCnt.getOrDefault(tuple, 0.) / cnt;
+//				double predicted = proposal.transition2proposedProbaSum.getOrDefault(tuple, 0.) / cnt;
+//				if (realized > 0 || predicted > 0) {
+//					System.out.println(from + "\t" + to + "\t" + realized + "\t" + predicted + "\t" + (realized / predicted));
+//				}
+//			}
+//		}
 
 		System.out.println("... DONE");
 	}
