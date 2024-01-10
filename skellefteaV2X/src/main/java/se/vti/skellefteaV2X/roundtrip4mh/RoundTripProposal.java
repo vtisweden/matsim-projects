@@ -39,11 +39,13 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	private final RoundTripLocationProposal<L> locationProposal;
 	private final RoundTripTimeBinProposal<L> timeBinProposal;
+	private final RoundTripChargingProposal<L> chargingProposal;
 
 	public RoundTripProposal(RoundTripScenario<L> scenario) {
 		this.scenario = scenario;
 		this.locationProposal = new RoundTripLocationProposal<>(scenario);
 		this.timeBinProposal = new RoundTripTimeBinProposal<>(scenario);
+		this.chargingProposal = new RoundTripChargingProposal<>(scenario);
 	}
 
 	// IMPLEMENTATION OF INTERFACE
@@ -72,6 +74,15 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
 					Math.log(this.scenario.timeBinProba) + transition.getFwdLogProb(),
 					Math.log(this.scenario.timeBinProba) + transition.getBwdLogProb());
+			return transition;
+
+		} else if (randomNumber < this.scenario.locationProba + this.scenario.timeBinProba
+				+ this.scenario.chargingProba) {
+
+			MHTransition<RoundTrip<L>> transition = this.chargingProposal.newTransition(state);
+			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
+					Math.log(this.scenario.chargingProba) + transition.getFwdLogProb(),
+					Math.log(this.scenario.chargingProba) + transition.getBwdLogProb());
 			return transition;
 
 		} else {

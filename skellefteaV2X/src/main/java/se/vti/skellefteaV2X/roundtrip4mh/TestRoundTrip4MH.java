@@ -19,8 +19,12 @@
  */
 package se.vti.skellefteaV2X.roundtrip4mh;
 
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -41,7 +45,8 @@ public class TestRoundTrip4MH {
 		final Random rnd = new Random();
 
 		final double locationProba = 0.0;
-		final RoundTripScenario<Integer> scenario = new RoundTripScenario<>(4, 8, locationProba, 1.0 - locationProba);
+		final RoundTripScenario<Integer> scenario = new RoundTripScenario<>(4, 8, locationProba, 1.0 - locationProba,
+				0.0);
 		for (int i = 1; i <= 3; i++) {
 			scenario.addLocation(i);
 		}
@@ -90,13 +95,16 @@ public class TestRoundTrip4MH {
 		algo.run(totalIts);
 	}
 
-	static void testLocationsAndTimes() {
-		final int totalIts = 100 * 1000 * 1000;
+	static void testLocationsAndTimesAndCharging() {
+		final int totalIts = 10 * 1000 * 1000;
 
 		final Random rnd = new Random();
 
 		final double locationProba = 0.1;
-		final RoundTripScenario<Integer> scenario = new RoundTripScenario<>(4, 8, locationProba, 1.0 - locationProba);
+		final double departureProba = 0.7;
+		final double chargingProba = 1.0 - locationProba - departureProba;
+		final RoundTripScenario<Integer> scenario = new RoundTripScenario<>(4, 8, locationProba, departureProba,
+				chargingProba);
 		for (int i = 1; i <= 3; i++) {
 			scenario.addLocation(i);
 		}
@@ -128,9 +136,26 @@ public class TestRoundTrip4MH {
 
 			@Override
 			public void end() {
+				List<Long> counts = new ArrayList<>(this.roundTrip2cnt.size());
+
 				for (Map.Entry<RoundTrip<Integer>, Long> e : this.roundTrip2cnt.entrySet()) {
 					System.out.println(e.getKey() + "\t" + e.getValue());
+					counts.add(e.getValue());
 				}
+				System.out.println(this.roundTrip2cnt.size());
+
+				Collections.sort(counts);
+				try {
+					PrintWriter w = new PrintWriter("counts.txt");
+					for (long c : counts) {
+						w.println(c);
+					}
+					w.flush();
+					w.close();
+				} catch (Exception e) {
+					throw new RuntimeException();
+				}
+
 			}
 
 		};
@@ -149,7 +174,7 @@ public class TestRoundTrip4MH {
 		System.out.println("STARTED ...");
 
 		// testTimes();
-		testLocationsAndTimes();
+		testLocationsAndTimesAndCharging();
 
 		System.out.println("... DONE");
 	}

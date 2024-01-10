@@ -38,14 +38,16 @@ public class RoundTripScenario<L> {
 	
 	public final double locationProba;
 	public final double timeBinProba;
+	public final double chargingProba;
 
 	private final Set<L> allLocations = new LinkedHashSet<>();
 
-	public RoundTripScenario(int maxLength, int departureBinCnt, double locationProba, double timeBinProba) {
+	public RoundTripScenario(int maxLength, int departureBinCnt, double locationProba, double timeBinProba, double chargingProba) {
 		this.maxLength = maxLength;
 		this.departureBinCnt = departureBinCnt;
 		this.locationProba = locationProba;
 		this.timeBinProba = timeBinProba;
+		this.chargingProba = chargingProba;
 	}
 
 	public void addLocation(L location) {

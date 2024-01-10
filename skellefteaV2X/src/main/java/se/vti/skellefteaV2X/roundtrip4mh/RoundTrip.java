@@ -88,6 +88,14 @@ public class RoundTrip<L> {
 		this.locations.set(i, location);
 	}
 
+	public Boolean getCharging(int i) {
+		return this.charging.get(i);
+	}
+
+	public void setCharging(int i, Boolean doCharge) {
+		this.charging.set(i, doCharge);
+	}
+
 	public Integer getDepartureBin(int i) {
 		return this.departureBins.get(i);
 	}
@@ -97,15 +105,17 @@ public class RoundTrip<L> {
 		Collections.sort(this.departureBins);
 	}
 
-	public void addAndEnsureSortedDepartures(int i, L location, Integer departureBin) {
+	public void addAndEnsureSortedDepartures(int i, L location, Integer departureBin, Boolean charging) {
 		this.locations.add(i, location);
 		this.departureBins.add(i, departureBin);
+		this.charging.add(i, charging);
 		Collections.sort(this.departureBins);
 	}
 
-	public void removeLocationAndDeparture(int i, int j) {
-		this.locations.remove(i);
-		this.departureBins.remove(j);
+	public void removeLocationAndChargingAndOtherDeparture(int locationChargingIndex, int departureIndex) {
+		this.locations.remove(locationChargingIndex);
+		this.charging.remove(locationChargingIndex);
+		this.departureBins.remove(departureIndex);
 	}
 
 	public void remove(int i) {

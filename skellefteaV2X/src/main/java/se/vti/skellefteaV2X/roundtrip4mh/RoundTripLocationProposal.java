@@ -20,7 +20,6 @@
 package se.vti.skellefteaV2X.roundtrip4mh;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -190,12 +189,14 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 		double concreteInsertProba(int index) {
 			return this.insertProba()
-					* (1.0 / this.possibleInsertIndices.size() / this.possibleInserts.get(index).size())
-					* (1.0 / (scenario.getDepartureBinCnt() - this.fromStateLength()));
+					* (1.0 / this.possibleInsertIndices.size() / this.possibleInserts.get(index).size()) // location
+					* (1.0 / (scenario.getDepartureBinCnt() - this.fromStateLength())) // departure
+					* 0.5; // charging
 		}
 
 		double concreteRemoveProba() {
 			return this.removeProba() * (1.0 / this.possibleRemoveIndices.size()) * (1.0 / this.fromStateLength());
+			// removal is unconditional on charging
 		}
 
 		double concreteFlipProba(int index) {
@@ -203,7 +204,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 		}
 	}
 
-	private RoundTrip<L> newStateWithLocationAndRandomizedDepartures(RoundTrip<L> state, L newLocation,
+	private RoundTrip<L> newStateWithLocationAndRandomizedChargingAndDepartures(RoundTrip<L> state, L newLocation,
 			int newLocationIndex) {
 
 		Integer newBin = null;
@@ -214,8 +215,10 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			}
 		} while (newBin == null);
 
+		final Boolean charging = this.rnd.nextBoolean();
+
 		final RoundTrip<L> newState = state.deepCopy();
-		newState.addAndEnsureSortedDepartures(newLocationIndex, newLocation, newBin);
+		newState.addAndEnsureSortedDepartures(newLocationIndex, newLocation, newBin, charging);
 		return newState;
 	}
 
@@ -238,8 +241,8 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 			final int whereToInsert = fwdActions.drawInsertIndex();
 			final L whatToInsert = fwdActions.drawInsertValue(whereToInsert);
-			final RoundTrip<L> newState = this.newStateWithLocationAndRandomizedDepartures(state, whatToInsert,
-					whereToInsert);
+			final RoundTrip<L> newState = this.newStateWithLocationAndRandomizedChargingAndDepartures(state,
+					whatToInsert, whereToInsert);
 			final double fwdLogProba = Math.log(fwdActions.concreteInsertProba(whereToInsert));
 
 			final PossibleTransitions bwdActions = new PossibleTransitions(newState);
@@ -254,7 +257,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			final int whereToRemoveLocation = fwdActions.drawRemoveIndex();
 			final int whereToRemoveDeparture = this.rnd.nextInt(state.size());
 			final RoundTrip<L> newState = state.deepCopy();
-			newState.removeLocationAndDeparture(whereToRemoveLocation, whereToRemoveDeparture);
+			newState.removeLocationAndChargingAndOtherDeparture(whereToRemoveLocation, whereToRemoveDeparture);
 			final double fwdLogProba = Math.log(fwdActions.concreteRemoveProba());
 
 			final PossibleTransitions bwdActions = new PossibleTransitions(newState);
