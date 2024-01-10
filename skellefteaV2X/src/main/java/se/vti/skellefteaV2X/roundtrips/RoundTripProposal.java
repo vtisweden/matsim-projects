@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.roundtrip4mh;
+package se.vti.skellefteaV2X.roundtrips;
 
 import java.util.Random;
 
@@ -38,13 +38,13 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 	private final RoundTripScenario<L> scenario;
 
 	private final RoundTripLocationProposal<L> locationProposal;
-	private final RoundTripTimeBinProposal<L> timeBinProposal;
+	private final RoundTripDepartureProposal<L> timeBinProposal;
 	private final RoundTripChargingProposal<L> chargingProposal;
 
 	public RoundTripProposal(RoundTripScenario<L> scenario) {
 		this.scenario = scenario;
 		this.locationProposal = new RoundTripLocationProposal<>(scenario);
-		this.timeBinProposal = new RoundTripTimeBinProposal<>(scenario);
+		this.timeBinProposal = new RoundTripDepartureProposal<>(scenario);
 		this.chargingProposal = new RoundTripChargingProposal<>(scenario);
 	}
 
@@ -60,29 +60,30 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 		final double randomNumber = this.rnd.nextDouble();
 
-		if (randomNumber < this.scenario.locationProba) {
+		if (randomNumber < this.scenario.getLocationProposalProbability()) {
 
 			MHTransition<RoundTrip<L>> transition = this.locationProposal.newTransition(state);
 			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.locationProba) + transition.getFwdLogProb(),
-					Math.log(this.scenario.locationProba) + transition.getBwdLogProb());
+					Math.log(this.scenario.getLocationProposalProbability()) + transition.getFwdLogProb(),
+					Math.log(this.scenario.getLocationProposalProbability()) + transition.getBwdLogProb());
 			return transition;
 
-		} else if (randomNumber < this.scenario.locationProba + this.scenario.timeBinProba) {
+		} else if (randomNumber < this.scenario.getLocationProposalProbability()
+				+ this.scenario.getDepartureProposalProbability()) {
 
 			MHTransition<RoundTrip<L>> transition = this.timeBinProposal.newTransition(state);
 			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.timeBinProba) + transition.getFwdLogProb(),
-					Math.log(this.scenario.timeBinProba) + transition.getBwdLogProb());
+					Math.log(this.scenario.getDepartureProposalProbability()) + transition.getFwdLogProb(),
+					Math.log(this.scenario.getDepartureProposalProbability()) + transition.getBwdLogProb());
 			return transition;
 
-		} else if (randomNumber < this.scenario.locationProba + this.scenario.timeBinProba
-				+ this.scenario.chargingProba) {
+		} else if (randomNumber < this.scenario.getLocationProposalProbability()
+				+ this.scenario.getDepartureProposalProbability() + this.scenario.getChargingProposalProbability()) {
 
 			MHTransition<RoundTrip<L>> transition = this.chargingProposal.newTransition(state);
 			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.chargingProba) + transition.getFwdLogProb(),
-					Math.log(this.scenario.chargingProba) + transition.getBwdLogProb());
+					Math.log(this.scenario.getChargingProposalProbability()) + transition.getFwdLogProb(),
+					Math.log(this.scenario.getChargingProposalProbability()) + transition.getBwdLogProb());
 			return transition;
 
 		} else {

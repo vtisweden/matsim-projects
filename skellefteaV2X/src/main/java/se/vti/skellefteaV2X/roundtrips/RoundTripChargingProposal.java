@@ -17,11 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.roundtrip4mh;
+package se.vti.skellefteaV2X.roundtrips;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
@@ -33,17 +32,21 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  */
 public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 
-	private final Random rnd = new Random();
+	// -------------------- CONSTANTS --------------------
+
+	private final RoundTripScenario<L> scenario;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public RoundTripChargingProposal(RoundTripScenario<L> scenario) {
+		this.scenario = scenario;
 	}
 
-	// INTERNALS
-
-	// IMPLEMENTATION OF INTERFACE
+	// -------------------- IMPLEMENTATION OF MHProposal --------------------
 
 	@Override
 	public RoundTrip<L> newInitialState() {
+		// not to be used standalone
 		throw new UnsupportedOperationException();
 	}
 
@@ -58,7 +61,7 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 			newChargings = new ArrayList<>(state.size());
 			proba = 1.0;
 			for (int i = 0; i < state.size(); i++) {
-				if (this.rnd.nextDouble() < flipProba) {
+				if (this.scenario.getRandom().nextDouble() < flipProba) {
 					flipped = true;
 					newChargings.add(!state.getCharging(i));
 					proba *= flipProba;
@@ -68,16 +71,14 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 				}
 			}
 		} while (!flipped);
-		final double noFlipProba = Math.pow(1.0 - flipProba, state.size());
-		proba /= noFlipProba;
+
+		final double fwdLogProba = Math.log(proba) - state.size() * Math.log(1.0 - flipProba);
+		final double bwdLogProba = fwdLogProba;
 
 		final RoundTrip<L> newState = state.deepCopy();
 		for (int i = 0; i < newState.size(); i++) {
 			newState.setCharging(i, newChargings.get(i));
 		}
-
-		final double fwdLogProba = Math.log(proba);
-		final double bwdLogProba = Math.log(proba);
 
 		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);
 	}

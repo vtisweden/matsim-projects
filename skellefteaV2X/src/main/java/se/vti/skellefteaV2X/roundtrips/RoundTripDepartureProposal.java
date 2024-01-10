@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.roundtrip4mh;
+package se.vti.skellefteaV2X.roundtrips;
 
 import java.util.Random;
 
@@ -29,42 +29,49 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class RoundTripTimeBinProposal<L> implements MHProposal<RoundTrip<L>> {
+public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 
-	private final Random rnd = new Random();
+	// -------------------- CONSTANTS --------------------
 
 	private final RoundTripScenario<L> scenario;
 
-	public RoundTripTimeBinProposal(RoundTripScenario<L> scenario) {
+	// -------------------- CONSTRUCTION --------------------
+
+	public RoundTripDepartureProposal(RoundTripScenario<L> scenario) {
 		this.scenario = scenario;
 	}
 
-	// INTERNALS
+	// -------------------- HELPERS --------------------
 
-	// IMPLEMENTATION OF INTERFACE
+	public static Integer drawUnusedDeparture(RoundTrip<?> state, RoundTripScenario<?> scenario) {
+		return drawUnusedDeparture(state, scenario.getRandom(), scenario.getTimeBinCnt());
+	}
+
+	public static Integer drawUnusedDeparture(RoundTrip<?> state, Random rnd, int timeBinCnt) {
+		while (true) {
+			final Integer dpt = rnd.nextInt(timeBinCnt);
+			if (!state.containsDeparture(dpt)) {
+				return dpt;
+			}
+		}
+	}
+
+	// -------------------- IMPLEMENTATION OF MHProposal --------------------
 
 	@Override
 	public RoundTrip<L> newInitialState() {
+		// not to be used standalone
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
-		Integer newBin = null;
-		do {
-			final Integer bin = this.rnd.nextInt(this.scenario.getDepartureBinCnt());
-			if (!state.containsDepartureBin(bin)) {
-				// so we cannot stay in the old bin
-				newBin = bin;
-			}
-		} while (newBin == null);
-
+		final Integer newDeparture = drawUnusedDeparture(state, this.scenario);
 		final RoundTrip<L> newState = state.deepCopy();
-		newState.setDepartureBinAndEnsureSortedDepartures(this.rnd.nextInt(state.size()), newBin);
+		newState.setDepartureAndEnsureOrdering(this.scenario.getRandom().nextInt(state.size()), newDeparture);
 
-		final double fwdLogProba = Math.log(1.0 / state.size())
-				+ Math.log(1.0 / (this.scenario.getDepartureBinCnt() - state.size()));
+		final double fwdLogProba = -Math.log(state.size()) - Math.log(this.scenario.getTimeBinCnt() - state.size());
 		final double bwdLogProba = fwdLogProba;
 
 		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);
