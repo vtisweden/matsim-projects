@@ -105,6 +105,10 @@ public class RoundTrip<L> {
 		return this.departures.get(i);
 	}
 
+	public Integer getNextDeparture(int i) {
+		return this.departures.get(this.successorIndex(i));
+	}
+
 	public boolean containsDeparture(int bin) {
 		return this.departures.contains(bin);
 	}

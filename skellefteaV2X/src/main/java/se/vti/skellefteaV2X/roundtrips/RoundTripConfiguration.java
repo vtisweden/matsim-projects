@@ -64,6 +64,12 @@ public class RoundTripConfiguration<L> {
 		this.rnd = rnd;
 	}
 
+	public RoundTripConfiguration(int maxLocations, int timeBinCnt, double locationProposalWeight,
+			double departureProposalWeight, double chargingProposalWeight) {
+		this(maxLocations, timeBinCnt, locationProposalWeight, departureProposalWeight, chargingProposalWeight,
+				new Random());
+	}
+
 	public void addLocation(L location) {
 		this.allLocations.add(location);
 	}
