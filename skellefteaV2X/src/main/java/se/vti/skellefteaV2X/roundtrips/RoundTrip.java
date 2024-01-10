@@ -152,7 +152,7 @@ public class RoundTrip<L> {
 	@Override
 	public String toString() {
 		return "locs[" + this.locations.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],bins["
-				+ this.departures.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],charging["
+				+ this.departures.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],charge["
 				+ this.chargings.stream().map(c -> c ? "1" : "0").collect(Collectors.joining(",")) + "]";
 	}
 }
