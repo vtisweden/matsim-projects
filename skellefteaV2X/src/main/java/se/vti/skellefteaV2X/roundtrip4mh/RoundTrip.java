@@ -20,6 +20,7 @@
 package se.vti.skellefteaV2X.roundtrip4mh;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,11 +34,14 @@ public class RoundTrip<L> {
 
 	private List<L> locations;
 
-	private List<Double> durations_s;
+	private List<Integer> departureBins;
 
-	public RoundTrip(List<L> locations, List<Double> durations_s) {
+	private List<Boolean> charging;
+	
+	public RoundTrip(List<L> locations, List<Integer> departureBins, List<Boolean> charging) {
 		this.locations = locations;
-		this.durations_s = durations_s;
+		this.departureBins = departureBins;
+		this.charging = charging;
 	}
 
 	// INTERNALS
@@ -80,27 +84,65 @@ public class RoundTrip<L> {
 		return this.locations.get(i);
 	}
 
-	public double getDuration_s(int i) {
-		return this.durations_s.get(i);
+	public void setLocation(int i, L location) {
+		this.locations.set(i, location);
 	}
 
-	public void add(int i, L location, double duration_s) {
+	public Integer getDepartureBin(int i) {
+		return this.departureBins.get(i);
+	}
+
+	public void setDepartureBinAndEnsureSortedDepartures(int i, Integer departureBin) {
+		this.departureBins.set(i, departureBin);
+		Collections.sort(this.departureBins);
+	}
+
+	public void addAndEnsureSortedDepartures(int i, L location, Integer departureBin) {
 		this.locations.add(i, location);
-		this.durations_s.add(i, duration_s);
+		this.departureBins.add(i, departureBin);
+		Collections.sort(this.departureBins);
+	}
+
+	public void removeLocationAndDeparture(int i, int j) {
+		this.locations.remove(i);
+		this.departureBins.remove(j);
 	}
 
 	public void remove(int i) {
 		this.locations.remove(i);
-		this.durations_s.remove(i);
+		this.departureBins.remove(i);
+	}
+
+	public boolean containsDepartureBin(int bin) {
+		return this.departureBins.contains(bin);
 	}
 
 	public RoundTrip<L> deepCopy() {
-		return new RoundTrip<L>(new ArrayList<>(this.locations), new ArrayList<>(this.durations_s));
+		return new RoundTrip<L>(new ArrayList<>(this.locations), new ArrayList<>(this.departureBins), new ArrayList<>(this.charging));
 	}
 
 	@Override
 	public String toString() {
-		return this.locations.stream().map(l -> l.toString()).collect(Collectors.joining(","));
+		return "locs[" + this.locations.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],bins["
+				+ this.departureBins.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],charging["
+						+ this.charging.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "]";				
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof RoundTrip) {
+			RoundTrip<?> otherRoundTrip = (RoundTrip<?>) other;
+			return this.locations.equals(otherRoundTrip.locations)
+					&& this.departureBins.equals(otherRoundTrip.departureBins)
+					&& this.charging.equals(otherRoundTrip.charging);
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		return this.locations.hashCode() + 31 * (this.departureBins.hashCode() + 31 * this.charging.hashCode());
 	}
 
 }

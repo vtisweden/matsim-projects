@@ -25,8 +25,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import floetteroed.utilities.Units;
-
 /**
  * 
  * @author GunnarF
@@ -36,17 +34,18 @@ import floetteroed.utilities.Units;
 public class RoundTripScenario<L> {
 
 	private final int maxLength;
-	private final double analysisPeriod_s;
+	private final int departureBinCnt;
+	
+	public final double locationProba;
+	public final double timeBinProba;
 
 	private final Set<L> allLocations = new LinkedHashSet<>();
 
-	public RoundTripScenario(int maxLength, double analysisPeriod_s) {
+	public RoundTripScenario(int maxLength, int departureBinCnt, double locationProba, double timeBinProba) {
 		this.maxLength = maxLength;
-		this.analysisPeriod_s = analysisPeriod_s;
-	}
-
-	public RoundTripScenario(int maxLength) {
-		this(maxLength, Units.S_PER_D);
+		this.departureBinCnt = departureBinCnt;
+		this.locationProba = locationProba;
+		this.timeBinProba = timeBinProba;
 	}
 
 	public void addLocation(L location) {
@@ -57,8 +56,8 @@ public class RoundTripScenario<L> {
 		return this.maxLength;
 	}
 
-	public double getAnalysisPeriod_s() {
-		return this.analysisPeriod_s;
+	public int getDepartureBinCnt() {
+		return this.departureBinCnt;
 	}
 
 	public List<L> getAllLocationsListView() {

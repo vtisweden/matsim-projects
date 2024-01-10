@@ -25,26 +25,21 @@ import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
 /**
- * TODO Deal with infeasible transitions (empty chains, max length, ...)
  * 
  * @author GunnarF
  *
- * @param <L> the location type
  */
-public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
+public class RoundTripTimeBinProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	private final Random rnd = new Random();
 
 	private final RoundTripScenario<L> scenario;
 
-	private final RoundTripLocationProposal<L> locationProposal;
-	private final RoundTripTimeBinProposal<L> timeBinProposal;
-
-	public RoundTripProposal(RoundTripScenario<L> scenario) {
+	public RoundTripTimeBinProposal(RoundTripScenario<L> scenario) {
 		this.scenario = scenario;
-		this.locationProposal = new RoundTripLocationProposal<>(scenario);
-		this.timeBinProposal = new RoundTripTimeBinProposal<>(scenario);
 	}
+
+	// INTERNALS
 
 	// IMPLEMENTATION OF INTERFACE
 
@@ -56,28 +51,22 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
-		final double randomNumber = this.rnd.nextDouble();
+		Integer newBin = null;
+		do {
+			final Integer bin = this.rnd.nextInt(this.scenario.getDepartureBinCnt());
+			if (!state.containsDepartureBin(bin)) {
+				// so we cannot stay in the old bin
+				newBin = bin;
+			}
+		} while (newBin == null);
 
-		if (randomNumber < this.scenario.locationProba) {
+		final RoundTrip<L> newState = state.deepCopy();
+		newState.setDepartureBinAndEnsureSortedDepartures(this.rnd.nextInt(state.size()), newBin);
 
-			MHTransition<RoundTrip<L>> transition = this.locationProposal.newTransition(state);
-			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.locationProba) + transition.getFwdLogProb(),
-					Math.log(this.scenario.locationProba) + transition.getBwdLogProb());
-			return transition;
+		final double fwdLogProba = Math.log(1.0 / state.size())
+				+ Math.log(1.0 / (this.scenario.getDepartureBinCnt() - state.size()));
+		final double bwdLogProba = fwdLogProba;
 
-		} else if (randomNumber < this.scenario.locationProba + this.scenario.timeBinProba) {
-
-			MHTransition<RoundTrip<L>> transition = this.timeBinProposal.newTransition(state);
-			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.timeBinProba) + transition.getFwdLogProb(),
-					Math.log(this.scenario.timeBinProba) + transition.getBwdLogProb());
-			return transition;
-
-		} else {
-
-			return null; // should not happen
-
-		}
+		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);
 	}
 }
