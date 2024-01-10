@@ -37,7 +37,7 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  * @author GunnarF
  *
  */
-public class TestRoundTrip4MH {
+public class TestRoundTrips {
 
 	static void testLocationsAndTimesAndCharging() {
 		final int totalIts = 10 * 1000 * 1000;
