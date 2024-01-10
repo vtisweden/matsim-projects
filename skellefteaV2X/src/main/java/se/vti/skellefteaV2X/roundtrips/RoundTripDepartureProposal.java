@@ -33,17 +33,17 @@ public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripScenario<L> scenario;
+	private final RoundTripConfiguration<L> scenario;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripDepartureProposal(RoundTripScenario<L> scenario) {
+	public RoundTripDepartureProposal(RoundTripConfiguration<L> scenario) {
 		this.scenario = scenario;
 	}
 
 	// -------------------- HELPERS --------------------
 
-	public static Integer drawUnusedDeparture(RoundTrip<?> state, RoundTripScenario<?> scenario) {
+	public static Integer drawUnusedDeparture(RoundTrip<?> state, RoundTripConfiguration<?> scenario) {
 		return drawUnusedDeparture(state, scenario.getRandom(), scenario.getTimeBinCnt());
 	}
 

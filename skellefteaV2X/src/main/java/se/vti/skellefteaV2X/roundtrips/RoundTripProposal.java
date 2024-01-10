@@ -35,13 +35,13 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	private final Random rnd = new Random();
 
-	private final RoundTripScenario<L> scenario;
+	private final RoundTripConfiguration<L> scenario;
 
 	private final RoundTripLocationProposal<L> locationProposal;
 	private final RoundTripDepartureProposal<L> timeBinProposal;
 	private final RoundTripChargingProposal<L> chargingProposal;
 
-	public RoundTripProposal(RoundTripScenario<L> scenario) {
+	public RoundTripProposal(RoundTripConfiguration<L> scenario) {
 		this.scenario = scenario;
 		this.locationProposal = new RoundTripLocationProposal<>(scenario);
 		this.timeBinProposal = new RoundTripDepartureProposal<>(scenario);

@@ -34,11 +34,11 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripScenario<L> scenario;
+	private final RoundTripConfiguration<L> scenario;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripChargingProposal(RoundTripScenario<L> scenario) {
+	public RoundTripChargingProposal(RoundTripConfiguration<L> scenario) {
 		this.scenario = scenario;
 	}
 

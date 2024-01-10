@@ -30,7 +30,7 @@ import java.util.Set;
  *
  * @param <L> the location type
  */
-public class RoundTripScenario<L> {
+public class RoundTripConfiguration<L> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -48,7 +48,7 @@ public class RoundTripScenario<L> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripScenario(int maxLocations, int timeBinCnt, double locationProposalWeight,
+	public RoundTripConfiguration(int maxLocations, int timeBinCnt, double locationProposalWeight,
 			double timeBinProposalWeight, double chargingProposalWeight, Random rnd) {
 
 		assert (maxLocations <= timeBinCnt);

@@ -36,13 +36,13 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripScenario<L> scenario;
+	private final RoundTripConfiguration<L> scenario;
 
 	private final List<L> allLocations;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripLocationProposal(RoundTripScenario<L> scenario) {
+	public RoundTripLocationProposal(RoundTripConfiguration<L> scenario) {
 		this.scenario = scenario;
 		this.allLocations = new ArrayList<>(scenario.getAllLocationsView());
 	}
