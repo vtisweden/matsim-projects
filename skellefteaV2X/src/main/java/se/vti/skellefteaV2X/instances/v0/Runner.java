@@ -117,7 +117,6 @@ public class Runner {
 				Arrays.asList(true));
 
 		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, targetWeights, new Random());
-//		algo.addStateProcessor(prn);
 		algo.setMsgInterval(iterations / 100);
 		algo.addStateProcessor(new StationarityStats(simulator, campus, timeBinCnt, iterations / 100));
 		algo.setInitialState(initialState);

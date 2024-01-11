@@ -38,7 +38,7 @@ public class RoundTripSimulator {
 	public RoundTripSimulator(Scenario scenario) {
 		this.scenario = scenario;
 	}
-	
+
 	public Scenario getScenario() {
 		return this.scenario;
 	}
@@ -60,7 +60,8 @@ public class RoundTripSimulator {
 		parking.setChargeAtStart_kWh(charge_kWh);
 		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * departure));
 		if (location.getAllowsCharging() && charging) {
-			charge_kWh += this.scenario.getChargingRate_kW() * (parking.getEndTime_h() - parking.getStartTime_h());
+			charge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
+					this.scenario.getChargingRate_kW() * (parking.getEndTime_h() - parking.getStartTime_h()));
 		}
 		parking.setChargeAtEnd_kWh(charge_kWh);
 		return parking;
@@ -71,42 +72,63 @@ public class RoundTripSimulator {
 		if (roundTrip.size() == 1) {
 			return null;
 		}
+		
+		long replications = 0;
 
-		final List<Episode> episodes = new ArrayList<>(2 * roundTrip.size() - 1);
+		double initialCharge_kWh = this.scenario.getMaxCharge_kWh(); // initial guess
+		List<Episode> episodes;
+		do {
+			replications++;
+			
+			episodes = new ArrayList<>(2 * roundTrip.size() - 1);
 
-		ParkingEpisode home = new ParkingEpisode(roundTrip.getLocation(0));
-		episodes.add(home);
+			ParkingEpisode home = new ParkingEpisode(roundTrip.getLocation(0));
+			episodes.add(home);
 
-		double time_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
-		double charge_kWh = this.scenario.getMaxCharge_kWh(); // initial guess
-		home.setEndTime_h(time_h);
-		home.setChargeAtEnd_kWh(charge_kWh);
+			double time_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
+			double charge_kWh = initialCharge_kWh;
+			home.setEndTime_h(time_h);
+			home.setChargeAtEnd_kWh(charge_kWh);
 
-		for (int index = 0; index < roundTrip.size(); index++) {
-			final int nextIndex = roundTrip.successorIndex(index);
+			for (int index = 0; index < roundTrip.size(); index++) {
+				final int nextIndex = roundTrip.successorIndex(index);
 
-			final DrivingEpisode driving = this.newDrivingEpisode(roundTrip.getLocation(index),
-					roundTrip.getLocation(nextIndex), time_h, charge_kWh);
+				final DrivingEpisode driving = this.newDrivingEpisode(roundTrip.getLocation(index),
+						roundTrip.getLocation(nextIndex), time_h, charge_kWh);
+				episodes.add(driving);
+				time_h = driving.getEndTime_h();
+				charge_kWh = driving.getChargeAtEnd_kWh();
+
+				final ParkingEpisode parking = this.newParkingEpisode(roundTrip.getLocation(nextIndex),
+						roundTrip.getDeparture(nextIndex), roundTrip.getCharging(nextIndex), time_h, charge_kWh);
+				episodes.add(parking);
+				time_h = parking.getEndTime_h();
+				charge_kWh = parking.getChargeAtEnd_kWh();
+			}
+
+			final DrivingEpisode driving = this.newDrivingEpisode(roundTrip.getLocation(roundTrip.size() - 1),
+					roundTrip.getLocation(0), time_h, charge_kWh);
 			episodes.add(driving);
 			time_h = driving.getEndTime_h();
 			charge_kWh = driving.getChargeAtEnd_kWh();
 
-			final ParkingEpisode parking = this.newParkingEpisode(roundTrip.getLocation(nextIndex),
-					roundTrip.getDeparture(nextIndex), roundTrip.getCharging(nextIndex), time_h, charge_kWh);
-			episodes.add(parking);
-			time_h = parking.getEndTime_h();
-			charge_kWh = parking.getChargeAtEnd_kWh();
-		}
+			home.setStartTime_h(time_h - 24.0); // wrap-around
+			home.setChargeAtStart_kWh(charge_kWh); // possible charge inconsistency at the home location
 
-		final DrivingEpisode driving = this.newDrivingEpisode(roundTrip.getLocation(roundTrip.size() - 1),
-				roundTrip.getLocation(0), time_h, charge_kWh);
-		episodes.add(driving);
-		time_h = driving.getEndTime_h();
-		charge_kWh = driving.getChargeAtEnd_kWh();
+			// postprocessing
 
-		home.setStartTime_h(time_h - 24.0); // wrap-around
-		home.setChargeAtStart_kWh(charge_kWh); // possible charge inconsistency at the home location
+			double newInitialCharge_kWh = Math.min(this.scenario.getMaxCharge_kWh(), home.getChargeAtStart_kWh()
+					+ this.scenario.getChargingRate_kW() * Math.max(0.0, home.getEndTime_h() - home.getStartTime_h()));
+			if ((newInitialCharge_kWh >= 0.0) && (newInitialCharge_kWh < (initialCharge_kWh - 1.0))) {
+				episodes = null;
+				initialCharge_kWh = newInitialCharge_kWh;
+			}
+		} while (episodes == null);
 
+//		if (Math.random() < 1e-4) {
+//			System.out.println("\t" + replications + "\t" + initialCharge_kWh);
+//		}
+		
 		return episodes;
 	}
 

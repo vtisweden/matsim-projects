@@ -30,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> {
 
 	private final RoundTripSimulator simulator;
-	
+
 	private final Location campus;
 
 	private final List<List<BasicStatistics>> sequenceOfStatsPerBin;
@@ -68,7 +68,7 @@ public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> 
 
 	@Override
 	public void processState(RoundTrip<Location> state) {
-		if (++this.cnt == this.iterationsPerBlock) {
+		if (this.cnt++ == this.iterationsPerBlock) {
 			this.sequenceOfStatsPerBin.add(this.statsPerBin);
 			this.statsPerBin = newStatsPerTimeBin();
 			this.cnt = 0;
@@ -76,23 +76,44 @@ public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> 
 
 		List<Episode> episodes = this.simulator.simulate(state);
 		if (episodes == null) {
-			return;
-		}
 
-		for (Episode e : episodes) {
-			if (e instanceof ParkingEpisode) {
-				ParkingEpisode p = (ParkingEpisode) e;
-				if (this.campus.equals(p.getLocation())) {
-				int startBin = (int) (p.getStartTime_h() / this.simulator.getScenario().getBinSize_h());
-				int endBin = (int) (p.getEndTime_h() / this.simulator.getScenario().getBinSize_h());
-				for (int bin = Math.max(0, startBin); bin < Math.min(this.timeBinCnt, endBin); bin++) {
+			if (this.campus.equals(state.getLocation(0))) {
+				for (int bin = 0; bin < this.timeBinCnt; bin++) {
 					this.statsPerBin.get(bin).add(1.0);
 				}
+			}
+
+		} else {
+
+//			if (Math.random() < 0.01) {
+//				System.out.println("\t" + ((ParkingEpisode) episodes.get(0)).getChargeAtStart_kWh());
+//			}
+
+			for (Episode e : episodes) {
+				if (e instanceof ParkingEpisode) {
+					ParkingEpisode p = (ParkingEpisode) e;
+					if (this.campus.equals(p.getLocation())) {
+						int startBin = (int) (p.getStartTime_h() / this.simulator.getScenario().getBinSize_h());
+						int endBin = (int) (p.getEndTime_h() / this.simulator.getScenario().getBinSize_h());
+						if (startBin >= 0) {
+							for (int bin = startBin; bin <= Math.min(endBin, this.timeBinCnt - 1); bin++) {
+								this.statsPerBin.get(bin).add(1.0);
+							}
+						} else {
+							// wrap-around activity
+							assert (state.getLocation(0).equals(p.getLocation()));
+							for (int bin = startBin + this.timeBinCnt; bin < this.timeBinCnt; bin++) {
+								this.statsPerBin.get(bin).add(1.0);
+							}
+							for (int bin = 0; bin <= Math.min(endBin, this.timeBinCnt - 1); bin++) {
+								this.statsPerBin.get(bin).add(1.0);
+							}
+						}
+					}
 				}
 			}
+
 		}
-			
-			
 	}
 
 	@Override
