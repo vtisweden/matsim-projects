@@ -50,7 +50,7 @@ public class RoundTrip<L> {
 
 	// -------------------- INTERNALS --------------------
 
-	private int predecessorIndex(int i) {
+	public int predecessorIndex(int i) {
 		if (i > 0) {
 			return i - 1;
 		} else {
@@ -58,7 +58,7 @@ public class RoundTrip<L> {
 		}
 	}
 
-	private int successorIndex(int i) {
+	public int successorIndex(int i) {
 		if (i < this.size() - 1) {
 			return i + 1;
 		} else {
@@ -94,6 +94,10 @@ public class RoundTrip<L> {
 
 	public Boolean getCharging(int i) {
 		return this.chargings.get(i);
+	}
+
+	public Boolean getSuccessorCharging(int i) {
+		return this.chargings.get(this.successorIndex(i));
 	}
 
 	public void setDepartureAndEnsureOrdering(int i, Integer departureBin) {

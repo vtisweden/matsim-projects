@@ -24,43 +24,46 @@ package se.vti.skellefteaV2X.instances.v0;
  * @author GunnarF
  *
  */
-public class SimulationStats {
+public class Episode {
 
-	private Double startTime_h = null;
+	private Double start_h = null;
+	private Double end_h = null;
 
-	private Double endTime_h = null;
+	private Double chargeAtStart_kWh = null;
+	private Double chargeAtEnd_kWh = null;
 
-	private double minCharge_kWh = 0.0;
-
-	private double maxCharge_kWh = 0.0;
-
-	public void setStartTime_h(double startTime_h) {
-		this.startTime_h = startTime_h;
-	}
-
-	public void setEndTime_h(double endTime_h) {
-		this.endTime_h = endTime_h;
+	public Episode() {
 	}
 
 	public Double getStartTime_h() {
-		return this.startTime_h;
+		return start_h;
 	}
-	
+
+	public void setStartTime_h(Double start_h) {
+		this.start_h = start_h;
+	}
+
 	public Double getEndTime_h() {
-		return this.endTime_h;
-	}
-	
-	public void addCharge_kWh(double charge_kWh) {
-		this.minCharge_kWh = Math.min(minCharge_kWh, charge_kWh);
-		this.maxCharge_kWh = Math.max(maxCharge_kWh, charge_kWh);
+		return end_h;
 	}
 
-	public double getMinCharge_kWh() {
-		return this.minCharge_kWh;
+	public void setEndTime_h(Double end_h) {
+		this.end_h = end_h;
 	}
 
-	public double getMaxCharge_kWh() {
-		return this.maxCharge_kWh;
+	public void setChargeAtStart_kWh(Double chargeAtStart_kWh) {
+		this.chargeAtStart_kWh = chargeAtStart_kWh;
 	}
-	
+
+	public Double getChargeAtStart_kWh() {
+		return this.chargeAtStart_kWh;
+	}
+
+	public void setChargeAtEnd_kWh(Double chargeAtEnd_kWh) {
+		this.chargeAtEnd_kWh = chargeAtEnd_kWh;
+	}
+
+	public Double getChargeAtEnd_kWh() {
+		return this.chargeAtEnd_kWh;
+	}
 }
