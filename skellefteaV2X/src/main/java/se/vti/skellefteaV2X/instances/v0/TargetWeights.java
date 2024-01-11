@@ -17,35 +17,31 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.model;
+package se.vti.skellefteaV2X.instances.v0;
+
+import java.util.List;
+
+import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.roundtrips.RoundTrip;
+import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Location {
+public class TargetWeights implements MHWeight<RoundTrip<Location>> {
 
-	private final String name;
-	
-	private final boolean allowsCharging;
-	
-	public Location(String name, boolean allowsCharging) {
-		this.name = name;
-		this.allowsCharging = allowsCharging;
+	private final RoundTripSimulator simulator;
+
+	public TargetWeights(RoundTripSimulator simulator) {
+		this.simulator = simulator;
 	}
-	
-	public String getName() {
-		return this.name;
-	}
-	
-	public boolean getAllowsCharging() {
-		return this.allowsCharging;
-	}
-	
+
 	@Override
-	public String toString() {
-		return this.name;
+	public double logWeight(RoundTrip<Location> roundTrip) {
+		List<Episode> episodes = this.simulator.simulate(roundTrip);
+		return 0.0;
 	}
-	
+
 }

@@ -36,15 +36,15 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripConfiguration<L> scenario;
+	private final RoundTripConfiguration<L> config;
 
 	private final List<L> allLocations;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripLocationProposal(RoundTripConfiguration<L> scenario) {
-		this.scenario = scenario;
-		this.allLocations = new ArrayList<>(scenario.getAllLocationsView());
+	public RoundTripLocationProposal(RoundTripConfiguration<L> config) {
+		this.config = config;
+		this.allLocations = new ArrayList<>(config.getAllLocationsView());
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -84,7 +84,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 				// analyze inserts
 
 				final List<L> localInserts;
-				if (state.size() == scenario.getMaxLocations()) {
+				if (state.size() == config.getMaxLocations()) {
 					localInserts = Collections.emptyList();
 				} else {
 					localInserts = new ArrayList<>(allLocations);
@@ -122,7 +122,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			// analyze appends-to end of list
 
 			final List<L> lastInserts;
-			if (state.size() == scenario.getMaxLocations()) {
+			if (state.size() == config.getMaxLocations()) {
 				lastInserts = Collections.emptyList();
 			} else {
 				lastInserts = new ArrayList<>(allLocations);
@@ -148,7 +148,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 		}
 
 		private <X> X draw(List<X> list) {
-			return list.get(scenario.getRandom().nextInt(list.size()));
+			return list.get(config.getRandom().nextInt(list.size()));
 		}
 
 		int drawInsertIndex() {
@@ -174,7 +174,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 		double concreteInsertProba(int index) {
 			return this.insertProba // insert at all
 					* (1.0 / this.possibleInsertIndices.size() / this.possibleInserts.get(index).size()) // location
-					* (1.0 / (scenario.getTimeBinCnt() - this.fromStateLength())) // new depature in unused time slot
+					* (1.0 / (config.getTimeBinCnt() - this.fromStateLength())) // new depature in unused time slot
 					* 0.5; // charging
 		}
 
@@ -203,7 +203,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
-		final double randomNumber = this.scenario.getRandom().nextDouble();
+		final double randomNumber = this.config.getRandom().nextDouble();
 		PossibleTransitions fwdActions = new PossibleTransitions(state);
 
 		if (randomNumber < fwdActions.insertProba) {
@@ -212,8 +212,8 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 			final int whereToInsert = fwdActions.drawInsertIndex();
 			final L whatToInsert = fwdActions.drawInsertValue(whereToInsert);
-			final Integer newDeparture = RoundTripDepartureProposal.drawUnusedDeparture(state, this.scenario);
-			final Boolean charging = this.scenario.getRandom().nextBoolean();
+			final Integer newDeparture = RoundTripDepartureProposal.drawUnusedDeparture(state, this.config);
+			final Boolean charging = this.config.getRandom().nextBoolean();
 
 			final RoundTrip<L> newState = state.deepCopy();
 			newState.addAndEnsureSortedDepartures(whereToInsert, whatToInsert, newDeparture, charging);
@@ -229,7 +229,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			// REMOVE
 
 			final int whereToRemoveLocation = fwdActions.drawRemoveIndex();
-			final int whereToRemoveDeparture = this.scenario.getRandom().nextInt(state.size());
+			final int whereToRemoveDeparture = this.config.getRandom().nextInt(state.size());
 			final RoundTrip<L> newState = state.deepCopy();
 			newState.remove(whereToRemoveLocation, whereToRemoveDeparture);
 

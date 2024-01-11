@@ -31,16 +31,25 @@ import floetteroed.utilities.Tuple;
  */
 public class Scenario {
 
+	private final double chargingRate_kW;
+	private final double maxCharge_kWh;
+	private final double consumptionRate_kWh_km;
+	private final double speed_km_h;
+	private final double binSize_h;
+
 	private final Map<String, Location> name2location = new LinkedHashMap<>();
 
 	private final Map<Tuple<Location, Location>, Double> od2distance_km = new LinkedHashMap<>();
-	
-	private final double binSize_h;
 
-	public Scenario(double binSize_h) {
+	public Scenario(double chargingRate_kW, double maxCharge_kWh, double consumptionRate_kWh_km, double speed_km_h,
+			double binSize_h) {
+		this.chargingRate_kW = chargingRate_kW;
+		this.maxCharge_kWh = maxCharge_kWh;
+		this.consumptionRate_kWh_km = consumptionRate_kWh_km;
+		this.speed_km_h = speed_km_h;
 		this.binSize_h = binSize_h;
 	}
-	
+
 	public Location createAndAddLocation(String name, boolean canCharge) {
 		Location result = new Location(name, canCharge);
 		this.name2location.put(name, result);
@@ -53,14 +62,29 @@ public class Scenario {
 			this.od2distance_km.put(new Tuple<>(to, from), dist_km);
 		}
 	}
-	
+
 	public Double getDistance_km(Location from, Location to) {
 		return this.od2distance_km.get(new Tuple<>(from, to));
 	}
-	
+
 	public double getBinSize_h() {
 		return this.binSize_h;
 	}
-	
+
+	public double getChargingRate_kW() {
+		return chargingRate_kW;
+	}
+
+	public double getMaxCharge_kWh() {
+		return maxCharge_kWh;
+	}
+
+	public double getConsumptionRate_kWh_km() {
+		return consumptionRate_kWh_km;
+	}
+
+	public double getSpeed_km_h() {
+		return speed_km_h;
+	}
 
 }

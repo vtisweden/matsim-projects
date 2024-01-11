@@ -33,12 +33,12 @@ public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripConfiguration<L> scenario;
+	private final RoundTripConfiguration<L> config;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripDepartureProposal(RoundTripConfiguration<L> scenario) {
-		this.scenario = scenario;
+	public RoundTripDepartureProposal(RoundTripConfiguration<L> config) {
+		this.config = config;
 	}
 
 	// -------------------- HELPERS --------------------
@@ -67,11 +67,11 @@ public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
-		final Integer newDeparture = drawUnusedDeparture(state, this.scenario);
+		final Integer newDeparture = drawUnusedDeparture(state, this.config);
 		final RoundTrip<L> newState = state.deepCopy();
-		newState.setDepartureAndEnsureOrdering(this.scenario.getRandom().nextInt(state.size()), newDeparture);
+		newState.setDepartureAndEnsureOrdering(this.config.getRandom().nextInt(state.size()), newDeparture);
 
-		final double fwdLogProba = -Math.log(state.size()) - Math.log(this.scenario.getTimeBinCnt() - state.size());
+		final double fwdLogProba = -Math.log(state.size()) - Math.log(this.config.getTimeBinCnt() - state.size());
 		final double bwdLogProba = fwdLogProba;
 
 		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);

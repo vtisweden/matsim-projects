@@ -19,9 +19,15 @@
  */
 package se.vti.skellefteaV2X.instances.v0;
 
+import java.util.Arrays;
+import java.util.Random;
+
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Scenario;
+import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.roundtrips.RoundTripConfiguration;
+import se.vti.skellefteaV2X.roundtrips.RoundTripProposal;
+import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
  * 
@@ -39,7 +45,13 @@ public class Runner {
 		final int timeBinCnt = 24;
 		final double binSize_h = 24.0 / timeBinCnt;
 
-		Scenario scenario = new Scenario(binSize_h);
+		// TODO CONTINUE HERE
+		final double chargingRate_kW = 11.0;
+		final double maxCharge_kWh = 60.0;
+		final double consumptionRate_kWh_km = 0.2;
+		final double speed_km_h = 60.0;
+
+		Scenario scenario = new Scenario(chargingRate_kW, maxCharge_kWh, consumptionRate_kWh_km, speed_km_h, binSize_h);
 
 		Location boliden = scenario.createAndAddLocation("Boliden", false);
 		Location kage = scenario.createAndAddLocation("Kåge", false);
@@ -78,12 +90,12 @@ public class Runner {
 
 		// BUILD ROUNDTRIPS SAMPLER
 
-		final int maxLocations = 4;
-		final double locationProposalWeight = 0.1;
-		final double departureProposalWeight = 0.7;
-		final double chargingProposalWeight = 0.2;
+		int maxLocations = 4;
+		double locationProposalWeight = 0.1;
+		double departureProposalWeight = 0.45;
+		double chargingProposalWeight = 0.45;
 
-		RoundTripConfiguration<Location> roundTrips = new RoundTripConfiguration<>(maxLocations, timeBinCnt,
+		final RoundTripConfiguration<Location> roundTrips = new RoundTripConfiguration<>(maxLocations, timeBinCnt,
 				locationProposalWeight, departureProposalWeight, chargingProposalWeight);
 		roundTrips.addLocation(boliden);
 		roundTrips.addLocation(kage);
@@ -92,6 +104,23 @@ public class Runner {
 		roundTrips.addLocation(hamn);
 		roundTrips.addLocation(burea);
 		roundTrips.addLocation(burtrask);
+
+		// BUILD MH MACHINERY
+
+		int iterations = 100 * 1000 * 1000;
+
+		RoundTripSimulator simulator = new RoundTripSimulator(scenario);
+		TargetWeights targetWeights = new TargetWeights(simulator);
+
+		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrips);
+		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(centrum), Arrays.asList(8),
+				Arrays.asList(true));
+
+		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, targetWeights, new Random());
+//		algo.addStateProcessor(prn);
+		algo.setMsgInterval(iterations / 100);
+		algo.setInitialState(initialState);
+		algo.run(iterations);
 
 		System.out.println("... DONE");
 	}

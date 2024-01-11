@@ -32,23 +32,11 @@ import se.vti.skellefteaV2X.roundtrips.RoundTrip;
  *
  */
 public class RoundTripSimulator {
-	
+
 	private final Scenario scenario;
 
-	private final double chargingRate_kW;
-
-	private final double maxCharge_kWh;
-
-	private final double consumptionRate_kWh_km;
-
-	private final double speed_km_h;
-
-	public RoundTripSimulator(Scenario scenario, double chargingRate_kW, double consumption_kWh_km, double maxCharge_kWh, double speed_km_h) {
+	public RoundTripSimulator(Scenario scenario) {
 		this.scenario = scenario;
-		this.chargingRate_kW = chargingRate_kW;
-		this.maxCharge_kWh = maxCharge_kWh;
-		this.consumptionRate_kWh_km = consumption_kWh_km;
-		this.speed_km_h = speed_km_h;
 	}
 
 	private DrivingEpisode newDrivingEpisode(Location origin, Location destination, double time_h, double charge_kWh) {
@@ -56,8 +44,8 @@ public class RoundTripSimulator {
 		driving.setStartTime_h(time_h);
 		driving.setChargeAtStart_kWh(charge_kWh);
 		final double dist_km = this.scenario.getDistance_km(origin, destination);
-		driving.setEndTime_h(time_h + dist_km / this.speed_km_h);
-		driving.setChargeAtEnd_kWh(charge_kWh - dist_km * this.consumptionRate_kWh_km);
+		driving.setEndTime_h(time_h + dist_km / this.scenario.getSpeed_km_h());
+		driving.setChargeAtEnd_kWh(charge_kWh - dist_km * this.scenario.getConsumptionRate_kWh_km());
 		return driving;
 	}
 
@@ -68,7 +56,7 @@ public class RoundTripSimulator {
 		parking.setChargeAtStart_kWh(charge_kWh);
 		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * departure));
 		if (location.getAllowsCharging() && charging) {
-			charge_kWh += this.chargingRate_kW * (parking.getEndTime_h() - parking.getStartTime_h());
+			charge_kWh += this.scenario.getChargingRate_kW() * (parking.getEndTime_h() - parking.getStartTime_h());
 		}
 		parking.setChargeAtEnd_kWh(charge_kWh);
 		return parking;
@@ -86,7 +74,7 @@ public class RoundTripSimulator {
 		episodes.add(home);
 
 		double time_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
-		double charge_kWh = this.maxCharge_kWh; // initial guess
+		double charge_kWh = this.scenario.getMaxCharge_kWh(); // initial guess
 		home.setEndTime_h(time_h);
 		home.setChargeAtEnd_kWh(charge_kWh);
 

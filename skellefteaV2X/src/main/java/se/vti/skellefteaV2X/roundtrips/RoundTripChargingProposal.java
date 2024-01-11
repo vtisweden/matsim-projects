@@ -34,12 +34,12 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripConfiguration<L> scenario;
+	private final RoundTripConfiguration<L> config;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripChargingProposal(RoundTripConfiguration<L> scenario) {
-		this.scenario = scenario;
+	public RoundTripChargingProposal(RoundTripConfiguration<L> config) {
+		this.config = config;
 	}
 
 	// -------------------- IMPLEMENTATION OF MHProposal --------------------
@@ -61,7 +61,7 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 			newChargings = new ArrayList<>(state.size());
 			proba = 1.0;
 			for (int i = 0; i < state.size(); i++) {
-				if (this.scenario.getRandom().nextDouble() < flipProba) {
+				if (this.config.getRandom().nextDouble() < flipProba) {
 					flipped = true;
 					newChargings.add(!state.getCharging(i));
 					proba *= flipProba;

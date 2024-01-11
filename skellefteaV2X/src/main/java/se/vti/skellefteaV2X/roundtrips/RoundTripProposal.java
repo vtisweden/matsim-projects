@@ -35,17 +35,17 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	private final Random rnd = new Random();
 
-	private final RoundTripConfiguration<L> scenario;
+	private final RoundTripConfiguration<L> config;
 
 	private final RoundTripLocationProposal<L> locationProposal;
 	private final RoundTripDepartureProposal<L> timeBinProposal;
 	private final RoundTripChargingProposal<L> chargingProposal;
 
-	public RoundTripProposal(RoundTripConfiguration<L> scenario) {
-		this.scenario = scenario;
-		this.locationProposal = new RoundTripLocationProposal<>(scenario);
-		this.timeBinProposal = new RoundTripDepartureProposal<>(scenario);
-		this.chargingProposal = new RoundTripChargingProposal<>(scenario);
+	public RoundTripProposal(RoundTripConfiguration<L> config) {
+		this.config = config;
+		this.locationProposal = new RoundTripLocationProposal<>(config);
+		this.timeBinProposal = new RoundTripDepartureProposal<>(config);
+		this.chargingProposal = new RoundTripChargingProposal<>(config);
 	}
 
 	// IMPLEMENTATION OF INTERFACE
@@ -60,30 +60,30 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 
 		final double randomNumber = this.rnd.nextDouble();
 
-		if (randomNumber < this.scenario.getLocationProposalProbability()) {
+		if (randomNumber < this.config.getLocationProposalProbability()) {
 
 			MHTransition<RoundTrip<L>> transition = this.locationProposal.newTransition(state);
 			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.getLocationProposalProbability()) + transition.getFwdLogProb(),
-					Math.log(this.scenario.getLocationProposalProbability()) + transition.getBwdLogProb());
+					Math.log(this.config.getLocationProposalProbability()) + transition.getFwdLogProb(),
+					Math.log(this.config.getLocationProposalProbability()) + transition.getBwdLogProb());
 			return transition;
 
-		} else if (randomNumber < this.scenario.getLocationProposalProbability()
-				+ this.scenario.getDepartureProposalProbability()) {
+		} else if (randomNumber < this.config.getLocationProposalProbability()
+				+ this.config.getDepartureProposalProbability()) {
 
 			MHTransition<RoundTrip<L>> transition = this.timeBinProposal.newTransition(state);
 			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.getDepartureProposalProbability()) + transition.getFwdLogProb(),
-					Math.log(this.scenario.getDepartureProposalProbability()) + transition.getBwdLogProb());
+					Math.log(this.config.getDepartureProposalProbability()) + transition.getFwdLogProb(),
+					Math.log(this.config.getDepartureProposalProbability()) + transition.getBwdLogProb());
 			return transition;
 
-		} else if (randomNumber < this.scenario.getLocationProposalProbability()
-				+ this.scenario.getDepartureProposalProbability() + this.scenario.getChargingProposalProbability()) {
+		} else if (randomNumber < this.config.getLocationProposalProbability()
+				+ this.config.getDepartureProposalProbability() + this.config.getChargingProposalProbability()) {
 
 			MHTransition<RoundTrip<L>> transition = this.chargingProposal.newTransition(state);
 			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-					Math.log(this.scenario.getChargingProposalProbability()) + transition.getFwdLogProb(),
-					Math.log(this.scenario.getChargingProposalProbability()) + transition.getBwdLogProb());
+					Math.log(this.config.getChargingProposalProbability()) + transition.getFwdLogProb(),
+					Math.log(this.config.getChargingProposalProbability()) + transition.getBwdLogProb());
 			return transition;
 
 		} else {
