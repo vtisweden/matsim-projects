@@ -107,10 +107,10 @@ public class Runner {
 
 		// BUILD MH MACHINERY
 
-		int iterations = 100 * 1000 * 1000;
+		int iterations = 10 * 1000 * 1000;
 
 		RoundTripSimulator simulator = new RoundTripSimulator(scenario);
-		TargetWeights targetWeights = new TargetWeights(simulator);
+		TargetWeights targetWeights = new TargetWeights(simulator, campus, 12.0, 1.0, -2.0, +6.0);
 
 		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrips);
 		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(centrum), Arrays.asList(8),
@@ -119,6 +119,7 @@ public class Runner {
 		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, targetWeights, new Random());
 //		algo.addStateProcessor(prn);
 		algo.setMsgInterval(iterations / 100);
+		algo.addStateProcessor(new StationarityStats(simulator, campus, timeBinCnt, iterations / 100));
 		algo.setInitialState(initialState);
 		algo.run(iterations);
 

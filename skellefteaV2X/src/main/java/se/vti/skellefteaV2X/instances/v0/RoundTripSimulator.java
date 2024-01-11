@@ -38,6 +38,10 @@ public class RoundTripSimulator {
 	public RoundTripSimulator(Scenario scenario) {
 		this.scenario = scenario;
 	}
+	
+	public Scenario getScenario() {
+		return this.scenario;
+	}
 
 	private DrivingEpisode newDrivingEpisode(Location origin, Location destination, double time_h, double charge_kWh) {
 		final DrivingEpisode driving = new DrivingEpisode(origin, destination);
@@ -65,7 +69,7 @@ public class RoundTripSimulator {
 	public List<Episode> simulate(RoundTrip<Location> roundTrip) {
 
 		if (roundTrip.size() == 1) {
-			return new ArrayList<>(0);
+			return null;
 		}
 
 		final List<Episode> episodes = new ArrayList<>(2 * roundTrip.size() - 1);
