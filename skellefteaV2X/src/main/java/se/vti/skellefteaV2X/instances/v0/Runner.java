@@ -30,6 +30,7 @@ import se.vti.skellefteaV2X.preferences.OnCampusPreference;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
+import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
 /**
  * 
@@ -40,8 +41,12 @@ public class Runner {
 
 	public static void main(String[] args) {
 
-		// CREATE MAP OF STUDY REGION
+		/*
+		 * Define study region.
+		 * 
+		 */
 
+		// Scenario has setters for non-default scenario parameters.
 		Scenario scenario = new Scenario();
 
 		Location boliden = scenario.createAndAddLocation("Boliden", true);
@@ -52,6 +57,9 @@ public class Runner {
 		Location burea = scenario.createAndAddLocation("Bureå", true);
 		Location burtrask = scenario.createAndAddLocation("Burträsk", true);
 
+		// Scenario has setters for direction-specific distances.
+		// By default, travel times are inferred from distances.
+		// Scenario also has setters for arbitrary travel times.
 		scenario.setSymmetricDistance_km(boliden, kage, 38);
 		scenario.setSymmetricDistance_km(boliden, centrum, 34);
 		scenario.setSymmetricDistance_km(boliden, campus, 34);
@@ -79,27 +87,38 @@ public class Runner {
 
 		scenario.setSymmetricDistance_km(burea, burtrask, 35);
 
-		// CREATE SIMULATOR
-		
+		/*
+		 * Create simulator.
+		 */
+
+		// Simulator has default parking/charging and driving logics.
 		Simulator simulator = new Simulator(scenario);
+		// Below an example of how alternative charging logics can be inserted.
 		simulator.setParkingSimulator(new V2GParkingSimulator(scenario, campus));
-		
-		// DEFINE PREFRENCES
-		
+
+		/*
+		 * Define preferences for round trip sampling.
+		 */
+
 		Preferences preferences = new Preferences(simulator);
 		preferences.addComponent(new AllDayTimeConstraintPreference());
 		preferences.addComponent(new NonnegativeBatteryStatePreference());
 		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));
 		preferences.addComponent(new OnCampusPreference(campus, 12.0));
+		// Add as many preferences as desired.
 
-		// RUN MH ALGORITHM
-		
+		/*
+		 * Run MH algorithm.
+		 */
+
 		int iterations = 10 * 1000 * 1000;
-
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(preferences);
+
+		// StationaryStats is an example of how to extract statistics from an MH run.
+		MHStateProcessor<RoundTrip<Location>> stats = new StationarityStats(simulator, campus, iterations / 100);
+		algo.addStateProcessor(stats);
+
 		algo.setMsgInterval(iterations / 100);
-		algo.addStateProcessor(new StationarityStats(simulator, campus, iterations / 100));
 		algo.run(iterations);
 	}
-
 }
