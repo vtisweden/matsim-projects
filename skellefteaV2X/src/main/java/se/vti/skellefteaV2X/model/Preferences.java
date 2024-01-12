@@ -36,12 +36,12 @@ public class Preferences implements MHWeight<RoundTrip<Location>> {
 		public double logWeight(List<Episode> episodes);
 	}
 
-	private final RoundTripSimulator simulator;
+	private final Simulator simulator;
 
 	private List<Component> components = new ArrayList<>();
 
-	public Preferences(Scenario scenario) {
-		this.simulator = new RoundTripSimulator(scenario);
+	public Preferences(Simulator simulator) {
+		this.simulator = simulator;
 	}
 
 	public void addComponent(Component component) {

@@ -22,11 +22,13 @@ package se.vti.skellefteaV2X.instances.v0;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
+import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.AtHomeOffCampusPreference;
 import se.vti.skellefteaV2X.preferences.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.OnCampusPreference;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
+import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
@@ -77,9 +79,14 @@ public class Runner {
 
 		scenario.setSymmetricDistance_km(burea, burtrask, 35);
 
+		// CREATE SIMULATOR
+		
+		Simulator simulator = new Simulator(scenario);
+		simulator.setParkingSimulator(new V2GParkingSimulator(scenario, campus));
+		
 		// DEFINE PREFRENCES
 		
-		Preferences preferences = new Preferences(scenario);
+		Preferences preferences = new Preferences(simulator);
 		preferences.addComponent(new AllDayTimeConstraintPreference());
 		preferences.addComponent(new NonnegativeBatteryStatePreference());
 		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));
@@ -91,7 +98,7 @@ public class Runner {
 
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(preferences);
 		algo.setMsgInterval(iterations / 100);
-		algo.addStateProcessor(new StationarityStats(scenario, campus, iterations / 100));
+		algo.addStateProcessor(new StationarityStats(simulator, campus, iterations / 100));
 		algo.run(iterations);
 	}
 

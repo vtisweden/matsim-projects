@@ -26,8 +26,7 @@ import floetteroed.utilities.math.BasicStatistics;
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
-import se.vti.skellefteaV2X.model.RoundTripSimulator;
-import se.vti.skellefteaV2X.model.Scenario;
+import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -38,9 +37,7 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  */
 public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> {
 
-	private final Scenario scenario;
-
-	private final RoundTripSimulator simulator;
+	private final Simulator simulator;
 
 	private final Location campus;
 
@@ -52,9 +49,8 @@ public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> 
 
 	long cnt;
 
-	public StationarityStats(Scenario scenario, Location campus, int iterationsPerBlock) {
-		this.scenario = scenario;
-		this.simulator = new RoundTripSimulator(scenario);
+	public StationarityStats(Simulator simulator, Location campus, int iterationsPerBlock) {
+		this.simulator = simulator;
 		this.campus = campus;
 		this.sequenceOfStatsPerBin = new ArrayList<>();
 		this.iterationsPerBlock = iterationsPerBlock;
@@ -64,8 +60,8 @@ public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> 
 	}
 
 	private List<BasicStatistics> newStatsPerTimeBin() {
-		List<BasicStatistics> result = new ArrayList<>(this.scenario.getBinCnt());
-		for (int i = 0; i < this.scenario.getBinCnt(); i++) {
+		List<BasicStatistics> result = new ArrayList<>(this.simulator.getScenario().getBinCnt());
+		for (int i = 0; i < this.simulator.getScenario().getBinCnt(); i++) {
 			result.add(new BasicStatistics());
 		}
 		return result;
@@ -87,7 +83,7 @@ public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> 
 		if (episodes == null) {
 
 			if (this.campus.equals(state.getLocation(0))) {
-				for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) {
+				for (int bin = 0; bin < this.simulator.getScenario().getBinCnt(); bin++) {
 					this.statsPerBin.get(bin).add(1.0);
 				}
 			}
@@ -101,17 +97,19 @@ public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> 
 						int startBin = (int) (p.getStartTime_h() / this.simulator.getScenario().getBinSize_h());
 						int endBin = (int) (p.getEndTime_h() / this.simulator.getScenario().getBinSize_h());
 						if (startBin >= 0) {
-							for (int bin = startBin; bin <= Math.min(endBin, this.scenario.getBinCnt() - 1); bin++) {
+							for (int bin = startBin; bin <= Math.min(endBin,
+									this.simulator.getScenario().getBinCnt() - 1); bin++) {
 								this.statsPerBin.get(bin).add(1.0);
 							}
 						} else {
 							// wrap-around activity
 							assert (state.getLocation(0).equals(p.getLocation()));
-							for (int bin = startBin + this.scenario.getBinCnt(); bin < this.scenario
-									.getBinCnt(); bin++) {
+							for (int bin = startBin + this.simulator.getScenario().getBinCnt(); bin < this.simulator
+									.getScenario().getBinCnt(); bin++) {
 								this.statsPerBin.get(bin).add(1.0);
 							}
-							for (int bin = 0; bin <= Math.min(endBin, this.scenario.getBinCnt() - 1); bin++) {
+							for (int bin = 0; bin <= Math.min(endBin,
+									this.simulator.getScenario().getBinCnt() - 1); bin++) {
 								this.statsPerBin.get(bin).add(1.0);
 							}
 						}
