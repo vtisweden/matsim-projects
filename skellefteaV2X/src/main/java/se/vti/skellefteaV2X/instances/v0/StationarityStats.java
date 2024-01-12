@@ -23,7 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import floetteroed.utilities.math.BasicStatistics;
+import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.RoundTripSimulator;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 

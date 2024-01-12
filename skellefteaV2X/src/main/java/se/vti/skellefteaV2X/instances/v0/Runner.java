@@ -23,7 +23,13 @@ import java.util.Arrays;
 import java.util.Random;
 
 import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.Preferences;
+import se.vti.skellefteaV2X.model.RoundTripSimulator;
 import se.vti.skellefteaV2X.model.Scenario;
+import se.vti.skellefteaV2X.preferences.AllDayTimeConstraintPreference;
+import se.vti.skellefteaV2X.preferences.AtHomeOffCampusPreference;
+import se.vti.skellefteaV2X.preferences.NonnegativeBatteryStatePreference;
+import se.vti.skellefteaV2X.preferences.OnCampusPreference;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.roundtrips.RoundTripConfiguration;
 import se.vti.skellefteaV2X.roundtrips.RoundTripProposal;
@@ -42,51 +48,49 @@ public class Runner {
 
 		// BUILD SCENARIO
 
-		final int timeBinCnt = 24;
-		final double binSize_h = 24.0 / timeBinCnt;
-
-		// TODO CONTINUE HERE
 		final double chargingRate_kW = 11.0;
 		final double maxCharge_kWh = 60.0;
 		final double consumptionRate_kWh_km = 0.2;
-		final double speed_km_h = 60.0;
 
-		Scenario scenario = new Scenario(chargingRate_kW, maxCharge_kWh, consumptionRate_kWh_km, speed_km_h, binSize_h);
+		final double defaultSpeed_km_h = 60.0;
+		final int timeBinCnt = 24;
 
-		Location boliden = scenario.createAndAddLocation("Boliden", false);
-		Location kage = scenario.createAndAddLocation("Kåge", false);
-		Location centrum = scenario.createAndAddLocation("Centrum", false);
-		Location campus = scenario.createAndAddLocation("Campus", false);
-		Location hamn = scenario.createAndAddLocation("Hamn", false);
-		Location burea = scenario.createAndAddLocation("Bureå", false);
-		Location burtrask = scenario.createAndAddLocation("Burträsk", false);
+		Scenario scenario = new Scenario(chargingRate_kW, maxCharge_kWh, consumptionRate_kWh_km, defaultSpeed_km_h, timeBinCnt);
 
-		scenario.setDistance_km(boliden, kage, 38, true);
-		scenario.setDistance_km(boliden, centrum, 34, true);
-		scenario.setDistance_km(boliden, campus, 34, true);
-		scenario.setDistance_km(boliden, hamn, 47, true);
-		scenario.setDistance_km(boliden, burea, 55, true);
-		scenario.setDistance_km(boliden, burtrask, 48, true);
+		Location boliden = scenario.createAndAddLocation("Boliden", true);
+		Location kage = scenario.createAndAddLocation("Kåge", true);
+		Location centrum = scenario.createAndAddLocation("Centrum", true);
+		Location campus = scenario.createAndAddLocation("Campus", true);
+		Location hamn = scenario.createAndAddLocation("Hamn", true);
+		Location burea = scenario.createAndAddLocation("Bureå", true);
+		Location burtrask = scenario.createAndAddLocation("Burträsk", true);
 
-		scenario.setDistance_km(kage, centrum, 13, true);
-		scenario.setDistance_km(kage, campus, 13, true);
-		scenario.setDistance_km(kage, hamn, 24, true);
-		scenario.setDistance_km(kage, burea, 33, true);
-		scenario.setDistance_km(kage, burtrask, 53, true);
+		scenario.setSymmetricDistance_km(boliden, kage, 38);
+		scenario.setSymmetricDistance_km(boliden, centrum, 34);
+		scenario.setSymmetricDistance_km(boliden, campus, 34);
+		scenario.setSymmetricDistance_km(boliden, hamn, 47);
+		scenario.setSymmetricDistance_km(boliden, burea, 55);
+		scenario.setSymmetricDistance_km(boliden, burtrask, 48);
 
-		scenario.setDistance_km(centrum, campus, 5, true);
-		scenario.setDistance_km(centrum, hamn, 13, true);
-		scenario.setDistance_km(centrum, burea, 22, true);
-		scenario.setDistance_km(centrum, burtrask, 42, true);
+		scenario.setSymmetricDistance_km(kage, centrum, 13);
+		scenario.setSymmetricDistance_km(kage, campus, 13);
+		scenario.setSymmetricDistance_km(kage, hamn, 24);
+		scenario.setSymmetricDistance_km(kage, burea, 33);
+		scenario.setSymmetricDistance_km(kage, burtrask, 53);
 
-		scenario.setDistance_km(campus, hamn, 13, true);
-		scenario.setDistance_km(campus, burea, 22, true);
-		scenario.setDistance_km(campus, burtrask, 42, true);
+		scenario.setSymmetricDistance_km(centrum, campus, 5);
+		scenario.setSymmetricDistance_km(centrum, hamn, 13);
+		scenario.setSymmetricDistance_km(centrum, burea, 22);
+		scenario.setSymmetricDistance_km(centrum, burtrask, 42);
 
-		scenario.setDistance_km(hamn, burea, 11, true);
-		scenario.setDistance_km(hamn, burtrask, 46, true);
+		scenario.setSymmetricDistance_km(campus, hamn, 13);
+		scenario.setSymmetricDistance_km(campus, burea, 22);
+		scenario.setSymmetricDistance_km(campus, burtrask, 42);
 
-		scenario.setDistance_km(burea, burtrask, 35, true);
+		scenario.setSymmetricDistance_km(hamn, burea, 11);
+		scenario.setSymmetricDistance_km(hamn, burtrask, 46);
+
+		scenario.setSymmetricDistance_km(burea, burtrask, 35);
 
 		// BUILD ROUNDTRIPS SAMPLER
 
@@ -97,26 +101,30 @@ public class Runner {
 
 		final RoundTripConfiguration<Location> roundTrips = new RoundTripConfiguration<>(maxLocations, timeBinCnt,
 				locationProposalWeight, departureProposalWeight, chargingProposalWeight);
-		roundTrips.addLocation(boliden);
-		roundTrips.addLocation(kage);
-		roundTrips.addLocation(centrum);
-		roundTrips.addLocation(campus);
-		roundTrips.addLocation(hamn);
-		roundTrips.addLocation(burea);
-		roundTrips.addLocation(burtrask);
+		roundTrips.addLocations(scenario.getLocationsView());
+
 
 		// BUILD MH MACHINERY
 
+		RoundTripSimulator simulator = new RoundTripSimulator(scenario);
+		
+//		TargetWeights targetWeights = new TargetWeights(simulator, campus, 12.0, 1.0, -2.0, +6.0);
+
+		
+		Preferences preferences = new Preferences(simulator);
+		preferences.addComponent(new AllDayTimeConstraintPreference());
+		preferences.addComponent(new NonnegativeBatteryStatePreference());
+		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));
+		preferences.addComponent(new OnCampusPreference(campus, 12.0));
+		
 		int iterations = 10 * 1000 * 1000;
 
-		RoundTripSimulator simulator = new RoundTripSimulator(scenario);
-		TargetWeights targetWeights = new TargetWeights(simulator, campus, 12.0, 1.0, -2.0, +6.0);
 
 		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrips);
 		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(centrum), Arrays.asList(8),
 				Arrays.asList(true));
 
-		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, targetWeights, new Random());
+		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
 		algo.setMsgInterval(iterations / 100);
 		algo.addStateProcessor(new StationarityStats(simulator, campus, timeBinCnt, iterations / 100));
 		algo.setInitialState(initialState);

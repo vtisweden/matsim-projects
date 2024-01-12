@@ -17,25 +17,29 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.instances.v0;
-
-import se.vti.skellefteaV2X.model.Location;
+package se.vti.skellefteaV2X.model;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ParkingEpisode extends Episode {
+public class DrivingEpisode extends Episode {
 	
-	private final Location location;
+	private final Location origin;
+	private final Location destination;
 	
-	public ParkingEpisode(Location location) {
-		this.location = location;
+	public DrivingEpisode(Location origin, Location destination) {
+		this.origin = origin;
+		this.destination = destination;
 	}
 
-	public Location getLocation() {
-		return location;
+	public Location getOrigin() {
+		return origin;
+	}
+
+	public Location getDestination() {
+		return destination;
 	}
 
 }

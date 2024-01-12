@@ -17,13 +17,12 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.instances.v0;
+package se.vti.skellefteaV2X.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 
 /**
@@ -70,15 +69,18 @@ public class RoundTripSimulator {
 	public List<Episode> simulate(RoundTrip<Location> roundTrip) {
 
 		if (roundTrip.size() == 1) {
-			return null;
+			ParkingEpisode home = new ParkingEpisode(roundTrip.getLocation(0));
+			home.setStartTime_h(0.0);
+			home.setEndTime_h(0.0); // wrap-around
+			double charge_kWh = (roundTrip.getCharging(0) ? this.scenario.getMaxCharge_kWh() : 0.0);
+			home.setChargeAtStart_kWh(charge_kWh);
+			home.setChargeAtEnd_kWh(charge_kWh);
+			return Collections.singletonList(home);
 		}
 		
-		long replications = 0;
-
 		double initialCharge_kWh = this.scenario.getMaxCharge_kWh(); // initial guess
 		List<Episode> episodes;
 		do {
-			replications++;
 			
 			episodes = new ArrayList<>(2 * roundTrip.size() - 1);
 
@@ -125,10 +127,6 @@ public class RoundTripSimulator {
 			}
 		} while (episodes == null);
 
-//		if (Math.random() < 1e-4) {
-//			System.out.println("\t" + replications + "\t" + initialCharge_kWh);
-//		}
-		
 		return episodes;
 	}
 

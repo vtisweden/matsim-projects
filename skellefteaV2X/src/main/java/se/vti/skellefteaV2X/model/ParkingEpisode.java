@@ -17,53 +17,23 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.instances.v0;
+package se.vti.skellefteaV2X.model;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Episode {
-
-	private Double start_h = null;
-	private Double end_h = null;
-
-	private Double chargeAtStart_kWh = null;
-	private Double chargeAtEnd_kWh = null;
-
-	public Episode() {
+public class ParkingEpisode extends Episode {
+	
+	private final Location location;
+	
+	public ParkingEpisode(Location location) {
+		this.location = location;
 	}
 
-	public Double getStartTime_h() {
-		return start_h;
+	public Location getLocation() {
+		return location;
 	}
 
-	public void setStartTime_h(Double start_h) {
-		this.start_h = start_h;
-	}
-
-	public Double getEndTime_h() {
-		return end_h;
-	}
-
-	public void setEndTime_h(Double end_h) {
-		this.end_h = end_h;
-	}
-
-	public void setChargeAtStart_kWh(Double chargeAtStart_kWh) {
-		this.chargeAtStart_kWh = chargeAtStart_kWh;
-	}
-
-	public Double getChargeAtStart_kWh() {
-		return this.chargeAtStart_kWh;
-	}
-
-	public void setChargeAtEnd_kWh(Double chargeAtEnd_kWh) {
-		this.chargeAtEnd_kWh = chargeAtEnd_kWh;
-	}
-
-	public Double getChargeAtEnd_kWh() {
-		return this.chargeAtEnd_kWh;
-	}
 }

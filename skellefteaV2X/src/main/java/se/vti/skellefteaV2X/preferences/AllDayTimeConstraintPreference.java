@@ -1,5 +1,5 @@
 /**
- * se.vti.skellefeaV2X
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,31 +17,24 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.instances.v0;
+package se.vti.skellefteaV2X.preferences;
 
-import se.vti.skellefteaV2X.model.Location;
+import java.util.List;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public class DrivingEpisode extends Episode {
-	
-	private final Location origin;
-	private final Location destination;
-	
-	DrivingEpisode(Location origin, Location destination) {
-		this.origin = origin;
-		this.destination = destination;
-	}
+import se.vti.skellefteaV2X.model.Episode;
+import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.Preferences;
 
-	public Location getOrigin() {
-		return origin;
-	}
+public class AllDayTimeConstraintPreference implements Preferences.Component {
 
-	public Location getDestination() {
-		return destination;
+	@Override
+	public double logWeight(List<Episode> episodes) {
+		if (episodes.size() == 1) {
+			return 0.0;
+		}
+		ParkingEpisode home = (ParkingEpisode) episodes.get(0);
+		double timeDiscrepancy_h = Math.max(0.0, home.getStartTime_h() - home.getEndTime_h());
+		return -timeDiscrepancy_h;
 	}
 
 }

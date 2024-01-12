@@ -19,6 +19,7 @@
  */
 package se.vti.skellefteaV2X.roundtrips;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -72,6 +73,10 @@ public class RoundTripConfiguration<L> {
 
 	public void addLocation(L location) {
 		this.allLocations.add(location);
+	}
+	
+	public void addLocations(Collection<L> locations) {
+		this.allLocations.addAll(locations);
 	}
 
 	// -------------------- GETTERS --------------------
