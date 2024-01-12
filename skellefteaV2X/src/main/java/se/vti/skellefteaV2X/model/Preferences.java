@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefeaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -25,18 +25,23 @@ import java.util.List;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class Preferences implements MHWeight<RoundTrip<Location>> {
 
 	public interface Component {
 		public double logWeight(List<Episode> episodes);
 	}
-	
+
 	private final RoundTripSimulator simulator;
 
 	private List<Component> components = new ArrayList<>();
 
-	public Preferences(RoundTripSimulator simulator) {
-		this.simulator = simulator;
+	public Preferences(Scenario scenario) {
+		this.simulator = new RoundTripSimulator(scenario);
 	}
 
 	public void addComponent(Component component) {

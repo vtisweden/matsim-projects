@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefeaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -26,6 +26,11 @@ import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class OnCampusPreference implements Component {
 
 	private final Location campus;

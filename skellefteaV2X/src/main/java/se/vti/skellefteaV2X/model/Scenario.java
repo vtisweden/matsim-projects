@@ -19,13 +19,20 @@
  */
 package se.vti.skellefteaV2X.model;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import floetteroed.utilities.Tuple;
+import se.vti.skellefteaV2X.roundtrips.RoundTrip;
+import se.vti.skellefteaV2X.roundtrips.RoundTripConfiguration;
+import se.vti.skellefteaV2X.roundtrips.RoundTripProposal;
+import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
  * 
@@ -34,11 +41,14 @@ import floetteroed.utilities.Tuple;
  */
 public class Scenario {
 
-	private final double chargingRate_kW;
-	private final double maxCharge_kWh;
-	private final double consumptionRate_kWh_km;
-	private final double defaultSpeed_km_h;
-	private final int binCnt;
+	private final Random rnd;
+
+	private double chargingRate_kW = 11.0;
+	private double maxCharge_kWh = 60.0;
+	private double consumptionRate_kWh_km = 0.2;
+
+	private double defaultSpeed_km_h = 60.0;
+	private int timeBinCnt = 24;
 
 	private final Set<Location> locations = new LinkedHashSet<>();
 
@@ -46,13 +56,12 @@ public class Scenario {
 
 	private final Map<Tuple<Location, Location>, Double> od2time_h = new LinkedHashMap<>();
 
-	public Scenario(double chargingRate_kW, double maxCharge_kWh, double consumptionRate_kWh_km,
-			double defaultSpeed_km_h, int binCnt) {
-		this.chargingRate_kW = chargingRate_kW;
-		this.maxCharge_kWh = maxCharge_kWh;
-		this.consumptionRate_kWh_km = consumptionRate_kWh_km;
-		this.defaultSpeed_km_h = defaultSpeed_km_h;
-		this.binCnt = binCnt;
+	public Scenario(Random rnd) {
+		this.rnd = rnd;
+	}
+
+	public Scenario() {
+		this(new Random());
 	}
 
 	public Location createAndAddLocation(String name, boolean canCharge) {
@@ -116,7 +125,49 @@ public class Scenario {
 	}
 
 	public int getBinCnt() {
-		return binCnt;
+		return timeBinCnt;
+	}
+
+	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences) {
+
+		int maxLocations = 4;
+		double locationProposalWeight = 0.1;
+		double departureProposalWeight = 0.45;
+		double chargingProposalWeight = 0.45;
+
+		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(maxLocations, getBinCnt(),
+				locationProposalWeight, departureProposalWeight, chargingProposalWeight);
+		configuration.addLocations(this.getLocationsView());
+
+		RoundTripProposal<Location> proposal = new RoundTripProposal<>(configuration);
+
+		RoundTrip<Location> initialState = new RoundTrip<>(
+				Arrays.asList(new ArrayList<>(this.locations).get(this.rnd.nextInt(this.locations.size()))),
+				Arrays.asList(this.rnd.nextInt(this.timeBinCnt)), Arrays.asList(this.rnd.nextBoolean()));
+
+		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
+		algo.setInitialState(initialState);
+		return algo;
+	}
+
+	public void setChargingRate_kW(double chargingRate_kW) {
+		this.chargingRate_kW = chargingRate_kW;
+	}
+
+	public void setMaxCharge_kWh(double maxCharge_kWh) {
+		this.maxCharge_kWh = maxCharge_kWh;
+	}
+
+	public void setConsumptionRate_kWh_km(double consumptionRate_kWh_km) {
+		this.consumptionRate_kWh_km = consumptionRate_kWh_km;
+	}
+
+	public void setDefaultSpeed_km_h(double defaultSpeed_km_h) {
+		this.defaultSpeed_km_h = defaultSpeed_km_h;
+	}
+
+	public void setTimeBinCnt(int timeBinCnt) {
+		this.timeBinCnt = timeBinCnt;
 	}
 
 }
