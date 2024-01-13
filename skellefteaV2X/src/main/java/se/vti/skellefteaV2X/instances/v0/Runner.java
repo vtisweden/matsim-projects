@@ -27,6 +27,7 @@ import se.vti.skellefteaV2X.preferences.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.AtHomeOffCampusPreference;
 import se.vti.skellefteaV2X.preferences.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.OnCampusPreference;
+import se.vti.skellefteaV2X.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
@@ -101,6 +102,7 @@ public class Runner {
 		 */
 
 		Preferences preferences = new Preferences();
+		preferences.addComponent(new StrategyRealizationConsistency(scenario));
 		preferences.addComponent(new AllDayTimeConstraintPreference());
 		preferences.addComponent(new NonnegativeBatteryStatePreference());
 		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));

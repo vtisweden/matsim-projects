@@ -38,11 +38,18 @@ public class Preferences implements MHWeight<RoundTrip<Location>> {
 
 	private List<Component> components = new ArrayList<>();
 
+	private List<Double> weights = new ArrayList<>();
+	
 	public Preferences() {
 	}
 
-	public void addComponent(Component component) {
+	public void addComponent(Component component, double weight) {
 		this.components.add(component);
+		this.weights.add(weight);
+	}
+
+	public void addComponent(Component component) {
+		this.addComponent(component, 1.0);
 	}
 
 	@Override
