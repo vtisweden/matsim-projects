@@ -35,5 +35,4 @@ public class ParkingEpisode extends Episode {
 	public Location getLocation() {
 		return location;
 	}
-
 }

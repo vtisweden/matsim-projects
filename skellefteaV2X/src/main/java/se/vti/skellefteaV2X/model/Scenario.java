@@ -72,6 +72,11 @@ public class Scenario {
 	public Set<Location> getLocationsView() {
 		return Collections.unmodifiableSet(this.locations);
 	}
+	
+	public int getLocationCnt() {
+		return this.locations.size();
+	}
+	
 
 	public void setDistance_km(Location from, Location to, double dist_km) {
 		Tuple<Location, Location> od = new Tuple<>(from, to);

@@ -123,7 +123,7 @@ public class RoundTrip<L> {
 		this.chargings.add(i, charging);
 		Collections.sort(this.departures);
 	}
-
+	
 	public void remove(int locationChargingIndex, int departureIndex) {
 		this.locations.remove(locationChargingIndex);
 		this.chargings.remove(locationChargingIndex);

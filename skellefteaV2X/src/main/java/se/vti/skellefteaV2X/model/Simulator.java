@@ -148,9 +148,16 @@ public class Simulator {
 
 			// postprocessing
 
-			double newInitialCharge_kWh = Math.min(this.scenario.getMaxCharge_kWh(), home.getChargeAtStart_kWh()
-					+ this.scenario.getChargingRate_kW() * Math.max(0.0, home.getEndTime_h() - home.getStartTime_h()));
-			if ((newInitialCharge_kWh >= 0.0) && (newInitialCharge_kWh < (initialCharge_kWh - 1.0))) {
+			final double newInitialCharge_kWh;
+			if (home.getLocation().getAllowsCharging() && roundTrip.getCharging(0)) {
+				newInitialCharge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
+						home.getChargeAtStart_kWh() + this.scenario.getChargingRate_kW()
+								* Math.max(0.0, home.getEndTime_h() - home.getStartTime_h()));
+			} else {
+				newInitialCharge_kWh = home.getChargeAtStart_kWh();
+			}
+
+			if ((newInitialCharge_kWh >= 0.0) && (newInitialCharge_kWh < (initialCharge_kWh - 1e-3))) {
 				episodes = null;
 				initialCharge_kWh = newInitialCharge_kWh;
 			}

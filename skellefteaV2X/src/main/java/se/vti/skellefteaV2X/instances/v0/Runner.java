@@ -19,19 +19,17 @@
  */
 package se.vti.skellefteaV2X.instances.v0;
 
+import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AllDayTimeConstraintPreference;
-import se.vti.skellefteaV2X.preferences.AtHomeOffCampusPreference;
 import se.vti.skellefteaV2X.preferences.NonnegativeBatteryStatePreference;
-import se.vti.skellefteaV2X.preferences.OnCampusPreference;
 import se.vti.skellefteaV2X.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
-import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
 /**
  * 
@@ -49,6 +47,7 @@ public class Runner {
 
 		// Scenario has setters for non-default scenario parameters.
 		Scenario scenario = new Scenario();
+		scenario.setMaxCharge_kWh(60);
 
 		Location boliden = scenario.createAndAddLocation("Boliden", true);
 		Location kage = scenario.createAndAddLocation("Kåge", true);
@@ -102,11 +101,11 @@ public class Runner {
 		 */
 
 		Preferences preferences = new Preferences();
-		preferences.addComponent(new StrategyRealizationConsistency(scenario));
-		preferences.addComponent(new AllDayTimeConstraintPreference());
-		preferences.addComponent(new NonnegativeBatteryStatePreference());
-		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));
-		preferences.addComponent(new OnCampusPreference(campus, 12.0));
+		preferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
+		preferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
+		preferences.addComponent(new NonnegativeBatteryStatePreference(), 1.0);
+//		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));
+//		preferences.addComponent(new OnCampusPreference(campus, 12.0));
 		// Add as many preferences as desired.
 
 		/*
@@ -117,8 +116,10 @@ public class Runner {
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(preferences, simulator);
 
 		// StationaryStats is an example of how to extract statistics from an MH run.
-		MHStateProcessor<RoundTrip<Location>> stats = new StationarityStats(simulator, campus, iterations / 100);
-		algo.addStateProcessor(stats);
+//		MHStateProcessor<RoundTrip<Location>> stats = new StationarityStats(simulator, campus, iterations / 100);
+//		algo.addStateProcessor(stats);
+
+		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, 1));
 
 		algo.setMsgInterval(iterations / 100);
 		algo.run(iterations);
