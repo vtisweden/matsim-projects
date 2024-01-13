@@ -134,9 +134,21 @@ public class RoundTrip<L> {
 		this.remove(i, i);
 	}
 
-	public RoundTrip<L> deepCopy() {
-		return new RoundTrip<L>(new ArrayList<>(this.locations), new ArrayList<>(this.departures),
-				new ArrayList<>(this.chargings));
+	public ArrayList<L> cloneLocations() {
+		return new ArrayList<>(this.locations);
+	}
+
+	public ArrayList<Integer> cloneDepartures() {
+		return new ArrayList<>(this.departures);
+	}
+
+	public ArrayList<Boolean> cloneChargings() {
+		return new ArrayList<>(this.chargings);
+	}
+
+	@Override
+	public RoundTrip<L> clone() {
+		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures(), this.cloneChargings());
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------

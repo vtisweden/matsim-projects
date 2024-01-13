@@ -215,7 +215,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			final Integer newDeparture = RoundTripDepartureProposal.drawUnusedDeparture(state, this.config);
 			final Boolean charging = this.config.getRandom().nextBoolean();
 
-			final RoundTrip<L> newState = state.deepCopy();
+			final RoundTrip<L> newState = state.clone();
 			newState.addAndEnsureSortedDepartures(whereToInsert, whatToInsert, newDeparture, charging);
 
 			final double fwdLogProba = Math.log(fwdActions.concreteInsertProba(whereToInsert));
@@ -230,7 +230,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 			final int whereToRemoveLocation = fwdActions.drawRemoveIndex();
 			final int whereToRemoveDeparture = this.config.getRandom().nextInt(state.size());
-			final RoundTrip<L> newState = state.deepCopy();
+			final RoundTrip<L> newState = state.clone();
 			newState.remove(whereToRemoveLocation, whereToRemoveDeparture);
 
 			final double fwdLogProba = Math.log(fwdActions.concreteRemoveProba());
@@ -245,7 +245,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 			final int whereToFlip = fwdActions.drawFlipIndex();
 			final L whatToFlip = fwdActions.drawFlipValue(whereToFlip);
-			final RoundTrip<L> newState = state.deepCopy();
+			final RoundTrip<L> newState = state.clone();
 			newState.setLocation(whereToFlip, whatToFlip);
 			
 			final double fwdLogProba = Math.log(fwdActions.concreteFlipProba(whereToFlip));

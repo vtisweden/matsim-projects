@@ -25,6 +25,7 @@ import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
+import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
  * 
@@ -42,7 +43,8 @@ public class OnCampusPreference implements Component {
 	}
 
 	@Override
-	public double logWeight(List<Episode> episodes) {
+	public double logWeight(SimulatedRoundTrip roundTrip) {
+		List<Episode> episodes = roundTrip.getEpisodes();
 		double minDist_h = 24.0;
 		if (episodes.size() == 1) {
 			if (this.campus.equals(((ParkingEpisode) episodes.get(0)).getLocation())) {

@@ -1,5 +1,5 @@
 /**
- * se.vti.skellefeaV2X
+ * se.vti.skelleftea
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,31 +17,36 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
+package se.vti.skellefteaV2X.model;
 
 import java.util.List;
 
-import se.vti.skellefteaV2X.model.Episode;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
-import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class AllDayTimeConstraintPreference implements Preferences.Component {
+public class SimulatedRoundTrip extends RoundTrip<Location> {
+
+	private List<Episode> episodes = null;
+
+	public SimulatedRoundTrip(List<Location> locations, List<Integer> departures, List<Boolean> charging) {
+		super(locations, departures, charging);
+	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip roundTrip) {
-		if (roundTrip.size() == 1) {
-			return 0.0;
-		}
-		List<Episode> episodes = roundTrip.getEpisodes();
-		ParkingEpisode home = (ParkingEpisode) episodes.get(0);
-		double timeDiscrepancy_h = Math.max(0.0, home.getStartTime_h() - home.getEndTime_h());
-		return -timeDiscrepancy_h;
+	public SimulatedRoundTrip clone() {
+		return new SimulatedRoundTrip(cloneLocations(), cloneDepartures(), cloneChargings());
+	}
+
+	public List<Episode> getEpisodes() {
+		return episodes;
+	}
+
+	public void setEpisodes(List<Episode> episodes) {
+		this.episodes = episodes;
 	}
 
 }

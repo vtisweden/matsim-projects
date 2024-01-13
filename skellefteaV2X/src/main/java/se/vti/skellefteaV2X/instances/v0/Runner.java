@@ -100,7 +100,7 @@ public class Runner {
 		 * Define preferences for round trip sampling.
 		 */
 
-		Preferences preferences = new Preferences(simulator);
+		Preferences preferences = new Preferences();
 		preferences.addComponent(new AllDayTimeConstraintPreference());
 		preferences.addComponent(new NonnegativeBatteryStatePreference());
 		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));
@@ -112,7 +112,7 @@ public class Runner {
 		 */
 
 		int iterations = 10 * 1000 * 1000;
-		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(preferences);
+		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(preferences, simulator);
 
 		// StationaryStats is an example of how to extract statistics from an MH run.
 		MHStateProcessor<RoundTrip<Location>> stats = new StationarityStats(simulator, campus, iterations / 100);

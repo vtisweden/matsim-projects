@@ -24,6 +24,7 @@ import java.util.List;
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 import se.vti.skellefteaV2X.model.Preferences.Component;
 
 /**
@@ -44,10 +45,11 @@ public class AtHomeOffCampusPreference implements Component {
 	}
 
 	@Override
-	public double logWeight(List<Episode> episodes) {
-		if (episodes.size() == 1) {
+	public double logWeight(SimulatedRoundTrip roundTrip) {
+		if (roundTrip.size() == 1) {
 			return 0.0; // FIXME may be on campus
 		}
+		List<Episode> episodes = roundTrip.getEpisodes();
 		ParkingEpisode home = (ParkingEpisode) episodes.get(0);
 		double discrepancy_h = 0.0;
 		if (this.campus.equals(home.getLocation())) {

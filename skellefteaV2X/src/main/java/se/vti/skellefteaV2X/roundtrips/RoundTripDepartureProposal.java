@@ -68,7 +68,7 @@ public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
 		final Integer newDeparture = drawUnusedDeparture(state, this.config);
-		final RoundTrip<L> newState = state.deepCopy();
+		final RoundTrip<L> newState = state.clone();
 		newState.setDepartureAndEnsureOrdering(this.config.getRandom().nextInt(state.size()), newDeparture);
 
 		final double fwdLogProba = -Math.log(state.size()) - Math.log(this.config.getTimeBinCnt() - state.size());

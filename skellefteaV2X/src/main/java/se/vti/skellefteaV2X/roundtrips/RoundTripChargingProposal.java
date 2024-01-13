@@ -75,7 +75,7 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 		final double fwdLogProba = Math.log(proba) - state.size() * Math.log(1.0 - flipProba);
 		final double bwdLogProba = fwdLogProba;
 
-		final RoundTrip<L> newState = state.deepCopy();
+		final RoundTrip<L> newState = state.clone();
 		for (int i = 0; i < newState.size(); i++) {
 			newState.setCharging(i, newChargings.get(i));
 		}

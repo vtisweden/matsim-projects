@@ -33,15 +33,12 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
 public class Preferences implements MHWeight<RoundTrip<Location>> {
 
 	public interface Component {
-		public double logWeight(List<Episode> episodes);
+		public double logWeight(SimulatedRoundTrip simulatedRoundTrip);
 	}
-
-	private final Simulator simulator;
 
 	private List<Component> components = new ArrayList<>();
 
-	public Preferences(Simulator simulator) {
-		this.simulator = simulator;
+	public Preferences() {
 	}
 
 	public void addComponent(Component component) {
@@ -50,10 +47,9 @@ public class Preferences implements MHWeight<RoundTrip<Location>> {
 
 	@Override
 	public double logWeight(RoundTrip<Location> roundTrip) {
-		List<Episode> episodes = this.simulator.simulate(roundTrip);
 		double result = 0.0;
 		for (Component component : this.components) {
-			result += component.logWeight(episodes);
+			result += component.logWeight((SimulatedRoundTrip) roundTrip);
 		}
 		return result;
 	}

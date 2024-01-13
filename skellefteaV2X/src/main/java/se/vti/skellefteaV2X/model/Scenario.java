@@ -31,7 +31,6 @@ import java.util.Set;
 import floetteroed.utilities.Tuple;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.roundtrips.RoundTripConfiguration;
-import se.vti.skellefteaV2X.roundtrips.RoundTripProposal;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
@@ -128,8 +127,9 @@ public class Scenario {
 		return timeBinCnt;
 	}
 
-	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences) {
+	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences, Simulator simulator) {
 
+		// TODO make configurable
 		int maxLocations = 4;
 		double locationProposalWeight = 0.1;
 		double departureProposalWeight = 0.45;
@@ -138,15 +138,15 @@ public class Scenario {
 		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(maxLocations, getBinCnt(),
 				locationProposalWeight, departureProposalWeight, chargingProposalWeight);
 		configuration.addLocations(this.getLocationsView());
+		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(configuration, simulator);
+		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
 
-		RoundTripProposal<Location> proposal = new RoundTripProposal<>(configuration);
-
-		RoundTrip<Location> initialState = new RoundTrip<>(
+		SimulatedRoundTrip initialState = new SimulatedRoundTrip(
 				Arrays.asList(new ArrayList<>(this.locations).get(this.rnd.nextInt(this.locations.size()))),
 				Arrays.asList(this.rnd.nextInt(this.timeBinCnt)), Arrays.asList(this.rnd.nextBoolean()));
-
-		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
+		initialState.setEpisodes(simulator.simulate(initialState));
 		algo.setInitialState(initialState);
+		
 		return algo;
 	}
 
