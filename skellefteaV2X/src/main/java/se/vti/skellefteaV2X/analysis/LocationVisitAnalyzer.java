@@ -121,6 +121,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 					overlap_h += MathHelpers.overlap(binStart_h, binEnd_h, interval.getA(), interval.getB());
 				}
 				final double relativeOverlap = overlap_h / (binEnd_h - binStart_h);
+				assert (overlap_h >= 0.0);
 				assert (overlap_h <= 1.0);
 				this.timeListOfDriving.set(bin, this.timeListOfDriving.get(bin) + relativeOverlap);
 			}

@@ -135,20 +135,15 @@ public class Runner {
 		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
 		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
 		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(), 1.0);
-//		preferences.addComponent(new OnCampusPreference(campus, 12.0));
-		// Add as many preferences as desired.
 
 		Preferences allPreferences = new Preferences();
 		allPreferences.addPreferences(consistencyPreferences);
-		allPreferences.addComponent(new AtHomePreference(22.0, 6.0), 1.0);
-		allPreferences.addComponent(new NotHomePreference(campus), 10.0);
-//		allPreferences.addComponent(new OffLocationPreference(campus, 22.0, 6.0), 10.0);
-//		allPreferences.addComponent(new AtLocationPreference(campus, 10.0, 14.0));
-		allPreferences.addComponent(new LocalChargingAmountPrefence(scenario, campus), 0.1);
-//		allPreferences.addComponent(new TravelDurationPreference(2.0));
+//		allPreferences.addComponent(new AtHomePreference(22.0, 6.0), 1.0);
+//		allPreferences.addComponent(new NotHomePreference(campus), 10.0);
+//		allPreferences.addComponent(new LocalChargingAmountPrefence(scenario, campus), 0.1);
 
+		
 //		allPreferences.addComponent(new AtLocationPreference(campus, 10.0, 14.0));
-
 //		LocationAttractivityPreference locPref = new LocationAttractivityPreference();
 //		locPref.setAttractivity(boliden, 1.566);
 //		locPref.setAttractivity(kage,2.248);
@@ -163,7 +158,7 @@ public class Runner {
 		 * Run MH algorithm.
 		 */
 
-		int iterations = 10 * 1000 * 1000;
+		int iterations = 20 * 1000 * 1000;
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		// StationaryStats is an example of how to extract statistics from an MH run.
