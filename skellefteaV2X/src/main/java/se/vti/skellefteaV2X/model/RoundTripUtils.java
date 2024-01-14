@@ -19,6 +19,11 @@
  */
 package se.vti.skellefteaV2X.model;
 
+import java.util.Arrays;
+import java.util.List;
+
+import floetteroed.utilities.Tuple;
+
 public class RoundTripUtils {
 
 	private final Scenario scenario;
@@ -29,39 +34,33 @@ public class RoundTripUtils {
 
 	public static double effectiveHomeDuration_h(ParkingEpisode h) {
 		// wraparound: home activity starts on the day before
-		return Math.max(0.0, h.getEndTime_h() - h.getStartTime_h());
+		double result = Math.max(0.0, h.getEndTime_h() - h.getStartTime_h());
+		double altResult = effectiveParkingDuration_h(h, true);
+		return altResult;
 	}
 
-//	public static List<Tuple<Double, Double>> withinDayParkingIntervals(ParkingEpisode h) {
-//		if (h.getStartTime_h() >= 0) {
-//			if (h.getEndTime_h() >= 0) {
-//
-//				// both within-day
-//				
-//				if (h.getStartTime_h() <= h.getEndTime_h()) {
-//					return Collections.singletonList(new Tuple<>(h.getStartTime_h(), h.getEndTime_h()));
-//				} else {
-//					return Collections.emptyList();
-//				}
-//			} else {
-//				
-//				// end-time outofday
-//				
-//				return null;
-//				
-//			}
-//		} else {
-//			if (h.getEndTime_h() >= 0) {
-//				
-//				return null;
-//				
-//			} else {
-//				
-//				return null;
-//				
-//			}			
-//		}
-//		
-//	}
+	public static List<Tuple<Double, Double>> effectiveParkingIntervals(ParkingEpisode p, boolean isHome) {
+		if (p.getStartTime_h() < 0.0) {
+			return Arrays.asList(new Tuple<>(p.getStartTime_h() + 24.0, 24.0), new Tuple<>(0.0, p.getEndTime_h()));
+		} else {
+			if (isHome) {
+				if (p.getStartTime_h() <= p.getEndTime_h()) {
+					return Arrays.asList(new Tuple<>(p.getStartTime_h(), p.getEndTime_h()));
+				} else {
+					return Arrays.asList(new Tuple<>(p.getStartTime_h(), 24.0), new Tuple<>(0.0, p.getEndTime_h()));
+				}
+			} else {
+				return Arrays.asList(new Tuple<>(p.getStartTime_h(), p.getEndTime_h()));
+			}
+		}
+	}
+
+	public static double effectiveParkingDuration_h(ParkingEpisode p, boolean isHome) {
+		double result = 0.0;
+		for (Tuple<Double, Double> interval : effectiveParkingIntervals(p, isHome)) {
+			result += interval.getB() - interval.getA();
+		}
+		return result;
+	}
 
 }
