@@ -84,6 +84,10 @@ public class RoundTrip<L> {
 		return this.locations.get(this.successorIndex(i));
 	}
 
+	public List<L> getLocationsView() {
+		return Collections.unmodifiableList(this.locations);
+	}
+	
 	public void setLocation(int i, L location) {
 		this.locations.set(i, location);
 	}

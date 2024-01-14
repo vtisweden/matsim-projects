@@ -54,8 +54,8 @@ public class RoundTripUtils {
 
 
 	
-	public static double effectiveParkingDuration_h(ParkingEpisode p) {
-		return effectiveDuration_h(effectiveIntervals(p.getStartTime_h(), p.getEndTime_h()));
+	public static double effectiveDuration_h(Episode e) {
+		return effectiveDuration_h(effectiveIntervals(e.getStartTime_h(), e.getEndTime_h()));
 //		double result = 0.0;
 //		for (Tuple<Double, Double> interval : effectiveIntervals(p.getStartTime_h(), p.getEndTime_h())) {
 //			result += interval.getB() - interval.getA();

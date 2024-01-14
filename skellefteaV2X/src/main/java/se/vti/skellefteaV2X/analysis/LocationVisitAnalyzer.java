@@ -57,6 +57,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 	private List<Double> timeListOfDriving;
 	
+	private Map<List<Location>, Long> sequence2uses = new LinkedHashMap<>();
+	
 	public LocationVisitAnalyzer(Scenario scenario, Preferences preferences, int burnInIterations, int samplingInterval) {
 		super(scenario, burnInIterations, samplingInterval);
 		this.preferences = preferences;
@@ -78,6 +80,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			return;
 		}
 		
+		this.sequence2uses.compute(state.getLocationsView(), (s,c) -> c == null ? 1 : c + 1);
+		
 		this.location2isHomeCnt.compute(state.getLocation(0), (l,c) -> c == null ? 1 : c + 1);
 		
 		for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) {
@@ -97,7 +101,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 				this.timeListOfLocation2visits.get(bin).compute(p.getLocation(),
 						(l, c) -> c == null ? relativeOverlap : c + relativeOverlap);
 
-				final double effectiveParkingDuration_h = RoundTripUtils.effectiveParkingDuration_h(p);
+				final double effectiveParkingDuration_h = RoundTripUtils.effectiveDuration_h(p);
 				if (effectiveParkingDuration_h > 1e-8) {
 					final double effectiveChargingRate_kW = Math.max(0.0, p.getChargeAtEnd_kWh() - p.getChargeAtStart_kWh())
 							/ effectiveParkingDuration_h;
@@ -272,6 +276,11 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		System.out.println("used            " + this.used_kWh);
 		System.out.println("charged         " + this.charged_kWh);
 		System.out.println("charged,detail  " + this.chargedDetail_kWh);
+		
+		System.out.println();
+		for (Map.Entry<List<Location>, Long> e : this.sequence2uses.entrySet()) {
+			System.out.println(e.getKey() + "\t" + e.getValue());
+		}
 		
 	}
 

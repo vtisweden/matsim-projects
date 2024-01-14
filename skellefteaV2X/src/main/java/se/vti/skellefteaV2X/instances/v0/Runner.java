@@ -25,8 +25,10 @@ import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AllDayTimeConstraintPreference;
-import se.vti.skellefteaV2X.preferences.LocationAttractivityPreference;
+import se.vti.skellefteaV2X.preferences.AtHomePreference;
+import se.vti.skellefteaV2X.preferences.LocalChargingAmountPrefence;
 import se.vti.skellefteaV2X.preferences.NonnegativeBatteryStatePreference;
+import se.vti.skellefteaV2X.preferences.NotHomePreference;
 import se.vti.skellefteaV2X.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
@@ -47,7 +49,7 @@ public class Runner {
 		 */
 
 		final double scale = 1.0;
-		
+
 		// Scenario has setters for non-default scenario parameters.
 		Scenario scenario = new Scenario();
 
@@ -138,21 +140,25 @@ public class Runner {
 
 		Preferences allPreferences = new Preferences();
 		allPreferences.addPreferences(consistencyPreferences);
-//		allPreferences.addComponent(new AtHomePreference(22.0, 6.0));
+		allPreferences.addComponent(new AtHomePreference(22.0, 6.0), 1.0);
+		allPreferences.addComponent(new NotHomePreference(campus), 10.0);
+//		allPreferences.addComponent(new OffLocationPreference(campus, 22.0, 6.0), 10.0);
 //		allPreferences.addComponent(new AtLocationPreference(campus, 10.0, 14.0));
-//		allPreferences.addComponent(new OffLocationPreference(campus, 22.0, 6.0));
+		allPreferences.addComponent(new LocalChargingAmountPrefence(scenario, campus), 0.1);
+//		allPreferences.addComponent(new TravelDurationPreference(2.0));
 
-		LocationAttractivityPreference locPref = new LocationAttractivityPreference();
-		locPref.setAttractivity(boliden, 1.566);
-		locPref.setAttractivity(kage,2.248);
-		locPref.setAttractivity(centrum, 74.702);
-		locPref.setAttractivity(campus, 10.000);
-		locPref.setAttractivity(hamn, 10.000);
-		locPref.setAttractivity(burea, 2.360);
-		locPref.setAttractivity(burtrask, 1.575);
-		allPreferences.addComponent(locPref);
+//		allPreferences.addComponent(new AtLocationPreference(campus, 10.0, 14.0));
 
-		
+//		LocationAttractivityPreference locPref = new LocationAttractivityPreference();
+//		locPref.setAttractivity(boliden, 1.566);
+//		locPref.setAttractivity(kage,2.248);
+//		locPref.setAttractivity(centrum, 74.702);
+//		locPref.setAttractivity(campus, 10.000);
+//		locPref.setAttractivity(hamn, 10.000);
+//		locPref.setAttractivity(burea, 2.360);
+//		locPref.setAttractivity(burtrask, 1.575);
+//		allPreferences.addComponent(locPref);
+
 		/*
 		 * Run MH algorithm.
 		 */
@@ -164,7 +170,7 @@ public class Runner {
 //		MHStateProcessor<RoundTrip<Location>> stats = new StationarityStats(simulator, campus, iterations / 100);
 //		algo.addStateProcessor(stats);
 
-		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, consistencyPreferences, iterations / 2, 1));
+		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, new Preferences(), iterations / 2, 10));
 
 		algo.setMsgInterval(iterations / 100);
 		algo.run(iterations);

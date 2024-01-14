@@ -48,7 +48,7 @@ public class DefaultParkingSimulator implements ParkingSimulator {
 		if (location.getAllowsCharging() && charging) {
 			double chargingDuration_h = Math.min(
 					Math.max(0.0, this.scenario.getMaxCharge_kWh() - charge_kWh) / this.scenario.getChargingRate_kW(),
-					RoundTripUtils.effectiveParkingDuration_h(parking));
+					RoundTripUtils.effectiveDuration_h(parking));
 			charge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
 					charge_kWh + this.scenario.getChargingRate_kW() * chargingDuration_h);
 		}
