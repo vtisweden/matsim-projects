@@ -21,10 +21,13 @@ package se.vti.skellefteaV2X.preferences;
 
 import java.util.List;
 
+import floetteroed.utilities.Tuple;
+import floetteroed.utilities.math.MathHelpers;
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
+import se.vti.skellefteaV2X.model.RoundTripUtils;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -32,43 +35,39 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class OnCampusPreference implements Component {
+public class OffLocationPreference implements Component {
 
-	private final Location campus;
-	private final double targetTime_h;
+	private final Location location;
 
-	public OnCampusPreference(Location campus, double targetTime_h) {
-		this.campus = campus;
-		this.targetTime_h = targetTime_h;
+	private final List<Tuple<Double, Double>> targetIntervals;
+
+	public OffLocationPreference(Location location, double targetStart_h, double targetEnd_h) {
+		this.location = location;
+		this.targetIntervals = RoundTripUtils.effectiveIntervals(targetStart_h, targetEnd_h);
 	}
 
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
-		List<Episode> episodes = roundTrip.getEpisodes();
-		double minDist_h = 24.0;
-		if (episodes.size() == 1) {
-			if (this.campus.equals(((ParkingEpisode) episodes.get(0)).getLocation())) {
-				minDist_h = 0.0;
-			}
-		} else {
-			for (Episode e : episodes) {
-				if (e instanceof ParkingEpisode) {
-					ParkingEpisode p = (ParkingEpisode) e;
-					if (this.campus.equals(p.getLocation())) {
-						final double candDist_h;
-						if (this.targetTime_h < p.getStartTime_h()) {
-							candDist_h = p.getStartTime_h() - this.targetTime_h;
-						} else if (this.targetTime_h < p.getEndTime_h()) {
-							candDist_h = 0.0;
-						} else {
-							candDist_h = this.targetTime_h - p.getEndTime_h();
+
+		double realizedDuration_h = 0.0;
+
+		for (Episode e : roundTrip.getEpisodes()) {
+			if (e instanceof ParkingEpisode) {
+				ParkingEpisode p = (ParkingEpisode) e;
+				if (this.location.equals(p.getLocation())) {
+					final List<Tuple<Double, Double>> realizedIntervals = RoundTripUtils
+							.effectiveIntervals(p.getStartTime_h(), p.getEndTime_h());
+					for (Tuple<Double, Double> target : this.targetIntervals) {
+						for (Tuple<Double, Double> realized : realizedIntervals) {
+							realizedDuration_h += MathHelpers.overlap(target.getA(), target.getB(), realized.getA(),
+									realized.getB());
 						}
-						minDist_h = Math.min(minDist_h, candDist_h);
 					}
 				}
 			}
 		}
-		return -minDist_h;
+
+		return -realizedDuration_h;
 	}
 
 }

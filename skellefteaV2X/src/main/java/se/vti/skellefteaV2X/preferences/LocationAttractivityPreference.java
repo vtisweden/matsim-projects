@@ -1,5 +1,5 @@
 /**
- * se.vti.skellefeaV2X
+ * se.vti.skellefteaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,47 +19,43 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
-import se.vti.skellefteaV2X.model.Preferences.Component;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class AtHomeOffCampusPreference implements Component {
+public class LocationAttractivityPreference implements Preferences.Component {
 
-	private final Location campus;
-	private final double homeStart_h;
-	private final double homeEnd_h;
+	private Map<Location, Double> location2logAttractivity = new LinkedHashMap<>();
 
-	public AtHomeOffCampusPreference(Location campus, double homeStart_h, double homeEnd_h) {
-		this.campus = campus;
-		this.homeStart_h = homeStart_h;
-		this.homeEnd_h = homeEnd_h;
+	private Double maxLogAttractivity = null;
+
+	public LocationAttractivityPreference() {
+	}
+
+	public void setAttractivity(Location location, double attractivity) {
+		final double logAttractivity = Math.log(attractivity);
+		this.location2logAttractivity.put(location, logAttractivity);
+		this.maxLogAttractivity = this.maxLogAttractivity == null ? logAttractivity
+				: Math.max(this.maxLogAttractivity, logAttractivity);
 	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip roundTrip) {
-		if (roundTrip.size() == 1) {
-			return 0.0; // FIXME may be on campus
+	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
+		double result = 0.0;
+		for (int i = 0; i < simulatedRoundTrip.size(); i += 2) {
+			ParkingEpisode p = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(i);
+			result += this.location2logAttractivity.get(p.getLocation()) - this.maxLogAttractivity;
 		}
-		List<Episode> episodes = roundTrip.getEpisodes();
-		ParkingEpisode home = (ParkingEpisode) episodes.get(0);
-		double discrepancy_h = 0.0;
-		if (this.campus.equals(home.getLocation())) {
-			discrepancy_h = this.homeEnd_h - this.homeStart_h;
-		} else {
-			discrepancy_h += Math.max(0, home.getStartTime_h() - this.homeStart_h);
-			discrepancy_h += Math.max(0, this.homeEnd_h - home.getEndTime_h());
-
-		}
-		return -discrepancy_h;
+		return result;
 	}
 
 }

@@ -124,7 +124,7 @@ public class Scenario {
 		return consumptionRate_kWh_km;
 	}
 
-	public double getSpeed_km_h() {
+	public double getDefaultSpeed_km_h() {
 		return defaultSpeed_km_h;
 	}
 

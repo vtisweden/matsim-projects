@@ -24,40 +24,49 @@ import java.util.List;
 
 import floetteroed.utilities.Tuple;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class RoundTripUtils {
 
-	private final Scenario scenario;
-
-	public RoundTripUtils(Scenario scenario) {
-		this.scenario = scenario;
+	public static double projectOntoDay_h(double time_h) {
+		double result_h = time_h;
+		while (result_h < 0.0) {
+			result_h += 24.0;
+		}
+		while (result_h >= 24.0) {
+			result_h -= 24.0;
+		}
+		return result_h;
 	}
-
-	public static double effectiveHomeDuration_h(ParkingEpisode h) {
-		// wraparound: home activity starts on the day before
-		double result = Math.max(0.0, h.getEndTime_h() - h.getStartTime_h());
-		double altResult = effectiveParkingDuration_h(h, true);
-		return altResult;
-	}
-
-	public static List<Tuple<Double, Double>> effectiveParkingIntervals(ParkingEpisode p, boolean isHome) {
-		if (p.getStartTime_h() < 0.0) {
-			return Arrays.asList(new Tuple<>(p.getStartTime_h() + 24.0, 24.0), new Tuple<>(0.0, p.getEndTime_h()));
+	
+	public static List<Tuple<Double, Double>> effectiveIntervals(double start_h, double end_h) {
+		start_h = projectOntoDay_h(start_h);
+		end_h = projectOntoDay_h(end_h);
+		if (start_h <= end_h) {
+			return Arrays.asList(new Tuple<>(start_h, end_h));
 		} else {
-			if (isHome) {
-				if (p.getStartTime_h() <= p.getEndTime_h()) {
-					return Arrays.asList(new Tuple<>(p.getStartTime_h(), p.getEndTime_h()));
-				} else {
-					return Arrays.asList(new Tuple<>(p.getStartTime_h(), 24.0), new Tuple<>(0.0, p.getEndTime_h()));
-				}
-			} else {
-				return Arrays.asList(new Tuple<>(p.getStartTime_h(), p.getEndTime_h()));
-			}
+			return Arrays.asList(new Tuple<>(start_h, 24.0), new Tuple<>(0.0, end_h));
 		}
 	}
 
-	public static double effectiveParkingDuration_h(ParkingEpisode p, boolean isHome) {
+
+	
+	public static double effectiveParkingDuration_h(ParkingEpisode p) {
+		return effectiveDuration_h(effectiveIntervals(p.getStartTime_h(), p.getEndTime_h()));
+//		double result = 0.0;
+//		for (Tuple<Double, Double> interval : effectiveIntervals(p.getStartTime_h(), p.getEndTime_h())) {
+//			result += interval.getB() - interval.getA();
+//		}
+//		return result;
+	}
+
+	
+	public static double effectiveDuration_h(List<Tuple<Double, Double>> intervals) {
 		double result = 0.0;
-		for (Tuple<Double, Double> interval : effectiveParkingIntervals(p, isHome)) {
+		for (Tuple<Double, Double> interval : intervals) {
 			result += interval.getB() - interval.getA();
 		}
 		return result;

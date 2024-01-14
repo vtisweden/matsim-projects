@@ -44,7 +44,7 @@ public class DefaultDrivingSimulator implements DrivingSimulator {
 		driving.setStartTime_h(time_h);
 		driving.setChargeAtStart_kWh(charge_kWh);
 		final double dist_km = this.scenario.getDistance_km(origin, destination);
-		driving.setEndTime_h(time_h + dist_km / this.scenario.getSpeed_km_h());
+		driving.setEndTime_h(time_h + dist_km / this.scenario.getDefaultSpeed_km_h());
 		driving.setChargeAtEnd_kWh(charge_kWh - dist_km * this.scenario.getConsumptionRate_kWh_km());
 		return driving;
 	}

@@ -26,12 +26,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import floetteroed.utilities.math.BasicStatistics;
+import floetteroed.utilities.Tuple;
 import floetteroed.utilities.math.MathHelpers;
 import se.vti.skellefteaV2X.model.DrivingEpisode;
-import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.RoundTripUtils;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
@@ -43,148 +43,173 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
-	private List<Map<Location, Long>> timeListOfLocation2visits;
+	private final Preferences preferences;
+	
+	private List<Map<Location, Double>> timeListOfLocation2visits;
 
-	private List<Map<Location, Long>> timeListOfLocation2chargings;
+	private List<Map<Location, Double>> timeListOfLocation2chargings_kWh;
 
-	private List<Long> timeListOfAtHome;
+	double chargedDetail_kWh = 0.0;
+	double used_kWh = 0.0;
+	double charged_kWh = 0.0;
 
-	private long visitsToHome;
-	private long chargingsAtHome;
+	private Map<Location, Long> location2isHomeCnt = new LinkedHashMap<>();
 
-	private long visitsOffHome;
-	private long chargingsOffHome;
-
-	private BasicStatistics homeDurationStats = new BasicStatistics();
-	private BasicStatistics homeStartStats = new BasicStatistics();
-	private BasicStatistics homeEndStats = new BasicStatistics();
-
-	private BasicStatistics otherDurationStats = new BasicStatistics();
-
-	public LocationVisitAnalyzer(Scenario scenario, int burnInIterations, int samplingInterval) {
+	private List<Double> timeListOfDriving;
+	
+	public LocationVisitAnalyzer(Scenario scenario, Preferences preferences, int burnInIterations, int samplingInterval) {
 		super(scenario, burnInIterations, samplingInterval);
+		this.preferences = preferences;
 		this.timeListOfLocation2visits = new ArrayList<>(scenario.getBinCnt());
-		this.timeListOfLocation2chargings = new ArrayList<>(scenario.getBinCnt());
-		this.timeListOfAtHome = new ArrayList<>(scenario.getBinCnt());
+		this.timeListOfLocation2chargings_kWh = new ArrayList<>(scenario.getBinCnt());
+		this.timeListOfDriving = new ArrayList<>(scenario.getBinCnt());
 
 		for (int i = 0; i < scenario.getBinCnt(); i++) {
 			this.timeListOfLocation2visits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
-			this.timeListOfLocation2chargings.add(new LinkedHashMap<>(scenario.getLocationCnt()));
-			this.timeListOfAtHome.add(0l);
-		}
+			this.timeListOfLocation2chargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
+			this.timeListOfDriving.add(0.0);
+		}		
 	}
 
 	@Override
 	public void processRelevantState(SimulatedRoundTrip state) {
 
+		if (this.preferences.logWeight(state) < -Double.MIN_VALUE) {
+			return;
+		}
+		
+		this.location2isHomeCnt.compute(state.getLocation(0), (l,c) -> c == null ? 1 : c + 1);
+		
+		for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) {
+
+			double binStart_h = this.scenario.getBinSize_h() * bin;
+			double binEnd_h = binStart_h + this.scenario.getBinSize_h();
+
+			for (int i = 0; i < state.getEpisodes().size(); i += 2) {
+				double overlap_h = 0;
+				ParkingEpisode p = (ParkingEpisode) state.getEpisodes().get(i);
+				for (Tuple<Double, Double> interval : RoundTripUtils.effectiveIntervals(p.getStartTime_h(),
+						p.getEndTime_h())) {
+					overlap_h += MathHelpers.overlap(binStart_h, binEnd_h, interval.getA(), interval.getB());
+				}
+				final double relativeOverlap = overlap_h / (binEnd_h - binStart_h);
+				assert (overlap_h <= 1.0);
+				this.timeListOfLocation2visits.get(bin).compute(p.getLocation(),
+						(l, c) -> c == null ? relativeOverlap : c + relativeOverlap);
+
+				final double effectiveParkingDuration_h = RoundTripUtils.effectiveParkingDuration_h(p);
+				if (effectiveParkingDuration_h > 1e-8) {
+					final double effectiveChargingRate_kW = Math.max(0.0, p.getChargeAtEnd_kWh() - p.getChargeAtStart_kWh())
+							/ effectiveParkingDuration_h;
+					final double effectiveCharging_kWh = effectiveChargingRate_kW * overlap_h;
+					this.chargedDetail_kWh += effectiveCharging_kWh;
+					this.timeListOfLocation2chargings_kWh.get(bin).compute(p.getLocation(),
+							(l, c) -> c == null ? effectiveCharging_kWh : c + effectiveCharging_kWh);
+				}
+			}
+			
+
+			for (int i = 1; i < state.getEpisodes().size(); i += 2) {
+				double overlap_h = 0;
+				DrivingEpisode d = (DrivingEpisode) state.getEpisodes().get(i);
+				for (Tuple<Double, Double> interval : RoundTripUtils.effectiveIntervals(d.getStartTime_h(),
+						d.getEndTime_h())) {
+					overlap_h += MathHelpers.overlap(binStart_h, binEnd_h, interval.getA(), interval.getB());
+				}
+				final double relativeOverlap = overlap_h / (binEnd_h - binStart_h);
+				assert (overlap_h <= 1.0);
+				this.timeListOfDriving.set(bin, this.timeListOfDriving.get(bin) + relativeOverlap);
+			}
+	}
+
+		for (int i = 0; i < state.getEpisodes().size(); i += 2) {
+			ParkingEpisode e = (ParkingEpisode) state.getEpisodes().get(i);
+			this.charged_kWh += e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh();
+		}
+
+		for (int i = 1; i < state.getEpisodes().size(); i += 2) {
+			DrivingEpisode e = (DrivingEpisode) state.getEpisodes().get(i);
+			this.used_kWh += e.getChargeAtStart_kWh() - e.getChargeAtEnd_kWh();
+		}
+
+//
 //		ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
+//		boolean homeCharging = home.getChargeAtEnd_kWh() > home.getChargeAtStart_kWh();
+//		int startBin = (int) ((home.getStartTime_h() + 24.0) / this.scenario.getBinSize_h());
+//		int endBin = (int) ((home.getEndTime_h()) / this.scenario.getBinSize_h());
 //
-//		for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) {
+//		this.visitsToHome++;
+//		if (homeCharging) {
+//			this.chargingsAtHome++;
+//		}
 //
-//			double binStart_h = this.scenario.getBinSize_h() * bin;
-//			double binEnd_h = binStart_h + this.scenario.getBinSize_h();
-//			
-//			if (RoundTripUtils.effectiveHomeDuration_h(home) > 0) {
-//				final double withinDayHomeStartTime_h = home.getStartTime_h() + 24.0;
-//				final double overlap_h;
-//				if (withinDayHomeStartTime_h >= 0) {
-//					overlap_h = MathHelpers.overlap(binStart_h, binEnd_h, withinDayHomeStartTime_h, home.getEndTime_h());
-//				} else {
-//					overlap_h = MathHelpers.overlap(binStart_h, binEnd_h, withinDayHomeStartTime_h, 24.0)
-//							+ MathHelpers.overlap(binStart_h, binEnd_h, 0.0, home.getEndTime_h());
+//		if (startBin > endBin) {
+//
+//			for (int parkingBin = Math.max(0, startBin); parkingBin < this.scenario.getBinCnt(); parkingBin++) {
+//				this.timeListOfLocation2visits.get(parkingBin).compute(home.getLocation(),
+//						(l, c) -> c == null ? 1 : c + 1);
+//				this.timeListOfAtHome.set(parkingBin, this.timeListOfAtHome.get(parkingBin) + 1);
+//				if (homeCharging) {
+//					this.timeListOfLocation2chargings.get(parkingBin).compute(home.getLocation(),
+//							(l, c) -> c == null ? 1 : c + 1);
 //				}
-//				//TODO register data
-//				
-//				for (int i = 2; i < state.getEpisodes().size(); i+=2) {
-//					ParkingEpisode p = (ParkingEpisode) state.getEpisodes().get(i);
-//					
+//			}
+//			for (int parkingBin = 0; parkingBin <= Math.min(endBin, this.scenario.getBinCnt() - 1); parkingBin++) {
+//				this.timeListOfLocation2visits.get(parkingBin).compute(home.getLocation(),
+//						(l, c) -> c == null ? 1 : c + 1);
+//				this.timeListOfAtHome.set(parkingBin, this.timeListOfAtHome.get(parkingBin) + 1);
+//				if (homeCharging) {
+//					this.timeListOfLocation2chargings.get(parkingBin).compute(home.getLocation(),
+//							(l, c) -> c == null ? 1 : c + 1);
 //				}
-//				
-//				
 //			}
 //
-//			
-//			
+//		} else {
+//
+//			for (int parkingBin = Math.max(0, startBin); parkingBin < Math.min(endBin,
+//					this.scenario.getBinCnt() - 1); parkingBin++) {
+//				this.timeListOfLocation2visits.get(parkingBin).compute(home.getLocation(),
+//						(l, c) -> c == null ? 1 : c + 1);
+//				this.timeListOfAtHome.set(parkingBin, this.timeListOfAtHome.get(parkingBin) + 1);
+//				if (home.getChargeAtEnd_kWh() > home.getChargeAtStart_kWh()) {
+//					this.timeListOfLocation2chargings.get(parkingBin).compute(home.getLocation(),
+//							(l, c) -> c == null ? 1 : c + 1);
+//				}
+//			}
+//
 //		}
-		
-
-		ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
-		boolean homeCharging = home.getChargeAtEnd_kWh() > home.getChargeAtStart_kWh();
-		int startBin = (int) ((home.getStartTime_h() + 24.0) / this.scenario.getBinSize_h());
-		int endBin = (int) ((home.getEndTime_h()) / this.scenario.getBinSize_h());
-
-		this.visitsToHome++;
-		if (homeCharging) {
-			this.chargingsAtHome++;
-		}
-
-		if (startBin > endBin) {
-
-			for (int parkingBin = Math.max(0, startBin); parkingBin < this.scenario.getBinCnt(); parkingBin++) {
-				this.timeListOfLocation2visits.get(parkingBin).compute(home.getLocation(),
-						(l, c) -> c == null ? 1 : c + 1);
-				this.timeListOfAtHome.set(parkingBin, this.timeListOfAtHome.get(parkingBin) + 1);
-				if (homeCharging) {
-					this.timeListOfLocation2chargings.get(parkingBin).compute(home.getLocation(),
-							(l, c) -> c == null ? 1 : c + 1);
-				}
-			}
-			for (int parkingBin = 0; parkingBin <= Math.min(endBin, this.scenario.getBinCnt() - 1); parkingBin++) {
-				this.timeListOfLocation2visits.get(parkingBin).compute(home.getLocation(),
-						(l, c) -> c == null ? 1 : c + 1);
-				this.timeListOfAtHome.set(parkingBin, this.timeListOfAtHome.get(parkingBin) + 1);
-				if (homeCharging) {
-					this.timeListOfLocation2chargings.get(parkingBin).compute(home.getLocation(),
-							(l, c) -> c == null ? 1 : c + 1);
-				}
-			}
-
-		} else {
-
-			for (int parkingBin = Math.max(0, startBin); parkingBin < Math.min(endBin,
-					this.scenario.getBinCnt() - 1); parkingBin++) {
-				this.timeListOfLocation2visits.get(parkingBin).compute(home.getLocation(),
-						(l, c) -> c == null ? 1 : c + 1);
-				this.timeListOfAtHome.set(parkingBin, this.timeListOfAtHome.get(parkingBin) + 1);
-				if (home.getChargeAtEnd_kWh() > home.getChargeAtStart_kWh()) {
-					this.timeListOfLocation2chargings.get(parkingBin).compute(home.getLocation(),
-							(l, c) -> c == null ? 1 : c + 1);
-				}
-			}
-
-		}
-
-		if (state.size() > 1) {
-			this.homeDurationStats.add(RoundTripUtils.effectiveHomeDuration_h(home));
-			this.homeStartStats.add(home.getStartTime_h());
-			this.homeEndStats.add(home.getEndTime_h());
-		}
-
-		for (int i = 1; i < state.getEpisodes().size(); i++) {
-			Episode e = state.getEpisodes().get(i);
-			startBin = (int) (e.getStartTime_h() / this.scenario.getBinSize_h());
-			endBin = (int) (e.getEndTime_h() / this.scenario.getBinSize_h());
-			if ((startBin >= 0) && (endBin < this.scenario.getBinCnt())) {
-				if (e instanceof DrivingEpisode) {
-					// nothing for now
-				} else {
-					ParkingEpisode p = (ParkingEpisode) e;
-					this.otherDurationStats.add(e.getEndTime_h() - e.getStartTime_h());
-					for (int parkingBin = startBin; parkingBin <= endBin; parkingBin++) {
-						this.timeListOfLocation2visits.get(parkingBin).compute(p.getLocation(),
-								(l, c) -> c == null ? 1 : c + 1);
-					}
-					this.visitsOffHome++;
-					if (p.getChargeAtEnd_kWh() > p.getChargeAtStart_kWh()) {
-						for (int parkingBin = startBin; parkingBin <= endBin; parkingBin++) {
-							this.timeListOfLocation2chargings.get(parkingBin).compute(p.getLocation(),
-									(l, c) -> c == null ? 1 : c + 1);
-						}
-						this.chargingsOffHome++;
-					}
-				}
-			}
-		}
+//
+//		if (state.size() > 1) {
+//			this.homeDurationStats.add(RoundTripUtils.effectiveParkingDuration_h(home));
+//			this.homeStartStats.add(home.getStartTime_h());
+//			this.homeEndStats.add(home.getEndTime_h());
+//		}
+//
+//		for (int i = 1; i < state.getEpisodes().size(); i++) {
+//			Episode e = state.getEpisodes().get(i);
+//			startBin = (int) (e.getStartTime_h() / this.scenario.getBinSize_h());
+//			endBin = (int) (e.getEndTime_h() / this.scenario.getBinSize_h());
+//			if ((startBin >= 0) && (endBin < this.scenario.getBinCnt())) {
+//				if (e instanceof DrivingEpisode) {
+//					// nothing for now
+//				} else {
+//					ParkingEpisode p = (ParkingEpisode) e;
+//					this.otherDurationStats.add(e.getEndTime_h() - e.getStartTime_h());
+//					for (int parkingBin = startBin; parkingBin <= endBin; parkingBin++) {
+//						this.timeListOfLocation2visits.get(parkingBin).compute(p.getLocation(),
+//								(l, c) -> c == null ? 1 : c + 1);
+//					}
+//					this.visitsOffHome++;
+//					if (p.getChargeAtEnd_kWh() > p.getChargeAtStart_kWh()) {
+//						for (int parkingBin = startBin; parkingBin <= endBin; parkingBin++) {
+//							this.timeListOfLocation2chargings.get(parkingBin).compute(p.getLocation(),
+//									(l, c) -> c == null ? 1 : c + 1);
+//						}
+//						this.chargingsOffHome++;
+//					}
+//				}
+//			}
+//		}
 	}
 
 	@Override
@@ -207,9 +232,9 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		}
 		System.out.println();
 
-		for (Map<Location, Long> location2visits : this.timeListOfLocation2visits) {
+		for (Map<Location, Double> location2visits : this.timeListOfLocation2visits) {
 			for (Location l : locations) {
-				System.out.print(location2visits.getOrDefault(l, 0l) + "\t");
+				System.out.print(location2visits.getOrDefault(l, 0.0) + "\t");
 			}
 			System.out.println();
 		}
@@ -223,50 +248,31 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		}
 		System.out.println();
 
-		for (Map<Location, Long> location2chargings : this.timeListOfLocation2chargings) {
+		for (Map<Location, Double> location2chargings : this.timeListOfLocation2chargings_kWh) {
 			for (Location l : locations) {
-				System.out.print(location2chargings.getOrDefault(l, 0l) + "\t");
+				System.out.print(location2chargings.getOrDefault(l, 0.0) + "\t");
 			}
 			System.out.println();
 		}
 
 		System.out.println();
-		System.out.println("HOME DURATION");
-		System.out.println(homeDurationStats.getAvg());
-		System.out.println(homeDurationStats.getStddev());
-		System.out.println(homeDurationStats.getMin());
-		System.out.println(homeDurationStats.getMax());
-
-		System.out.println();
-		System.out.println("OTHER DURATION");
-		System.out.println(otherDurationStats.getAvg());
-		System.out.println(otherDurationStats.getStddev());
-		System.out.println(otherDurationStats.getMin());
-		System.out.println(otherDurationStats.getMax());
-
-		System.out.println();
-		System.out.println("HOME START");
-		System.out.println(homeStartStats.getAvg());
-		System.out.println(homeStartStats.getStddev());
-		System.out.println(homeStartStats.getMin());
-		System.out.println(homeStartStats.getMax());
-
-		System.out.println();
-		System.out.println("HOME END");
-		System.out.println(homeEndStats.getAvg());
-		System.out.println(homeEndStats.getStddev());
-		System.out.println(homeEndStats.getMin());
-		System.out.println(homeEndStats.getMax());
-
-		System.out.println();
-		for (Long l : this.timeListOfAtHome) {
-			System.out.println(l);
+		for (Map.Entry<Location, Long> e : this.location2isHomeCnt.entrySet()) {
+			System.out.println(e.getKey() + "\t" + e.getValue());
 		}
-
 		System.out.println();
-		System.out.println("P(chargeAtHome) = " + ((double) this.chargingsAtHome) / this.visitsToHome);
-		System.out.println("P(chargeElsewhere) = " + ((double) this.chargingsOffHome) / this.visitsOffHome);
-
+		
+		System.out.println();
+		System.out.println("Drivings");
+		for (Double cnt : this.timeListOfDriving) {
+			System.out.println(cnt);
+		}
+		System.out.println();
+		
+		System.out.println();
+		System.out.println("used            " + this.used_kWh);
+		System.out.println("charged         " + this.charged_kWh);
+		System.out.println("charged,detail  " + this.chargedDetail_kWh);
+		
 	}
 
 }

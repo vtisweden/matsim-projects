@@ -25,7 +25,7 @@ import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AllDayTimeConstraintPreference;
-import se.vti.skellefteaV2X.preferences.AtHomeOffCampusPreference;
+import se.vti.skellefteaV2X.preferences.LocationAttractivityPreference;
 import se.vti.skellefteaV2X.preferences.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
@@ -46,6 +46,8 @@ public class Runner {
 		 * 
 		 */
 
+		final double scale = 1.0;
+		
 		// Scenario has setters for non-default scenario parameters.
 		Scenario scenario = new Scenario();
 
@@ -60,32 +62,59 @@ public class Runner {
 		// Scenario has setters for direction-specific distances.
 		// By default, travel times are inferred from distances.
 		// Scenario also has setters for arbitrary travel times.
-		scenario.setSymmetricDistance_km(boliden, kage, 38);
-		scenario.setSymmetricDistance_km(boliden, centrum, 34);
-		scenario.setSymmetricDistance_km(boliden, campus, 34);
-		scenario.setSymmetricDistance_km(boliden, hamn, 47);
-		scenario.setSymmetricDistance_km(boliden, burea, 55);
-		scenario.setSymmetricDistance_km(boliden, burtrask, 48);
+		scenario.setSymmetricDistance_km(boliden, kage, scale * 38);
+		scenario.setSymmetricDistance_km(boliden, centrum, scale * 34);
+		scenario.setSymmetricDistance_km(boliden, campus, scale * 34);
+		scenario.setSymmetricDistance_km(boliden, hamn, scale * 47);
+		scenario.setSymmetricDistance_km(boliden, burea, scale * 55);
+		scenario.setSymmetricDistance_km(boliden, burtrask, scale * 48);
 
-		scenario.setSymmetricDistance_km(kage, centrum, 13);
-		scenario.setSymmetricDistance_km(kage, campus, 13);
-		scenario.setSymmetricDistance_km(kage, hamn, 24);
-		scenario.setSymmetricDistance_km(kage, burea, 33);
-		scenario.setSymmetricDistance_km(kage, burtrask, 53);
+		scenario.setSymmetricDistance_km(kage, centrum, scale * 13);
+		scenario.setSymmetricDistance_km(kage, campus, scale * 13);
+		scenario.setSymmetricDistance_km(kage, hamn, scale * 24);
+		scenario.setSymmetricDistance_km(kage, burea, scale * 33);
+		scenario.setSymmetricDistance_km(kage, burtrask, scale * 53);
 
-		scenario.setSymmetricDistance_km(centrum, campus, 5);
-		scenario.setSymmetricDistance_km(centrum, hamn, 13);
-		scenario.setSymmetricDistance_km(centrum, burea, 22);
-		scenario.setSymmetricDistance_km(centrum, burtrask, 42);
+		scenario.setSymmetricDistance_km(centrum, campus, scale * 5);
+		scenario.setSymmetricDistance_km(centrum, hamn, scale * 13);
+		scenario.setSymmetricDistance_km(centrum, burea, scale * 22);
+		scenario.setSymmetricDistance_km(centrum, burtrask, scale * 42);
 
-		scenario.setSymmetricDistance_km(campus, hamn, 13);
-		scenario.setSymmetricDistance_km(campus, burea, 22);
-		scenario.setSymmetricDistance_km(campus, burtrask, 42);
+		scenario.setSymmetricDistance_km(campus, hamn, scale * 13);
+		scenario.setSymmetricDistance_km(campus, burea, scale * 22);
+		scenario.setSymmetricDistance_km(campus, burtrask, scale * 42);
 
-		scenario.setSymmetricDistance_km(hamn, burea, 11);
-		scenario.setSymmetricDistance_km(hamn, burtrask, 46);
+		scenario.setSymmetricDistance_km(hamn, burea, scale * 11);
+		scenario.setSymmetricDistance_km(hamn, burtrask, scale * 46);
 
-		scenario.setSymmetricDistance_km(burea, burtrask, 35);
+		scenario.setSymmetricDistance_km(burea, burtrask, scale * 35);
+
+//		scenario.setSymmetricDistance_km(boliden, kage, 25);
+//		scenario.setSymmetricDistance_km(boliden, centrum, 25);
+//		scenario.setSymmetricDistance_km(boliden, campus, 25);
+//		scenario.setSymmetricDistance_km(boliden, hamn, 25);
+//		scenario.setSymmetricDistance_km(boliden, burea, 25);
+//		scenario.setSymmetricDistance_km(boliden, burtrask, 25);
+//
+//		scenario.setSymmetricDistance_km(kage, centrum, 25);
+//		scenario.setSymmetricDistance_km(kage, campus, 25);
+//		scenario.setSymmetricDistance_km(kage, hamn, 25);
+//		scenario.setSymmetricDistance_km(kage, burea, 25);
+//		scenario.setSymmetricDistance_km(kage, burtrask, 25);
+//
+//		scenario.setSymmetricDistance_km(centrum, campus, 25);
+//		scenario.setSymmetricDistance_km(centrum, hamn, 25);
+//		scenario.setSymmetricDistance_km(centrum, burea, 25);
+//		scenario.setSymmetricDistance_km(centrum, burtrask, 25);
+//
+//		scenario.setSymmetricDistance_km(campus, hamn, 25);
+//		scenario.setSymmetricDistance_km(campus, burea, 25);
+//		scenario.setSymmetricDistance_km(campus, burtrask, 25);
+//
+//		scenario.setSymmetricDistance_km(hamn, burea, 25);
+//		scenario.setSymmetricDistance_km(hamn, burtrask, 25);
+//
+//		scenario.setSymmetricDistance_km(burea, burtrask, 25);
 
 		/*
 		 * Create simulator.
@@ -100,26 +129,42 @@ public class Runner {
 		 * Define preferences for round trip sampling.
 		 */
 
-		Preferences preferences = new Preferences();
-		preferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
-		preferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
-		preferences.addComponent(new NonnegativeBatteryStatePreference(), 1.0);
-//		preferences.addComponent(new AtHomeOffCampusPreference(campus, -2.0, +6.0));
+		Preferences consistencyPreferences = new Preferences();
+		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
+		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
+		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(), 1.0);
 //		preferences.addComponent(new OnCampusPreference(campus, 12.0));
 		// Add as many preferences as desired.
 
+		Preferences allPreferences = new Preferences();
+		allPreferences.addPreferences(consistencyPreferences);
+//		allPreferences.addComponent(new AtHomePreference(22.0, 6.0));
+//		allPreferences.addComponent(new AtLocationPreference(campus, 10.0, 14.0));
+//		allPreferences.addComponent(new OffLocationPreference(campus, 22.0, 6.0));
+
+		LocationAttractivityPreference locPref = new LocationAttractivityPreference();
+		locPref.setAttractivity(boliden, 1.566);
+		locPref.setAttractivity(kage,2.248);
+		locPref.setAttractivity(centrum, 74.702);
+		locPref.setAttractivity(campus, 10.000);
+		locPref.setAttractivity(hamn, 10.000);
+		locPref.setAttractivity(burea, 2.360);
+		locPref.setAttractivity(burtrask, 1.575);
+		allPreferences.addComponent(locPref);
+
+		
 		/*
 		 * Run MH algorithm.
 		 */
 
 		int iterations = 10 * 1000 * 1000;
-		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(preferences, simulator);
+		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		// StationaryStats is an example of how to extract statistics from an MH run.
 //		MHStateProcessor<RoundTrip<Location>> stats = new StationarityStats(simulator, campus, iterations / 100);
 //		algo.addStateProcessor(stats);
 
-		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, 1));
+		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, consistencyPreferences, iterations / 2, 1));
 
 		algo.setMsgInterval(iterations / 100);
 		algo.run(iterations);
