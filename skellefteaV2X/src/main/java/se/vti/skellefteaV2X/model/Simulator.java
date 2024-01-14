@@ -100,7 +100,7 @@ public class Simulator {
 		if (roundTrip.size() == 1) {
 			ParkingEpisode home = new ParkingEpisode(roundTrip.getLocation(0));
 			home.setStartTime_h(0.0);
-			home.setEndTime_h(0.0); // wrap-around
+			home.setEndTime_h(24.0);
 			double charge_kWh = (roundTrip.getCharging(0) ? this.scenario.getMaxCharge_kWh() : 0.0);
 			home.setChargeAtStart_kWh(charge_kWh);
 			home.setChargeAtEnd_kWh(charge_kWh);
@@ -143,7 +143,7 @@ public class Simulator {
 			time_h = driving.getEndTime_h();
 			charge_kWh = driving.getChargeAtEnd_kWh();
 
-			home.setStartTime_h(time_h - 24.0); // wrap-around
+			home.setStartTime_h(time_h - 24.0);
 			home.setChargeAtStart_kWh(charge_kWh); // possible charge inconsistency at the home location
 
 			// postprocessing
@@ -152,7 +152,7 @@ public class Simulator {
 			if (home.getLocation().getAllowsCharging() && roundTrip.getCharging(0)) {
 				newInitialCharge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
 						home.getChargeAtStart_kWh() + this.scenario.getChargingRate_kW()
-								* Math.max(0.0, home.getEndTime_h() - home.getStartTime_h()));
+								* RoundTripUtils.effectiveHomeDuration_h(home));
 			} else {
 				newInitialCharge_kWh = home.getChargeAtStart_kWh();
 			}

@@ -42,7 +42,6 @@ public class AllDayTimeConstraintPreference implements Preferences.Component {
 		ParkingEpisode home = (ParkingEpisode) episodes.get(0);
 		
 		double timeDiscrepancy_h = Math.max(0.0, home.getStartTime_h() - home.getEndTime_h());
-		// double timeDiscrepancy_h = Math.max(0.0, home.getStartTime_h() - 24.0);
 
 		return -timeDiscrepancy_h;
 	}

@@ -25,6 +25,7 @@ import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AllDayTimeConstraintPreference;
+import se.vti.skellefteaV2X.preferences.AtHomeOffCampusPreference;
 import se.vti.skellefteaV2X.preferences.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
@@ -47,7 +48,6 @@ public class Runner {
 
 		// Scenario has setters for non-default scenario parameters.
 		Scenario scenario = new Scenario();
-		scenario.setMaxCharge_kWh(60);
 
 		Location boliden = scenario.createAndAddLocation("Boliden", true);
 		Location kage = scenario.createAndAddLocation("Kåge", true);

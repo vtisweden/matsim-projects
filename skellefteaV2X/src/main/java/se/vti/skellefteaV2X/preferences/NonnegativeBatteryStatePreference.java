@@ -19,8 +19,6 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
-import java.util.List;
-
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
@@ -38,15 +36,14 @@ public class NonnegativeBatteryStatePreference implements Preferences.Component 
 		if (roundTrip.size() == 1) {
 			return 0.0;
 		}
-		List<Episode> episodes = roundTrip.getEpisodes();
-		double minCharging_kWh = Double.POSITIVE_INFINITY;
-		for (Episode e : episodes) {
+		double minCharge_kWh = Double.POSITIVE_INFINITY;
+		for (Episode e : roundTrip.getEpisodes()) {
 			if (e instanceof ParkingEpisode) {
 				ParkingEpisode p = (ParkingEpisode) e;
-				minCharging_kWh = Math.min(minCharging_kWh, Math.min(p.getChargeAtStart_kWh(), p.getChargeAtEnd_kWh()));
+				minCharge_kWh = Math.min(minCharge_kWh, p.getChargeAtStart_kWh());
 			}
 		}
-		return Math.min(0.0, minCharging_kWh);
+		return Math.min(0.0, minCharge_kWh);
 	}
 
 }

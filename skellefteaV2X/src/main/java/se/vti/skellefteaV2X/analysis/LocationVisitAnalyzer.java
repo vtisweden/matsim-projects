@@ -27,10 +27,12 @@ import java.util.List;
 import java.util.Map;
 
 import floetteroed.utilities.math.BasicStatistics;
+import floetteroed.utilities.math.MathHelpers;
 import se.vti.skellefteaV2X.model.DrivingEpisode;
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.RoundTripUtils;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
@@ -46,16 +48,18 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 	private List<Map<Location, Long>> timeListOfLocation2chargings;
 
 	private List<Long> timeListOfAtHome;
-	
+
 	private long visitsToHome;
 	private long chargingsAtHome;
-	
+
 	private long visitsOffHome;
 	private long chargingsOffHome;
 
 	private BasicStatistics homeDurationStats = new BasicStatistics();
 	private BasicStatistics homeStartStats = new BasicStatistics();
 	private BasicStatistics homeEndStats = new BasicStatistics();
+
+	private BasicStatistics otherDurationStats = new BasicStatistics();
 
 	public LocationVisitAnalyzer(Scenario scenario, int burnInIterations, int samplingInterval) {
 		super(scenario, burnInIterations, samplingInterval);
@@ -73,6 +77,37 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 	@Override
 	public void processRelevantState(SimulatedRoundTrip state) {
 
+//		ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
+//
+//		for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) {
+//
+//			double binStart_h = this.scenario.getBinSize_h() * bin;
+//			double binEnd_h = binStart_h + this.scenario.getBinSize_h();
+//			
+//			if (RoundTripUtils.effectiveHomeDuration_h(home) > 0) {
+//				final double withinDayHomeStartTime_h = home.getStartTime_h() + 24.0;
+//				final double overlap_h;
+//				if (withinDayHomeStartTime_h >= 0) {
+//					overlap_h = MathHelpers.overlap(binStart_h, binEnd_h, withinDayHomeStartTime_h, home.getEndTime_h());
+//				} else {
+//					overlap_h = MathHelpers.overlap(binStart_h, binEnd_h, withinDayHomeStartTime_h, 24.0)
+//							+ MathHelpers.overlap(binStart_h, binEnd_h, 0.0, home.getEndTime_h());
+//				}
+//				//TODO register data
+//				
+//				for (int i = 2; i < state.getEpisodes().size(); i+=2) {
+//					ParkingEpisode p = (ParkingEpisode) state.getEpisodes().get(i);
+//					
+//				}
+//				
+//				
+//			}
+//
+//			
+//			
+//		}
+		
+
 		ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
 		boolean homeCharging = home.getChargeAtEnd_kWh() > home.getChargeAtStart_kWh();
 		int startBin = (int) ((home.getStartTime_h() + 24.0) / this.scenario.getBinSize_h());
@@ -82,7 +117,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		if (homeCharging) {
 			this.chargingsAtHome++;
 		}
-		
+
 		if (startBin > endBin) {
 
 			for (int parkingBin = Math.max(0, startBin); parkingBin < this.scenario.getBinCnt(); parkingBin++) {
@@ -105,7 +140,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			}
 
 		} else {
-			
+
 			for (int parkingBin = Math.max(0, startBin); parkingBin < Math.min(endBin,
 					this.scenario.getBinCnt() - 1); parkingBin++) {
 				this.timeListOfLocation2visits.get(parkingBin).compute(home.getLocation(),
@@ -116,12 +151,14 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 							(l, c) -> c == null ? 1 : c + 1);
 				}
 			}
-			
+
 		}
 
-		this.homeDurationStats.add(home.getEndTime_h() - home.getStartTime_h());
-		this.homeStartStats.add(home.getStartTime_h());
-		this.homeEndStats.add(home.getEndTime_h());
+		if (state.size() > 1) {
+			this.homeDurationStats.add(RoundTripUtils.effectiveHomeDuration_h(home));
+			this.homeStartStats.add(home.getStartTime_h());
+			this.homeEndStats.add(home.getEndTime_h());
+		}
 
 		for (int i = 1; i < state.getEpisodes().size(); i++) {
 			Episode e = state.getEpisodes().get(i);
@@ -132,6 +169,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 					// nothing for now
 				} else {
 					ParkingEpisode p = (ParkingEpisode) e;
+					this.otherDurationStats.add(e.getEndTime_h() - e.getStartTime_h());
 					for (int parkingBin = startBin; parkingBin <= endBin; parkingBin++) {
 						this.timeListOfLocation2visits.get(parkingBin).compute(p.getLocation(),
 								(l, c) -> c == null ? 1 : c + 1);
@@ -193,18 +231,28 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		}
 
 		System.out.println();
+		System.out.println("HOME DURATION");
 		System.out.println(homeDurationStats.getAvg());
 		System.out.println(homeDurationStats.getStddev());
 		System.out.println(homeDurationStats.getMin());
 		System.out.println(homeDurationStats.getMax());
 
 		System.out.println();
+		System.out.println("OTHER DURATION");
+		System.out.println(otherDurationStats.getAvg());
+		System.out.println(otherDurationStats.getStddev());
+		System.out.println(otherDurationStats.getMin());
+		System.out.println(otherDurationStats.getMax());
+
+		System.out.println();
+		System.out.println("HOME START");
 		System.out.println(homeStartStats.getAvg());
 		System.out.println(homeStartStats.getStddev());
 		System.out.println(homeStartStats.getMin());
 		System.out.println(homeStartStats.getMax());
 
 		System.out.println();
+		System.out.println("HOME END");
 		System.out.println(homeEndStats.getAvg());
 		System.out.println(homeEndStats.getStddev());
 		System.out.println(homeEndStats.getMin());
@@ -218,7 +266,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		System.out.println();
 		System.out.println("P(chargeAtHome) = " + ((double) this.chargingsAtHome) / this.visitsToHome);
 		System.out.println("P(chargeElsewhere) = " + ((double) this.chargingsOffHome) / this.visitsOffHome);
-		
+
 	}
 
 }
