@@ -285,10 +285,10 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		System.out.println("charged         " + this.charged_kWh);
 		System.out.println("charged,detail  " + this.chargedDetail_kWh);
 
-//		System.out.println();
-//		for (Map.Entry<List<Location>, Long> e : this.sequence2uses.entrySet()) {
-//			System.out.println(e.getKey() + "\t" + e.getValue());
-//		}
+		System.out.println();
+		for (Map.Entry<List<Location>, Long> e : this.sequence2uses.entrySet()) {
+			System.out.println(e.getKey() + "\t" + e.getValue());
+		}
 
 	}
 

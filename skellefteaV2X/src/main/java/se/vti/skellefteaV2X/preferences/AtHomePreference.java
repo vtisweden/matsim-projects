@@ -38,8 +38,8 @@ public class AtHomePreference implements Component {
 	private final List<Tuple<Double, Double>> targetIntervals;
 	private final double targetDuration_h;
 
-	public AtHomePreference(double homeStart_h, double homeEnd_h) {
-		this.targetIntervals = RoundTripUtils.effectiveIntervals(homeStart_h, homeEnd_h);
+	public AtHomePreference(double duration_h, double homeEnd_h) {
+		this.targetIntervals = RoundTripUtils.effectiveIntervals(duration_h, homeEnd_h);
 		this.targetDuration_h = this.targetIntervals.stream().mapToDouble(t -> t.getB() - t.getA()).sum();
 	}
 
