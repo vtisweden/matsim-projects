@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
+import floetteroed.utilities.math.MathHelpers;
 
 /**
  * 
@@ -42,14 +43,28 @@ public class RoundTripUtils {
 		return result_h;
 	}
 	
+//	public static double selfOverlap_h(List<Tuple<Double, Double>> intervals) {
+//		double result_h = 0.0;	
+//		for (Tuple<Double, Double> i1 : intervals) {
+//			for (Tuple<Double, Double> i2 : intervals) {
+//				if (i1 != i2) {
+//					result_h += MathHelpers.overlap(i1.getA(), i1.getB(), i2.getA(), i2.getB());
+//				}
+//			}
+//		}		
+//		return result_h;
+//	}
+	
 	public static List<Tuple<Double, Double>> effectiveIntervals(double start_h, double end_h) {
 		start_h = projectOntoDay_h(start_h);
 		end_h = projectOntoDay_h(end_h);
+		List<Tuple<Double, Double>> result;
 		if (start_h <= end_h) {
-			return Arrays.asList(new Tuple<>(start_h, end_h));
+			result = Arrays.asList(new Tuple<>(start_h, end_h));
 		} else {
-			return Arrays.asList(new Tuple<>(start_h, 24.0), new Tuple<>(0.0, end_h));
+			result = Arrays.asList(new Tuple<>(start_h, 24.0), new Tuple<>(0.0, end_h));
 		}
+		return result;
 	}
 
 

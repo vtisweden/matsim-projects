@@ -39,14 +39,16 @@ public class StrategyRealizationConsistency implements Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		if (simulatedRoundTrip.size() == 1) {
+		if (simulatedRoundTrip.locationCnt() == 1) {
 			return 0.0;
 		}
 		double result = 0.0;
-		for (int i = 0; i < simulatedRoundTrip.size(); i += 2) {
-			ParkingEpisode parking = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(i);
+		for (int locationIndex = 0; locationIndex < simulatedRoundTrip.locationCnt(); locationIndex++) {
+			final int parkingEpisodeIndex = 2 * locationIndex;
+			ParkingEpisode parking = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(parkingEpisodeIndex);
+			assert(parking.getEndTime_h() >= 0.0);
 			result += Math
-					.abs(this.scenario.getBinSize_h() * simulatedRoundTrip.getDeparture(i) - parking.getEndTime_h());
+					.abs(this.scenario.getBinSize_h() * simulatedRoundTrip.getDeparture(locationIndex) - parking.getEndTime_h());
 		}
 		return -result;
 	}

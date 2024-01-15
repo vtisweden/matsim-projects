@@ -1,5 +1,5 @@
 /**
- * se.vti.skellefeaV2X
+ * se.vti.skellefteaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,43 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.model;
+package se.vti.skellefteaV2X.preferences;
+
+import se.vti.skellefteaV2X.model.Preferences;
+import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class DrivingEpisode extends Episode {
-
-	private final Location origin;
-	private final Location destination;
-	private Double duration_h;
-	
-	public DrivingEpisode(Location origin, Location destination) {
-		this.origin = origin;
-		this.destination = destination;
-	}
-
-	public Location getOrigin() {
-		return origin;
-	}
-
-	public Location getDestination() {
-		return destination;
-	}
+public class UniformOnlyOverLocationAndTimes implements Preferences.Component {
 
 	@Override
-	public String toString() {
-		return super.toString() + ",od(" + this.origin + "," + this.destination + ")";
-	}
-
-	public Double getDuration_h() {
-		return duration_h;
-	}
-
-	public void setDuration_h(Double duration_h) {
-		this.duration_h = duration_h;
+	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
+		return -Math.log(2.0) * simulatedRoundTrip.locationCnt();
 	}
 
 }

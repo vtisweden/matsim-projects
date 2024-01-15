@@ -32,20 +32,20 @@ import se.vti.skellefteaV2X.model.Simulator.DrivingSimulator;
 public class DefaultDrivingSimulator implements DrivingSimulator {
 
 	private final Scenario scenario;
-	
+
 	public DefaultDrivingSimulator(Scenario scenario) {
 		this.scenario = scenario;
 	}
-	
+
 	@Override
-	public DrivingEpisode newDrivingEpisode(Location origin, Location destination, double time_h,
-			double charge_kWh) {
+	public DrivingEpisode newDrivingEpisode(Location origin, Location destination, double time_h, double charge_kWh) {
 		final DrivingEpisode driving = new DrivingEpisode(origin, destination);
 		driving.setStartTime_h(time_h);
 		driving.setChargeAtStart_kWh(charge_kWh);
-		final double dist_km = this.scenario.getDistance_km(origin, destination);
-		driving.setEndTime_h(time_h + dist_km / this.scenario.getDefaultSpeed_km_h());
-		driving.setChargeAtEnd_kWh(charge_kWh - dist_km * this.scenario.getConsumptionRate_kWh_km());
+		driving.setEndTime_h(time_h + this.scenario.getTime_h(origin, destination));
+		driving.setDuration_h(this.scenario.getTime_h(origin, destination));
+		driving.setChargeAtEnd_kWh(charge_kWh
+				- this.scenario.getDistance_km(origin, destination) * this.scenario.getConsumptionRate_kWh_km());
 		return driving;
 	}
 

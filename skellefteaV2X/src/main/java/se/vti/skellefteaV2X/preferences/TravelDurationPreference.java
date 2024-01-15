@@ -40,7 +40,7 @@ public class TravelDurationPreference implements Component {
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
 		double travelDuration_h = 0.0;
-		for (int i = 1; i < simulatedRoundTrip.size(); i += 2) {
+		for (int i = 1; i < simulatedRoundTrip.episodeCnt(); i += 2) {
 			travelDuration_h += RoundTripUtils
 					.effectiveDuration_h((DrivingEpisode) simulatedRoundTrip.getEpisodes().get(i));
 		}

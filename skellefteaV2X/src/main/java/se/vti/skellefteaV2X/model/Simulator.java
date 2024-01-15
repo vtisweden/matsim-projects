@@ -97,7 +97,7 @@ public class Simulator {
 
 	public List<Episode> simulate(RoundTrip<Location> roundTrip) {
 
-		if (roundTrip.size() == 1) {
+		if (roundTrip.locationCnt() == 1) {
 			ParkingEpisode home = new ParkingEpisode(roundTrip.getLocation(0));
 			home.setStartTime_h(0.0);
 			home.setEndTime_h(24.0 - 1e-8); // wraparound
@@ -112,14 +112,14 @@ public class Simulator {
 		List<Episode> episodes;
 		do {
 
-			episodes = new ArrayList<>(2 * roundTrip.size() - 1);
+			episodes = new ArrayList<>(2 * roundTrip.locationCnt() - 1);
 
 			episodes.add(null); // placeholder for home episode
 
 			double time_h = initialTime_h;
 			double charge_kWh = initialCharge_kWh;
 
-			for (int index = 0; index < roundTrip.size(); index++) {
+			for (int index = 0; index < roundTrip.locationCnt(); index++) {
 				final int nextIndex = roundTrip.successorIndex(index);
 
 				final DrivingEpisode driving = this.drivingSimulator.newDrivingEpisode(roundTrip.getLocation(index),
@@ -136,7 +136,7 @@ public class Simulator {
 			}
 
 			final DrivingEpisode driving = this.drivingSimulator.newDrivingEpisode(
-					roundTrip.getLocation(roundTrip.size() - 1), roundTrip.getLocation(0), time_h, charge_kWh);
+					roundTrip.getLocation(roundTrip.locationCnt() - 1), roundTrip.getLocation(0), time_h, charge_kWh);
 			episodes.add(driving);
 			time_h = driving.getEndTime_h();
 			charge_kWh = driving.getChargeAtEnd_kWh();
@@ -147,7 +147,7 @@ public class Simulator {
 
 			// postprocessing
 
-			final double newInitialCharge_kWh = home.getChargeAtStart_kWh();
+			final double newInitialCharge_kWh = home.getChargeAtEnd_kWh();
 //			if (home.getLocation().getAllowsCharging() && roundTrip.getCharging(0)) {
 //				double chargingDuration_h = Math.min(Math.max(0.0, this.scenario.getMaxCharge_kWh() - charge_kWh)
 //						/ this.scenario.getChargingRate_kW(), RoundTripUtils.effectiveParkingDuration_h(home));

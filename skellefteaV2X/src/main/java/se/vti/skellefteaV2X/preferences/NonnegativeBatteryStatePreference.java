@@ -33,7 +33,7 @@ public class NonnegativeBatteryStatePreference implements Preferences.Component 
 
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
-		if (roundTrip.size() == 1) {
+		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		}
 		double minCharge_kWh = Double.POSITIVE_INFINITY;

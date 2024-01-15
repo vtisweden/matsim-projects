@@ -66,6 +66,7 @@ public class TestRoundTrips {
 
 			int it = 0;
 			Map<RoundTrip<Integer>, Long> roundTrip2cnt = new LinkedHashMap<>();
+			private long[] binCnts = new long[scenario.getTimeBinCnt()];
 
 			@Override
 			public void start() {
@@ -75,6 +76,9 @@ public class TestRoundTrips {
 			public void processState(RoundTrip<Integer> state) {
 				if (it++ > totalIts / 2) {
 					this.roundTrip2cnt.compute(state, (s, c) -> c == null ? 1 : c + 1);
+					for (int i = 0; i < state.locationCnt(); i++) {
+						this.binCnts[state.getDeparture(i)]++;
+					}
 				}
 			}
 
@@ -88,6 +92,11 @@ public class TestRoundTrips {
 				}
 				System.out.println(this.roundTrip2cnt.size());
 
+				System.out.println("departures");
+				for (long cnt : this.binCnts) {
+					System.out.println(cnt);
+				}
+				
 				Collections.sort(counts);
 				try {
 					PrintWriter w = new PrintWriter("counts.txt");

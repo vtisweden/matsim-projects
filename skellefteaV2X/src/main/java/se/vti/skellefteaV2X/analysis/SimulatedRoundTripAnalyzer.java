@@ -65,15 +65,6 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 	public void end() {
 	}
 
-	public List<Integer> realizedDepartures(SimulatedRoundTrip roundTrip) {
-		List<Integer> departures = new ArrayList<>(roundTrip.size());
-		for (int i = 0; i < roundTrip.size(); i++) {
-			double end_h = roundTrip.getEpisodes().get(i).getEndTime_h();
-			departures.add((int) (end_h / this.scenario.getBinSize_h()));
-		}
-		return departures;
-	}
-
 	public abstract void processRelevantState(SimulatedRoundTrip state);
 
 }

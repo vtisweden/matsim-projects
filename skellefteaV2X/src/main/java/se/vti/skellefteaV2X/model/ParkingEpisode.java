@@ -35,4 +35,10 @@ public class ParkingEpisode extends Episode {
 	public Location getLocation() {
 		return location;
 	}
+	
+	@Override
+	public String toString() {
+		return super.toString() + ",loc(" + this.location + ")";
+	}
+
 }

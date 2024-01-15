@@ -64,18 +64,18 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 		PossibleTransitions(RoundTrip<L> state) {
 
-			this.possibleInsertIndices = new ArrayList<>(state.size() + 1);
-			this.possibleRemoveIndices = new ArrayList<>(state.size());
-			this.possibleFlipIndices = new ArrayList<>(state.size());
+			this.possibleInsertIndices = new ArrayList<>(state.locationCnt() + 1);
+			this.possibleRemoveIndices = new ArrayList<>(state.locationCnt());
+			this.possibleFlipIndices = new ArrayList<>(state.locationCnt());
 
-			this.possibleInserts = new ArrayList<>(state.size() + 1);
-			this.possibleFlips = new ArrayList<>(state.size());
+			this.possibleInserts = new ArrayList<>(state.locationCnt() + 1);
+			this.possibleFlips = new ArrayList<>(state.locationCnt());
 
 			double insertIndicator = 0.0;
 			double removeIndicator = 0.0;
 			double flipIndicator = 0.0;
 
-			for (int i = 0; i < state.size(); i++) {
+			for (int i = 0; i < state.locationCnt(); i++) {
 
 				final L pred = state.getPredecessorLocation(i);
 				final L curr = state.getLocation(i);
@@ -84,7 +84,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 				// analyze inserts
 
 				final List<L> localInserts;
-				if (state.size() == config.getMaxLocations()) {
+				if (state.locationCnt() == config.getMaxLocations()) {
 					localInserts = Collections.emptyList();
 				} else {
 					localInserts = new ArrayList<>(allLocations);
@@ -99,7 +99,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 				// analyze removes
 
-				if ((state.size() > 1) && (state.size() <= 3 || !pred.equals(succ))) {
+				if ((state.locationCnt() > 1) && (state.locationCnt() <= 3 || !pred.equals(succ))) {
 					this.possibleRemoveIndices.add(i);
 					removeIndicator = 1.0;
 				}
@@ -108,7 +108,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 				final List<L> localFlips = new ArrayList<>(allLocations);
 				localFlips.remove(curr); // must change!
-				if (state.size() > 1) {
+				if (state.locationCnt() > 1) {
 					localFlips.remove(pred);
 					localFlips.remove(succ);
 				}
@@ -122,16 +122,16 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			// analyze appends-to end of list
 
 			final List<L> lastInserts;
-			if (state.size() == config.getMaxLocations()) {
+			if (state.locationCnt() == config.getMaxLocations()) {
 				lastInserts = Collections.emptyList();
 			} else {
 				lastInserts = new ArrayList<>(allLocations);
-				lastInserts.remove(state.getLocation(state.size() - 1));
+				lastInserts.remove(state.getLocation(state.locationCnt() - 1));
 				lastInserts.remove(state.getLocation(0));
 			}
 			this.possibleInserts.add(lastInserts);
 			if (lastInserts.size() > 0) {
-				this.possibleInsertIndices.add(state.size());
+				this.possibleInsertIndices.add(state.locationCnt());
 				insertIndicator = 1.0;
 			}
 
@@ -229,7 +229,7 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			// REMOVE
 
 			final int whereToRemoveLocation = fwdActions.drawRemoveIndex();
-			final int whereToRemoveDeparture = this.config.getRandom().nextInt(state.size());
+			final int whereToRemoveDeparture = this.config.getRandom().nextInt(state.locationCnt());
 			final RoundTrip<L> newState = state.clone();
 			newState.remove(whereToRemoveLocation, whereToRemoveDeparture);
 

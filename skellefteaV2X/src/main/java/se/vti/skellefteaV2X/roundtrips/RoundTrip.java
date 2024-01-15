@@ -54,12 +54,12 @@ public class RoundTrip<L> {
 		if (i > 0) {
 			return i - 1;
 		} else {
-			return this.size() - 1;
+			return this.locationCnt() - 1;
 		}
 	}
 
 	public int successorIndex(int i) {
-		if (i < this.size() - 1) {
+		if (i < this.locationCnt() - 1) {
 			return i + 1;
 		} else {
 			return 0;
@@ -68,7 +68,7 @@ public class RoundTrip<L> {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public int size() {
+	public int locationCnt() {
 		return this.locations.size();
 	}
 

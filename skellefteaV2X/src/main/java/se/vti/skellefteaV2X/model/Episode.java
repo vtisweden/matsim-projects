@@ -19,6 +19,8 @@
  */
 package se.vti.skellefteaV2X.model;
 
+import floetteroed.utilities.math.MathHelpers;
+
 /**
  * 
  * @author GunnarF
@@ -65,5 +67,12 @@ public class Episode {
 
 	public Double getChargeAtEnd_kWh() {
 		return this.chargeAtEnd_kWh;
+	}
+
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + ":time(" + MathHelpers.round(this.start_h, 2) + ","
+				+ MathHelpers.round(this.end_h, 2) + "),charge(" + MathHelpers.round(this.chargeAtStart_kWh, 2) + ","
+				+ MathHelpers.round(this.chargeAtEnd_kWh, 2) + ")";
 	}
 }

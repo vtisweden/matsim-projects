@@ -49,6 +49,8 @@ public class Scenario {
 	private double defaultSpeed_km_h = 60.0;
 	private int timeBinCnt = 24;
 
+	private int maxParkingEpisodes = 4;
+	
 	private final Set<Location> locations = new LinkedHashSet<>();
 
 	private final Map<Tuple<Location, Location>, Double> od2distance_km = new LinkedHashMap<>();
@@ -135,12 +137,11 @@ public class Scenario {
 	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences, Simulator simulator) {
 
 		// TODO make configurable
-		int maxLocations = 4;
 		double locationProposalWeight = 0.1;
 		double departureProposalWeight = 0.45;
 		double chargingProposalWeight = 0.45;
 
-		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(maxLocations, getBinCnt(),
+		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(this.maxParkingEpisodes, getBinCnt(),
 				locationProposalWeight, departureProposalWeight, chargingProposalWeight);
 		configuration.addLocations(this.getLocationsView());
 		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(configuration, simulator);
@@ -173,6 +174,10 @@ public class Scenario {
 
 	public void setTimeBinCnt(int timeBinCnt) {
 		this.timeBinCnt = timeBinCnt;
+	}
+
+	public void setMaxParkingEpisodes(int maxParkingEpisodes) {
+		this.maxParkingEpisodes = maxParkingEpisodes;
 	}
 
 }

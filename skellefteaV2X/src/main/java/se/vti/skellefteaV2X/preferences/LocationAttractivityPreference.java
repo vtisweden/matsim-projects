@@ -51,7 +51,7 @@ public class LocationAttractivityPreference implements Preferences.Component {
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
 		double result = 0.0;
-		for (int i = 0; i < simulatedRoundTrip.size(); i += 2) {
+		for (int i = 0; i < simulatedRoundTrip.episodeCnt(); i += 2) {
 			ParkingEpisode p = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(i);
 			result += this.location2logAttractivity.get(p.getLocation()) - this.maxLogAttractivity;
 		}

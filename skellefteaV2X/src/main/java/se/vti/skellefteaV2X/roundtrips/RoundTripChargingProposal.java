@@ -53,14 +53,14 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
-		final double flipProba = 1.0 / (state.size() + 1.0);
+		final double flipProba = 1.0 / (state.locationCnt() + 1.0);
 		boolean flipped = false;
 		List<Boolean> newChargings;
 		double proba;
 		do {
-			newChargings = new ArrayList<>(state.size());
+			newChargings = new ArrayList<>(state.locationCnt());
 			proba = 1.0;
-			for (int i = 0; i < state.size(); i++) {
+			for (int i = 0; i < state.locationCnt(); i++) {
 				if (this.config.getRandom().nextDouble() < flipProba) {
 					flipped = true;
 					newChargings.add(!state.getCharging(i));
@@ -72,11 +72,11 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 			}
 		} while (!flipped);
 
-		final double fwdLogProba = Math.log(proba) - state.size() * Math.log(1.0 - flipProba);
+		final double fwdLogProba = Math.log(proba) - state.locationCnt() * Math.log(1.0 - flipProba);
 		final double bwdLogProba = fwdLogProba;
 
 		final RoundTrip<L> newState = state.clone();
-		for (int i = 0; i < newState.size(); i++) {
+		for (int i = 0; i < newState.locationCnt(); i++) {
 			newState.setCharging(i, newChargings.get(i));
 		}
 
