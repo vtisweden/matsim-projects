@@ -40,10 +40,9 @@ public class DefaultDrivingSimulator implements DrivingSimulator {
 	@Override
 	public DrivingEpisode newDrivingEpisode(Location origin, Location destination, double time_h, double charge_kWh) {
 		final DrivingEpisode driving = new DrivingEpisode(origin, destination);
-		driving.setStartTime_h(time_h);
 		driving.setChargeAtStart_kWh(charge_kWh);
-		driving.setEndTime_h(time_h + this.scenario.getTime_h(origin, destination));
 		driving.setDuration_h(this.scenario.getTime_h(origin, destination));
+		driving.setEndTime_h(time_h + driving.getDuration_h());
 		driving.setChargeAtEnd_kWh(charge_kWh
 				- this.scenario.getDistance_km(origin, destination) * this.scenario.getConsumptionRate_kWh_km());
 		return driving;

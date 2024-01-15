@@ -20,7 +20,6 @@
 package se.vti.skellefteaV2X.model;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
@@ -32,17 +31,17 @@ import floetteroed.utilities.Tuple;
  */
 public class RoundTripUtils {
 
-	public static double projectOntoDay_h(double time_h) {
-		double result_h = time_h;
-		while (result_h < 0.0) {
-			result_h += 24.0;
-		}
-		while (result_h >= 24.0) {
-			result_h -= 24.0;
-		}
-		return result_h;
-	}
-	
+//	public static double projectOntoDay_h(double time_h) {
+//		double result_h = time_h;
+//		while (result_h < 0.0) {
+//			result_h += 24.0;
+//		}
+//		while (result_h >= 24.0) {
+//			result_h -= 24.0;
+//		}
+//		return result_h;
+//	}
+
 //	public static double selfOverlap_h(List<Tuple<Double, Double>> intervals) {
 //		double result_h = 0.0;	
 //		for (Tuple<Double, Double> i1 : intervals) {
@@ -54,40 +53,54 @@ public class RoundTripUtils {
 //		}		
 //		return result_h;
 //	}
-	
-	public static List<Tuple<Double, Double>> effectiveIntervals(double start_h, double end_h) {
-		if (end_h <= start_h || end_h > start_h + 24.0) {
-			return Collections.emptyList();
-		}
-		start_h = projectOntoDay_h(start_h);
-		end_h = projectOntoDay_h(end_h);
-		List<Tuple<Double, Double>> result;
-		if (start_h <= end_h) {
-			result = Arrays.asList(new Tuple<>(start_h, end_h));
+
+	public static List<Tuple<Double, Double>> effectiveIntervals(double duration_h, double end_h) {
+		assert(duration_h >= 0.0);
+		if (duration_h > 24.0) {
+			return Arrays.asList(new Tuple<>(0.0, 24.0));
 		} else {
-			result = Arrays.asList(new Tuple<>(start_h, 24.0), new Tuple<>(0.0, end_h));
+			while (end_h < 0.0) {
+				end_h += 24.0;
+			}
+			while (end_h > 24.0) {
+				end_h -= 24.0;
+			}
+			double start_h = end_h - duration_h;
+			if (start_h < 0.0) {
+				return Arrays.asList(new Tuple<>(start_h + 24.0, 24.0), new Tuple<>(0.0, end_h));
+			} else {
+				return Arrays.asList(new Tuple<>(start_h, end_h));
+			}
 		}
-		return result;
-	}
-
-
-	
-	public static double effectiveDuration_h(Episode e) {
-		return effectiveDuration_h(effectiveIntervals(e.getStartTime_h(), e.getEndTime_h()));
-//		double result = 0.0;
-//		for (Tuple<Double, Double> interval : effectiveIntervals(p.getStartTime_h(), p.getEndTime_h())) {
-//			result += interval.getB() - interval.getA();
+//		if (end_h <= start_h || end_h > start_h + 24.0) {
+//			return Collections.emptyList();
+//		}
+//		start_h = projectOntoDay_h(start_h);
+//		end_h = projectOntoDay_h(end_h);
+//		List<Tuple<Double, Double>> result;
+//		if (start_h <= end_h) {
+//			result = Arrays.asList(new Tuple<>(start_h, end_h));
+//		} else {
+//			result = Arrays.asList(new Tuple<>(start_h, 24.0), new Tuple<>(0.0, end_h));
 //		}
 //		return result;
 	}
 
-	
-	public static double effectiveDuration_h(List<Tuple<Double, Double>> intervals) {
-		double result = 0.0;
-		for (Tuple<Double, Double> interval : intervals) {
-			result += interval.getB() - interval.getA();
-		}
-		return result;
-	}
+//	public static double effectiveDuration_h(Episode e) {
+//		return effectiveDuration_h(effectiveIntervals(e.getStartTime_h(), e.getEndTime_h()));
+////		double result = 0.0;
+////		for (Tuple<Double, Double> interval : effectiveIntervals(p.getStartTime_h(), p.getEndTime_h())) {
+////			result += interval.getB() - interval.getA();
+////		}
+////		return result;
+//	}
+//
+//	public static double effectiveDuration_h(List<Tuple<Double, Double>> intervals) {
+//		double result = 0.0;
+//		for (Tuple<Double, Double> interval : intervals) {
+//			result += interval.getB() - interval.getA();
+//		}
+//		return result;
+//	}
 
 }

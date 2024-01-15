@@ -21,7 +21,6 @@ package se.vti.skellefteaV2X.simulators;
 
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
-import se.vti.skellefteaV2X.model.RoundTripUtils;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator.ParkingSimulator;
 
@@ -42,13 +41,14 @@ public class DefaultParkingSimulator implements ParkingSimulator {
 	public ParkingEpisode newParkingEpisode(Location location, Integer departure, Boolean charging, double time_h,
 			double charge_kWh) {
 		final ParkingEpisode parking = new ParkingEpisode(location);
-		parking.setStartTime_h(time_h);
+//		parking.setStartTime_h(time_h);
 		parking.setChargeAtStart_kWh(charge_kWh);
 		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * departure));
+		parking.setDuration_h(parking.getEndTime_h() - time_h);
 		if (location.getAllowsCharging() && charging) {
 			double chargingDuration_h = Math.min(
 					Math.max(0.0, this.scenario.getMaxCharge_kWh() - charge_kWh) / this.scenario.getChargingRate_kW(),
-					RoundTripUtils.effectiveDuration_h(parking));
+					parking.getDuration_h());
 			charge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
 					charge_kWh + this.scenario.getChargingRate_kW() * chargingDuration_h);
 		}

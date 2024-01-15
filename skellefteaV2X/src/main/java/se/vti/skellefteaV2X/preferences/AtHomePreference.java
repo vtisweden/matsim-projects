@@ -40,14 +40,14 @@ public class AtHomePreference implements Component {
 
 	public AtHomePreference(double homeStart_h, double homeEnd_h) {
 		this.targetIntervals = RoundTripUtils.effectiveIntervals(homeStart_h, homeEnd_h);
-		this.targetDuration_h = RoundTripUtils.effectiveDuration_h(this.targetIntervals);
+		this.targetDuration_h = this.targetIntervals.stream().mapToDouble(t -> t.getB() - t.getA()).sum();
 	}
 
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
 
 		final ParkingEpisode home = (ParkingEpisode) roundTrip.getEpisodes().get(0);
-		final List<Tuple<Double, Double>> realizedIntervals = RoundTripUtils.effectiveIntervals(home.getStartTime_h(),
+		final List<Tuple<Double, Double>> realizedIntervals = RoundTripUtils.effectiveIntervals(home.getDuration_h(),
 				home.getEndTime_h());
 
 		double realizedDuration_h = 0.0;

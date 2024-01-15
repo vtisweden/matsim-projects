@@ -45,7 +45,7 @@ public class AtLocationPreference implements Component {
 	public AtLocationPreference(Location location, double targetStart_h, double targetEnd_h) {
 		this.location = location;
 		this.targetIntervals = RoundTripUtils.effectiveIntervals(targetStart_h, targetEnd_h);
-		this.targetDuration_h = RoundTripUtils.effectiveDuration_h(this.targetIntervals);
+		this.targetDuration_h = this.targetIntervals.stream().mapToDouble(t -> t.getB() - t.getA()).sum();
 	}
 
 	@Override
@@ -58,7 +58,7 @@ public class AtLocationPreference implements Component {
 				ParkingEpisode p = (ParkingEpisode) e;
 				if (this.location.equals(p.getLocation())) {
 					final List<Tuple<Double, Double>> realizedIntervals = RoundTripUtils
-							.effectiveIntervals(p.getStartTime_h(), p.getEndTime_h());
+							.effectiveIntervals(p.getDuration_h(), p.getEndTime_h());
 					for (Tuple<Double, Double> target : this.targetIntervals) {
 						for (Tuple<Double, Double> realized : realizedIntervals) {
 							realizedDuration_h += MathHelpers.overlap(target.getA(), target.getB(), realized.getA(),

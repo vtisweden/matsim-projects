@@ -28,7 +28,6 @@ public class DrivingEpisode extends Episode {
 
 	private final Location origin;
 	private final Location destination;
-	private Double duration_h;
 	
 	public DrivingEpisode(Location origin, Location destination) {
 		this.origin = origin;
@@ -47,13 +46,4 @@ public class DrivingEpisode extends Episode {
 	public String toString() {
 		return super.toString() + ",od(" + this.origin + "," + this.destination + ")";
 	}
-
-	public Double getDuration_h() {
-		return duration_h;
-	}
-
-	public void setDuration_h(Double duration_h) {
-		this.duration_h = duration_h;
-	}
-
 }
