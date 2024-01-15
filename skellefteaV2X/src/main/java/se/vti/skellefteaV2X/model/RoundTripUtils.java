@@ -20,10 +20,10 @@
 package se.vti.skellefteaV2X.model;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
-import floetteroed.utilities.math.MathHelpers;
 
 /**
  * 
@@ -56,6 +56,9 @@ public class RoundTripUtils {
 //	}
 	
 	public static List<Tuple<Double, Double>> effectiveIntervals(double start_h, double end_h) {
+		if (end_h <= start_h || end_h > start_h + 24.0) {
+			return Collections.emptyList();
+		}
 		start_h = projectOntoDay_h(start_h);
 		end_h = projectOntoDay_h(end_h);
 		List<Tuple<Double, Double>> result;

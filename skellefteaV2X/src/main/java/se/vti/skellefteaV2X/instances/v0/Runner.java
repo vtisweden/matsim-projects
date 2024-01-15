@@ -116,9 +116,9 @@ public class Runner {
 
 		Preferences allPreferences = new Preferences();
 		allPreferences.addPreferences(consistencyPreferences);
-		allPreferences.addComponent(new NotHomePreference(campus), 10.0);
-		allPreferences.addComponent(new AtHomePreference(22.0, 6.0), 1.0);
-		allPreferences.addComponent(new LocalChargingAmountPrefence(scenario, campus), 0.1);
+//		allPreferences.addComponent(new NotHomePreference(campus), 10.0);
+//		allPreferences.addComponent(new AtHomePreference(22.0, 6.0), 1.0);
+//		allPreferences.addComponent(new LocalChargingAmountPrefence(scenario, campus), 0.1);
 //		allPreferences.addComponent(new AtHomePreference(14.0, 16.0), 5.0);
 //		allPreferences.addComponent(new BatteryRangePreference(scenario));
 

@@ -29,6 +29,7 @@ import java.util.Map;
 import floetteroed.utilities.Tuple;
 import floetteroed.utilities.math.MathHelpers;
 import se.vti.skellefteaV2X.model.DrivingEpisode;
+import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
@@ -87,41 +88,24 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		this.sequence2uses.compute(state.getLocationsView(), (s, c) -> c == null ? 1 : c + 1);
 		this.location2isHomeCnt.compute(state.getLocation(0), (l, c) -> c == null ? 1 : c + 1);
 
-		if (state.locationCnt() > 1) {
-			for (int i = 0; i < state.locationCnt(); i++) {
+		for (Episode e : state.getEpisodes()) {
 
-				DrivingEpisode d = (DrivingEpisode) state.getEpisodes().get(2 * i + 1);
+			final ParkingEpisode p = (e instanceof ParkingEpisode ? (ParkingEpisode) e : null);
+			final DrivingEpisode d = (e instanceof DrivingEpisode ? (DrivingEpisode) e : null);
 
-				for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) {
-					final double binStart_h = this.scenario.getBinSize_h() * bin;
-					final double binEnd_h = binStart_h + this.scenario.getBinSize_h();
-					final double overlap_h = MathHelpers.overlap(binStart_h, binEnd_h, d.getStartTime_h(),
-							d.getStartTime_h() + d.getDuration_h());
-
-					final double relativeOverlap = overlap_h / (binEnd_h - binStart_h);
-					assert (relativeOverlap >= 0.0);
-					assert (relativeOverlap <= 1.0);
-					this.timeListOfDriving.set(bin, this.timeListOfDriving.get(bin) + relativeOverlap);
-				}
-			}
-		}
-
-		for (int i = 0; i < state.locationCnt(); i++) {
-
-			ParkingEpisode p = (ParkingEpisode) state.getEpisodes().get(2 * i);
-			final List<Tuple<Double, Double>> intervals = RoundTripUtils.effectiveIntervals(p.getStartTime_h(),
-					p.getEndTime_h());
-			
-			final double effectiveParkingDuration_h = RoundTripUtils.effectiveDuration_h(p);
+			final List<Tuple<Double, Double>> intervals = RoundTripUtils.effectiveIntervals(e.getStartTime_h(),
+					e.getEndTime_h());
+			final double effectiveDuration_h = RoundTripUtils.effectiveDuration_h(intervals);
 			final double effectiveChargingRate_kW;
-			if (effectiveParkingDuration_h > 1e-8) {
-				effectiveChargingRate_kW = Math.max(0.0, p.getChargeAtEnd_kWh() - p.getChargeAtStart_kWh())
-						/ effectiveParkingDuration_h;
+			if (effectiveDuration_h > 1e-8) {
+				effectiveChargingRate_kW = Math.max(0.0, e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh())
+						/ effectiveDuration_h;
 			} else {
 				effectiveChargingRate_kW = 0.0;
 			}
 
 			for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) {
+				
 				final double binStart_h = this.scenario.getBinSize_h() * bin;
 				final double binEnd_h = binStart_h + this.scenario.getBinSize_h();
 				double overlap_h = 0.0;
@@ -131,15 +115,74 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 				final double relativeOverlap = overlap_h / (binEnd_h - binStart_h);
 				assert (relativeOverlap >= 0.0);
 				assert (relativeOverlap <= 1.0);
-				this.timeListOfLocation2visits.get(bin).compute(p.getLocation(),
-						(l, c) -> c == null ? relativeOverlap : c + relativeOverlap);
 
-				final double effectiveCharging_kWh = effectiveChargingRate_kW * overlap_h;
-				this.chargedDetail_kWh += effectiveCharging_kWh;
-				this.timeListOfLocation2chargings_kWh.get(bin).compute(p.getLocation(),
-						(l, c) -> c == null ? effectiveCharging_kWh : c + effectiveCharging_kWh);
+				if (d != null) {
+					this.timeListOfDriving.set(bin, this.timeListOfDriving.get(bin) + relativeOverlap);
+				}
+
+				if (p != null) {
+					this.timeListOfLocation2visits.get(bin).compute(p.getLocation(),
+							(l, c) -> c == null ? relativeOverlap : c + relativeOverlap);
+
+					final double effectiveCharging_kWh = effectiveChargingRate_kW * overlap_h;
+					this.chargedDetail_kWh += effectiveCharging_kWh;
+					this.timeListOfLocation2chargings_kWh.get(bin).compute(p.getLocation(),
+							(l, c) -> c == null ? effectiveCharging_kWh : c + effectiveCharging_kWh);
+				}
 			}
+
 		}
+
+		/*
+		 * 
+		 * if (state.locationCnt() > 1) { for (int i = 0; i < state.locationCnt(); i++)
+		 * {
+		 * 
+		 * DrivingEpisode d = (DrivingEpisode) state.getEpisodes().get(2 * i + 1); final
+		 * List<Tuple<Double, Double>> intervals =
+		 * RoundTripUtils.effectiveIntervals(d.getStartTime_h(), d.getEndTime_h());
+		 * 
+		 * for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) { final double
+		 * binStart_h = this.scenario.getBinSize_h() * bin; final double binEnd_h =
+		 * binStart_h + this.scenario.getBinSize_h(); double overlap_h = 0.0; for
+		 * (Tuple<Double, Double> interval : intervals) { overlap_h +=
+		 * MathHelpers.overlap(binStart_h, binEnd_h, interval.getA(), interval.getB());
+		 * } // final double overlap_h = MathHelpers.overlap(binStart_h, binEnd_h,
+		 * d.getStartTime_h(), // d.getStartTime_h() + d.getDuration_h());
+		 * 
+		 * final double relativeOverlap = overlap_h / (binEnd_h - binStart_h); assert
+		 * (relativeOverlap >= 0.0); assert (relativeOverlap <= 1.0);
+		 * this.timeListOfDriving.set(bin, this.timeListOfDriving.get(bin) +
+		 * relativeOverlap); } } }
+		 * 
+		 * for (int i = 0; i < state.locationCnt(); i++) {
+		 * 
+		 * ParkingEpisode p = (ParkingEpisode) state.getEpisodes().get(2 * i); final
+		 * List<Tuple<Double, Double>> intervals =
+		 * RoundTripUtils.effectiveIntervals(p.getStartTime_h(), p.getEndTime_h());
+		 * 
+		 * final double effectiveParkingDuration_h =
+		 * RoundTripUtils.effectiveDuration_h(p); final double effectiveChargingRate_kW;
+		 * if (effectiveParkingDuration_h > 1e-8) { effectiveChargingRate_kW =
+		 * Math.max(0.0, p.getChargeAtEnd_kWh() - p.getChargeAtStart_kWh()) /
+		 * effectiveParkingDuration_h; } else { effectiveChargingRate_kW = 0.0; }
+		 * 
+		 * for (int bin = 0; bin < this.scenario.getBinCnt(); bin++) { final double
+		 * binStart_h = this.scenario.getBinSize_h() * bin; final double binEnd_h =
+		 * binStart_h + this.scenario.getBinSize_h(); double overlap_h = 0.0; for
+		 * (Tuple<Double, Double> interval : intervals) { overlap_h +=
+		 * MathHelpers.overlap(binStart_h, binEnd_h, interval.getA(), interval.getB());
+		 * } final double relativeOverlap = overlap_h / (binEnd_h - binStart_h); assert
+		 * (relativeOverlap >= 0.0); assert (relativeOverlap <= 1.0);
+		 * this.timeListOfLocation2visits.get(bin).compute(p.getLocation(), (l, c) -> c
+		 * == null ? relativeOverlap : c + relativeOverlap);
+		 * 
+		 * final double effectiveCharging_kWh = effectiveChargingRate_kW * overlap_h;
+		 * this.chargedDetail_kWh += effectiveCharging_kWh;
+		 * this.timeListOfLocation2chargings_kWh.get(bin).compute(p.getLocation(), (l,
+		 * c) -> c == null ? effectiveCharging_kWh : c + effectiveCharging_kWh); } }
+		 * 
+		 */
 
 		double myCharged_kWh = 0.0;
 		double myUsed_kWh = 0.0;
@@ -202,17 +245,15 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		}
 
 		System.out.println();
-		for (Map.Entry<Location, Long> e : this.location2isHomeCnt.entrySet()) {
-			System.out.println(e.getKey() + "\t" + e.getValue());
+		for (Location l : locations) {
+			System.out.println(l + "\t" + this.location2isHomeCnt.getOrDefault(l, 0l));
 		}
-		System.out.println();
 
 		System.out.println();
 		System.out.println("Drivings");
 		for (Double cnt : this.timeListOfDriving) {
 			System.out.println(cnt);
 		}
-		System.out.println();
 
 		System.out.println();
 		System.out.println("used            " + this.used_kWh);

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.instances.v0;
+package se.vti.skellefteaV2X.analysis;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +34,7 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * 
  * @author GunnarF
  *
+ * @deprecated needs update
  */
 public class StationarityStats implements MHStateProcessor<RoundTrip<Location>> {
 
