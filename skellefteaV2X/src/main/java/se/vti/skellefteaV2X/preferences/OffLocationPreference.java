@@ -34,7 +34,7 @@ import se.vti.utils.misc.math.MathHelpers;
  * @author GunnarF
  *
  */
-public class OffLocationPreference implements Component {
+public class OffLocationPreference extends Component {
 
 	private final Location location;
 

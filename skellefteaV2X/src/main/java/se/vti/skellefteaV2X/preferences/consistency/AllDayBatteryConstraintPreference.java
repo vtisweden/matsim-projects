@@ -29,7 +29,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class AllDayBatteryConstraintPreference implements Preferences.Component {
+public class AllDayBatteryConstraintPreference extends Preferences.Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {

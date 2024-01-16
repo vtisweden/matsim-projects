@@ -29,7 +29,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class NotHomePreference implements Preferences.Component {
+public class NotHomePreference extends Preferences.Component {
 
 	private final Location location;
 

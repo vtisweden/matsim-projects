@@ -29,7 +29,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class ChargeEnTripWhenEmpty implements Preferences.Component {
+public class ChargeEnTripWhenEmpty extends Preferences.Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {

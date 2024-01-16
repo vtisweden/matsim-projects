@@ -29,7 +29,7 @@ import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AtHomePreference;
-import se.vti.skellefteaV2X.preferences.LocalChargingPrefence;
+import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.NotHomePreference;
 import se.vti.skellefteaV2X.preferences.UniformOnlyOverLocationAndTimes;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;

@@ -32,7 +32,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class LocationAttractivityPreference implements Preferences.Component {
+public class LocationAttractivityPreference extends Preferences.Component {
 
 	private Map<Location, Double> location2logAttractivity = new LinkedHashMap<>();
 

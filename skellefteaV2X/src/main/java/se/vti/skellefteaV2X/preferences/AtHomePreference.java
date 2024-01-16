@@ -33,7 +33,7 @@ import se.vti.utils.misc.math.MathHelpers;
  * @author GunnarF
  *
  */
-public class AtHomePreference implements Component {
+public class AtHomePreference extends Component {
 
 	private final MathHelpers math = new MathHelpers();
 

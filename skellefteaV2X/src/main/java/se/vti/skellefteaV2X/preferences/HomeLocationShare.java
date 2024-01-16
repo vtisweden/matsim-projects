@@ -31,7 +31,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class HomeLocationShare implements Preferences.Component {
+public class HomeLocationShare extends Preferences.Component {
 
 	private final Map<Location, Double> location2logShare = new LinkedHashMap<>();
 

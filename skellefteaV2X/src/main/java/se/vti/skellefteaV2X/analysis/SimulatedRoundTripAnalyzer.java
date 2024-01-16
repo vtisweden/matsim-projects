@@ -20,6 +20,7 @@
 package se.vti.skellefteaV2X.analysis;
 
 import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
@@ -38,20 +39,29 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 
 	private final long samplingInterval;
 
-	protected long iteration = 0;
+	private final Preferences importanceSamplingPreferences;
 
-	protected long sampleCnt = 0;
+	protected long iteration = 0;
 	
-	public SimulatedRoundTripAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval) {
+	private double sampleWeightSum = 0.0;
+
+	private double acceptedSampleWeightSum = 0.0;
+	
+	public SimulatedRoundTripAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval,
+			Preferences importanceSamplingPreferences) {
 		this.scenario = scenario;
 		this.burnInIterations = burnInIterations;
 		this.samplingInterval = samplingInterval;
+		this.importanceSamplingPreferences = importanceSamplingPreferences;
 	}
 
-	protected double sampleCntAsDouble() {
-		return (double) this.sampleCnt;
-	}
-	
+//	public SimulatedRoundTripAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval) {
+//		this.scenario = scenario;
+//		this.burnInIterations = burnInIterations;
+//		this.samplingInterval = samplingInterval;
+//		this.importanceSamplingPreferences = new Preferences();
+//	}
+
 	@Override
 	public void start() {
 	}
@@ -60,8 +70,14 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 	public final void processState(RoundTrip<Location> state) {
 		this.iteration++;
 		if ((this.iteration > this.burnInIterations) && (this.iteration % this.samplingInterval == 0)) {
-			this.processRelevantState((SimulatedRoundTrip) state);
-			this.sampleCnt++;
+			final SimulatedRoundTrip simulatedRoundTrip = (SimulatedRoundTrip) state;
+			final double sampleWeight = 1.0
+					/ Math.exp(this.importanceSamplingPreferences.logWeight(simulatedRoundTrip));
+			this.sampleWeightSum += sampleWeight;
+			if (this.importanceSamplingPreferences.thresholdPassed(simulatedRoundTrip)) {
+				this.processRelevantState(simulatedRoundTrip, sampleWeight);
+				this.acceptedSampleWeightSum += sampleWeight;
+			}
 		}
 	}
 
@@ -69,6 +85,14 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 	public void end() {
 	}
 
-	public abstract void processRelevantState(SimulatedRoundTrip state);
+	public abstract void processRelevantState(SimulatedRoundTrip state, double sampleWeight);
 
+	protected double sampleWeightSum() {
+		return this.sampleWeightSum;
+	}
+
+	protected double acceptanceRate() {
+		return this.acceptedSampleWeightSum / this.sampleWeightSum;
+	}
+	
 }

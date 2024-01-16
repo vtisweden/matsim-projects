@@ -34,7 +34,7 @@ import se.vti.utils.misc.math.MathHelpers;
  * @author GunnarF
  *
  */
-public class AtLocationPreference implements Component {
+public class AtLocationPreference extends Component {
 
 	private final Location location;
 

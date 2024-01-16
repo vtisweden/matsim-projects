@@ -31,14 +31,14 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class LocalChargingPrefence implements Component {
-
-	private final double maxAmount_kWh;
+public class LocalChargingPreference extends Component {
+	
+	private final Scenario scenario;
 	
 	private final Location location;
 
-	public LocalChargingPrefence(Scenario scenario, Location location) {
-		this.maxAmount_kWh = scenario.getMaxCharge_kWh();
+	public LocalChargingPreference(Scenario scenario, Location location) {
+		this.scenario = scenario;
 		this.location = location;
 	}
 
@@ -53,8 +53,12 @@ public class LocalChargingPrefence implements Component {
 				}
 			}
 		}
-		amount_kWh = Math.min(amount_kWh, this.maxAmount_kWh);		
-		return amount_kWh - this.maxAmount_kWh;
+		amount_kWh = Math.min(amount_kWh, this.scenario.getMaxCharge_kWh());		
+		return amount_kWh - this.scenario.getMaxCharge_kWh();
 	}
 
+	public void setChargingAmountThreshold_kWh(double threshold_kWh) {
+		this.setLogWeightThreshold(threshold_kWh - this.scenario.getMaxCharge_kWh());
+	}
+	
 }

@@ -29,7 +29,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class AllDayTimeConstraintPreference implements Preferences.Component {
+public class AllDayTimeConstraintPreference extends Preferences.Component {
 
 	private final double minHomeDuration_h;
 

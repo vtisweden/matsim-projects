@@ -28,7 +28,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class NonnegativeBatteryStatePreference implements Preferences.Component {
+public class NonnegativeBatteryStatePreference extends Preferences.Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {

@@ -29,7 +29,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class BatteryStressPreference implements Preferences.Component {
+public class BatteryStressPreference extends Preferences.Component {
 
 	private final Scenario scenario;
 
@@ -46,6 +46,10 @@ public class BatteryStressPreference implements Preferences.Component {
 			}
 		}
 		return Math.min(0.0, stress_kWh - 2.0 * this.scenario.getMaxCharge_kWh());
+	}
+	
+	public void setBatteryChangeThreshold_kWh(double threshold_kWh) {
+		this.setLogWeightThreshold(threshold_kWh - 2.0 * this.scenario.getMaxCharge_kWh());
 	}
 
 }

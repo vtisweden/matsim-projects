@@ -28,7 +28,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class TravelDurationPreference implements Component {
+public class TravelDurationPreference extends Component {
 
 	private final double targetDuration_h;
 

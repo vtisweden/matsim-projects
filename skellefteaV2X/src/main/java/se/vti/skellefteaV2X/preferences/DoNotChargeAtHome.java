@@ -28,7 +28,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class DoNotChargeAtHome implements Preferences.Component {
+public class DoNotChargeAtHome extends Preferences.Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {

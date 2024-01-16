@@ -27,7 +27,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class UniformOnlyOverLocationAndTimes implements Preferences.Component {
+public class UniformOnlyOverLocationAndTimes extends Preferences.Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {

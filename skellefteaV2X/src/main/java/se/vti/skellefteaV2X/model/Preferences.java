@@ -32,8 +32,20 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  */
 public class Preferences implements MHWeight<RoundTrip<Location>> {
 
-	public interface Component {
-		public double logWeight(SimulatedRoundTrip simulatedRoundTrip);
+	public static abstract class Component {
+		
+		private double logWeightThreshold = Double.NEGATIVE_INFINITY;
+
+		public void setLogWeightThreshold(double threshold) {
+			this.logWeightThreshold = threshold;
+		}
+		
+		public boolean thresholdPassed(SimulatedRoundTrip simulatedRoundTrip) {
+			return (this.logWeight(simulatedRoundTrip) >= this.logWeightThreshold);
+		}
+
+		public abstract double logWeight(SimulatedRoundTrip simulatedRoundTrip);
+
 	}
 
 	private List<Component> components = new ArrayList<>();
@@ -65,6 +77,15 @@ public class Preferences implements MHWeight<RoundTrip<Location>> {
 			result += this.weights.get(i) * this.components.get(i).logWeight((SimulatedRoundTrip) roundTrip);
 		}
 		return result;
+	}
+
+	public boolean thresholdPassed(SimulatedRoundTrip roundTrip) {
+		for (Component component : this.components) {
+			if (!component.thresholdPassed(roundTrip)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 }

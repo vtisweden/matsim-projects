@@ -33,7 +33,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class MinDistinctChargingLocationsPreference implements Preferences.Component {
+public class MinDistinctChargingLocationsPreference extends Preferences.Component {
 
 	private final boolean doNotCountHome;
 

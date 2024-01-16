@@ -29,7 +29,7 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class StrategyRealizationConsistency implements Component {
+public class StrategyRealizationConsistency extends Component {
 
 	private final Scenario scenario;
 

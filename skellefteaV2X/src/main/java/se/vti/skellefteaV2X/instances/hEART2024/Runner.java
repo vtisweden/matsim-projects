@@ -31,6 +31,7 @@ import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AtHomePreference;
 import se.vti.skellefteaV2X.preferences.BatteryStressPreference;
 import se.vti.skellefteaV2X.preferences.HomeLocationShare;
+import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.UniformOnlyOverLocationAndTimes;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
@@ -111,21 +112,18 @@ public class Runner {
 		 */
 
 		// CONSISTENCY PREFERENCES
-		
+
 		Preferences consistencyPreferences = new Preferences();
 		consistencyPreferences.addComponent(new UniformOnlyOverLocationAndTimes());
 		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario));
 		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference());
 		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference());
 		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference());
-		
-		Preferences allPreferences = new Preferences();
-		allPreferences.addPreferences(consistencyPreferences);
 
 		// BEHAVIORAL PREFERENCES
-		
-		allPreferences.addComponent(new AtHomePreference(8.0, 6.0));
 
+		Preferences modelingPreferences = new Preferences();
+		modelingPreferences.addComponent(new AtHomePreference(8.0, 6.0));
 		HomeLocationShare homeShare = new HomeLocationShare();
 		homeShare.setShare(boliden, 1.0);
 		homeShare.setShare(kage, 1.0);
@@ -134,27 +132,36 @@ public class Runner {
 		homeShare.setShare(hamn, 0.1);
 		homeShare.setShare(burea, 1.0);
 		homeShare.setShare(burtrask, 1.0);
-		allPreferences.addComponent(homeShare);
-		
+		modelingPreferences.addComponent(homeShare);
+
 		// ANALYSIS PREFERENCES
-		
-//		allPreferences.addComponent(new LocalChargingPrefence(scenario, campus));
 
-//		scenario.setAllowHomeCharging(false);
-//		centrum.setAllowsCharging(false);
+		Preferences importanceSamplingPreferences = new Preferences();
 
-		allPreferences.addComponent(new BatteryStressPreference(scenario), 0.1);
+//		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus);
+//		localChargingPreference.setChargingAmountThreshold_kWh(20.0); // charge at least this much
+//		importanceSamplingPreferences.addComponent(localChargingPreference, 0.1);
+
+		BatteryStressPreference batteryStressPreference = new BatteryStressPreference(scenario);
+		batteryStressPreference.setBatteryChangeThreshold_kWh(scenario.getMaxCharge_kWh());
+		importanceSamplingPreferences.addComponent(batteryStressPreference, 0.1);
 		
 		/*
 		 * Run MH algorithm.
 		 */
+
+		Preferences allPreferences = new Preferences();
+		allPreferences.addPreferences(consistencyPreferences);
+		allPreferences.addPreferences(modelingPreferences);
+		allPreferences.addPreferences(importanceSamplingPreferences);
 
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		final long targetSamples = 100 * 1000;
 		final long burnInIterations = (iterations / 4);
 		final long samplingInterval = (iterations - burnInIterations) / targetSamples;
-		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName));
+		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
+				importanceSamplingPreferences));
 
 		algo.setMsgInterval(samplingInterval);
 
