@@ -31,7 +31,7 @@ import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AtHomePreference;
 import se.vti.skellefteaV2X.preferences.BatteryStressPreference;
 import se.vti.skellefteaV2X.preferences.HomeLocationShare;
-import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
+import se.vti.skellefteaV2X.preferences.OffHomeLocationShare;
 import se.vti.skellefteaV2X.preferences.UniformOnlyOverLocationAndTimes;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
@@ -113,48 +113,58 @@ public class Runner {
 
 		// CONSISTENCY PREFERENCES
 
-		Preferences consistencyPreferences = new Preferences();
+		final Preferences consistencyPreferences = new Preferences();
+
 		consistencyPreferences.addComponent(new UniformOnlyOverLocationAndTimes());
 		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario));
 		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference());
 		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference());
 		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference());
 
-		// BEHAVIORAL PREFERENCES
+		// MODELING PREFERENCES
 
-		Preferences modelingPreferences = new Preferences();
-		modelingPreferences.addComponent(new AtHomePreference(8.0, 6.0));
-		HomeLocationShare homeShare = new HomeLocationShare();
-		homeShare.setShare(boliden, 1.0);
-		homeShare.setShare(kage, 1.0);
-		homeShare.setShare(centrum, 5.0);
-		homeShare.setShare(campus, 0.1);
-		homeShare.setShare(hamn, 0.1);
-		homeShare.setShare(burea, 1.0);
-		homeShare.setShare(burtrask, 1.0);
-		modelingPreferences.addComponent(homeShare);
+		final Preferences modelingPreferences = new Preferences();
+
+//		modelingPreferences.addComponent(new AtHomePreference(8.0, 6.0));
+//
+//		final HomeLocationShare homeShare = new HomeLocationShare();
+//		homeShare.setShare(boliden, 1.0);
+//		homeShare.setShare(kage, 1.0);
+//		homeShare.setShare(centrum, 5.0);
+//		homeShare.setShare(campus, 0.1);
+//		homeShare.setShare(hamn, 0.1);
+//		homeShare.setShare(burea, 1.0);
+//		homeShare.setShare(burtrask, 1.0);
+//		modelingPreferences.addComponent(homeShare);
+//
+//		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare();
+//		offHomeShare.setShare(boliden, 1.0);
+//		offHomeShare.setShare(kage, 1.0);
+//		offHomeShare.setShare(centrum, 5.0);
+//		offHomeShare.setShare(campus, 2.0);
+//		offHomeShare.setShare(hamn, 2.0);
+//		offHomeShare.setShare(burea, 1.0);
+//		offHomeShare.setShare(burtrask, 1.0);
+//		modelingPreferences.addComponent(offHomeShare);
 
 		// ANALYSIS PREFERENCES
 
-		Preferences importanceSamplingPreferences = new Preferences();
+		final Preferences importanceSamplingPreferences = new Preferences();
 
 //		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus);
 //		localChargingPreference.setChargingAmountThreshold_kWh(20.0); // charge at least this much
 //		importanceSamplingPreferences.addComponent(localChargingPreference, 0.1);
 
-		BatteryStressPreference batteryStressPreference = new BatteryStressPreference(scenario);
-		batteryStressPreference.setBatteryChangeThreshold_kWh(scenario.getMaxCharge_kWh());
-		importanceSamplingPreferences.addComponent(batteryStressPreference, 0.1);
-		
+//		BatteryStressPreference batteryStressPreference = new BatteryStressPreference(scenario);
+//		batteryStressPreference.setBatteryChangeThreshold_kWh(scenario.getMaxCharge_kWh());
+//		importanceSamplingPreferences.addComponent(batteryStressPreference, 0.1);
+
 		/*
 		 * Run MH algorithm.
 		 */
 
-		Preferences allPreferences = new Preferences();
-		allPreferences.addPreferences(consistencyPreferences);
-		allPreferences.addPreferences(modelingPreferences);
-		allPreferences.addPreferences(importanceSamplingPreferences);
-
+		Preferences allPreferences = new Preferences(consistencyPreferences, modelingPreferences,
+				importanceSamplingPreferences);
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		final long targetSamples = 100 * 1000;
@@ -176,9 +186,9 @@ public class Runner {
 	public static void main(String[] args) {
 		final ExecutorService threadPool = Executors.newFixedThreadPool(4);
 		threadPool.execute(createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log"));
-		threadPool.execute(createMHAlgorithmRunnable(20 * 1000 * 1000, "20-000-000_skelleftea.log"));
-		threadPool.execute(createMHAlgorithmRunnable(40 * 1000 * 1000, "40-000-000_skelleftea.log"));
-		threadPool.execute(createMHAlgorithmRunnable(80 * 1000 * 1000, "80-000-000_skelleftea.log"));
+//		threadPool.execute(createMHAlgorithmRunnable(20 * 1000 * 1000, "20-000-000_skelleftea.log"));
+//		threadPool.execute(createMHAlgorithmRunnable(40 * 1000 * 1000, "40-000-000_skelleftea.log"));
+//		threadPool.execute(createMHAlgorithmRunnable(80 * 1000 * 1000, "80-000-000_skelleftea.log"));
 		threadPool.shutdown();
 		try {
 			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);

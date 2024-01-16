@@ -55,6 +55,12 @@ public class Preferences implements MHWeight<RoundTrip<Location>> {
 	public Preferences() {
 	}
 
+	public Preferences(Preferences... parents) {
+		for (Preferences p : parents) {
+			this.addPreferences(p);
+		}
+	}
+
 	public void addPreferences(Preferences other) {
 		for (int i = 0; i < other.components.size(); i++) {
 			this.addComponent(other.components.get(i), other.weights.get(i));

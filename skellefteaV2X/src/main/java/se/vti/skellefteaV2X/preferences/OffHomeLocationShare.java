@@ -19,12 +19,7 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
-import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -32,30 +27,22 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class LocationAttractivityPreference extends Preferences.Component {
+public class OffHomeLocationShare extends LocationShare {
 
-	private Map<Location, Double> location2logAttractivity = new LinkedHashMap<>();
-
-	private Double maxLogAttractivity = null;
-
-	public LocationAttractivityPreference() {
-	}
-
-	public void setAttractivity(Location location, double attractivity) {
-		final double logAttractivity = Math.log(attractivity);
-		this.location2logAttractivity.put(location, logAttractivity);
-		this.maxLogAttractivity = this.maxLogAttractivity == null ? logAttractivity
-				: Math.max(this.maxLogAttractivity, logAttractivity);
+	public OffHomeLocationShare() {
+		super();
 	}
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
 		double result = 0.0;
-		for (int i = 0; i < simulatedRoundTrip.episodeCnt(); i += 2) {
+		for (int i = 2; i < simulatedRoundTrip.episodeCnt(); i+= 2) {
 			ParkingEpisode p = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(i);
-			result += this.location2logAttractivity.get(p.getLocation()) - this.maxLogAttractivity;
+			result += this.location2logShare.get(p.getLocation()) - this.maxLogShare;
+			
 		}
 		return result;
 	}
 
+	
 }

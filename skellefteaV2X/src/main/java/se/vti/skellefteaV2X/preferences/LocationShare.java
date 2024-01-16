@@ -1,5 +1,5 @@
 /**
- * se.vti.skellefteaV2X
+ * org.matsim.contrib.emulation
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,22 +19,20 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public class HomeLocationShare extends LocationShare {
+import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.Preferences.Component;
 
-	public HomeLocationShare() {
-		super();
+public abstract class LocationShare extends Component {
+
+	protected final Map<Location, Double> location2logShare = new LinkedHashMap<>();
+	protected Double maxLogShare = null;
+
+	public void setShare(Location location, double share) {
+		final double logShare = Math.log(share);
+		this.location2logShare.put(location, logShare);
+		this.maxLogShare = (this.maxLogShare == null ? logShare : Math.max(this.maxLogShare, logShare));
 	}
-
-	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		return this.location2logShare.get(simulatedRoundTrip.getHomeLocation()) - this.maxLogShare;
-	}
-
 }

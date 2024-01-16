@@ -27,6 +27,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import floetteroed.utilities.Tuple;
 import se.vti.skellefteaV2X.model.DrivingEpisode;
@@ -49,8 +51,12 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 	private final String fileName;
 
-	private List<Map<Location, Double>> timeListOfLocation2visits;
-	private List<Map<Location, Double>> timeListOfLocation2chargings_kWh;
+	private List<Map<Location, Double>> timeListOfLocation2homeVisits;
+	private List<Map<Location, Double>> timeListOfLocation2homeChargings_kWh;
+
+	private List<Map<Location, Double>> timeListOfLocation2enRouteVisits;
+	private List<Map<Location, Double>> timeListOfLocation2enRouteChargings_kWh;
+
 	private List<Double> timeListOfDriving;
 
 	private Map<List<Location>, Double> sequence2uses = new LinkedHashMap<>();
@@ -66,13 +72,17 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			Preferences importanceSamplingPreferences) {
 		super(scenario, burnInIterations, samplingInterval, importanceSamplingPreferences);
 		this.fileName = fileName;
-		this.timeListOfLocation2visits = new ArrayList<>(scenario.getBinCnt());
-		this.timeListOfLocation2chargings_kWh = new ArrayList<>(scenario.getBinCnt());
+		this.timeListOfLocation2homeVisits = new ArrayList<>(scenario.getBinCnt());
+		this.timeListOfLocation2homeChargings_kWh = new ArrayList<>(scenario.getBinCnt());
+		this.timeListOfLocation2enRouteVisits = new ArrayList<>(scenario.getBinCnt());
+		this.timeListOfLocation2enRouteChargings_kWh = new ArrayList<>(scenario.getBinCnt());
 		this.timeListOfDriving = new ArrayList<>(scenario.getBinCnt());
 
 		for (int i = 0; i < scenario.getBinCnt(); i++) {
-			this.timeListOfLocation2visits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
-			this.timeListOfLocation2chargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
+			this.timeListOfLocation2homeVisits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
+			this.timeListOfLocation2homeChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
+			this.timeListOfLocation2enRouteVisits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
+			this.timeListOfLocation2enRouteChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfDriving.add(0.0);
 		}
 	}
@@ -147,12 +157,20 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 					}
 
 					if (parking != null) {
-						this.timeListOfLocation2visits.get(bin).compute(parking.getLocation(),
-								(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
-
 						final double weightedEffectiveCharging_kWh = chargeChangeRate_kW * weightedRelativeOverlap;
-						this.timeListOfLocation2chargings_kWh.get(bin).compute(parking.getLocation(), (l,
-								c) -> c == null ? weightedEffectiveCharging_kWh : c + weightedEffectiveCharging_kWh);
+						if (parking.equals(home)) {
+							this.timeListOfLocation2homeVisits.get(bin).compute(parking.getLocation(),
+									(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
+							this.timeListOfLocation2homeChargings_kWh.get(bin).compute(parking.getLocation(),
+									(l, c) -> c == null ? weightedEffectiveCharging_kWh
+											: c + weightedEffectiveCharging_kWh);
+						} else {
+							this.timeListOfLocation2enRouteVisits.get(bin).compute(parking.getLocation(),
+									(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
+							this.timeListOfLocation2enRouteChargings_kWh.get(bin).compute(parking.getLocation(),
+									(l, c) -> c == null ? weightedEffectiveCharging_kWh
+											: c + weightedEffectiveCharging_kWh);
+						}
 					}
 				}
 			}
@@ -190,82 +208,126 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 			PrintWriter writer = new PrintWriter(this.fileName);
 
-			writer.println("VISITS");
+			writer.println("Pr(home parking)");
 			writer.println();
 			for (Location l : locations) {
 				writer.print(l + "\t");
 			}
 			writer.println();
-			for (Map<Location, Double> location2visits : this.timeListOfLocation2visits) {
+			for (Map<Location, Double> location2visits : this.timeListOfLocation2homeVisits) {
 				for (Location l : locations) {
-					writer.print(location2visits.getOrDefault(l, 0.0) / sampleWeightSum() + "\t");
+					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
 				}
 				writer.println();
 			}
 
 			writer.println();
 
-			writer.println("CHARGINGS");
+			writer.println("E{amount charged at home} [kWh]");
 			writer.println();
 			for (Location l : locations) {
 				writer.print(l + "\t");
 			}
 			writer.println();
-			for (Map<Location, Double> location2chargings : this.timeListOfLocation2chargings_kWh) {
+			for (Map<Location, Double> location2chargings : this.timeListOfLocation2homeChargings_kWh) {
 				for (Location l : locations) {
-					writer.print(location2chargings.getOrDefault(l, 0.0) / sampleWeightSum() + "\t");
+					writer.print(location2chargings.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
 				}
 				writer.println();
 			}
 
 			writer.println();
 
-			writer.println("LOCATION IS HOME");
+			writer.println("Pr(parking en route)");
 			writer.println();
 			for (Location l : locations) {
-				writer.println(l + "\t" + this.location2isHomeCnt.getOrDefault(l, 0.0) / sampleWeightSum());
+				writer.print(l + "\t");
+			}
+			writer.println();
+			for (Map<Location, Double> location2visits : this.timeListOfLocation2enRouteVisits) {
+				for (Location l : locations) {
+					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
+				}
+				writer.println();
 			}
 
 			writer.println();
-			writer.println("DRIVING");
+
+			writer.println("E{amount charged en route} [kWh]");
+			writer.println();
+			for (Location l : locations) {
+				writer.print(l + "\t");
+			}
+			writer.println();
+			for (Map<Location, Double> location2chargings : this.timeListOfLocation2enRouteChargings_kWh) {
+				for (Location l : locations) {
+					writer.print(location2chargings.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
+				}
+				writer.println();
+			}
+
+			writer.println();
+
+			writer.println("Pr(location is home)");
+			writer.println();
+			for (Location l : locations) {
+				writer.println(l + "\t" + this.location2isHomeCnt.getOrDefault(l, 0.0) / acceptedSampleWeightSum());
+			}
+
+			writer.println();
+			writer.println("Pr(driving)");
 			writer.println();
 			for (Double cnt : this.timeListOfDriving) {
-				writer.println(cnt / sampleWeightSum());
+				writer.println(cnt / acceptedSampleWeightSum());
 			}
 
 			writer.println();
-			writer.println("LOCATION IS CHARGING");
+			writer.println("Pr(charging at location)");
 			writer.println();
 			writer.println("\tovernight\ten route");
 			for (Location l : locations) {
-				writer.println(l + "\t" + this.location2isOvernightCharging.getOrDefault(l, 0.0) / sampleWeightSum()
-						+ "\t" + this.location2isEnTourCharging.getOrDefault(l, 0.0) / sampleWeightSum());
+				writer.println(l + "\t"
+						+ this.location2isOvernightCharging.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t"
+						+ this.location2isEnTourCharging.getOrDefault(l, 0.0) / acceptedSampleWeightSum());
 			}
 
 			writer.println();
 			writer.println("REL. NUMBER OF CHARGING EPISODES");
 			writer.println();
 			writer.println(this.location2isOvernightCharging.values().stream().mapToDouble(f -> f).sum()
-					/ sampleWeightSum()
-					+ this.location2isEnTourCharging.values().stream().mapToDouble(f -> f).sum() / sampleWeightSum());
+					/ acceptedSampleWeightSum()
+					+ this.location2isEnTourCharging.values().stream().mapToDouble(f -> f).sum()
+							/ acceptedSampleWeightSum());
 
 			writer.println();
 			writer.println("ENERGY CONSUMPTION");
 			writer.println();
-			writer.println("used            " + this.used_kWh);
-			writer.println("charged         " + this.charged_kWh);
+			writer.println("used            " + this.used_kWh / acceptedSampleWeightSum());
+			writer.println("charged         " + this.charged_kWh / acceptedSampleWeightSum());
 
 			writer.println();
 			writer.println("ACCEPTANCE RATE");
 			writer.println();
 			writer.println(this.acceptanceRate());
-			
+
+			final List<Map.Entry<List<Location>, Double>> usedLocs = this.sequence2uses.entrySet().stream()
+					.collect(Collectors.toList());
+			Collections.sort(usedLocs, new Comparator<Map.Entry<List<Location>, Double>>() {
+				@Override
+				public int compare(Entry<List<Location>, Double> e1, Entry<List<Location>, Double> e2) {
+					return -e1.getValue().compareTo(e2.getValue());
+				}
+			});
+
 			writer.println();
 			writer.println("LOCATION SEQUENCES");
 			writer.println();
-			writer.println();
-			for (Map.Entry<List<Location>, Double> e : this.sequence2uses.entrySet()) {
-				writer.println(e.getKey() + "\t" + e.getValue() / sampleWeightSum());
+			writer.println("locations\tprobability\tcumulative probability");
+			double cumulativeProba = 0.0;
+			for (Map.Entry<List<Location>, Double> e : usedLocs) {
+				final double proba = e.getValue() / acceptedSampleWeightSum();
+				cumulativeProba += proba;
+				writer.println(e.getKey() + "\t" + proba + "\t" + cumulativeProba);
 			}
 
 			writer.flush();

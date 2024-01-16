@@ -91,6 +91,10 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 		return this.sampleWeightSum;
 	}
 
+	protected double acceptedSampleWeightSum() {
+		return this.acceptedSampleWeightSum;
+	}
+
 	protected double acceptanceRate() {
 		return this.acceptedSampleWeightSum / this.sampleWeightSum;
 	}
