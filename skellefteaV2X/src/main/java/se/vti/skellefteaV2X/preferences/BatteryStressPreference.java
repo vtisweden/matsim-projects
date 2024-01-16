@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefeaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,9 +19,9 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Preferences;
+import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -29,22 +29,23 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class NotHomePreference implements Preferences.Component {
+public class BatteryStressPreference implements Preferences.Component {
 
-	private final Location location;
+	private final Scenario scenario;
 
-	public NotHomePreference(Location location) {
-		this.location = location;
+	public BatteryStressPreference(Scenario scenario) {
+		this.scenario = scenario;
 	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ParkingEpisode home = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
-		if (this.location.equals(home.getLocation())) {
-			return -home.getDuration_h();
-		} else {
-			return 0.0;
+	public double logWeight(SimulatedRoundTrip roundTrip) {
+		double stress_kWh = 0;
+		if (roundTrip.locationCnt() > 1) {
+			for (Episode e : roundTrip.getEpisodes()) {
+				stress_kWh += Math.abs(e.getChargeAtStart_kWh() - e.getChargeAtEnd_kWh());
+			}
 		}
+		return Math.min(0.0, stress_kWh - 2.0 * this.scenario.getMaxCharge_kWh());
 	}
 
 }

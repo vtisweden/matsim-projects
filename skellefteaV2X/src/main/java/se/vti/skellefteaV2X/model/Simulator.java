@@ -77,7 +77,9 @@ public class Simulator {
 			ParkingEpisode home = new ParkingEpisode(roundTrip.getLocation(0));
 			home.setDuration_h(24.0);
 			home.setEndTime_h(24.0 - 1e-8); // wraparound
-			double charge_kWh = (roundTrip.getCharging(0) ? this.scenario.getMaxCharge_kWh() : 0.0);
+			double charge_kWh = (this.scenario.isAllowHomeCharging() && roundTrip.getCharging(0)
+					? this.scenario.getMaxCharge_kWh()
+					: 0.0);
 			home.setChargeAtStart_kWh(charge_kWh);
 			home.setChargeAtEnd_kWh(charge_kWh);
 			return Collections.singletonList(home);
@@ -117,7 +119,8 @@ public class Simulator {
 			charge_kWh = driving.getChargeAtEnd_kWh();
 
 			final ParkingEpisode home = this.parkingSimulator.newParkingEpisode(roundTrip.getLocation(0),
-					roundTrip.getDeparture(0), roundTrip.getCharging(0), time_h - 24.0, charge_kWh);
+					roundTrip.getDeparture(0), this.scenario.isAllowHomeCharging() && roundTrip.getCharging(0),
+					time_h - 24.0, charge_kWh);
 			episodes.set(0, home);
 
 			// postprocessing for wrap-around of battery level

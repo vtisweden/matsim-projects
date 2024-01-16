@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefteaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,7 +19,6 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
-import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
@@ -29,22 +28,12 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class NotHomePreference implements Preferences.Component {
-
-	private final Location location;
-
-	public NotHomePreference(Location location) {
-		this.location = location;
-	}
+public class DoNotChargeAtHome implements Preferences.Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ParkingEpisode home = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
-		if (this.location.equals(home.getLocation())) {
-			return -home.getDuration_h();
-		} else {
-			return 0.0;
-		}
+		ParkingEpisode homeEpisode = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
+		return Math.min(0.0, homeEpisode.getChargeAtStart_kWh() - homeEpisode.getChargeAtEnd_kWh());
 	}
 
 }

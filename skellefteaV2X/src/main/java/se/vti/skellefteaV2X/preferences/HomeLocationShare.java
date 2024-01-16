@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefteaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,8 +19,10 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
@@ -29,22 +31,25 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class NotHomePreference implements Preferences.Component {
+public class HomeLocationShare implements Preferences.Component {
 
-	private final Location location;
+	private final Map<Location, Double> location2logShare = new LinkedHashMap<>();
 
-	public NotHomePreference(Location location) {
-		this.location = location;
+	private Double maxLogShare = null;
+
+	public HomeLocationShare() {
+	}
+
+	public void setShare(Location location, double share) {
+		final double logShare = Math.log(share);
+		this.location2logShare.put(location, logShare);
+		this.maxLogShare = (this.maxLogShare == null ? logShare : Math.max(this.maxLogShare, logShare));
 	}
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ParkingEpisode home = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
-		if (this.location.equals(home.getLocation())) {
-			return -home.getDuration_h();
-		} else {
-			return 0.0;
-		}
+		return this.location2logShare.get(simulatedRoundTrip.getHomeLocation()) - this.maxLogShare;
 	}
 
+	
 }

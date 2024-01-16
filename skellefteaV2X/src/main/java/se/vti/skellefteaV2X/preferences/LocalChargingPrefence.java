@@ -31,13 +31,13 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class LocalChargingAmountPrefence implements Component {
+public class LocalChargingPrefence implements Component {
 
 	private final double maxAmount_kWh;
 	
 	private final Location location;
 
-	public LocalChargingAmountPrefence(Scenario scenario, Location location) {
+	public LocalChargingPrefence(Scenario scenario, Location location) {
 		this.maxAmount_kWh = scenario.getMaxCharge_kWh();
 		this.location = location;
 	}

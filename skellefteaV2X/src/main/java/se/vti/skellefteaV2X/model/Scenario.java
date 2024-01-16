@@ -50,7 +50,8 @@ public class Scenario {
 	private int timeBinCnt = 24;
 
 	private int maxParkingEpisodes = 4;
-
+	private boolean allowHomeCharging = true;
+	
 	private final Set<Location> locations = new LinkedHashSet<>();
 
 	private final Map<Tuple<Location, Location>, Double> od2distance_km = new LinkedHashMap<>();
@@ -176,5 +177,13 @@ public class Scenario {
 		algo.setInitialState(initialState);
 
 		return algo;
+	}
+
+	public boolean isAllowHomeCharging() {
+		return allowHomeCharging;
+	}
+
+	public void setAllowHomeCharging(boolean allowHomeCharging) {
+		this.allowHomeCharging = allowHomeCharging;
 	}
 }

@@ -1,5 +1,5 @@
 /**
- * se.vti.skellefeaV2X
+ * se.vti.skellefteaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -22,7 +22,6 @@ package se.vti.skellefteaV2X.preferences;
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -30,30 +29,20 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class BatteryRangePreference implements Preferences.Component {
+public class ChargeEnTripWhenEmpty implements Preferences.Component {
 
-	private Scenario scenario;
-	
-	public BatteryRangePreference(Scenario scenario) {
-		this.scenario = scenario;
-	}
-	
 	@Override
-	public double logWeight(SimulatedRoundTrip roundTrip) {
-		double range_kWh = 0;
-		if (roundTrip.locationCnt() > 1) {
-			double minCharge_kWh = Double.POSITIVE_INFINITY;
-			double maxCharge_kWh = Double.NEGATIVE_INFINITY;
-			for (Episode e : roundTrip.getEpisodes()) {
-				if (e instanceof ParkingEpisode) {
-					ParkingEpisode p = (ParkingEpisode) e;
-					minCharge_kWh = Math.min(minCharge_kWh, p.getChargeAtStart_kWh());
-					maxCharge_kWh = Math.max(maxCharge_kWh, p.getChargeAtEnd_kWh());
+	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
+		double remainingWhenCharging_kWh = 0.0;
+		for (Episode e : simulatedRoundTrip.getEpisodes()) {
+			if (e != simulatedRoundTrip.getEpisodes().get(0) && e instanceof ParkingEpisode) {
+				ParkingEpisode p = (ParkingEpisode) e;
+				if (p.getChargeAtEnd_kWh() > p.getChargeAtStart_kWh()) {
+					remainingWhenCharging_kWh += Math.max(0.0, p.getChargeAtStart_kWh());
 				}
 			}
-			range_kWh = maxCharge_kWh - minCharge_kWh;
-		}			
-		return range_kWh - this.scenario.getMaxCharge_kWh();
+		}
+		return -remainingWhenCharging_kWh;
 	}
 
 }

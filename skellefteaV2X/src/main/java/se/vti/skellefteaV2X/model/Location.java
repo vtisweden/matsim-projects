@@ -28,7 +28,7 @@ public class Location {
 
 	private final String name;
 	
-	private final boolean allowsCharging;
+	private boolean allowsCharging;
 	
 	public Location(String name, boolean allowsCharging) {
 		this.name = name;
@@ -37,6 +37,10 @@ public class Location {
 	
 	public String getName() {
 		return this.name;
+	}
+	
+	public void setAllowsCharging(boolean allowsCharging) {
+		this.allowsCharging = allowsCharging;
 	}
 	
 	public boolean getAllowsCharging() {

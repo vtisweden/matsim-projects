@@ -38,14 +38,20 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 
 	private final long samplingInterval;
 
-	private long iteration = 0;
+	protected long iteration = 0;
 
+	protected long sampleCnt = 0;
+	
 	public SimulatedRoundTripAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval) {
 		this.scenario = scenario;
 		this.burnInIterations = burnInIterations;
 		this.samplingInterval = samplingInterval;
 	}
 
+	protected double sampleCntAsDouble() {
+		return (double) this.sampleCnt;
+	}
+	
 	@Override
 	public void start() {
 	}
@@ -55,6 +61,7 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 		this.iteration++;
 		if ((this.iteration > this.burnInIterations) && (this.iteration % this.samplingInterval == 0)) {
 			this.processRelevantState((SimulatedRoundTrip) state);
+			this.sampleCnt++;
 		}
 	}
 

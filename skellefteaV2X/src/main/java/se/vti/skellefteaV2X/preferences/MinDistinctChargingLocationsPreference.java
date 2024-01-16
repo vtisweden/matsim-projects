@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefteaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,6 +19,10 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
@@ -29,22 +33,27 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  * @author GunnarF
  *
  */
-public class NotHomePreference implements Preferences.Component {
+public class MinDistinctChargingLocationsPreference implements Preferences.Component {
 
-	private final Location location;
+	private final boolean doNotCountHome;
 
-	public NotHomePreference(Location location) {
-		this.location = location;
+	public MinDistinctChargingLocationsPreference(boolean doNotCountHome) {
+		this.doNotCountHome = doNotCountHome;
 	}
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ParkingEpisode home = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
-		if (this.location.equals(home.getLocation())) {
-			return -home.getDuration_h();
-		} else {
-			return 0.0;
+		Set<Location> locs = new LinkedHashSet<>();
+		for (Episode e : simulatedRoundTrip.getEpisodes()) {
+			if (e instanceof ParkingEpisode) {
+				ParkingEpisode p = (ParkingEpisode) e;
+				if (!(this.doNotCountHome && simulatedRoundTrip.getEpisodes().get(0).equals(p))
+						&& (p.getChargeAtEnd_kWh() > p.getChargeAtStart_kWh())) {
+					locs.add(p.getLocation());
+				}
+			}
 		}
+		return -locs.size();
 	}
 
 }

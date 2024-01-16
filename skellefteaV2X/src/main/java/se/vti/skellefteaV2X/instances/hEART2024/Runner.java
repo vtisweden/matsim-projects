@@ -29,8 +29,8 @@ import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AtHomePreference;
-import se.vti.skellefteaV2X.preferences.LocalChargingAmountPrefence;
-import se.vti.skellefteaV2X.preferences.NotHomePreference;
+import se.vti.skellefteaV2X.preferences.BatteryStressPreference;
+import se.vti.skellefteaV2X.preferences.HomeLocationShare;
 import se.vti.skellefteaV2X.preferences.UniformOnlyOverLocationAndTimes;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
@@ -110,28 +110,48 @@ public class Runner {
 		 * Define preferences for round trip sampling.
 		 */
 
+		// CONSISTENCY PREFERENCES
+		
 		Preferences consistencyPreferences = new Preferences();
 		consistencyPreferences.addComponent(new UniformOnlyOverLocationAndTimes());
 		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario));
 		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference());
 		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference());
 		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference());
-
+		
 		Preferences allPreferences = new Preferences();
 		allPreferences.addPreferences(consistencyPreferences);
-//		allPreferences.addComponent(new AtHomePreference(8.0, 6.0), 1.0);
-//		allPreferences.addComponent(new NotHomePreference(campus), 5.0);
-//		allPreferences.addComponent(new LocalChargingAmountPrefence(scenario, campus), 1.0);
-//		allPreferences.addComponent(new AtHomePreference(14.0, 16.0), 5.0);
-//		allPreferences.addComponent(new BatteryRangePreference(scenario));
 
+		// BEHAVIORAL PREFERENCES
+		
+		allPreferences.addComponent(new AtHomePreference(8.0, 6.0));
+
+		HomeLocationShare homeShare = new HomeLocationShare();
+		homeShare.setShare(boliden, 1.0);
+		homeShare.setShare(kage, 1.0);
+		homeShare.setShare(centrum, 5.0);
+		homeShare.setShare(campus, 0.1);
+		homeShare.setShare(hamn, 0.1);
+		homeShare.setShare(burea, 1.0);
+		homeShare.setShare(burtrask, 1.0);
+		allPreferences.addComponent(homeShare);
+		
+		// ANALYSIS PREFERENCES
+		
+//		allPreferences.addComponent(new LocalChargingPrefence(scenario, campus));
+
+//		scenario.setAllowHomeCharging(false);
+//		centrum.setAllowsCharging(false);
+
+		allPreferences.addComponent(new BatteryStressPreference(scenario), 0.1);
+		
 		/*
 		 * Run MH algorithm.
 		 */
 
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
-		final long targetSamples = 1000;
+		final long targetSamples = 100 * 1000;
 		final long burnInIterations = (iterations / 4);
 		final long samplingInterval = (iterations - burnInIterations) / targetSamples;
 		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName));
@@ -148,8 +168,10 @@ public class Runner {
 
 	public static void main(String[] args) {
 		final ExecutorService threadPool = Executors.newFixedThreadPool(4);
-		threadPool.execute(createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_a_skelleftea.log"));
-		threadPool.execute(createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_b_skelleftea.log"));
+		threadPool.execute(createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log"));
+		threadPool.execute(createMHAlgorithmRunnable(20 * 1000 * 1000, "20-000-000_skelleftea.log"));
+		threadPool.execute(createMHAlgorithmRunnable(40 * 1000 * 1000, "40-000-000_skelleftea.log"));
+		threadPool.execute(createMHAlgorithmRunnable(80 * 1000 * 1000, "80-000-000_skelleftea.log"));
 		threadPool.shutdown();
 		try {
 			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);

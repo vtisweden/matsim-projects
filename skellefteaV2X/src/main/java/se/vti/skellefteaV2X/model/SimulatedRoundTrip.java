@@ -40,9 +40,13 @@ public class SimulatedRoundTrip extends RoundTrip<Location> {
 	public SimulatedRoundTrip clone() {
 		return new SimulatedRoundTrip(cloneLocations(), cloneDepartures(), cloneChargings());
 	}
-	
+
 	public int episodeCnt() {
 		return this.episodes.size();
+	}
+
+	public Location getHomeLocation() {
+		return ((ParkingEpisode) this.episodes.get(0)).getLocation();
 	}
 
 	public List<Episode> getEpisodes() {

@@ -35,24 +35,20 @@ import se.vti.utils.misc.math.MathHelpers;
  */
 public class AtHomePreference implements Component {
 
+	private final MathHelpers math = new MathHelpers();
+
 	private final List<Tuple<Double, Double>> targetIntervals;
 	private final double targetDuration_h;
-	private final MathHelpers math = new MathHelpers();
 	
 	public AtHomePreference(double duration_h, double homeEnd_h) {
-		
 		this.targetIntervals = Episode.effectiveIntervals(duration_h, homeEnd_h);
-		
-		
 		this.targetDuration_h = this.targetIntervals.stream().mapToDouble(t -> t.getB() - t.getA()).sum();
 	}
 
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
-
 		final ParkingEpisode home = (ParkingEpisode) roundTrip.getEpisodes().get(0);
 		final List<Tuple<Double, Double>> realizedIntervals = home.effectiveIntervals();
-
 		double realizedDuration_h = 0.0;
 		for (Tuple<Double, Double> target : this.targetIntervals) {
 			for (Tuple<Double, Double> realized : realizedIntervals) {
@@ -62,21 +58,5 @@ public class AtHomePreference implements Component {
 		}
 		assert (this.targetDuration_h >= realizedDuration_h);
 		return realizedDuration_h - this.targetDuration_h;
-
-//		if (roundTrip.size() == 1) {
-//			return 0.0; // FIXME may be on campus
-//		}
-//		List<Episode> episodes = roundTrip.getEpisodes();
-//		ParkingEpisode home = (ParkingEpisode) episodes.get(0);
-//		double discrepancy_h = 0.0;
-//		if (this.campus.equals(home.getLocation())) {
-//			discrepancy_h = this.homeEnd_h - this.homeStart_h;
-//		} else {
-//			discrepancy_h += Math.max(0, home.getStartTime_h() - this.homeStart_h);
-//			discrepancy_h += Math.max(0, this.homeEnd_h - home.getEndTime_h());
-//
-//		}
-//		return -discrepancy_h;
 	}
-
 }

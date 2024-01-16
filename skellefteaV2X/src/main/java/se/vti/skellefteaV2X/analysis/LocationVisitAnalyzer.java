@@ -46,7 +46,7 @@ import se.vti.utils.misc.math.MathHelpers;
 public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 	private final MathHelpers math = new MathHelpers();
-	
+
 	private final Preferences preferences;
 
 	private final String fileName;
@@ -59,6 +59,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 	private Map<List<Location>, Long> sequence2uses = new LinkedHashMap<>();
 	private Map<Location, Long> location2isHomeCnt = new LinkedHashMap<>();
+	private Map<Location, Long> location2isOvernightCharging = new LinkedHashMap<>();
+	private Map<Location, Long> location2isEnTourCharging = new LinkedHashMap<>();
 
 	double chargedDetail_kWh = 0.0;
 	double used_kWh = 0.0;
@@ -91,17 +93,12 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			return;
 		}
 
+		final ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
+		final boolean homeCharger = home.getChargeAtEnd_kWh() > home.getChargeAtStart_kWh();
+
 		this.sequence2uses.compute(state.getLocationsView(), (s, c) -> c == null ? 1 : c + 1);
 		this.location2isHomeCnt.compute(state.getLocation(0), (l, c) -> c == null ? 1 : c + 1);
 
-//		List<Episode> episodes = new ArrayList<>();
-//		for (int i = 0; i < state.locationCnt(); i++) {
-//			episodes.add(state.getEpisodes().get(2 * i));
-//			episodes.add(state.getEpisodes().get(2 * i + 1));			
-//		}
-//		for (int i = 0; i < episodes.size(); i++) {
-//			assert(episodes.get(i) == state.getEpisodes().get(i));
-//		}
 		assert (state.locationCnt() == 1 || state.episodeCnt() == 2 * state.locationCnt());
 
 		for (Episode e : state.getEpisodes()) {
@@ -115,6 +112,14 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 						/ e.getDuration_h();
 			} else {
 				chargeChangeRate_kW = 0.0;
+			}
+
+			if (chargeChangeRate_kW > 0) {
+				if (home.equals(e)) {
+					this.location2isOvernightCharging.compute(parking.getLocation(), (l, c) -> c == null ? 1 : c + 1);
+				} else {
+					this.location2isEnTourCharging.compute(parking.getLocation(), (l, c) -> c == null ? 1 : c + 1);
+				}
 			}
 
 			final List<Tuple<Double, Double>> intervals = e.effectiveIntervals();
@@ -198,13 +203,13 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			writer.println();
 			for (Map<Location, Double> location2visits : this.timeListOfLocation2visits) {
 				for (Location l : locations) {
-					writer.print(location2visits.getOrDefault(l, 0.0) + "\t");
+					writer.print(location2visits.getOrDefault(l, 0.0) / sampleCntAsDouble() + "\t");
 				}
 				writer.println();
 			}
 
 			writer.println();
-			
+
 			writer.println("CHARGINGS");
 			writer.println();
 			for (Location l : locations) {
@@ -213,25 +218,41 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			writer.println();
 			for (Map<Location, Double> location2chargings : this.timeListOfLocation2chargings_kWh) {
 				for (Location l : locations) {
-					writer.print(location2chargings.getOrDefault(l, 0.0) + "\t");
+					writer.print(location2chargings.getOrDefault(l, 0.0) / sampleCntAsDouble() + "\t");
 				}
 				writer.println();
 			}
 
 			writer.println();
-			
+
 			writer.println("LOCATION IS HOME");
 			writer.println();
 			for (Location l : locations) {
-				writer.println(l + "\t" + this.location2isHomeCnt.getOrDefault(l, 0l));
+				writer.println(l + "\t" + this.location2isHomeCnt.getOrDefault(l, 0l) / sampleCntAsDouble());
 			}
-			
+
 			writer.println();
 			writer.println("DRIVING");
 			writer.println();
 			for (Double cnt : this.timeListOfDriving) {
-				writer.println(cnt);
+				writer.println(cnt / sampleCntAsDouble());
 			}
+
+			writer.println();
+			writer.println("LOCATION IS CHARGING");
+			writer.println();
+			writer.println("\tovernight\ten route");
+			for (Location l : locations) {
+				writer.println(l + "\t" + this.location2isOvernightCharging.getOrDefault(l, 0l) / sampleCntAsDouble()
+						+ "\t" + this.location2isEnTourCharging.getOrDefault(l, 0l) / sampleCntAsDouble());
+			}
+
+			writer.println();
+			writer.println("REL. NUMBER OF CHARGING EPISODES");
+			writer.println();
+			writer.println(this.location2isOvernightCharging.values().stream().mapToDouble(f -> f).sum()
+					/ sampleCntAsDouble()
+					+ this.location2isEnTourCharging.values().stream().mapToDouble(f -> f).sum() / sampleCntAsDouble());
 
 			writer.println();
 			writer.println("ENERGY CONSUMPTION");
@@ -245,7 +266,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			writer.println();
 			writer.println();
 			for (Map.Entry<List<Location>, Long> e : this.sequence2uses.entrySet()) {
-				writer.println(e.getKey() + "\t" + e.getValue());
+				writer.println(e.getKey() + "\t" + e.getValue() / sampleCntAsDouble());
 			}
 
 			writer.flush();
