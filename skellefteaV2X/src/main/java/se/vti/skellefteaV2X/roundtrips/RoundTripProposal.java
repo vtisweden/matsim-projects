@@ -19,8 +19,6 @@
  */
 package se.vti.skellefteaV2X.roundtrips;
 
-import java.util.Random;
-
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -32,8 +30,6 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @param <L> the location type
  */
 public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
-
-	private final Random rnd = new Random();
 
 	private final RoundTripConfiguration<L> config;
 
@@ -58,7 +54,7 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
-		final double randomNumber = this.rnd.nextDouble();
+		final double randomNumber = this.config.getRandom().nextDouble();
 
 		if (randomNumber < this.config.getLocationProposalProbability()) {
 

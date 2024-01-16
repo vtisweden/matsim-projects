@@ -19,7 +19,11 @@
  */
 package se.vti.skellefteaV2X.model;
 
-import floetteroed.utilities.math.MathHelpers;
+import java.util.Arrays;
+import java.util.List;
+
+import floetteroed.utilities.Tuple;
+import se.vti.utils.misc.math.MathHelpers;
 
 /**
  * 
@@ -36,14 +40,6 @@ public class Episode {
 
 	public Episode() {
 	}
-
-//	public Double getStartTime_h() {
-//		return start_h;
-//	}
-//
-//	public void setStartTime_h(Double start_h) {
-//		this.start_h = start_h;
-//	}
 
 	public Double getEndTime_h() {
 		return end_h;
@@ -69,18 +65,47 @@ public class Episode {
 		return this.chargeAtEnd_kWh;
 	}
 
-	@Override
-	public String toString() {
-		return this.getClass().getSimpleName() + ":time(" + MathHelpers.round(this.end_h - this.duration_h, 2) + ","
-				+ MathHelpers.round(this.end_h, 2) + "),charge(" + MathHelpers.round(this.chargeAtStart_kWh, 2) + ","
-				+ MathHelpers.round(this.chargeAtEnd_kWh, 2) + ")";
-	}
-
 	public Double getDuration_h() {
 		return duration_h;
 	}
 
 	public void setDuration_h(Double duration_h) {
 		this.duration_h = duration_h;
+	}
+
+	public List<Tuple<Double, Double>> effectiveIntervals() {
+		assert (this.duration_h >= 0.0);
+		if (this.duration_h > 24.0) {
+			return Arrays.asList(new Tuple<>(0.0, 24.0));
+		} else {
+			double withinDayEnd_h = this.end_h;
+			while (withinDayEnd_h < 0.0) {
+				withinDayEnd_h += 24.0;
+			}
+			while (withinDayEnd_h > 24.0) {
+				withinDayEnd_h -= 24.0;
+			}
+			double start_h = withinDayEnd_h - this.duration_h;
+			if (start_h < 0.0) {
+				return Arrays.asList(new Tuple<>(start_h + 24.0, 24.0), new Tuple<>(0.0, withinDayEnd_h));
+			} else {
+				return Arrays.asList(new Tuple<>(start_h, withinDayEnd_h));
+			}
+		}
+	}
+
+	public synchronized static List<Tuple<Double, Double>> effectiveIntervals(double duration_h, double end_h) {
+		Episode e = new Episode();
+		e.setDuration_h(duration_h);
+		e.setEndTime_h(end_h);
+		return e.effectiveIntervals();
+	}
+
+	@Override
+	public String toString() {
+		MathHelpers math = new MathHelpers();
+		return this.getClass().getSimpleName() + ":time(" + math.round(this.end_h - this.duration_h, 2) + ","
+				+ math.round(this.end_h, 2) + "),charge(" + math.round(this.chargeAtStart_kWh, 2) + ","
+				+ math.round(this.chargeAtEnd_kWh, 2) + ")";
 	}
 }

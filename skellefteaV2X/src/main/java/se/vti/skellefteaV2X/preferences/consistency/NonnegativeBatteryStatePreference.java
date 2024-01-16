@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefeaV2X
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,29 +17,29 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
+package se.vti.skellefteaV2X.preferences.consistency;
 
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
-public class NotHomePreference implements Preferences.Component {
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public class NonnegativeBatteryStatePreference implements Preferences.Component {
 
-	private final Location location;
-	
-	public NotHomePreference(Location location) {
-		this.location = location;
-	}
-	
 	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ParkingEpisode home = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
-		if (this.location.equals(home.getLocation())) {
-			return - 1.0;
-		} else {
+	public double logWeight(SimulatedRoundTrip roundTrip) {
+		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
+		} else {
+			double minCharge_kWh = Double.POSITIVE_INFINITY;
+			for (Episode e : roundTrip.getEpisodes()) {
+				minCharge_kWh = Math.min(minCharge_kWh, Math.min(e.getChargeAtStart_kWh(), e.getChargeAtEnd_kWh()));
+			}
+			return Math.min(0.0, minCharge_kWh);
 		}
 	}
-
 }

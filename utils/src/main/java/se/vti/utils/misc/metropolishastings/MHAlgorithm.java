@@ -47,7 +47,7 @@ public class MHAlgorithm<S extends Object> {
 
 	private List<MHStateProcessor<S>> stateProcessors = new ArrayList<MHStateProcessor<S>>();
 
-	private int msgInterval = 1;
+	private long msgInterval = 1;
 
 	private long lastCompTime_ms = 0;
 
@@ -78,14 +78,14 @@ public class MHAlgorithm<S extends Object> {
 		return this.initialState;
 	}
 
-	public void setMsgInterval(final int msgInterval) {
+	public void setMsgInterval(final long msgInterval) {
 		if (msgInterval < 1) {
 			throw new IllegalArgumentException("message interval < 1");
 		}
 		this.msgInterval = msgInterval;
 	}
 
-	public int getMsgInterval() {
+	public long getMsgInterval() {
 		return this.msgInterval;
 	}
 
@@ -102,7 +102,7 @@ public class MHAlgorithm<S extends Object> {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void run(final int iterations) {
+	public void run(final long iterations) {
 
 		this.lastCompTime_ms = 0;
 
@@ -130,7 +130,7 @@ public class MHAlgorithm<S extends Object> {
 		/*
 		 * iterate (iterations 1, 2, ...)
 		 */
-		for (int i = 1; i <= iterations; i++) {
+		for (long i = 1; i <= iterations; i++) {
 
 			if (i % this.msgInterval == 0) {
 				System.out.println("MH iteration " + i);

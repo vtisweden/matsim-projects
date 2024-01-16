@@ -19,9 +19,6 @@
  */
 package se.vti.skellefteaV2X.analysis;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
@@ -37,13 +34,13 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 
 	protected final Scenario scenario;
 
-	private final int burnInIterations;
+	private final long burnInIterations;
 
-	private final int samplingInterval;
+	private final long samplingInterval;
 
 	private long iteration = 0;
 
-	public SimulatedRoundTripAnalyzer(Scenario scenario, int burnInIterations, int samplingInterval) {
+	public SimulatedRoundTripAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval) {
 		this.scenario = scenario;
 		this.burnInIterations = burnInIterations;
 		this.samplingInterval = samplingInterval;

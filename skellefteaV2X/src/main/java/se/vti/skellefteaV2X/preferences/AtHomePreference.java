@@ -22,11 +22,11 @@ package se.vti.skellefteaV2X.preferences;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
-import floetteroed.utilities.math.MathHelpers;
+import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.RoundTripUtils;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import se.vti.utils.misc.math.MathHelpers;
 
 /**
  * 
@@ -37,9 +37,13 @@ public class AtHomePreference implements Component {
 
 	private final List<Tuple<Double, Double>> targetIntervals;
 	private final double targetDuration_h;
-
+	private final MathHelpers math = new MathHelpers();
+	
 	public AtHomePreference(double duration_h, double homeEnd_h) {
-		this.targetIntervals = RoundTripUtils.effectiveIntervals(duration_h, homeEnd_h);
+		
+		this.targetIntervals = Episode.effectiveIntervals(duration_h, homeEnd_h);
+		
+		
 		this.targetDuration_h = this.targetIntervals.stream().mapToDouble(t -> t.getB() - t.getA()).sum();
 	}
 
@@ -47,13 +51,12 @@ public class AtHomePreference implements Component {
 	public double logWeight(SimulatedRoundTrip roundTrip) {
 
 		final ParkingEpisode home = (ParkingEpisode) roundTrip.getEpisodes().get(0);
-		final List<Tuple<Double, Double>> realizedIntervals = RoundTripUtils.effectiveIntervals(home.getDuration_h(),
-				home.getEndTime_h());
+		final List<Tuple<Double, Double>> realizedIntervals = home.effectiveIntervals();
 
 		double realizedDuration_h = 0.0;
 		for (Tuple<Double, Double> target : this.targetIntervals) {
 			for (Tuple<Double, Double> realized : realizedIntervals) {
-				realizedDuration_h += MathHelpers.overlap(target.getA(), target.getB(), realized.getA(),
+				realizedDuration_h += this.math.overlap(target.getA(), target.getB(), realized.getA(),
 						realized.getB());
 			}
 		}

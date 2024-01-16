@@ -71,30 +71,6 @@ public class Simulator {
 		this.parkingSimulator = parkingSimulator;
 	}
 
-//	private DrivingEpisode newDrivingEpisode(Location origin, Location destination, double time_h, double charge_kWh) {
-//		final DrivingEpisode driving = new DrivingEpisode(origin, destination);
-//		driving.setStartTime_h(time_h);
-//		driving.setChargeAtStart_kWh(charge_kWh);
-//		final double dist_km = this.scenario.getDistance_km(origin, destination);
-//		driving.setEndTime_h(time_h + dist_km / this.scenario.getSpeed_km_h());
-//		driving.setChargeAtEnd_kWh(charge_kWh - dist_km * this.scenario.getConsumptionRate_kWh_km());
-//		return driving;
-//	}
-
-//	private ParkingEpisode newParkingEpisode(Location location, Integer departure, Boolean charging, double time_h,
-//			double charge_kWh) {
-//		final ParkingEpisode parking = new ParkingEpisode(location);
-//		parking.setStartTime_h(time_h);
-//		parking.setChargeAtStart_kWh(charge_kWh);
-//		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * departure));
-//		if (location.getAllowsCharging() && charging) {
-//			charge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
-//					this.scenario.getChargingRate_kW() * (parking.getEndTime_h() - parking.getStartTime_h()));
-//		}
-//		parking.setChargeAtEnd_kWh(charge_kWh);
-//		return parking;
-//	}
-
 	public List<Episode> simulate(RoundTrip<Location> roundTrip) {
 
 		if (roundTrip.locationCnt() == 1) {
@@ -144,24 +120,13 @@ public class Simulator {
 					roundTrip.getDeparture(0), roundTrip.getCharging(0), time_h - 24.0, charge_kWh);
 			episodes.set(0, home);
 
-			// postprocessing
-
+			// postprocessing for wrap-around of battery level
 			final double newInitialCharge_kWh = home.getChargeAtEnd_kWh();
-//			if (home.getLocation().getAllowsCharging() && roundTrip.getCharging(0)) {
-//				double chargingDuration_h = Math.min(Math.max(0.0, this.scenario.getMaxCharge_kWh() - charge_kWh)
-//						/ this.scenario.getChargingRate_kW(), RoundTripUtils.effectiveParkingDuration_h(home));
-//				newInitialCharge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
-//						home.getChargeAtStart_kWh() + this.scenario.getChargingRate_kW() * chargingDuration_h);
-//			} else {
-//				newInitialCharge_kWh = home.getChargeAtStart_kWh();
-//			}
-
-			// if ((newInitialCharge_kWh >= 0.0) && (newInitialCharge_kWh <
-			// (initialCharge_kWh - 1e-3))) {
 			if ((newInitialCharge_kWh >= 0.0) && Math.abs(newInitialCharge_kWh - initialCharge_kWh) > 1e-3) {
 				episodes = null;
 				initialCharge_kWh = newInitialCharge_kWh;
 			}
+
 		} while (episodes == null);
 
 		return episodes;

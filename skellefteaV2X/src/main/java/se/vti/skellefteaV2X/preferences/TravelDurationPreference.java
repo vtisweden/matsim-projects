@@ -21,7 +21,6 @@ package se.vti.skellefteaV2X.preferences;
 
 import se.vti.skellefteaV2X.model.DrivingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.RoundTripUtils;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**

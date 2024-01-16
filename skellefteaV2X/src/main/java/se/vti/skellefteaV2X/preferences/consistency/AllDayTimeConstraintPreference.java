@@ -17,12 +17,9 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
-
-import java.util.List;
+package se.vti.skellefteaV2X.preferences.consistency;
 
 import se.vti.skellefteaV2X.model.DrivingEpisode;
-import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
@@ -46,17 +43,14 @@ public class AllDayTimeConstraintPreference implements Preferences.Component {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
-
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
+		} else {
+			final ParkingEpisode home = (ParkingEpisode) roundTrip.getEpisodes().get(0);
+			final DrivingEpisode leaveHome = (DrivingEpisode) roundTrip.getEpisodes().get(1);
+			final double earliestLeaveHome_h = home.getEndTime_h() - 24.0 + this.minHomeDuration_h;
+			final double realizedLeaveHome_h = leaveHome.getEndTime_h() - leaveHome.getDuration_h();
+			return -Math.max(0.0, earliestLeaveHome_h - realizedLeaveHome_h);
 		}
-
-		List<Episode> episodes = roundTrip.getEpisodes();
-		ParkingEpisode home = (ParkingEpisode) episodes.get(0);
-		DrivingEpisode fromHome = (DrivingEpisode) episodes.get(1);
-
-		return Math.max(0.0, (home.getEndTime_h() - 24.0 + this.minHomeDuration_h)
-				- (fromHome.getEndTime_h() - fromHome.getDuration_h()));
 	}
-
 }

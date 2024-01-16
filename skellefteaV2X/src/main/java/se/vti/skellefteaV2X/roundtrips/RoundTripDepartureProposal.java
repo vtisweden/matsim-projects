@@ -43,11 +43,11 @@ public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- HELPERS --------------------
 
-	public static Integer drawUnusedDeparture(RoundTrip<?> state, RoundTripConfiguration<?> scenario) {
+	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, RoundTripConfiguration<?> scenario) {
 		return drawUnusedDeparture(state, scenario.getRandom(), scenario.getTimeBinCnt());
 	}
 
-	public static Integer drawUnusedDeparture(RoundTrip<?> state, Random rnd, int timeBinCnt) {
+	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, Random rnd, int timeBinCnt) {
 		while (true) {
 			final Integer dpt = rnd.nextInt(timeBinCnt);
 			if (!state.containsDeparture(dpt)) {

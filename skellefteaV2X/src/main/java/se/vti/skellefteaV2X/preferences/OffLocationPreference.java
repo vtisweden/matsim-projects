@@ -22,13 +22,12 @@ package se.vti.skellefteaV2X.preferences;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
-import floetteroed.utilities.math.MathHelpers;
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.RoundTripUtils;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import se.vti.utils.misc.math.MathHelpers;
 
 /**
  * 
@@ -41,9 +40,11 @@ public class OffLocationPreference implements Component {
 
 	private final List<Tuple<Double, Double>> targetIntervals;
 
-	public OffLocationPreference(Location location, double targetStart_h, double targetEnd_h) {
+	private final MathHelpers math = new MathHelpers();
+
+	public OffLocationPreference(Location location, double duration_h, double end_h) {
 		this.location = location;
-		this.targetIntervals = RoundTripUtils.effectiveIntervals(targetStart_h, targetEnd_h);
+		this.targetIntervals = Episode.effectiveIntervals(duration_h, end_h);
 	}
 
 	@Override
@@ -55,11 +56,10 @@ public class OffLocationPreference implements Component {
 			if (e instanceof ParkingEpisode) {
 				ParkingEpisode p = (ParkingEpisode) e;
 				if (this.location.equals(p.getLocation())) {
-					final List<Tuple<Double, Double>> realizedIntervals = RoundTripUtils
-							.effectiveIntervals(p.getDuration_h(), p.getEndTime_h());
+					final List<Tuple<Double, Double>> realizedIntervals = p.effectiveIntervals();
 					for (Tuple<Double, Double> target : this.targetIntervals) {
 						for (Tuple<Double, Double> realized : realizedIntervals) {
-							realizedDuration_h += MathHelpers.overlap(target.getA(), target.getB(), realized.getA(),
+							realizedDuration_h += this.math.overlap(target.getA(), target.getB(), realized.getA(),
 									realized.getB());
 						}
 					}

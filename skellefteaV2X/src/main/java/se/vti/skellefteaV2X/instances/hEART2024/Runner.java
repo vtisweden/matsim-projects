@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.instances.v0;
+package se.vti.skellefteaV2X.instances.hEART2024;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

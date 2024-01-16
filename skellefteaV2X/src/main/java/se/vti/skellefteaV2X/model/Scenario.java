@@ -50,7 +50,7 @@ public class Scenario {
 	private int timeBinCnt = 24;
 
 	private int maxParkingEpisodes = 4;
-	
+
 	private final Set<Location> locations = new LinkedHashSet<>();
 
 	private final Map<Tuple<Location, Location>, Double> od2distance_km = new LinkedHashMap<>();
@@ -74,11 +74,10 @@ public class Scenario {
 	public Set<Location> getLocationsView() {
 		return Collections.unmodifiableSet(this.locations);
 	}
-	
+
 	public int getLocationCnt() {
 		return this.locations.size();
 	}
-	
 
 	public void setDistance_km(Location from, Location to, double dist_km) {
 		Tuple<Location, Location> od = new Tuple<>(from, to);
@@ -134,28 +133,6 @@ public class Scenario {
 		return timeBinCnt;
 	}
 
-	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences, Simulator simulator) {
-
-		// TODO make configurable
-		double locationProposalWeight = 0.1;
-		double departureProposalWeight = 0.45;
-		double chargingProposalWeight = 0.45;
-
-		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(this.maxParkingEpisodes, getBinCnt(),
-				locationProposalWeight, departureProposalWeight, chargingProposalWeight);
-		configuration.addLocations(this.getLocationsView());
-		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(configuration, simulator);
-		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
-
-		SimulatedRoundTrip initialState = new SimulatedRoundTrip(
-				Arrays.asList(new ArrayList<>(this.locations).get(this.rnd.nextInt(this.locations.size()))),
-				Arrays.asList(this.rnd.nextInt(this.timeBinCnt)), Arrays.asList(this.rnd.nextBoolean()));
-		initialState.setEpisodes(simulator.simulate(initialState));
-		algo.setInitialState(initialState);
-		
-		return algo;
-	}
-
 	public void setChargingRate_kW(double chargingRate_kW) {
 		this.chargingRate_kW = chargingRate_kW;
 	}
@@ -180,4 +157,24 @@ public class Scenario {
 		this.maxParkingEpisodes = maxParkingEpisodes;
 	}
 
+	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences, Simulator simulator) {
+
+		double locationProposalWeight = 0.1;
+		double chargingProposalWeight = 0.3;
+		double departureProposalWeight = 0.6;
+
+		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(this.maxParkingEpisodes,
+				getBinCnt(), locationProposalWeight, departureProposalWeight, chargingProposalWeight);
+		configuration.addLocations(this.getLocationsView());
+		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(configuration, simulator);
+		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
+
+		SimulatedRoundTrip initialState = new SimulatedRoundTrip(
+				Arrays.asList(new ArrayList<>(this.locations).get(this.rnd.nextInt(this.locations.size()))),
+				Arrays.asList(this.rnd.nextInt(this.timeBinCnt)), Arrays.asList(this.rnd.nextBoolean()));
+		initialState.setEpisodes(simulator.simulate(initialState));
+		algo.setInitialState(initialState);
+
+		return algo;
+	}
 }

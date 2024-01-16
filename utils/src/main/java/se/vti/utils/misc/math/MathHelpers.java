@@ -1,5 +1,5 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.utils
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,29 +17,33 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
+package se.vti.utils.misc.math;
 
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
-import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+/**
+ * Based on floetteroed.utilities.math.metropolishastings package.
+ * 
+ * @author GunnarF
+ *
+ */
+public class MathHelpers {
 
-public class NotHomePreference implements Preferences.Component {
-
-	private final Location location;
+	private static final MathHelpers globalInstance = new MathHelpers();
 	
-	public NotHomePreference(Location location) {
-		this.location = location;
+	public MathHelpers() {		
 	}
 	
-	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ParkingEpisode home = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
-		if (this.location.equals(home.getLocation())) {
-			return - 1.0;
-		} else {
-			return 0.0;
-		}
+	public static MathHelpers globalInstance() {
+		return globalInstance;
+	}
+	
+	public double round(final double x, final int digits) {
+		final double fact = Math.pow(10.0, digits);
+		return Math.round(x * fact) / fact;
 	}
 
+	public double overlap(final double start1, final double end1,
+			final double start2, final double end2) {
+		return Math.max(0, (Math.min(end1, end2) - Math.max(start1, start2)));
+	}
+	
 }
