@@ -29,8 +29,8 @@ import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.AtHomePreference;
-import se.vti.skellefteaV2X.preferences.BatteryStressPreference;
 import se.vti.skellefteaV2X.preferences.HomeLocationShare;
+import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.OffHomeLocationShare;
 import se.vti.skellefteaV2X.preferences.UniformOnlyOverLocationAndTimes;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
@@ -125,39 +125,35 @@ public class Runner {
 
 		final Preferences modelingPreferences = new Preferences();
 
-//		modelingPreferences.addComponent(new AtHomePreference(8.0, 6.0));
-//
-//		final HomeLocationShare homeShare = new HomeLocationShare();
-//		homeShare.setShare(boliden, 1.0);
-//		homeShare.setShare(kage, 1.0);
-//		homeShare.setShare(centrum, 5.0);
-//		homeShare.setShare(campus, 0.1);
-//		homeShare.setShare(hamn, 0.1);
-//		homeShare.setShare(burea, 1.0);
-//		homeShare.setShare(burtrask, 1.0);
-//		modelingPreferences.addComponent(homeShare);
-//
-//		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare();
-//		offHomeShare.setShare(boliden, 1.0);
-//		offHomeShare.setShare(kage, 1.0);
-//		offHomeShare.setShare(centrum, 5.0);
-//		offHomeShare.setShare(campus, 2.0);
-//		offHomeShare.setShare(hamn, 2.0);
-//		offHomeShare.setShare(burea, 1.0);
-//		offHomeShare.setShare(burtrask, 1.0);
-//		modelingPreferences.addComponent(offHomeShare);
+		modelingPreferences.addComponent(new AtHomePreference(8.0, 6.0));
+
+		final HomeLocationShare homeShare = new HomeLocationShare();
+		homeShare.setShare(boliden, 1.0);
+		homeShare.setShare(kage, 1.0);
+		homeShare.setShare(centrum, 5.0);
+		homeShare.setShare(campus, 0.1);
+		homeShare.setShare(hamn, 0.1);
+		homeShare.setShare(burea, 1.0);
+		homeShare.setShare(burtrask, 1.0);
+		modelingPreferences.addComponent(homeShare);
+
+		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare();
+		offHomeShare.setShare(boliden, 1.0);
+		offHomeShare.setShare(kage, 1.0);
+		offHomeShare.setShare(centrum, 5.0);
+		offHomeShare.setShare(campus, 2.0);
+		offHomeShare.setShare(hamn, 2.0);
+		offHomeShare.setShare(burea, 1.0);
+		offHomeShare.setShare(burtrask, 1.0);
+		modelingPreferences.addComponent(offHomeShare);
 
 		// ANALYSIS PREFERENCES
 
 		final Preferences importanceSamplingPreferences = new Preferences();
 
-//		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus);
-//		localChargingPreference.setChargingAmountThreshold_kWh(20.0); // charge at least this much
-//		importanceSamplingPreferences.addComponent(localChargingPreference, 0.1);
-
-//		BatteryStressPreference batteryStressPreference = new BatteryStressPreference(scenario);
-//		batteryStressPreference.setBatteryChangeThreshold_kWh(scenario.getMaxCharge_kWh());
-//		importanceSamplingPreferences.addComponent(batteryStressPreference, 0.1);
+		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus);
+		localChargingPreference.setChargingAmountThreshold_kWh(20.0); // charge at least this much
+		importanceSamplingPreferences.addComponent(localChargingPreference, 0.1);
 
 		/*
 		 * Run MH algorithm.

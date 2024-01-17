@@ -40,6 +40,7 @@ public class RoundTripConfiguration<L> {
 	private final double locationProposalProba;
 	private final double departureProposalProba;
 	private final double chargingProposalProba;
+	private final double doNothingProba;
 
 	private final Random rnd;
 
@@ -50,31 +51,33 @@ public class RoundTripConfiguration<L> {
 	// -------------------- CONSTRUCTION --------------------
 
 	public RoundTripConfiguration(int maxLocations, int timeBinCnt, double locationProposalWeight,
-			double timeBinProposalWeight, double chargingProposalWeight, Random rnd) {
+			double timeBinProposalWeight, double chargingProposalWeight, double doNothingWeight, Random rnd) {
 
 		assert (maxLocations <= timeBinCnt);
 		this.maxLocations = maxLocations;
 		this.timeBinCnt = timeBinCnt;
 
-		final double weightSum = locationProposalWeight + timeBinProposalWeight + chargingProposalWeight;
+		final double weightSum = locationProposalWeight + timeBinProposalWeight + chargingProposalWeight
+				+ doNothingWeight;
 		assert (weightSum > 1e-8);
 		this.locationProposalProba = locationProposalWeight / weightSum;
 		this.departureProposalProba = timeBinProposalWeight / weightSum;
 		this.chargingProposalProba = chargingProposalWeight / weightSum;
+		this.doNothingProba = doNothingWeight / weightSum;
 
 		this.rnd = rnd;
 	}
 
 	public RoundTripConfiguration(int maxLocations, int timeBinCnt, double locationProposalWeight,
-			double departureProposalWeight, double chargingProposalWeight) {
+			double departureProposalWeight, double chargingProposalWeight, double doNothingWeight) {
 		this(maxLocations, timeBinCnt, locationProposalWeight, departureProposalWeight, chargingProposalWeight,
-				new Random());
+				doNothingWeight, new Random());
 	}
 
 	public void addLocation(L location) {
 		this.allLocations.add(location);
 	}
-	
+
 	public void addLocations(Collection<L> locations) {
 		this.allLocations.addAll(locations);
 	}
@@ -103,6 +106,10 @@ public class RoundTripConfiguration<L> {
 
 	public double getChargingProposalProbability() {
 		return this.chargingProposalProba;
+	}
+	
+	public double getDoNothingProbability() {
+		return this.doNothingProba;
 	}
 
 	public Set<L> getAllLocationsView() {

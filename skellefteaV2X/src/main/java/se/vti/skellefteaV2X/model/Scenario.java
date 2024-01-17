@@ -51,7 +51,7 @@ public class Scenario {
 
 	private int maxParkingEpisodes = 4;
 	private boolean allowHomeCharging = true;
-	
+
 	private final Set<Location> locations = new LinkedHashSet<>();
 
 	private final Map<Tuple<Location, Location>, Double> od2distance_km = new LinkedHashMap<>();
@@ -162,10 +162,11 @@ public class Scenario {
 
 		double locationProposalWeight = 0.1;
 		double chargingProposalWeight = 0.3;
-		double departureProposalWeight = 0.6;
+		double departureProposalWeight = 0.59;
+		double doNothingWeight = 0.01; // for aperiodicity
 
 		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(this.maxParkingEpisodes,
-				getBinCnt(), locationProposalWeight, departureProposalWeight, chargingProposalWeight);
+				getBinCnt(), locationProposalWeight, departureProposalWeight, chargingProposalWeight, doNothingWeight);
 		configuration.addLocations(this.getLocationsView());
 		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(configuration, simulator);
 		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());

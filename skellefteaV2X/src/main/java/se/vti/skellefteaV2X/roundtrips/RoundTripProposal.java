@@ -82,10 +82,10 @@ public class RoundTripProposal<L> implements MHProposal<RoundTrip<L>> {
 					Math.log(this.config.getChargingProposalProbability()) + transition.getBwdLogProb());
 			return transition;
 
-		} else {
+		} else { // do nothing
 
-			return null; // should not happen
-
+			return new MHTransition<>(state, state.clone(), Math.log(this.config.getDoNothingProbability()),
+					Math.log(this.config.getDoNothingProbability()));
 		}
 	}
 }

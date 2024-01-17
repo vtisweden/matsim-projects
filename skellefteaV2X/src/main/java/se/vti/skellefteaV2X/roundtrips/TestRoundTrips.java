@@ -46,9 +46,10 @@ public class TestRoundTrips {
 
 		final double locationProba = 0.1;
 		final double departureProba = 0.7;
-		final double chargingProba = 1.0 - locationProba - departureProba;
+		final double chargingProba = 0.19;
+		final double doNothingProba = 0.01;
 		final RoundTripConfiguration<Integer> scenario = new RoundTripConfiguration<>(4, 8, locationProba, departureProba,
-				chargingProba, new Random());
+				chargingProba, doNothingProba, new Random());
 		for (int i = 1; i <= 3; i++) {
 			scenario.addLocation(i);
 		}
