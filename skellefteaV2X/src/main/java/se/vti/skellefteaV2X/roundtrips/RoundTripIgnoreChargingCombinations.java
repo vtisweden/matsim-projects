@@ -17,32 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
+package se.vti.skellefteaV2X.roundtrips;
 
-import se.vti.skellefteaV2X.model.DrivingEpisode;
-import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
  * 
  * @author GunnarF
  *
+ * @param <L>
  */
-public class TravelDurationPreference extends Component {
-
-	private final double targetDuration_h;
-
-	public TravelDurationPreference(double targetDuration_h) {
-		this.targetDuration_h = targetDuration_h;
-	}
+public class RoundTripIgnoreChargingCombinations<L> implements MHWeight<RoundTrip<L>> {
 
 	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		double travelDuration_h = 0.0;
-		for (int i = 1; i < simulatedRoundTrip.episodeCnt(); i += 2) {
-			travelDuration_h += ((DrivingEpisode) simulatedRoundTrip.getEpisodes().get(i)).getDuration_h();
-		}
-		return -Math.abs(travelDuration_h - this.targetDuration_h);
+	public double logWeight(RoundTrip<L> state) {
+		return -Math.log(2.0) * state.locationCnt();
 	}
 
 }

@@ -65,6 +65,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 	private Map<Location, Double> location2isOvernightCharging = new LinkedHashMap<>();
 	private Map<Location, Double> location2isEnTourCharging = new LinkedHashMap<>();
 
+	private final double[] sizeCnt;
+	
 	double used_kWh = 0.0;
 	double charged_kWh = 0.0;
 
@@ -78,6 +80,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		this.timeListOfLocation2enRouteChargings_kWh = new ArrayList<>(scenario.getBinCnt());
 		this.timeListOfDriving = new ArrayList<>(scenario.getBinCnt());
 
+		this.sizeCnt = new double[scenario.getBinCnt() + 1];
+		
 		for (int i = 0; i < scenario.getBinCnt(); i++) {
 			this.timeListOfLocation2homeVisits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfLocation2homeChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
@@ -94,6 +98,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 	@Override
 	public void processRelevantState(SimulatedRoundTrip state, double sampleWeight) {
 
+		this.sizeCnt[state.locationCnt()] += sampleWeight;
+		
 		final ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
 
 		this.sequence2uses.compute(state.getLocationsView(), (s, c) -> c == null ? sampleWeight : c + sampleWeight);
@@ -208,7 +214,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 			PrintWriter writer = new PrintWriter(this.fileName);
 
-			writer.println("Pr(home parking)");
+			writer.println("Pr[home parking]");
 			writer.println();
 			for (Location l : locations) {
 				writer.print(l + "\t");
@@ -223,7 +229,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 			writer.println();
 
-			writer.println("E{amount charged at home} [kWh]");
+			writer.println("E[charging at home] [kW]");
 			writer.println();
 			for (Location l : locations) {
 				writer.print(l + "\t");
@@ -238,7 +244,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 			writer.println();
 
-			writer.println("Pr(parking en route)");
+			writer.println("Pr[parking en route]");
 			writer.println();
 			for (Location l : locations) {
 				writer.print(l + "\t");
@@ -253,7 +259,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 			writer.println();
 
-			writer.println("E{amount charged en route} [kWh]");
+			writer.println("E[charging en route] [kW]");
 			writer.println();
 			for (Location l : locations) {
 				writer.print(l + "\t");
@@ -268,7 +274,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 			writer.println();
 
-			writer.println("Pr(location is home)");
+			writer.println("Pr[location is home]");
 			writer.println();
 			for (Location l : locations) {
 				writer.println(l + "\t" + this.location2isHomeCnt.getOrDefault(l, 0.0) / acceptedSampleWeightSum());
@@ -282,7 +288,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			}
 
 			writer.println();
-			writer.println("Pr(charging at location)");
+			writer.println("Pr[charging at location]");
 			writer.println();
 			writer.println("\tovernight\ten route");
 			for (Location l : locations) {
@@ -310,6 +316,15 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			writer.println();
 			writer.println(this.acceptanceRate());
 
+			writer.println();
+			writer.println("LOCATION COUNT DISTRIBUTION");
+			writer.println();
+			for (int i = 0; i < this.sizeCnt.length; i++) {
+				System.out.println(i+"\t" + this.sizeCnt[i] / this.acceptedSampleWeightSum());
+			}
+			System.out.println();
+			
+			
 			final List<Map.Entry<List<Location>, Double>> usedLocs = this.sequence2uses.entrySet().stream()
 					.collect(Collectors.toList());
 			Collections.sort(usedLocs, new Comparator<Map.Entry<List<Location>, Double>>() {

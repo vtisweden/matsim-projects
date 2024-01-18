@@ -28,15 +28,14 @@ import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
-import se.vti.skellefteaV2X.preferences.AtHomePreference;
 import se.vti.skellefteaV2X.preferences.HomeLocationShare;
 import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.OffHomeLocationShare;
-import se.vti.skellefteaV2X.preferences.UniformOnlyOverLocationAndTimes;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
+import se.vti.skellefteaV2X.preferences.consistency.UniformOverLocationCount;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
@@ -115,29 +114,27 @@ public class Runner {
 
 		final Preferences consistencyPreferences = new Preferences();
 
-		consistencyPreferences.addComponent(new UniformOnlyOverLocationAndTimes());
-		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario));
-		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference());
-		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference());
-		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference());
+		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario), 1.0);
+		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
+		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
+		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 1.0);
+		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1.0);
 
 		// MODELING PREFERENCES
 
 		final Preferences modelingPreferences = new Preferences();
 
-		modelingPreferences.addComponent(new AtHomePreference(8.0, 6.0));
-
-		final HomeLocationShare homeShare = new HomeLocationShare();
+		final HomeLocationShare homeShare = new HomeLocationShare(8.0, 6.0, 5.0);
 		homeShare.setShare(boliden, 1.0);
 		homeShare.setShare(kage, 1.0);
 		homeShare.setShare(centrum, 5.0);
-		homeShare.setShare(campus, 0.1);
-		homeShare.setShare(hamn, 0.1);
+		homeShare.setShare(campus, 0.01);
+		homeShare.setShare(hamn, 0.01);
 		homeShare.setShare(burea, 1.0);
 		homeShare.setShare(burtrask, 1.0);
-		modelingPreferences.addComponent(homeShare);
+		modelingPreferences.addComponent(homeShare, 1.0 /* must be one */);
 
-		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare();
+		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare(10.0, 18.0, 5.0);
 		offHomeShare.setShare(boliden, 1.0);
 		offHomeShare.setShare(kage, 1.0);
 		offHomeShare.setShare(centrum, 5.0);
@@ -145,14 +142,14 @@ public class Runner {
 		offHomeShare.setShare(hamn, 2.0);
 		offHomeShare.setShare(burea, 1.0);
 		offHomeShare.setShare(burtrask, 1.0);
-		modelingPreferences.addComponent(offHomeShare);
+		modelingPreferences.addComponent(offHomeShare, 1.0 /* must be one */);
 
 		// ANALYSIS PREFERENCES
 
 		final Preferences importanceSamplingPreferences = new Preferences();
 
 		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus);
-		localChargingPreference.setChargingAmountThreshold_kWh(20.0); // charge at least this much
+		localChargingPreference.setChargingAmountThreshold_kWh(10.0); // charge at least this much
 		importanceSamplingPreferences.addComponent(localChargingPreference, 0.1);
 
 		/*
@@ -180,6 +177,10 @@ public class Runner {
 	}
 
 	public static void main(String[] args) {
+
+		createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log").run();
+		System.exit(0);
+
 		final ExecutorService threadPool = Executors.newFixedThreadPool(4);
 		threadPool.execute(createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log"));
 //		threadPool.execute(createMHAlgorithmRunnable(20 * 1000 * 1000, "20-000-000_skelleftea.log"));

@@ -49,7 +49,7 @@ public class StrategyRealizationConsistency extends Component {
 				discrepancy_h += Math.abs(
 						this.scenario.getBinSize_h() * simulatedRoundTrip.getDeparture(i) - parking.getEndTime_h());
 			}
-			return -discrepancy_h;
+			return -discrepancy_h / 24.0;
 		}
 	}
 

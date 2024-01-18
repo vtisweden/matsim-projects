@@ -19,6 +19,9 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
+import java.util.Arrays;
+
+import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -28,13 +31,13 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class HomeLocationShare extends LocationShare {
 
-	public HomeLocationShare() {
-		super();
+	public HomeLocationShare(double duration_h, double endTime_h, double overlapStrictness) {
+		super(duration_h, endTime_h, overlapStrictness);
 	}
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		return this.location2logShare.get(simulatedRoundTrip.getHomeLocation()) - this.maxLogShare;
+		return this.logWeight(Arrays.asList((ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0)));
 	}
 
 }

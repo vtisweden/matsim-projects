@@ -22,6 +22,7 @@ package se.vti.skellefteaV2X.preferences.consistency;
 import se.vti.skellefteaV2X.model.DrivingEpisode;
 import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
+import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -31,6 +32,12 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class AllDayBatteryConstraintPreference extends Preferences.Component {
 
+	private Scenario scenario;
+	
+	public AllDayBatteryConstraintPreference(Scenario scenario) {
+		this.scenario = scenario;
+	}
+	
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
@@ -38,7 +45,7 @@ public class AllDayBatteryConstraintPreference extends Preferences.Component {
 		} else {
 			final ParkingEpisode home = (ParkingEpisode) roundTrip.getEpisodes().get(0);
 			final DrivingEpisode leaveHome = (DrivingEpisode) roundTrip.getEpisodes().get(1);
-			return -Math.abs(home.getChargeAtEnd_kWh() - leaveHome.getChargeAtStart_kWh());
+			return -Math.abs(home.getChargeAtEnd_kWh() - leaveHome.getChargeAtStart_kWh()) / this.scenario.getMaxCharge_kWh();
 		}
 	}
 }

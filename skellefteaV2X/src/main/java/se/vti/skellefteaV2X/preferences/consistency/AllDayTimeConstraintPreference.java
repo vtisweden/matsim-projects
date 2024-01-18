@@ -50,7 +50,7 @@ public class AllDayTimeConstraintPreference extends Preferences.Component {
 			final DrivingEpisode leaveHome = (DrivingEpisode) roundTrip.getEpisodes().get(1);
 			final double earliestLeaveHome_h = home.getEndTime_h() - 24.0 + this.minHomeDuration_h;
 			final double realizedLeaveHome_h = leaveHome.getEndTime_h() - leaveHome.getDuration_h();
-			return -Math.max(0.0, earliestLeaveHome_h - realizedLeaveHome_h);
+			return -Math.max(0.0, earliestLeaveHome_h - realizedLeaveHome_h) / 24.0;
 		}
 	}
 }

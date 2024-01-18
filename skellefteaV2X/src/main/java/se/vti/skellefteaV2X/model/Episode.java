@@ -32,6 +32,8 @@ import se.vti.utils.misc.math.MathHelpers;
  */
 public class Episode {
 
+	private MathHelpers math = new MathHelpers();
+
 	private Double duration_h = null;
 	private Double end_h = null;
 
@@ -92,6 +94,16 @@ public class Episode {
 				return Arrays.asList(new Tuple<>(start_h, withinDayEnd_h));
 			}
 		}
+	}
+
+	public double overlap_h(List<Tuple<Double, Double>> intervals) {
+		double overlap_h = 0.0;
+		for (Tuple<Double, Double> int1 : this.effectiveIntervals()) {
+			for (Tuple<Double, Double> int2 : intervals) {
+				overlap_h += this.math.overlap(int1.getA(), int1.getB(), int2.getA(), int2.getB());
+			}
+		}
+		return overlap_h;
 	}
 
 	public synchronized static List<Tuple<Double, Double>> effectiveIntervals(double duration_h, double end_h) {

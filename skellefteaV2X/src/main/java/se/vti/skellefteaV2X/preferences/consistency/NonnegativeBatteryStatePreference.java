@@ -21,6 +21,7 @@ package se.vti.skellefteaV2X.preferences.consistency;
 
 import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Preferences;
+import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -30,6 +31,12 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class NonnegativeBatteryStatePreference extends Preferences.Component {
 
+	private final Scenario scenario;
+	
+	public NonnegativeBatteryStatePreference(Scenario scenario) {
+		this.scenario = scenario;
+	}
+	
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
@@ -39,7 +46,7 @@ public class NonnegativeBatteryStatePreference extends Preferences.Component {
 			for (Episode e : roundTrip.getEpisodes()) {
 				minCharge_kWh = Math.min(minCharge_kWh, Math.min(e.getChargeAtStart_kWh(), e.getChargeAtEnd_kWh()));
 			}
-			return Math.min(0.0, minCharge_kWh);
+			return Math.min(0.0, minCharge_kWh) / this.scenario.getMaxCharge_kWh();
 		}
 	}
 }

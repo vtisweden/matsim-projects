@@ -19,20 +19,81 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+import floetteroed.utilities.Tuple;
+import se.vti.skellefteaV2X.model.Episode;
 import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
+import se.vti.utils.misc.math.MathHelpers;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public abstract class LocationShare extends Component {
 
-	protected final Map<Location, Double> location2logShare = new LinkedHashMap<>();
-	protected Double maxLogShare = null;
+	protected final MathHelpers math = new MathHelpers();
+
+	private final double duration_h;
+	private final double endTime_h;
+	private final double overlapStrictness;
+	private final List<Tuple<Double, Double>> targetIntervals;
+
+	private final Map<Location, Double> location2Share = new LinkedHashMap<>();
+	private double shareSum = 0.0;
+
+	public LocationShare(double duration_h, double endTime_h, double overlapStrictness) {
+		this.duration_h = duration_h;
+		this.endTime_h = endTime_h;
+		this.overlapStrictness = overlapStrictness;
+		this.targetIntervals = Collections.unmodifiableList(Episode.effectiveIntervals(duration_h, endTime_h));
+	}
 
 	public void setShare(Location location, double share) {
-		final double logShare = Math.log(share);
-		this.location2logShare.put(location, logShare);
-		this.maxLogShare = (this.maxLogShare == null ? logShare : Math.max(this.maxLogShare, logShare));
+		assert (!this.location2Share.containsKey(location));
+		this.shareSum += share;
+		this.location2Share.put(location, share);
 	}
+
+	double emphasize(double ratio) {
+		return Math.pow(ratio, this.overlapStrictness);
+//		double xThresh = 0.9;
+//		double yThreshVal = 0.1;
+//		if (ratio < xThresh) {
+//			return (yThreshVal / xThresh) * ratio;
+//		} else {
+//			double rel = (ratio - xThresh) / (1.0 - xThresh);
+//			return yThreshVal * (1.0 - rel) + 1.0 * rel;
+//		}
+	}
+
+	protected double logWeight(List<ParkingEpisode> parkingEpisodes) {
+
+		double maxOverlap_h = 0;
+		ParkingEpisode relevantEpisode = null;
+		for (ParkingEpisode p : parkingEpisodes) {
+			double overlap_h = p.overlap_h(this.targetIntervals);
+			if (relevantEpisode == null || overlap_h > maxOverlap_h) {
+				relevantEpisode = p;
+				maxOverlap_h = overlap_h;
+			}
+		}
+		assert (maxOverlap_h <= this.duration_h);
+
+		if (relevantEpisode == null) {
+			return Math.log(1e-8);
+		} else {
+			double weight = Math.pow(maxOverlap_h / this.duration_h, this.overlapStrictness)
+					* (this.location2Share.get(relevantEpisode.getLocation()) / this.shareSum);
+			return Math.log(Math.max(1e-8, weight));
+		}
+
+	}
+
 }

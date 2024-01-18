@@ -28,14 +28,11 @@ import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
-import se.vti.skellefteaV2X.preferences.AtHomePreference;
-import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
-import se.vti.skellefteaV2X.preferences.NotHomePreference;
-import se.vti.skellefteaV2X.preferences.UniformOnlyOverLocationAndTimes;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
+import se.vti.skellefteaV2X.preferences.consistency.UniformOverLocationCount;
 import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
@@ -111,11 +108,11 @@ public class Runner {
 		 */
 
 		Preferences consistencyPreferences = new Preferences();
-		consistencyPreferences.addComponent(new UniformOnlyOverLocationAndTimes());
+		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario));
 		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario));
 		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference());
-		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference());
-		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference());
+		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario));
+		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario));
 
 		Preferences allPreferences = new Preferences();
 		allPreferences.addPreferences(consistencyPreferences);
