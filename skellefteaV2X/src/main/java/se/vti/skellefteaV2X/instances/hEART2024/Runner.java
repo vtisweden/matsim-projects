@@ -113,18 +113,17 @@ public class Runner {
 		// CONSISTENCY PREFERENCES
 
 		final Preferences consistencyPreferences = new Preferences();
-
-		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario), 1.0);
-		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
-		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
-		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 1.0);
-		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1.0);
+		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario), 1.0 /* must be one */);
+		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1);
+		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1);
+		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 4);
+		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1);
 
 		// MODELING PREFERENCES
 
 		final Preferences modelingPreferences = new Preferences();
 
-		final HomeLocationShare homeShare = new HomeLocationShare(8.0, 6.0, 5.0);
+		final HomeLocationShare homeShare = new HomeLocationShare(8.0, 12.0, 6.0, 10.0);
 		homeShare.setShare(boliden, 1.0);
 		homeShare.setShare(kage, 1.0);
 		homeShare.setShare(centrum, 5.0);
@@ -134,7 +133,7 @@ public class Runner {
 		homeShare.setShare(burtrask, 1.0);
 		modelingPreferences.addComponent(homeShare, 1.0 /* must be one */);
 
-		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare(10.0, 18.0, 5.0);
+		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare(8.0, 12.0, 18.0, 10.0);
 		offHomeShare.setShare(boliden, 1.0);
 		offHomeShare.setShare(kage, 1.0);
 		offHomeShare.setShare(centrum, 5.0);
@@ -148,9 +147,8 @@ public class Runner {
 
 		final Preferences importanceSamplingPreferences = new Preferences();
 
-		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus);
-		localChargingPreference.setChargingAmountThreshold_kWh(10.0); // charge at least this much
-		importanceSamplingPreferences.addComponent(localChargingPreference, 0.1);
+//		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus, 10.0);
+//		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
 
 		/*
 		 * Run MH algorithm.
@@ -160,7 +158,7 @@ public class Runner {
 				importanceSamplingPreferences);
 		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
-		final long targetSamples = 100 * 1000;
+		final long targetSamples = 1000 * 1000;
 		final long burnInIterations = (iterations / 4);
 		final long samplingInterval = (iterations - burnInIterations) / targetSamples;
 		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
@@ -178,14 +176,14 @@ public class Runner {
 
 	public static void main(String[] args) {
 
-		createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log").run();
-		System.exit(0);
+//		createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log").run();
+//		System.exit(0);
 
 		final ExecutorService threadPool = Executors.newFixedThreadPool(4);
 		threadPool.execute(createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log"));
-//		threadPool.execute(createMHAlgorithmRunnable(20 * 1000 * 1000, "20-000-000_skelleftea.log"));
-//		threadPool.execute(createMHAlgorithmRunnable(40 * 1000 * 1000, "40-000-000_skelleftea.log"));
-//		threadPool.execute(createMHAlgorithmRunnable(80 * 1000 * 1000, "80-000-000_skelleftea.log"));
+		threadPool.execute(createMHAlgorithmRunnable(20 * 1000 * 1000, "20-000-000_skelleftea.log"));
+		threadPool.execute(createMHAlgorithmRunnable(40 * 1000 * 1000, "40-000-000_skelleftea.log"));
+		threadPool.execute(createMHAlgorithmRunnable(80 * 1000 * 1000, "80-000-000_skelleftea.log"));
 		threadPool.shutdown();
 		try {
 			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);

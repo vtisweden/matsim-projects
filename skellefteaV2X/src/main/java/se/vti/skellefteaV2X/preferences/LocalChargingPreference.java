@@ -37,9 +37,13 @@ public class LocalChargingPreference extends Component {
 	
 	private final Location location;
 
-	public LocalChargingPreference(Scenario scenario, Location location) {
+	private final double minCharging_kWh;
+	
+	public LocalChargingPreference(Scenario scenario, Location location, double minCharging_kWh) {
 		this.scenario = scenario;
 		this.location = location;
+		this.minCharging_kWh = minCharging_kWh;
+		this.setLogWeightThreshold(-1e-8);
 	}
 
 	@Override
@@ -53,12 +57,7 @@ public class LocalChargingPreference extends Component {
 				}
 			}
 		}
-		amount_kWh = Math.min(amount_kWh, this.scenario.getMaxCharge_kWh());		
-		return amount_kWh - this.scenario.getMaxCharge_kWh();
+		return Math.min(0.0, amount_kWh - this.minCharging_kWh) / this.scenario.getMaxCharge_kWh();
 	}
 
-	public void setChargingAmountThreshold_kWh(double threshold_kWh) {
-		this.setLogWeightThreshold(threshold_kWh - this.scenario.getMaxCharge_kWh());
-	}
-	
 }

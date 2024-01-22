@@ -157,6 +157,10 @@ public class Scenario {
 	public void setMaxParkingEpisodes(int maxParkingEpisodes) {
 		this.maxParkingEpisodes = maxParkingEpisodes;
 	}
+	
+	public int getMaxParkingEpisodes() {
+		return this.maxParkingEpisodes;
+	}
 
 	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences, Simulator simulator) {
 

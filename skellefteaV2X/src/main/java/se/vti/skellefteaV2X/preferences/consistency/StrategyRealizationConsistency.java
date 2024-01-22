@@ -37,8 +37,7 @@ public class StrategyRealizationConsistency extends Component {
 		this.scenario = scenario;
 	}
 
-	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
+	public double discrepancy_h(SimulatedRoundTrip simulatedRoundTrip) {
 		if (simulatedRoundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
@@ -49,8 +48,13 @@ public class StrategyRealizationConsistency extends Component {
 				discrepancy_h += Math.abs(
 						this.scenario.getBinSize_h() * simulatedRoundTrip.getDeparture(i) - parking.getEndTime_h());
 			}
-			return -discrepancy_h / 24.0;
+			return discrepancy_h;
 		}
+	}
+
+	@Override
+	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
+		return -this.discrepancy_h(simulatedRoundTrip) / 24.0;
 	}
 
 }

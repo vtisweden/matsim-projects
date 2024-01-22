@@ -31,8 +31,8 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class HomeLocationShare extends LocationShare {
 
-	public HomeLocationShare(double duration_h, double endTime_h, double overlapStrictness) {
-		super(duration_h, endTime_h, overlapStrictness);
+	public HomeLocationShare(double targetDuration_h, double duration_h, double endTime_h, double overlapStrictness) {
+		super(targetDuration_h, duration_h, endTime_h, overlapStrictness);
 	}
 
 	@Override

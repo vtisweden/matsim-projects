@@ -37,8 +37,7 @@ public class NonnegativeBatteryStatePreference extends Preferences.Component {
 		this.scenario = scenario;
 	}
 	
-	@Override
-	public double logWeight(SimulatedRoundTrip roundTrip) {
+	public double discrepancy_kWh(SimulatedRoundTrip roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
@@ -46,7 +45,12 @@ public class NonnegativeBatteryStatePreference extends Preferences.Component {
 			for (Episode e : roundTrip.getEpisodes()) {
 				minCharge_kWh = Math.min(minCharge_kWh, Math.min(e.getChargeAtStart_kWh(), e.getChargeAtEnd_kWh()));
 			}
-			return Math.min(0.0, minCharge_kWh) / this.scenario.getMaxCharge_kWh();
-		}
+			return Math.max(0.0, -minCharge_kWh);
+		}		
+	}
+	
+	@Override
+	public double logWeight(SimulatedRoundTrip roundTrip) {
+		return -this.discrepancy_kWh(roundTrip) / this.scenario.getMaxCharge_kWh();
 	}
 }

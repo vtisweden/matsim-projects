@@ -38,14 +38,18 @@ public class AllDayBatteryConstraintPreference extends Preferences.Component {
 		this.scenario = scenario;
 	}
 	
-	@Override
-	public double logWeight(SimulatedRoundTrip roundTrip) {
+	public double discrepancy_kWh(SimulatedRoundTrip roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
 			final ParkingEpisode home = (ParkingEpisode) roundTrip.getEpisodes().get(0);
 			final DrivingEpisode leaveHome = (DrivingEpisode) roundTrip.getEpisodes().get(1);
-			return -Math.abs(home.getChargeAtEnd_kWh() - leaveHome.getChargeAtStart_kWh()) / this.scenario.getMaxCharge_kWh();
-		}
+			return Math.abs(home.getChargeAtEnd_kWh() - leaveHome.getChargeAtStart_kWh());
+		}		
+	}
+	
+	@Override
+	public double logWeight(SimulatedRoundTrip roundTrip) {
+		return -this.discrepancy_kWh(roundTrip) / this.scenario.getMaxCharge_kWh();
 	}
 }

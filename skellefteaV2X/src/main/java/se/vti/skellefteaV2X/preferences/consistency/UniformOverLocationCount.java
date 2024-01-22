@@ -41,7 +41,7 @@ public class UniformOverLocationCount extends Preferences.Component {
 	public UniformOverLocationCount(Scenario scenario) {
 		this.correctChargingCombinations = new RoundTripIgnoreChargingCombinations<>();
 		this.correctDepartureCombinations = new RoundTripIgnoreDepartureCombinations<>(scenario.getBinCnt());
-		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinations<>(scenario.getLocationCnt());
+		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinations<>(scenario.getLocationCnt(), scenario.getMaxParkingEpisodes());
 	}
 
 	@Override

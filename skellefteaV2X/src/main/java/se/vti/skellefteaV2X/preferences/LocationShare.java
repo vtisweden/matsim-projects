@@ -40,19 +40,23 @@ public abstract class LocationShare extends Component {
 
 	protected final MathHelpers math = new MathHelpers();
 
-	private final double duration_h;
+	private final double targetDuration_h;
+	private final double intervalDuration_h;
 	private final double endTime_h;
+	private final double compliance = 0.5;
 	private final double overlapStrictness;
 	private final List<Tuple<Double, Double>> targetIntervals;
 
 	private final Map<Location, Double> location2Share = new LinkedHashMap<>();
 	private double shareSum = 0.0;
 
-	public LocationShare(double duration_h, double endTime_h, double overlapStrictness) {
-		this.duration_h = duration_h;
+	public LocationShare(double targetDuration_h, double intervalDuration_h, double endTime_h,
+			double overlapStrictness) {
+		this.targetDuration_h = targetDuration_h;
+		this.intervalDuration_h = intervalDuration_h;
 		this.endTime_h = endTime_h;
 		this.overlapStrictness = overlapStrictness;
-		this.targetIntervals = Collections.unmodifiableList(Episode.effectiveIntervals(duration_h, endTime_h));
+		this.targetIntervals = Collections.unmodifiableList(Episode.effectiveIntervals(intervalDuration_h, endTime_h));
 	}
 
 	public void setShare(Location location, double share) {
@@ -84,12 +88,12 @@ public abstract class LocationShare extends Component {
 				maxOverlap_h = overlap_h;
 			}
 		}
-		assert (maxOverlap_h <= this.duration_h);
+		maxOverlap_h = Math.min(maxOverlap_h, this.targetDuration_h);
 
 		if (relevantEpisode == null) {
 			return Math.log(1e-8);
 		} else {
-			double weight = Math.pow(maxOverlap_h / this.duration_h, this.overlapStrictness)
+			double weight = Math.pow(maxOverlap_h / this.targetDuration_h, this.overlapStrictness)
 					* (this.location2Share.get(relevantEpisode.getLocation()) / this.shareSum);
 			return Math.log(Math.max(1e-8, weight));
 		}

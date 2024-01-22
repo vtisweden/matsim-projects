@@ -38,6 +38,10 @@ import se.vti.skellefteaV2X.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
+import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
+import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
+import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
 import se.vti.utils.misc.math.MathHelpers;
 
 /**
@@ -69,6 +73,16 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 	
 	double used_kWh = 0.0;
 	double charged_kWh = 0.0;
+	
+	private AllDayBatteryConstraintPreference batteryWrapAround;
+	private AllDayTimeConstraintPreference timeWrapAround;
+	private NonnegativeBatteryStatePreference nonnegativeBattery;
+	private StrategyRealizationConsistency consistentRealization;
+	
+	double batteryWrapAroundDiscrepancy_kWh = 0.0;
+	double timeWrapAroundDiscrepancy_h = 0.0;
+	double nonnegativeBatteryDiscrepancy_kWh = 0.0;
+	double ralizationDiscrepancy_h = 0.0;
 
 	public LocationVisitAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval, String fileName,
 			Preferences importanceSamplingPreferences) {
@@ -89,6 +103,11 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			this.timeListOfLocation2enRouteChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfDriving.add(0.0);
 		}
+		
+		this.batteryWrapAround = new AllDayBatteryConstraintPreference(scenario);
+		this.timeWrapAround = new AllDayTimeConstraintPreference();
+		this.nonnegativeBattery = new NonnegativeBatteryStatePreference(scenario);
+		this.consistentRealization = new StrategyRealizationConsistency(scenario);
 	}
 
 	public LocationVisitAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval, String fileName) {
@@ -98,6 +117,11 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 	@Override
 	public void processRelevantState(SimulatedRoundTrip state, double sampleWeight) {
 
+		this.batteryWrapAroundDiscrepancy_kWh += sampleWeight * this.batteryWrapAround.discrepancy_kWh(state);
+		this.timeWrapAroundDiscrepancy_h += sampleWeight * this.timeWrapAround.discrepancy_h(state);
+		this.nonnegativeBatteryDiscrepancy_kWh += sampleWeight * this.nonnegativeBattery.discrepancy_kWh(state);
+		this.ralizationDiscrepancy_h += sampleWeight * this.consistentRealization.discrepancy_h(state);
+		
 		this.sizeCnt[state.locationCnt()] += sampleWeight;
 		
 		final ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
@@ -305,6 +329,14 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 					+ this.location2isEnTourCharging.values().stream().mapToDouble(f -> f).sum()
 							/ acceptedSampleWeightSum());
 
+			writer.println();
+			writer.println("CONSISTENCY DEVIATIONS");
+			writer.println();
+			writer.println("battery wrap-around [kWh]\t" + this.batteryWrapAroundDiscrepancy_kWh / acceptedSampleWeightSum());
+			writer.println("nonnegative battery [kWh]\t" + this.nonnegativeBatteryDiscrepancy_kWh / acceptedSampleWeightSum());
+			writer.println("time wrap-around      [h]\t" + this.timeWrapAroundDiscrepancy_h / acceptedSampleWeightSum());
+			writer.println("strategy consistency  [h]\t" + this.ralizationDiscrepancy_h / acceptedSampleWeightSum());
+			
 			writer.println();
 			writer.println("ENERGY CONSUMPTION");
 			writer.println();
