@@ -257,7 +257,7 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 		Hamming, Kernel
 	}
 
-	private PopulationDistanceType populationDistance = PopulationDistanceType.Hamming;
+	private PopulationDistanceType populationDistance = PopulationDistanceType.Kernel;
 
 	@StringGetter("populationDistance")
 	public PopulationDistanceType getPopulationDistance() {
