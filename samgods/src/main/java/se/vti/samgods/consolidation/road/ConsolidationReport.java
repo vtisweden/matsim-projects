@@ -47,13 +47,14 @@ public class ConsolidationReport {
 	}
 	
 	void add(Vehicle vehicle) {
-		for (Map.Entry<Shipment, Double> entry : vehicle.getAssignedShipments2tons().entrySet()) {
-			Tuple<ShipmentType, VehicleType> key = new Tuple<>(entry.getKey().getType(), vehicle.getType());
-			if (this.shipmentTypes.contains(key.getA()) && this.vehicleTypes.contains(key.getB())) {
-				this.commodityAndVehicle2Ton.compute(key,
-						(k, t) -> t == null ? entry.getValue() : t + entry.getValue());
-			}
-		}
+		throw new UnsupportedOperationException("TODO");
+//		for (Map.Entry<IndividualShipment, Double> entry : vehicle.getAssignedShipments2tons().entrySet()) {
+//			Tuple<ShipmentType, VehicleType> key = new Tuple<>(entry.getKey().getType(), vehicle.getType());
+//			if (this.shipmentTypes.contains(key.getA()) && this.vehicleTypes.contains(key.getB())) {
+//				this.commodityAndVehicle2Ton.compute(key,
+//						(k, t) -> t == null ? entry.getValue() : t + entry.getValue());
+//			}
+//		}
 	}
 
 	public String toString() {

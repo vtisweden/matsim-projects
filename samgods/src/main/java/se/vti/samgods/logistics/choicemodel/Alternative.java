@@ -20,7 +20,7 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import floetteroed.utilities.math.MathHelpers;
-import se.vti.samgods.logistics.Shipment;
+import se.vti.samgods.logistics.RecurrentShipment;
 
 /**
  * 
@@ -33,7 +33,7 @@ public class Alternative<C extends ShipmentCost> {
 
 	public final SizeClass sizeClass;
 
-	public final Shipment shipment;
+	public final RecurrentShipment shipment;
 
 	public final C cost;
 
@@ -41,7 +41,7 @@ public class Alternative<C extends ShipmentCost> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Alternative(final SizeClass sizeClass, final Shipment shipment, final C cost, final double utility) {
+	public Alternative(final SizeClass sizeClass, final RecurrentShipment shipment, final C cost, final double utility) {
 		this.sizeClass = sizeClass;
 		this.shipment = shipment;
 		this.cost = cost;

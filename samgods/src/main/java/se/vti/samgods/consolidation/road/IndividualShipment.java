@@ -22,45 +22,47 @@ package se.vti.samgods.consolidation.road;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import se.vti.samgods.SamgodsConstants.Commodity;
+
 /**
  * 
  * @author GunnarF
  *
  */
-public class Shipment {
-
-	private final Object id;
+public class IndividualShipment {
 
 	private final double weight_ton;
 
-	private final ShipmentType type;
+	private final Commodity commodity;
+
+	private final double probability;
 
 	private final Map<Vehicle, Double> assignedVehicle2tons = new LinkedHashMap<>();
 
-	public Shipment(final Object id, final double weight_ton, final ShipmentType type) {
-		this.id = id;
+	public IndividualShipment(final double weight_ton, final Commodity commodity, double probability) {
 		this.weight_ton = weight_ton;
-		this.type = type;
+		this.commodity = commodity;
+		this.probability = probability;
 	}
 
 	public double allocatedShare_ton() {
 		return this.assignedVehicle2tons.values().stream().mapToDouble(t -> t).sum();
 	}
 
-	public Object getId() {
-		return this.id;
-	}
-
 	public double getWeight_ton() {
 		return this.weight_ton;
 	}
 
-	public double getVolume_m3() {
-		return this.type.computeVolume_m3(this.getWeight_ton());
+	public double getProbability() {
+		return this.probability;
 	}
 
-	public ShipmentType getType() {
-		return this.type;
+//	public double getVolume_m3() {
+//		return this.type.computeVolume_m3(this.getWeight_ton());
+//	}
+
+	public Commodity getType() {
+		return this.commodity;
 	}
 
 	public Map<Vehicle, Double> getAssignedVehicle2tons() {
@@ -85,7 +87,7 @@ public class Shipment {
 
 	@Override
 	public String toString() {
-		return this.id + "(weight=" + this.weight_ton + "ton,type=" + type.getName() + ")";
+		return this.getClass().getSimpleName() + "(weight=" + this.weight_ton + "ton,type=" + this.commodity + ")";
 	}
 
 }

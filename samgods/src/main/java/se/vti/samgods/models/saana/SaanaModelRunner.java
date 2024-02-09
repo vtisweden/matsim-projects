@@ -28,7 +28,7 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.logistics.Shipment;
+import se.vti.samgods.logistics.RecurrentShipment;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportChainUtils;
 import se.vti.samgods.logistics.TransportDemand;
@@ -132,7 +132,7 @@ public class SaanaModelRunner {
 		BasicShipmentCostFunction costFunction = new BasicShipmentCostFunction(transportPrices);
 		// (Choice model) shipment utility, given its properties and (monetary) cost.
 		ShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new ShipmentUtilityFunction<>() {
-			public double computeUtility(Shipment shipment, BasicShipmentCost shipmentCost) {
+			public double computeUtility(RecurrentShipment shipment, BasicShipmentCost shipmentCost) {
 				return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr(); // for testing
 			}
 		};

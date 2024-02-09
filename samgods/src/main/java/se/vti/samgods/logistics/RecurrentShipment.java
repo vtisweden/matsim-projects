@@ -30,7 +30,7 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
  * @author GunnarF
  *
  */
-public class Shipment {
+public class RecurrentShipment {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -44,7 +44,7 @@ public class Shipment {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Shipment(Commodity commodity, TransportChain transportChain, double size_ton, double frequency_1_yr) {
+	public RecurrentShipment(Commodity commodity, TransportChain transportChain, double size_ton, double frequency_1_yr) {
 		this.commodity = commodity;
 		this.transportChain = transportChain;
 		this.size_ton = size_ton;

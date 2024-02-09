@@ -33,7 +33,7 @@ public class Vehicle {
 
 	private final VehicleType type;
 
-	private final Map<Shipment, Double> assignedShipment2tons = new LinkedHashMap<>();
+	private final Map<IndividualShipment, Double> assignedShipment2tons = new LinkedHashMap<>();
 
 	public Vehicle(final Object id, final VehicleType vehicleType) {
 		this.id = id;
@@ -48,15 +48,15 @@ public class Vehicle {
 		return this.type;
 	}
 
-	public Map<Shipment, Double> getAssignedShipments2tons() {
+	public Map<IndividualShipment, Double> getAssignedShipments2tons() {
 		return this.assignedShipment2tons;
 	}
 	
-	public void assignShipment(final Shipment shipment, final double tons) {
+	public void assignShipment(final IndividualShipment shipment, final double tons) {
 		this.assignedShipment2tons.put(shipment, tons);
 	}
 
-	public void unassignShipment(final Shipment shipment) {
+	public void unassignShipment(final IndividualShipment shipment) {
 		this.assignedShipment2tons.remove(shipment);
 	}
 
@@ -72,14 +72,14 @@ public class Vehicle {
 		return this.type.getCapacity_ton() - this.computePayload_ton();
 	}
 
-	public double computePayload_m3() {
-		return this.assignedShipment2tons.entrySet().stream()
-				.mapToDouble(e -> e.getKey().getType().computeVolume_m3(e.getValue())).sum();
-	}
+//	public double computePayload_m3() {
+//		return this.assignedShipment2tons.entrySet().stream()
+//				.mapToDouble(e -> e.getKey().getType().computeVolume_m3(e.getValue())).sum();
+//	}
 
-	public double computeRemainingCapacity_m3() {
-		return this.type.getCapacity_m3() - this.computePayload_m3();
-	}
+//	public double computeRemainingCapacity_m3() {
+//		return this.type.getCapacity_m3() - this.computePayload_m3();
+//	}
 
 	@Override
 	public String toString() {

@@ -26,29 +26,30 @@ package se.vti.samgods.consolidation.road;
  */
 public interface VehicleUtilityFunction {
 
-	default boolean computeCompatibility(Shipment shipment, Vehicle vehicle) {
+	default boolean computeCompatibility(IndividualShipment shipment, Vehicle vehicle) {
 		final double remainingCap_ton = vehicle.computeRemainingCapacity_ton();
 		if (remainingCap_ton < 0.1) { // TODO magic number
 			return false;
 		}
-		
-		// shipment must be compatible with vehicle type
-		if (shipment.getType().isCompatible(vehicle.getType())) {
-			// shipment must be splittable or there must be enough space in vehicle
-			if (shipment.getType().isSplittable() 
-					|| ((remainingCap_ton >= shipment.getWeight_ton() - 1e-8)
-							&& (vehicle.computeRemainingCapacity_m3() >= shipment.getVolume_m3() - 1e-8))) {
-				// the must be no incompatible other shipments in vehicle
-				if (vehicle.getAssignedShipments2tons().keySet().stream()
-						.filter(s -> !s.getType().isCompatible(shipment.getType())).findFirst().isEmpty()) {
-					return true;
-				}
-			}
-		}
-		return false;
+	
+		throw new UnsupportedOperationException("TODO");		
+//		// shipment must be compatible with vehicle type
+//		if (shipment.getType().isCompatible(vehicle.getType())) {
+//			// shipment must be splittable or there must be enough space in vehicle
+//			if (shipment.getType().isSplittable() 
+//					|| ((remainingCap_ton >= shipment.getWeight_ton() - 1e-8)
+//							&& (vehicle.computeRemainingCapacity_m3() >= shipment.getVolume_m3() - 1e-8))) {
+//				// the must be no incompatible other shipments in vehicle
+//				if (vehicle.getAssignedShipments2tons().keySet().stream()
+//						.filter(s -> !s.getType().isCompatible(shipment.getType())).findFirst().isEmpty()) {
+//					return true;
+//				}
+//			}
+//		}
+//		return false;
 	}
 
-	default double computeExtrapolatedUtility(Shipment shipment, Vehicle vehicle, double weightAllocatedSoFar_ton,
+	default double computeExtrapolatedUtility(IndividualShipment shipment, Vehicle vehicle, double weightAllocatedSoFar_ton,
 			double utilityReceivedSoFar) {
 		final double remainingWeightToAllocate_ton = Math.max(0.0, shipment.getWeight_ton() - weightAllocatedSoFar_ton);
 		final double newlyReceivedUtility = this.computeUtility(shipment, vehicle);
@@ -58,6 +59,6 @@ public interface VehicleUtilityFunction {
 				/ (weightAllocatedSoFar_ton + newlyAllocatedWeight_ton);
 	}
 
-	public double computeUtility(Shipment shipment, Vehicle vehicle);
+	public double computeUtility(IndividualShipment shipment, Vehicle vehicle);
 
 }

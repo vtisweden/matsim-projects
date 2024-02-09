@@ -38,7 +38,7 @@ public class Consolidator {
 
 	// -------------------- VARIABLES --------------------
 
-	public final Set<Shipment> shipments = new LinkedHashSet<>();
+	public final Set<IndividualShipment> shipments = new LinkedHashSet<>();
 
 	private final Set<Vehicle> vehicles = new LinkedHashSet<>();
 
@@ -59,11 +59,11 @@ public class Consolidator {
 		this.vehicles.addAll(vehicles);
 	}
 	
-	public void addShipment(Shipment shipment) {
+	public void addShipment(IndividualShipment shipment) {
 		this.shipments.add(shipment);
 	}
 	
-	public void addShipments(Collection<Shipment> shipments) {
+	public void addShipments(Collection<IndividualShipment> shipments) {
 		this.shipments.addAll(shipments);
 	}
 
@@ -75,10 +75,10 @@ public class Consolidator {
 
 	private void step() {
 
-		final List<Shipment> shipmentsToReplan = new ArrayList<>(this.shipments);
+		final List<IndividualShipment> shipmentsToReplan = new ArrayList<>(this.shipments);
 		Collections.shuffle(shipmentsToReplan);
 
-		for (Shipment shipment : shipmentsToReplan) {
+		for (IndividualShipment shipment : shipmentsToReplan) {
 
 			for (Vehicle vehicle : shipment.getAssignedVehicle2tons().keySet()) {
 				vehicle.unassignShipment(shipment);
@@ -147,9 +147,12 @@ public class Consolidator {
 	public ConsolidationReport createReport() {		
 		ConsolidationReport report = new ConsolidationReport();
 		this.vehicles.forEach(v -> report.addVehicleType(v.getType()));
-		this.shipments.forEach(s -> report.addShipmentType(s.getType()));
-		this.vehicles.forEach(v -> report.add(v));
-		return report;
+
+		throw new UnsupportedOperationException("TODO");
+//		this.shipments.forEach(s -> report.addShipmentType(s.getType()));
+
+		//		this.vehicles.forEach(v -> report.add(v));
+//		return report;
 	}
 	
 	public void startRun(int iterations) {

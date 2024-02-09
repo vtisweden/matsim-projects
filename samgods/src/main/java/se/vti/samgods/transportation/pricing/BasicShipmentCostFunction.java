@@ -22,7 +22,7 @@ package se.vti.samgods.transportation.pricing;
 import org.matsim.api.core.v01.network.Link;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.logistics.Shipment;
+import se.vti.samgods.logistics.RecurrentShipment;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.ShipmentCostFunction;
 import se.vti.samgods.transportation.pricing.TransportPrices.ShipmentPrices;
@@ -41,7 +41,7 @@ public class BasicShipmentCostFunction implements ShipmentCostFunction<BasicShip
 		this.transportPrices = transportPrices;
 	}
 
-	public BasicShipmentCost computeCost(final Shipment shipment) {
+	public BasicShipmentCost computeCost(final RecurrentShipment shipment) {
 
 		double transportCostSum = 0.0;
 		double durationSum_min = 0.0;

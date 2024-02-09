@@ -39,7 +39,7 @@ public class LogitVehicleSampler implements SingleVehicleSampler {
 	}
 
 	@Override
-	public Vehicle drawVehicle(final Shipment shipment, final Map<Vehicle, Double> vehicle2utility) {
+	public Vehicle drawVehicle(final IndividualShipment shipment, final Map<Vehicle, Double> vehicle2utility) {
 
 		if (vehicle2utility.size() == 0) {
 			return null;
