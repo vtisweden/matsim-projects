@@ -57,7 +57,7 @@ public class ConsolidationUtils {
 		final int numberOfCertainShipments = analysisPeriod_days / shipmentPeriod_days;
 		final List<Shipment> shipments = new ArrayList<>(numberOfCertainShipments + 1);
 		for (int i = 0; i < numberOfCertainShipments; i++) {
-			shipments.add(new Shipment(individualShipmentSize_ton, recurrentShipment.getCommmodity(), 1.0));
+			shipments.add(new Shipment(recurrentShipment.getCommmodity(), individualShipmentSize_ton, 1.0));
 		}
 
 		/*
@@ -68,8 +68,8 @@ public class ConsolidationUtils {
 		 */
 		final double additionalShipmentProba = ((double) (analysisPeriod_days % shipmentPeriod_days))
 				/ shipmentPeriod_days;
-		shipments.add(new Shipment(individualShipmentSize_ton, recurrentShipment.getCommmodity(),
-				additionalShipmentProba));
+		shipments.add(
+				new Shipment(recurrentShipment.getCommmodity(), individualShipmentSize_ton, additionalShipmentProba));
 
 		return shipments;
 	}

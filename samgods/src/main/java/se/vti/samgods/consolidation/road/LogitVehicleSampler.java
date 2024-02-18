@@ -29,7 +29,7 @@ import org.matsim.vehicles.Vehicle;
  * @author GunnarF
  *
  */
-public class LogitVehicleSampler implements SingleVehicleSampler {
+public class LogitVehicleSampler implements VehicleSampler {
 
 	private final double scale;
 

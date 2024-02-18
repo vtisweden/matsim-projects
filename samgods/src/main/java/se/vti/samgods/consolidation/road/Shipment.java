@@ -19,11 +19,6 @@
  */
 package se.vti.samgods.consolidation.road;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import org.matsim.vehicles.Vehicle;
-
 import se.vti.samgods.SamgodsConstants.Commodity;
 
 /**
@@ -33,26 +28,20 @@ import se.vti.samgods.SamgodsConstants.Commodity;
  */
 public class Shipment {
 
-	private final double weight_ton;
-
 	private final Commodity commodity;
+
+	private final double tons;
 
 	private final double probability;
 
-	private final Map<Vehicle, Double> assignedVehicle2tons = new LinkedHashMap<>();
-
-	public Shipment(final double weight_ton, final Commodity commodity, double probability) {
-		this.weight_ton = weight_ton;
+	public Shipment(final Commodity commodity, final double tons, double probability) {
 		this.commodity = commodity;
+		this.tons = tons;
 		this.probability = probability;
 	}
 
-	public double allocatedShare_ton() {
-		return this.assignedVehicle2tons.values().stream().mapToDouble(t -> t).sum();
-	}
-
 	public double getWeight_ton() {
-		return this.weight_ton;
+		return this.tons;
 	}
 
 	public double getProbability() {
@@ -63,29 +52,9 @@ public class Shipment {
 		return this.commodity;
 	}
 
-	public Map<Vehicle, Double> getAssignedVehicle2tons() {
-		return this.assignedVehicle2tons;
-	}
-
-//	public Map<VehicleType, Integer> getAssignedVehicleTypes() {
-//		final Map<VehicleType, Integer> type2cnt = new LinkedHashMap<>();
-//		this.assignedVehicle2tons.keySet().stream()
-//				.forEach(v -> type2cnt.compute(v.getType(), (t, c) -> c == null ? 1 : c + 1));
-//		return type2cnt;
-//	}
-
-	public void setAssignedVehicles(final Map<Vehicle, Double> vehicle2tons) {
-		this.assignedVehicle2tons.clear();
-		this.assignedVehicle2tons.putAll(vehicle2tons);
-	}
-
-	public void clearAssignedVehicle2tons() {
-		this.assignedVehicle2tons.clear();
-	}
-
 	@Override
 	public String toString() {
-		return this.getClass().getSimpleName() + "(weight=" + this.weight_ton + "ton,type=" + this.commodity + ")";
+		return this.commodity + "(weight=" + this.tons + "ton,proba=" + this.probability + ")";
 	}
 
 }

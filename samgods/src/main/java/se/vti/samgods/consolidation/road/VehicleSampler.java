@@ -28,7 +28,7 @@ import org.matsim.vehicles.Vehicle;
  * @author GunnarF
  *
  */
-public interface SingleVehicleSampler {
+public interface VehicleSampler {
 
 	public Vehicle drawVehicle(Shipment shipment, Map<Vehicle, Double> vehicle2utility);
 

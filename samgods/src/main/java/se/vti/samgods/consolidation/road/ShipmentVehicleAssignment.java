@@ -58,32 +58,44 @@ public class ShipmentVehicleAssignment {
 		this.vehicle2payload_ton.compute(vehicle, (v, pl) -> pl == null ? tons : pl + tons);
 	}
 
-	private <K, V> void reduceValueList(final K key, final V removeValue, final Map<K, LinkedList<V>> mapToModify) {
-		final List<V> valueList = mapToModify.get(key);
-		if (valueList.size() == 1) {
-			mapToModify.remove(key);
-		} else {
-			valueList.remove(removeValue);
+	private void takeShipmentOutOfVehicle(final Shipment shipment, final Vehicle vehicle,
+			final boolean modifyVehicleList) {
+
+		if (modifyVehicleList) {
+			final List<Vehicle> vehiclesUsedForShipment = this.shipment2vehicles.get(shipment);
+			if (vehiclesUsedForShipment.size() == 1) {
+				this.shipment2vehicles.remove(shipment);
+			} else {
+				vehiclesUsedForShipment.remove(vehicle);
+			}
 		}
-	}
 
-	public void unassign(final Shipment shipment, final Vehicle vehicle) {
-		assert (this.shipmentAndVehicle2tons.containsKey(new Tuple<>(shipment, vehicle)));
-
-		this.reduceValueList(shipment, vehicle, this.shipment2vehicles);
-		this.reduceValueList(vehicle, shipment, this.vehicle2shipments);
-
+		final List<Shipment> shipmentsInVehicle = this.vehicle2shipments.get(vehicle);
 		final Tuple<Shipment, Vehicle> shipmentAndVehicle = new Tuple<>(shipment, vehicle);
-		if (this.vehicle2shipments.containsKey(vehicle)) {
+		if (shipmentsInVehicle.size() == 1) {
+			this.vehicle2shipments.remove(vehicle);
+			this.vehicle2payload_ton.remove(vehicle);
+		} else {
+			shipmentsInVehicle.remove(shipment);
 			final double removedTons = this.shipmentAndVehicle2tons.get(shipmentAndVehicle);
 			this.vehicle2payload_ton.compute(vehicle, (v, pl) -> pl - removedTons);
-		} else { // We have removed the last shipment from the (now empty) vehicle.
-			this.vehicle2payload_ton.remove(vehicle);
 		}
 		this.shipmentAndVehicle2tons.remove(shipmentAndVehicle);
 	}
 
-	public void unassignAllShipments() {
+	public void unassign(final Shipment shipment, final Vehicle vehicle) {
+		assert (this.shipmentAndVehicle2tons.containsKey(new Tuple<>(shipment, vehicle)));
+		this.takeShipmentOutOfVehicle(shipment, vehicle, true);
+	}
+
+	public void unassign(final Shipment shipment) {
+		for (Vehicle vehicle : this.shipment2vehicles.get(shipment)) {
+			this.takeShipmentOutOfVehicle(shipment, vehicle, false);
+		}
+		this.shipment2vehicles.remove(shipment);
+	}
+
+	public void clear() {
 		this.shipment2vehicles.clear();
 		this.vehicle2shipments.clear();
 		this.shipmentAndVehicle2tons.clear();

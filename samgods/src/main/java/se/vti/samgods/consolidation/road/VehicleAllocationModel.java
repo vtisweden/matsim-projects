@@ -34,12 +34,12 @@ public class VehicleAllocationModel {
 
 	private final VehicleUtilityFunction utilityFunction;
 
-	private final SingleVehicleSampler vehicleSampler;
+	private final VehicleSampler sampler;
 
 	public VehicleAllocationModel(final VehicleUtilityFunction utilityFunction,
-			final SingleVehicleSampler vehicleSampler) {
+			final VehicleSampler sampler) {
 		this.utilityFunction = utilityFunction;
-		this.vehicleSampler = vehicleSampler;
+		this.sampler = sampler;
 	}
 
 	public Map<Vehicle, Double> allocate(final Shipment shipment, final Set<Vehicle> vehicles,
@@ -61,7 +61,7 @@ public class VehicleAllocationModel {
 				}
 			}
 
-			final Vehicle vehicle = this.vehicleSampler.drawVehicle(shipment, vehicle2extrapolatedUtility);
+			final Vehicle vehicle = this.sampler.drawVehicle(shipment, vehicle2extrapolatedUtility);
 			if (vehicle == null) {
 				return vehicle2ton;
 			}

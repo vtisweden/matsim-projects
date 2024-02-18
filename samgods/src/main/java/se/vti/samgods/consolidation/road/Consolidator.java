@@ -89,18 +89,11 @@ public class Consolidator {
 		Collections.shuffle(shipmentsToReplan);
 
 		for (Shipment shipment : shipmentsToReplan) {
-
-			for (Vehicle vehicle : shipment.getAssignedVehicle2tons().keySet()) {
-				this.assignment.unassign(shipment, vehicle);
-			}
-			shipment.clearAssignedVehicle2tons();
-
+			this.assignment.unassign(shipment);			
 			final Map<Vehicle, Double> vehicle2tons = this.vehicleAllocationModel.allocate(shipment, this.vehicles, this.assignment);
-
 			for (Map.Entry<Vehicle, Double> entry : vehicle2tons.entrySet()) {
 				this.assignment.assign(shipment, entry.getKey(), entry.getValue());
 			}
-			shipment.setAssignedVehicles(vehicle2tons);
 		}
 	}
 
@@ -166,7 +159,7 @@ public class Consolidator {
 //	}
 
 	public void startRun(int iterations) {
-		this.assignment.unassignAllShipments();
+		this.assignment.clear();
 		this.step();
 		this.continueRun(iterations);
 	}
