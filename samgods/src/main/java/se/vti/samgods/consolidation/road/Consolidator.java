@@ -98,7 +98,7 @@ public class Consolidator {
 			final Map<Vehicle, Double> vehicle2tons = this.vehicleAllocationModel.allocate(shipment, this.vehicles, this.assignment);
 
 			for (Map.Entry<Vehicle, Double> entry : vehicle2tons.entrySet()) {
-				this.assignment.addAssignment(shipment, entry.getKey(), entry.getValue());
+				this.assignment.assign(shipment, entry.getKey(), entry.getValue());
 			}
 			shipment.setAssignedVehicles(vehicle2tons);
 		}

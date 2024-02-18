@@ -19,12 +19,14 @@
  */
 package se.vti.samgods.consolidation.road;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.matsim.vehicles.Vehicle;
+
+import floetteroed.utilities.Tuple;
 
 /**
  * 
@@ -33,68 +35,63 @@ import org.matsim.vehicles.Vehicle;
  */
 public class ShipmentVehicleAssignment {
 
-	class Assignment {
-		final IndividualShipment shipment;
-		final Vehicle vehicle;
-		final double tons;
+	// -------------------- MEMBERS --------------------
 
-		Assignment(IndividualShipment shipment, Vehicle vehicle, double tons) {
-			this.shipment = shipment;
-			this.vehicle = vehicle;
-			this.tons = tons;
+	private final Map<IndividualShipment, LinkedList<Vehicle>> shipment2vehicles = new LinkedHashMap<>();
+	private final Map<Vehicle, LinkedList<IndividualShipment>> vehicle2shipments = new LinkedHashMap<>();
+	private final Map<Tuple<IndividualShipment, Vehicle>, Double> shipmentAndVehicle2tons = new LinkedHashMap<>();
+	private final Map<Vehicle, Double> vehicle2payload_ton = new LinkedHashMap<>();
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public ShipmentVehicleAssignment() {
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public void assign(final IndividualShipment shipment, final Vehicle vehicle, final double tons) {
+		this.shipment2vehicles.computeIfAbsent(shipment, s -> new LinkedList<>()).add(vehicle);
+		this.vehicle2shipments.computeIfAbsent(vehicle, v -> new LinkedList<>()).add(shipment);
+		this.shipmentAndVehicle2tons.put(new Tuple<>(shipment, vehicle), tons);
+		this.vehicle2payload_ton.compute(vehicle, (v, pl) -> pl == null ? tons : pl + tons);
+	}
+
+	private <K, V> void reduceValueList(K key, V removeValue, Map<K, LinkedList<V>> mapToModify) {
+		List<V> valueList = mapToModify.get(key);
+		if (valueList.size() == 1) {
+			mapToModify.remove(key);
+		} else {
+			valueList.remove(removeValue);
 		}
-	}
-
-	private Map<IndividualShipment, List<Assignment>> shipment2assignments = new LinkedHashMap<>();
-	private Map<Vehicle, List<Assignment>> vehicle2assignments = new LinkedHashMap<>();
-	private Map<Vehicle, Double> vehicle2payload_tons = new LinkedHashMap<>();
-
-	public List<Assignment> getAssignments(IndividualShipment shipment) {
-		return this.shipment2assignments.get(shipment);
-	}
-
-	public List<Assignment> getAssignments(Vehicle vehicle) {
-		return this.vehicle2assignments.get(vehicle);
-	}
-
-	public void addAssignment(final IndividualShipment shipment, final Vehicle vehicle, final double tons) {
-		if (shipment2assignments.containsKey(shipment)) {
-			throw new RuntimeException("Shipment is already assigned, unassign first.");
-		}
-		Assignment assignment = new Assignment(shipment, vehicle, tons);
-		this.shipment2assignments.computeIfAbsent(shipment, s -> new ArrayList<>()).add(assignment);
-		this.vehicle2assignments.computeIfAbsent(vehicle, v -> new ArrayList<>()).add(assignment);
-		this.vehicle2payload_tons.compute(vehicle, (v, pl) -> pl == null ? tons : pl + tons);
 	}
 
 	public void unassign(final IndividualShipment shipment, final Vehicle vehicle) {
-		Assignment assignmentToRemove = this.shipment2assignments.get(shipment).stream()
-				.filter(a -> a.vehicle.equals(vehicle)).findFirst().get();
-		List<Assignment> vehicleAssignments = this.vehicle2assignments.get(vehicle);
-		if (vehicleAssignments.size() == 1) {
-			assert (vehicleAssignments.get(0) == assignmentToRemove);
-			this.vehicle2assignments.remove(vehicle);
-			this.vehicle2payload_tons.remove(vehicle);
-		} else {
-			final int removeIndex = vehicleAssignments.indexOf(assignmentToRemove);
-			assert (vehicleAssignments.get(removeIndex) == assignmentToRemove);
-			vehicleAssignments.remove(removeIndex);
-			this.vehicle2payload_tons.compute(vehicle, (v, pl) -> pl - assignmentToRemove.tons);
+		this.reduceValueList(shipment, vehicle, this.shipment2vehicles);
+		this.reduceValueList(vehicle, shipment, this.vehicle2shipments);
+
+		final Tuple<IndividualShipment, Vehicle> shipmentAndVehicle = new Tuple<>(shipment, vehicle);
+		final double removedTons = this.shipmentAndVehicle2tons.get(shipmentAndVehicle);
+		this.shipmentAndVehicle2tons.remove(shipmentAndVehicle);
+		if (this.vehicle2shipments.containsKey(vehicle)) {
+			this.vehicle2payload_ton.compute(vehicle, (v, pl) -> pl - removedTons);
+		} else { // We have removed the last shipment from the (now empty) vehicle.
+			this.vehicle2payload_ton.remove(vehicle);
 		}
 	}
 
 	public void unassignAllShipments() {
-		this.shipment2assignments.clear();
-		this.vehicle2assignments.clear();
-		this.vehicle2payload_tons.clear();
+		this.shipment2vehicles.clear();
+		this.vehicle2shipments.clear();
+		this.shipmentAndVehicle2tons.clear();
+		this.vehicle2payload_ton.clear();
 	}
 
 	public double getPayload_ton(Vehicle vehicle) {
-		return this.vehicle2payload_tons.getOrDefault(vehicle, 0.0);
+		return this.vehicle2payload_ton.getOrDefault(vehicle, 0.0);
 	}
 
 	public double getRemainingCapacity_ton(Vehicle vehicle) {
-		return ConsolidationUtils.getCapacity_ton(vehicle) - this.vehicle2payload_tons.getOrDefault(vehicle, 0.0);
+		return ConsolidationUtils.getCapacity_ton(vehicle) - this.getPayload_ton(vehicle);
 	}
 
 }
