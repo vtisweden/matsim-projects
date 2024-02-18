@@ -134,11 +134,11 @@ public class EmulationEngine {
 	// TODO ATTENTION. This now produces and uses average scores over all travel
 	// times in the list.
 	public void replan(final int matsimIteration, final List<Map<String, ? extends TravelTime>> listOfMode2travelTime,
-			final Integer overrideTraveltimeIndex) {
+			final boolean overrideTravelTimesFromFirstListEntry) {
 		final ReplanningContext replanningContext = this.replanningContextProvider.get();
 
 		removeUnselectedPlans(this.scenario.getPopulation());
-		this.emulate(matsimIteration, listOfMode2travelTime, null, overrideTraveltimeIndex);
+		this.emulate(matsimIteration, listOfMode2travelTime, overrideTravelTimesFromFirstListEntry);
 
 		for (int i = 0; i < this.ierConfig.getIterationsPerCycle(); i++) {
 
@@ -156,7 +156,7 @@ public class EmulationEngine {
 			// Logger.getLogger("org.matsim").setLevel(originalLogLevel);
 			Logger.getRootLogger().setLevel(originalLogLevel);
 
-			this.emulate(matsimIteration, listOfMode2travelTime, null, overrideTraveltimeIndex);
+			this.emulate(matsimIteration, listOfMode2travelTime, overrideTravelTimesFromFirstListEntry);
 			selectBestPlans(this.scenario.getPopulation());
 			removeUnselectedPlans(this.scenario.getPopulation());
 
@@ -168,16 +168,16 @@ public class EmulationEngine {
 	// TODO ATTENTION. This now produces average scores over all travel times in the
 	// list.
 	public void emulate(int iteration, final List<Map<String, ? extends TravelTime>> listOfMode2travelTime,
-			EventHandler eventsHandler, final Integer overrideTraveltimeIndex) {
-		this.emulate(this.scenario.getPopulation().getPersons().values(), iteration, listOfMode2travelTime,
-				eventsHandler, overrideTraveltimeIndex);
+			final boolean overrideTravelTimesFromFirstListEntry) {
+		this.emulate(this.scenario.getPopulation().getPersons().values(), iteration, listOfMode2travelTime, null,
+				overrideTravelTimesFromFirstListEntry);
 	}
 
 	// TODO ATTENTION. This now produces average scores over all travel times in the
 	// list.
 	public void emulate(Collection<? extends Person> persons, int iteration,
 			final List<Map<String, ? extends TravelTime>> listOfMode2travelTime, final EventHandler eventsHandler,
-			final Integer overrideTraveltimeIndex) {
+			final boolean overrideTravelTimesFromFirstListEntry) {
 
 		Iterator<? extends Person> personIterator = persons.iterator();
 		List<Thread> threads = new LinkedList<>();
@@ -242,7 +242,7 @@ public class EmulationEngine {
 							planEmulator.emulate(person, person.getSelectedPlan(), // eventsManager,
 									mode2travelTime, eventsHandler, this.emulationHandlerProvider, iteration,
 									eventsManager, events2score,
-									(overrideTraveltimeIndex != null) && (overrideTraveltimeIndex == travelTimeIndex));
+									overrideTravelTimesFromFirstListEntry && (travelTimeIndex == 0));
 						}
 
 						events2score.finish();

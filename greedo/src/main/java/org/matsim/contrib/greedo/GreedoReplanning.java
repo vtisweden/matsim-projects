@@ -21,7 +21,6 @@ package org.matsim.contrib.greedo;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -30,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -42,7 +42,6 @@ import org.matsim.core.controler.events.AfterMobsimEvent;
 import org.matsim.core.controler.events.ReplanningEvent;
 import org.matsim.core.controler.listener.AfterMobsimListener;
 import org.matsim.core.controler.listener.ReplanningListener;
-import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.router.util.TravelTime;
 
 import com.google.inject.Inject;
@@ -343,11 +342,11 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 //		final List<Map<Id<Person>, Double>> personId2oldScoreOverReplications = new ArrayList<>(memory);
 		EmulationEngine emulationEngine = this.emulationEngineProvider.get();
 //		replanningEngine.setOverwriteTravelTimes(false);
-		emulationEngine.emulate(this.replanIteration.intValue(), listOfMode2travelTimes4emulation, null, null);
+		emulationEngine.emulate(this.replanIteration.intValue(), listOfMode2travelTimes4emulation, true);
 //		this.emulateAgainstAllTravelTimes(personId2oldScoreOverReplications, emulatedEventsChecker, true,
 //				listOfMode2travelTimes4emulation);
-		Plans oldPlans = new Plans(this.services.getScenario().getPopulation());
-		// TODO hier die alten avg scores entnehmen
+		final Plans oldPlans = new Plans(this.services.getScenario().getPopulation());
+//		final double oldAvgScore = oldPlans.getSumOfSelectedPlanScores() / this.personIds.size();
 
 		this.emulationErrorAnalyzer.setEmulatedScores(this.services.getScenario().getPopulation());
 		if (emulatedEventsChecker != null) {
@@ -357,11 +356,11 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 //		final List<Map<Id<Person>, Double>> personId2newScoreOverReplications = new ArrayList<>(memory);
 		final EmulationEngine replanningEngine = this.emulationEngineProvider.get();
 //		replanningEngine.setOverwriteTravelTimes(false);
-		replanningEngine.replan(event.getIteration(), listOfMode2travelTimes4emulation, null);
+		replanningEngine.replan(event.getIteration(), listOfMode2travelTimes4emulation, true);
 		// this.emulateAgainstAllTravelTimes(personId2newScoreOverReplications, null,
 		// true, mode2travelTimesForEmulation);
-		Plans newPlans = new Plans(event.getServices().getScenario().getPopulation());
-		// TODO hier die neuen avg scores entnehmen
+		final Plans newPlans = new Plans(event.getServices().getScenario().getPopulation());
+//		final double newAvgScore = newPlans.getSumOfSelectedPlanScores() / this.personIds.size();
 
 		/*
 		 * (2) Compute intermediate statistics.
@@ -373,33 +372,33 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 //						.getAsDouble();
 //		this.gap = null;
 
-		final double lagWeight = 1.0 / memory;
-		final Map<Id<Person>, Double> personId2FilteredGap = new LinkedHashMap<>(this.personIds.size());
-//		final Map<Id<Person>, Double> personId2filteredOldScore = new LinkedHashMap<>(this.personIds.size());
-		for (Id<Person> personId : this.personIds) {
-			double filteredGap = 0.0;
-//			double filteredOldScore = 0.0;
-			for (int lag = 0; lag < memory; lag++) {
-//				filteredGap += lagWeight * (personId2newScoreOverReplications.get(lag).get(personId)
-//						- personId2oldScoreOverReplications.get(lag).get(personId));
-				filteredGap += lagWeight * (newPlans.getSelectedPlan(personId).getScore()
-						- oldPlans.getSelectedPlan(personId).getScore());
-//				filteredOldScore += lagWeight * personId2oldScoreOverReplications.get(lag).get(personId);
-			}
-			personId2FilteredGap.put(personId, filteredGap);
-//			personId2filteredOldScore.put(personId, filteredOldScore);
-		}
+		final Map<Id<Person>, Double> personId2FilteredGap = this.personIds.stream().collect(Collectors.toMap(id -> id,
+				id -> (newPlans.getSelectedPlan(id).getScore() - oldPlans.getSelectedPlan(id).getScore())));
+
+		/*
+		 * final double lagWeight = 1.0 / memory; final Map<Id<Person>, Double>
+		 * personId2FilteredGap = new LinkedHashMap<>(this.personIds.size()); // final
+		 * Map<Id<Person>, Double> personId2filteredOldScore = new
+		 * LinkedHashMap<>(this.personIds.size()); for (Id<Person> personId :
+		 * this.personIds) { double filteredGap = 0.0; // double filteredOldScore = 0.0;
+		 * for (int lag = 0; lag < memory; lag++) { // filteredGap += lagWeight *
+		 * (personId2newScoreOverReplications.get(lag).get(personId) // -
+		 * personId2oldScoreOverReplications.get(lag).get(personId)); filteredGap +=
+		 * lagWeight * (newPlans.getSelectedPlan(personId).getScore() -
+		 * oldPlans.getSelectedPlan(personId).getScore()); // filteredOldScore +=
+		 * lagWeight * personId2oldScoreOverReplications.get(lag).get(personId); }
+		 * personId2FilteredGap.put(personId, filteredGap); //
+		 * personId2filteredOldScore.put(personId, filteredOldScore); }
+		 */
 
 		{
-			// TODO Emulator takes care of this. Pass an index (or null) of the travel times from which
-			// plan tts are to be overwritten.
-			
+			// TODO ONLY FOR TESTING
+
 			emulationEngine = this.emulationEngineProvider.get();
 //			emulationEngine.setOverwriteTravelTimes(true);
 			oldPlans.set(this.services.getScenario().getPopulation());
 			emulationEngine.emulate(this.replanIteration.intValue(),
-					Collections.singletonList(this.listOfMode2travelTimes.getFirst()), null, 0);
-			oldPlans = new Plans(this.services.getScenario().getPopulation());
+					Collections.singletonList(this.listOfMode2travelTimes.getFirst()), false);
 			this.gap = (-1.0) * this.services.getScenario().getPopulation().getPersons().values().stream()
 					.mapToDouble(p -> p.getSelectedPlan().getScore()).average().getAsDouble();
 
@@ -407,8 +406,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 //			emulationEngine.setOverwriteTravelTimes(true);
 			newPlans.set(this.services.getScenario().getPopulation());
 			emulationEngine.emulate(this.replanIteration.intValue(),
-					Collections.singletonList(this.listOfMode2travelTimes.getFirst()), null, 0);
-			newPlans = new Plans(this.services.getScenario().getPopulation());
+					Collections.singletonList(this.listOfMode2travelTimes.getFirst()), false);
 			this.gap += this.services.getScenario().getPopulation().getPersons().values().stream()
 					.mapToDouble(p -> p.getSelectedPlan().getScore()).average().getAsDouble();
 		}
