@@ -22,6 +22,8 @@ package se.vti.samgods.consolidation.road;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.matsim.vehicles.Vehicle;
+
 import se.vti.samgods.SamgodsConstants.Commodity;
 
 /**
@@ -57,10 +59,6 @@ public class IndividualShipment {
 		return this.probability;
 	}
 
-//	public double getVolume_m3() {
-//		return this.type.computeVolume_m3(this.getWeight_ton());
-//	}
-
 	public Commodity getType() {
 		return this.commodity;
 	}
@@ -69,12 +67,12 @@ public class IndividualShipment {
 		return this.assignedVehicle2tons;
 	}
 
-	public Map<VehicleType, Integer> getAssignedVehicleTypes() {
-		final Map<VehicleType, Integer> type2cnt = new LinkedHashMap<>();
-		this.assignedVehicle2tons.keySet().stream()
-				.forEach(v -> type2cnt.compute(v.getType(), (t, c) -> c == null ? 1 : c + 1));
-		return type2cnt;
-	}
+//	public Map<VehicleType, Integer> getAssignedVehicleTypes() {
+//		final Map<VehicleType, Integer> type2cnt = new LinkedHashMap<>();
+//		this.assignedVehicle2tons.keySet().stream()
+//				.forEach(v -> type2cnt.compute(v.getType(), (t, c) -> c == null ? 1 : c + 1));
+//		return type2cnt;
+//	}
 
 	public void setAssignedVehicles(final Map<Vehicle, Double> vehicle2tons) {
 		this.assignedVehicle2tons.clear();

@@ -22,10 +22,14 @@ package se.vti.samgods.consolidation.road;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 /**
  * 
@@ -36,39 +40,45 @@ public class Consolidator {
 
 	// -------------------- CONSTANTS --------------------
 
+	private final VehicleAllocationModel vehicleAllocationModel;
+
 	// -------------------- VARIABLES --------------------
 
-	public final Set<IndividualShipment> shipments = new LinkedHashSet<>();
+	// exogeneously set
 
-	private final Set<Vehicle> vehicles = new LinkedHashSet<>();
+	private final Map<VehicleType, Integer> vehicleType2maxNumber = new LinkedHashMap<>();
 
-	private VehicleAllocationModel vehicleSampler = null;
+	private final Set<IndividualShipment> shipments = new LinkedHashSet<>();
 
+	// endogeneous
+
+	private final ShipmentVehicleAssignment assignment = new ShipmentVehicleAssignment();
+	
+	// TODO populate!
+	private Set<Vehicle> vehicles = new LinkedHashSet<>();
+	
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator() {
+	public Consolidator(VehicleAllocationModel vehicleAllocationModel) {
+		this.vehicleAllocationModel = vehicleAllocationModel;
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
 
-	public void addVehicle(Vehicle vehicle) {
-		this.vehicles.add(vehicle);
+	public void addVehicleType(VehicleType vehicleType) {
+		this.vehicleType2maxNumber.put(vehicleType, Integer.MAX_VALUE);
 	}
 
-	public void addVehicles(Collection<Vehicle> vehicles) {
-		this.vehicles.addAll(vehicles);
+	public void addVehicleType(VehicleType vehicleType, int maxNumber) {
+		this.vehicleType2maxNumber.put(vehicleType, maxNumber);
 	}
-	
+
 	public void addShipment(IndividualShipment shipment) {
 		this.shipments.add(shipment);
 	}
-	
+
 	public void addShipments(Collection<IndividualShipment> shipments) {
 		this.shipments.addAll(shipments);
-	}
-
-	public void setVehicleSampler(VehicleAllocationModel allocationModel) {
-		this.vehicleSampler = allocationModel;
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -81,14 +91,14 @@ public class Consolidator {
 		for (IndividualShipment shipment : shipmentsToReplan) {
 
 			for (Vehicle vehicle : shipment.getAssignedVehicle2tons().keySet()) {
-				vehicle.unassignShipment(shipment);
+				this.assignment.unassign(shipment, vehicle);
 			}
 			shipment.clearAssignedVehicle2tons();
 
-			final Map<Vehicle, Double> vehicle2tons = this.vehicleSampler.allocate(shipment, this.vehicles);
+			final Map<Vehicle, Double> vehicle2tons = this.vehicleAllocationModel.allocate(shipment, this.vehicles, this.assignment);
 
 			for (Map.Entry<Vehicle, Double> entry : vehicle2tons.entrySet()) {
-				entry.getKey().assignShipment(shipment, entry.getValue());
+				this.assignment.addAssignment(shipment, entry.getKey(), entry.getValue());
 			}
 			shipment.setAssignedVehicles(vehicle2tons);
 		}
@@ -144,20 +154,19 @@ public class Consolidator {
 //		return result.toString();
 //	}
 
-	public ConsolidationReport createReport() {		
-		ConsolidationReport report = new ConsolidationReport();
-		this.vehicles.forEach(v -> report.addVehicleType(v.getType()));
+//	public ConsolidationReport createReport() {
+//		ConsolidationReport report = new ConsolidationReport();
+//		this.vehicles.forEach(v -> report.addVehicleType(v.getType()));
+//
+//		throw new UnsupportedOperationException("TODO");
+////		this.shipments.forEach(s -> report.addShipmentType(s.getType()));
+//
+//		// this.vehicles.forEach(v -> report.add(v));
+////		return report;
+//	}
 
-		throw new UnsupportedOperationException("TODO");
-//		this.shipments.forEach(s -> report.addShipmentType(s.getType()));
-
-		//		this.vehicles.forEach(v -> report.add(v));
-//		return report;
-	}
-	
 	public void startRun(int iterations) {
-		this.vehicles.stream().forEach(v -> v.unassignAllShipments());
-		this.shipments.stream().forEach(s -> s.clearAssignedVehicle2tons());
+		this.assignment.unassignAllShipments();
 		this.step();
 		this.continueRun(iterations);
 	}

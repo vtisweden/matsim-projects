@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.matsim.vehicles.Vehicle;
+
 /**
  * 
  * @author GunnarF
@@ -40,7 +42,8 @@ public class VehicleAllocationModel {
 		this.vehicleSampler = vehicleSampler;
 	}
 
-	public Map<Vehicle, Double> allocate(final IndividualShipment shipment, final Set<Vehicle> vehicles) {
+	public Map<Vehicle, Double> allocate(final IndividualShipment shipment, final Set<Vehicle> vehicles,
+			final ShipmentVehicleAssignment assignment) {
 
 		final Map<Vehicle, Double> vehicle2ton = new LinkedHashMap<>();
 		double weightAllocatedSoFar_ton = 0.0;
@@ -63,7 +66,7 @@ public class VehicleAllocationModel {
 				return vehicle2ton;
 			}
 			final double newlyAllocatedWeight_ton = Math.min(shipment.getWeight_ton() - weightAllocatedSoFar_ton,
-					vehicle.computeRemainingCapacity_ton());
+					assignment.getRemainingCapacity_ton(vehicle));
 			vehicle2ton.put(vehicle, newlyAllocatedWeight_ton);
 			weightAllocatedSoFar_ton += newlyAllocatedWeight_ton;
 			utilityReceivedSoFar += this.utilityFunction.computeUtility(shipment, vehicle);

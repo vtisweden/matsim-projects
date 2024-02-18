@@ -26,7 +26,7 @@ import se.vti.samgods.SamgodsConstants;
  * @author GunnarF
  *
  */
-public class FreightVehicleAttributes {
+public class FreightVehicleTypeAttributes {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -48,7 +48,7 @@ public class FreightVehicleAttributes {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FreightVehicleAttributes(final SamgodsConstants.TransportMode transportMode, final double capacity_ton) {
+	public FreightVehicleTypeAttributes(final SamgodsConstants.TransportMode transportMode, final double capacity_ton) {
 		this.transportMode = transportMode;
 		this.capacity_ton = capacity_ton;
 	}
@@ -67,7 +67,7 @@ public class FreightVehicleAttributes {
 		return fixedCost_1_h;
 	}
 
-	public FreightVehicleAttributes setFixedCost_1_h(Double fixedCost_1_h) {
+	public FreightVehicleTypeAttributes setFixedCost_1_h(Double fixedCost_1_h) {
 		this.fixedCost_1_h = fixedCost_1_h;
 		return this;
 	}
@@ -76,7 +76,7 @@ public class FreightVehicleAttributes {
 		return fixedCost_1_km;
 	}
 
-	public FreightVehicleAttributes setFixedCost_1_km(Double fixedCost_1_km) {
+	public FreightVehicleTypeAttributes setFixedCost_1_km(Double fixedCost_1_km) {
 		this.fixedCost_1_km = fixedCost_1_km;
 		return this;
 	}
@@ -85,7 +85,7 @@ public class FreightVehicleAttributes {
 		return unitCost_1_hTon;
 	}
 
-	public FreightVehicleAttributes setUnitCost_1_hTon(Double unitCost_1_hTon) {
+	public FreightVehicleTypeAttributes setUnitCost_1_hTon(Double unitCost_1_hTon) {
 		this.unitCost_1_hTon = unitCost_1_hTon;
 		return this;
 	}
@@ -94,7 +94,7 @@ public class FreightVehicleAttributes {
 		return unitCost_1_kmTon;
 	}
 
-	public FreightVehicleAttributes setUnitCost_1_kmTon(Double unitCost_1_kmTon) {
+	public FreightVehicleTypeAttributes setUnitCost_1_kmTon(Double unitCost_1_kmTon) {
 		this.unitCost_1_kmTon = unitCost_1_kmTon;
 		return this;
 	}

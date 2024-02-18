@@ -23,7 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.matsim.vehicles.Vehicle;
+
 import se.vti.samgods.logistics.RecurrentShipment;
+import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
 
 /**
  * 
@@ -31,6 +34,11 @@ import se.vti.samgods.logistics.RecurrentShipment;
  *
  */
 public class ConsolidationUtils {
+
+	public static double getCapacity_ton(Vehicle vehicle) {
+		return ((FreightVehicleTypeAttributes) vehicle.getAttributes()
+				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME)).getCapacity_ton();
+	}
 
 	public static List<IndividualShipment> disaggregate(RecurrentShipment recurrentShipment, int analysisPeriod_days) {
 

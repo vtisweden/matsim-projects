@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.consolidation.road;
 
+import org.matsim.vehicles.Vehicle;
+
 /**
  * 
  * @author GunnarF
@@ -27,10 +29,10 @@ package se.vti.samgods.consolidation.road;
 public interface VehicleUtilityFunction {
 
 	default boolean computeCompatibility(IndividualShipment shipment, Vehicle vehicle) {
-		final double remainingCap_ton = vehicle.computeRemainingCapacity_ton();
-		if (remainingCap_ton < 0.1) { // TODO magic number
-			return false;
-		}
+//		final double remainingCap_ton = vehicle.computeRemainingCapacity_ton();
+//		if (remainingCap_ton < 0.1) { // TODO magic number
+//			return false;
+//		}
 	
 		throw new UnsupportedOperationException("TODO");		
 //		// shipment must be compatible with vehicle type
@@ -51,12 +53,13 @@ public interface VehicleUtilityFunction {
 
 	default double computeExtrapolatedUtility(IndividualShipment shipment, Vehicle vehicle, double weightAllocatedSoFar_ton,
 			double utilityReceivedSoFar) {
-		final double remainingWeightToAllocate_ton = Math.max(0.0, shipment.getWeight_ton() - weightAllocatedSoFar_ton);
-		final double newlyReceivedUtility = this.computeUtility(shipment, vehicle);
-		final double newlyAllocatedWeight_ton = Math.min(remainingWeightToAllocate_ton,
-				vehicle.computeRemainingCapacity_ton());
-		return (utilityReceivedSoFar + newlyReceivedUtility) * shipment.getWeight_ton()
-				/ (weightAllocatedSoFar_ton + newlyAllocatedWeight_ton);
+//		final double remainingWeightToAllocate_ton = Math.max(0.0, shipment.getWeight_ton() - weightAllocatedSoFar_ton);
+//		final double newlyReceivedUtility = this.computeUtility(shipment, vehicle);
+//		final double newlyAllocatedWeight_ton = Math.min(remainingWeightToAllocate_ton,
+//				vehicle.computeRemainingCapacity_ton());
+//		return (utilityReceivedSoFar + newlyReceivedUtility) * shipment.getWeight_ton()
+//				/ (weightAllocatedSoFar_ton + newlyAllocatedWeight_ton);
+		throw new UnsupportedOperationException("Make this sequence independent");
 	}
 
 	public double computeUtility(IndividualShipment shipment, Vehicle vehicle);

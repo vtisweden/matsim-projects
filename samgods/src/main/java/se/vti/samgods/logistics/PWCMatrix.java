@@ -32,6 +32,11 @@ import floetteroed.utilities.Tuple;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class PWCMatrix {
 
 	// -------------------- MEMBERS --------------------

@@ -21,6 +21,8 @@ package se.vti.samgods.consolidation.road;
 
 import java.util.Map;
 
+import org.matsim.vehicles.Vehicle;
+
 /**
  * 
  * @author GunnarF

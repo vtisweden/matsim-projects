@@ -19,12 +19,11 @@
  */
 package se.vti.samgods.consolidation.road;
 
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
-import floetteroed.utilities.Tuple;
+import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 /**
  * 
@@ -33,14 +32,14 @@ import floetteroed.utilities.Tuple;
  */
 public class ConsolidationReport {
 
-	private Set<ShipmentType> shipmentTypes = new LinkedHashSet<>();
+//	private Set<ShipmentType> shipmentTypes = new LinkedHashSet<>();
 	private Set<VehicleType> vehicleTypes = new LinkedHashSet<>();
 
-	private Map<Tuple<ShipmentType, VehicleType>, Double> commodityAndVehicle2Ton = new LinkedHashMap<>();
-
-	void addShipmentType(ShipmentType shipmentType) {
-		this.shipmentTypes.add(shipmentType);
-	}
+//	private Map<Tuple<ShipmentType, VehicleType>, Double> commodityAndVehicle2Ton = new LinkedHashMap<>();
+//
+//	void addShipmentType(ShipmentType shipmentType) {
+//		this.shipmentTypes.add(shipmentType);
+//	}
 	
 	void addVehicleType(VehicleType vehicleType) {
 		this.vehicleTypes.add(vehicleType);
@@ -58,24 +57,24 @@ public class ConsolidationReport {
 	}
 
 	public String toString() {
-		StringBuffer result = new StringBuffer();
+		StringBuffer result = new StringBuffer("[[TODO]]");
 
-		result.append("\t");
-		for (VehicleType vehicleType : this.vehicleTypes) {
-			result.append(vehicleType.getName());
-			result.append("\t");
-		}
-		result.append("\n");
-
-		for (ShipmentType shipmentType : this.shipmentTypes) {
-			result.append(shipmentType.getName());
-			result.append("\t");
-			for (VehicleType vehicleType : this.vehicleTypes) {
-				result.append(this.commodityAndVehicle2Ton.getOrDefault(new Tuple<>(shipmentType, vehicleType), 0.0));
-				result.append("\t");
-			}
-			result.append("\n");
-		}
+//		result.append("\t");
+//		for (VehicleType vehicleType : this.vehicleTypes) {
+//			result.append(vehicleType.getName());
+//			result.append("\t");
+//		}
+//		result.append("\n");
+//
+//		for (ShipmentType shipmentType : this.shipmentTypes) {
+//			result.append(shipmentType.getName());
+//			result.append("\t");
+//			for (VehicleType vehicleType : this.vehicleTypes) {
+//				result.append(this.commodityAndVehicle2Ton.getOrDefault(new Tuple<>(shipmentType, vehicleType), 0.0));
+//				result.append("\t");
+//			}
+//			result.append("\n");
+//		}
 
 		return result.toString();
 	}
