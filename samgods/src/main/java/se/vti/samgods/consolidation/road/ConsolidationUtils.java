@@ -40,7 +40,7 @@ public class ConsolidationUtils {
 				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME)).getCapacity_ton();
 	}
 
-	public static List<IndividualShipment> disaggregate(RecurrentShipment recurrentShipment, int analysisPeriod_days) {
+	public static List<Shipment> disaggregate(RecurrentShipment recurrentShipment, int analysisPeriod_days) {
 
 		/*
 		 * Translate shipment frequency into shipment period in integer days. Scale
@@ -55,9 +55,9 @@ public class ConsolidationUtils {
 		 * analysis period.
 		 */
 		final int numberOfCertainShipments = analysisPeriod_days / shipmentPeriod_days;
-		final List<IndividualShipment> shipments = new ArrayList<>(numberOfCertainShipments + 1);
+		final List<Shipment> shipments = new ArrayList<>(numberOfCertainShipments + 1);
 		for (int i = 0; i < numberOfCertainShipments; i++) {
-			shipments.add(new IndividualShipment(individualShipmentSize_ton, recurrentShipment.getCommmodity(), 1.0));
+			shipments.add(new Shipment(individualShipmentSize_ton, recurrentShipment.getCommmodity(), 1.0));
 		}
 
 		/*
@@ -68,7 +68,7 @@ public class ConsolidationUtils {
 		 */
 		final double additionalShipmentProba = ((double) (analysisPeriod_days % shipmentPeriod_days))
 				/ shipmentPeriod_days;
-		shipments.add(new IndividualShipment(individualShipmentSize_ton, recurrentShipment.getCommmodity(),
+		shipments.add(new Shipment(individualShipmentSize_ton, recurrentShipment.getCommmodity(),
 				additionalShipmentProba));
 
 		return shipments;
@@ -79,7 +79,7 @@ public class ConsolidationUtils {
 		for (int r = 0; r < 10000; r++) {
 			RecurrentShipment recurrentShipment = new RecurrentShipment(null, null, 100.0, rnd.nextDouble() * 365.0);
 			int analysisPeriod_days = 1 + rnd.nextInt(365);
-			List<IndividualShipment> shipments = disaggregate(recurrentShipment, analysisPeriod_days);
+			List<Shipment> shipments = disaggregate(recurrentShipment, analysisPeriod_days);
 			double realized = shipments.stream().mapToDouble(s -> s.getWeight_ton() * s.getProbability()).sum();
 			double target = recurrentShipment.getSize_ton() * (analysisPeriod_days / 365.0);
 			System.out.println((realized - target) / target);

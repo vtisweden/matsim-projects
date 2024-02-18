@@ -48,7 +48,7 @@ public class Consolidator {
 
 	private final Map<VehicleType, Integer> vehicleType2maxNumber = new LinkedHashMap<>();
 
-	private final Set<IndividualShipment> shipments = new LinkedHashSet<>();
+	private final Set<Shipment> shipments = new LinkedHashSet<>();
 
 	// endogeneous
 
@@ -73,11 +73,11 @@ public class Consolidator {
 		this.vehicleType2maxNumber.put(vehicleType, maxNumber);
 	}
 
-	public void addShipment(IndividualShipment shipment) {
+	public void addShipment(Shipment shipment) {
 		this.shipments.add(shipment);
 	}
 
-	public void addShipments(Collection<IndividualShipment> shipments) {
+	public void addShipments(Collection<Shipment> shipments) {
 		this.shipments.addAll(shipments);
 	}
 
@@ -85,10 +85,10 @@ public class Consolidator {
 
 	private void step() {
 
-		final List<IndividualShipment> shipmentsToReplan = new ArrayList<>(this.shipments);
+		final List<Shipment> shipmentsToReplan = new ArrayList<>(this.shipments);
 		Collections.shuffle(shipmentsToReplan);
 
-		for (IndividualShipment shipment : shipmentsToReplan) {
+		for (Shipment shipment : shipmentsToReplan) {
 
 			for (Vehicle vehicle : shipment.getAssignedVehicle2tons().keySet()) {
 				this.assignment.unassign(shipment, vehicle);

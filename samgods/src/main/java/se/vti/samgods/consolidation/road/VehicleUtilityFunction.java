@@ -28,7 +28,7 @@ import org.matsim.vehicles.Vehicle;
  */
 public interface VehicleUtilityFunction {
 
-	default boolean computeCompatibility(IndividualShipment shipment, Vehicle vehicle) {
+	default boolean computeCompatibility(Shipment shipment, Vehicle vehicle) {
 //		final double remainingCap_ton = vehicle.computeRemainingCapacity_ton();
 //		if (remainingCap_ton < 0.1) { // TODO magic number
 //			return false;
@@ -51,7 +51,7 @@ public interface VehicleUtilityFunction {
 //		return false;
 	}
 
-	default double computeExtrapolatedUtility(IndividualShipment shipment, Vehicle vehicle, double weightAllocatedSoFar_ton,
+	default double computeExtrapolatedUtility(Shipment shipment, Vehicle vehicle, double weightAllocatedSoFar_ton,
 			double utilityReceivedSoFar) {
 //		final double remainingWeightToAllocate_ton = Math.max(0.0, shipment.getWeight_ton() - weightAllocatedSoFar_ton);
 //		final double newlyReceivedUtility = this.computeUtility(shipment, vehicle);
@@ -62,6 +62,6 @@ public interface VehicleUtilityFunction {
 		throw new UnsupportedOperationException("Make this sequence independent");
 	}
 
-	public double computeUtility(IndividualShipment shipment, Vehicle vehicle);
+	public double computeUtility(Shipment shipment, Vehicle vehicle);
 
 }

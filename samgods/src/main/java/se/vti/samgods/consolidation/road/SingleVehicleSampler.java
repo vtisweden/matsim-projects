@@ -30,6 +30,6 @@ import org.matsim.vehicles.Vehicle;
  */
 public interface SingleVehicleSampler {
 
-	public Vehicle drawVehicle(IndividualShipment shipment, Map<Vehicle, Double> vehicle2utility);
+	public Vehicle drawVehicle(Shipment shipment, Map<Vehicle, Double> vehicle2utility);
 
 }

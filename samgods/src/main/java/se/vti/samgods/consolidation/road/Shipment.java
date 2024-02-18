@@ -31,7 +31,7 @@ import se.vti.samgods.SamgodsConstants.Commodity;
  * @author GunnarF
  *
  */
-public class IndividualShipment {
+public class Shipment {
 
 	private final double weight_ton;
 
@@ -41,7 +41,7 @@ public class IndividualShipment {
 
 	private final Map<Vehicle, Double> assignedVehicle2tons = new LinkedHashMap<>();
 
-	public IndividualShipment(final double weight_ton, final Commodity commodity, double probability) {
+	public Shipment(final double weight_ton, final Commodity commodity, double probability) {
 		this.weight_ton = weight_ton;
 		this.commodity = commodity;
 		this.probability = probability;

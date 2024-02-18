@@ -42,7 +42,7 @@ public class VehicleAllocationModel {
 		this.vehicleSampler = vehicleSampler;
 	}
 
-	public Map<Vehicle, Double> allocate(final IndividualShipment shipment, final Set<Vehicle> vehicles,
+	public Map<Vehicle, Double> allocate(final Shipment shipment, final Set<Vehicle> vehicles,
 			final ShipmentVehicleAssignment assignment) {
 
 		final Map<Vehicle, Double> vehicle2ton = new LinkedHashMap<>();
