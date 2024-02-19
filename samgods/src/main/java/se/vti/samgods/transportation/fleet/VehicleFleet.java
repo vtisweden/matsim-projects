@@ -19,10 +19,11 @@
  */
 package se.vti.samgods.transportation.fleet;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.population.Person;
-import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
@@ -30,6 +31,7 @@ import org.matsim.vehicles.Vehicles;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.consolidation.road.PrototypeVehicle;
 
 /**
  * 
@@ -42,13 +44,15 @@ public class VehicleFleet {
 
 	private final Vehicles vehicles;
 
+	private long vehCnt = 0;
+	
 	// -------------------- CONSTRUCTION --------------------
 
 	public VehicleFleet() {
 		this.vehicles = VehicleUtils.createVehiclesContainer();
 	}
 
-	public FreightVehicleTypeAttributes createVehicleType(final String key, final SamgodsConstants.TransportMode transportMode,
+	public void createAndAddVehicleType(final String key, final SamgodsConstants.TransportMode transportMode,
 			final double capacity_ton, final double speed_km_h) {
 
 		final Id<VehicleType> typeId = Id.create(key, VehicleType.class);
@@ -58,19 +62,33 @@ public class VehicleFleet {
 
 		final FreightVehicleTypeAttributes attributes = new FreightVehicleTypeAttributes(transportMode, capacity_ton);
 		type.getAttributes().putAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME, attributes);
-		return attributes;
+		// return attributes;
 	}
 
+	public Map<Id<Vehicle>, Vehicle> createPrototypeVehicles() {
+		final Map<Id<Vehicle>, Vehicle> id2veh = new LinkedHashMap<>(this.vehicles.getVehicleTypes().size());
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+			final Vehicle prototype = new PrototypeVehicle(type);
+			id2veh.put(prototype.getId(), prototype);
+		}
+		return id2veh;
+	}
+
+	public Vehicle createVehicle(VehicleType type) {
+		return this.vehicles.getFactory().createVehicle(Id.create(this.vehCnt++, Vehicle.class), type);
+	}
+	
 	// -------------------- IMPLEMENTATION --------------------
 
-	public FreightVehicleTypeAttributes getFreightVehicleAttributes(final Id<VehicleType> typeId) {
-		return (FreightVehicleTypeAttributes) this.vehicles.getVehicleTypes().get(typeId).getAttributes()
-				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME);
-	}
-
-	public FreightVehicleTypeAttributes getFreightVehicleAttributes(final String key) {
-		return this.getFreightVehicleAttributes(Id.create(key, VehicleType.class));
-	}
+	
+//	public FreightVehicleTypeAttributes getFreightVehicleAttributes(final Id<VehicleType> typeId) {
+//		return (FreightVehicleTypeAttributes) this.vehicles.getVehicleTypes().get(typeId).getAttributes()
+//				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME);
+//	}
+//
+//	public FreightVehicleTypeAttributes getFreightVehicleAttributes(final String key) {
+//		return this.getFreightVehicleAttributes(Id.create(key, VehicleType.class));
+//	}
 
 //	public TravelDisutility createEmptyVehicleTravelDisutility(final String vehicleKey) {
 //		final Id<VehicleType> vehicleTypeId = Id.create(vehicleKey, VehicleType.class);

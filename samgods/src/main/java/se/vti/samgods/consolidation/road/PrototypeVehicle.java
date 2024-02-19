@@ -19,23 +19,43 @@
  */
 package se.vti.samgods.consolidation.road;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 /**
+ * 
+ * Represents one additional, not yet used, vehicle of a given type.
  * 
  * @author GunnarF
  *
  */
-public interface VehicleUtilityFunction {
+public class PrototypeVehicle implements Vehicle {
 
-	public double getFixedCost(Vehicle vehicle);
-
-	public double getCost_1_ton(Vehicle vehicle, ShipmentVehicleAssignment assignment);
-
-	default public double getUtility(double maxAmount_ton, Vehicle vehicle, ShipmentVehicleAssignment assignment) {
-		final double potentiallyAssigned_ton = Math.min(maxAmount_ton, assignment.getRemainingCapacity_ton(vehicle));
-		return (this.getFixedCost(vehicle) + this.getCost_1_ton(vehicle, assignment) * potentiallyAssigned_ton)
-				/ Math.max(1e-8, potentiallyAssigned_ton);
+	private final VehicleType type;
+	
+	private final Id<Vehicle> id;
+	
+	public PrototypeVehicle(VehicleType type) {
+		this.type = type;
+		this.id = Id.create(type.getId(), Vehicle.class);
 	}
+	
+	@Override
+	public Id<Vehicle> getId() {
+		return this.id;
+	}
+
+	@Override
+	public VehicleType getType() {
+		return this.type;
+	}
+
+	@Override
+	public Attributes getAttributes() {
+		throw new UnsupportedOperationException();
+	}
+
 
 }

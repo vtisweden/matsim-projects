@@ -57,15 +57,15 @@ public class RunBasicModel {
 		/*
 		 * Define one representative vehicle type per transport mode.
 		 */
-		final VehicleFleet fleet = new VehicleFleet();
-		fleet.createVehicleType("truck", SamgodsConstants.TransportMode.Road, 20.0, 80.0).setFixedCost_1_h(300.0)
-				.setFixedCost_1_km(50.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(200.0);
-		fleet.createVehicleType("train", SamgodsConstants.TransportMode.Rail, 200.0, 120.0).setFixedCost_1_h(3000.0)
-				.setFixedCost_1_km(500.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(2000.0);
-		fleet.createVehicleType("ship", SamgodsConstants.TransportMode.Sea, 2000.0, 30.0).setFixedCost_1_h(30000.0)
-				.setFixedCost_1_km(5000.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(20000.0);
-		fleet.createVehicleType("plane", SamgodsConstants.TransportMode.Air, 200.0, 800.0).setFixedCost_1_h(30000.0)
-				.setFixedCost_1_km(5000.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(20000.0);
+//		final VehicleFleet fleet = new VehicleFleet();
+//		fleet.createVehicleType("truck", SamgodsConstants.TransportMode.Road, 20.0, 80.0).setFixedCost_1_h(300.0)
+//				.setFixedCost_1_km(50.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(200.0);
+//		fleet.createVehicleType("train", SamgodsConstants.TransportMode.Rail, 200.0, 120.0).setFixedCost_1_h(3000.0)
+//				.setFixedCost_1_km(500.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(2000.0);
+//		fleet.createVehicleType("ship", SamgodsConstants.TransportMode.Sea, 2000.0, 30.0).setFixedCost_1_h(30000.0)
+//				.setFixedCost_1_km(5000.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(20000.0);
+//		fleet.createVehicleType("plane", SamgodsConstants.TransportMode.Air, 200.0, 800.0).setFixedCost_1_h(30000.0)
+//				.setFixedCost_1_km(5000.0).setUnitCost_1_hTon(0.0).setUnitCost_1_kmTon(20000.0);
 
 		/*
 		 * Route all unimodal chain segments using representative vehicles.

@@ -27,9 +27,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
+
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * 
@@ -40,38 +44,34 @@ public class Consolidator {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final VehicleAllocationModel vehicleAllocationModel;
+	private final VehicleFleet fleet;
+
+	private final VehicleUtilityFunction vehicleUtilityFunction;
+
+	private final VehicleSampler vehicleSampler;
 
 	// -------------------- VARIABLES --------------------
 
 	// exogeneously set
 
-	private final Map<VehicleType, Integer> vehicleType2maxNumber = new LinkedHashMap<>();
-
-	private final Set<Shipment> shipments = new LinkedHashSet<>();
+	private final List<Shipment> shipments = new ArrayList<>();
 
 	// endogeneous
 
-	private final ShipmentVehicleAssignment assignment = new ShipmentVehicleAssignment();
-	
-	// TODO populate!
-	private Set<Vehicle> vehicles = new LinkedHashSet<>();
-	
+	private ShipmentVehicleAssignment assignment = null;
+
+	private Map<Id<Vehicle>, Vehicle> assignedVehicles = null;
+
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(VehicleAllocationModel vehicleAllocationModel) {
-		this.vehicleAllocationModel = vehicleAllocationModel;
+	public Consolidator(VehicleFleet fleet, VehicleUtilityFunction vehicleUtilityFunction, VehicleSampler vehicleSampler) {
+		this.fleet = fleet;
+		this.vehicleUtilityFunction = vehicleUtilityFunction;
+		this.vehicleSampler = vehicleSampler;
 	}
+
 
 	// -------------------- SETTERS AND GETTERS --------------------
-
-	public void addVehicleType(VehicleType vehicleType) {
-		this.vehicleType2maxNumber.put(vehicleType, Integer.MAX_VALUE);
-	}
-
-	public void addVehicleType(VehicleType vehicleType, int maxNumber) {
-		this.vehicleType2maxNumber.put(vehicleType, maxNumber);
-	}
 
 	public void addShipment(Shipment shipment) {
 		this.shipments.add(shipment);
@@ -83,91 +83,62 @@ public class Consolidator {
 
 	// -------------------- INTERNALS --------------------
 
-	private void step() {
-
-		final List<Shipment> shipmentsToReplan = new ArrayList<>(this.shipments);
-		Collections.shuffle(shipmentsToReplan);
-
-		for (Shipment shipment : shipmentsToReplan) {
-			this.assignment.unassign(shipment);			
-			final Map<Vehicle, Double> vehicle2tons = this.vehicleAllocationModel.allocate(shipment, this.vehicles, this.assignment);
-			for (Map.Entry<Vehicle, Double> entry : vehicle2tons.entrySet()) {
-				this.assignment.assign(shipment, entry.getKey(), entry.getValue());
+	private void removeUnusedNonPrototypeVehicles() {
+		Set<Vehicle> remove = new LinkedHashSet<>();
+		for (Vehicle vehicle : this.assignedVehicles.values()) {
+			if (!this.assignment.isUsed(vehicle)) {
+				remove.add(vehicle);
 			}
 		}
-	}
-
-	// -------------------- IMPLEMENTATION --------------------
-
-//	public double computeUtility() {
-//		double result = 0.0;
-//		for (Shipment shipment : this.shipments) {
-//			if (shipment.getAssignedVehicle() != null) {
-//				result += this.vehicleSampler.getUtilityFunction().computeUtility(shipment,
-//						shipment.getAssignedVehicle());
-//			}
-//		}
-//		return result;
-//	}
-//
-//	public String assignmentToString() {
-//		StringBuffer result = new StringBuffer();
-//		for (Shipment shipment : this.shipments) {
-//			result.append(shipment.getId() + " -> ");
-//			if (shipment.getAssignedVehicle() == null) {
-//				result.append("NULL\n");
-//			} else {
-//				result.append(shipment.getAssignedVehicle().getId() + "\n");
-//			}
-//		}
-//		return result.toString();
-//
-//	}
-//
-//	public long countUnassigned() {
-//		return this.shipments.stream().filter(s -> (s.getAssignedVehicle() == null)).count();
-//	}
-//
-//	public Map<VehicleType, Integer> countVehicleTypes() {
-//		Map<VehicleType, Integer> type2count = new LinkedHashMap<>();
-//		for (Shipment shipment : this.shipments) {
-//			type2count.compute(shipment.getAssignedVehicleType(), (t, c) -> (c == null) ? 1 : (c + 1));
-//		}
-//		return type2count;
-//	}
-//
-//	public String vehicleUsagesToString() {
-//		StringBuffer result = new StringBuffer();
-//		for (Vehicle vehicle : this.vehicles) {
-//			if (vehicle.computeCurrentVolume_m3() > 0) {
-//				result.append(vehicle.getType() + " with ID " + vehicle.getId() + " loaded with "
-//						+ vehicle.computeCurrentVolume_m3() + " out of " + vehicle.getType().getCapacity_m3() + "\n");
-//			}
-//		}
-//		return result.toString();
-//	}
-
-//	public ConsolidationReport createReport() {
-//		ConsolidationReport report = new ConsolidationReport();
-//		this.vehicles.forEach(v -> report.addVehicleType(v.getType()));
-//
-//		throw new UnsupportedOperationException("TODO");
-////		this.shipments.forEach(s -> report.addShipmentType(s.getType()));
-//
-//		// this.vehicles.forEach(v -> report.add(v));
-////		return report;
-//	}
-
-	public void startRun(int iterations) {
-		this.assignment.clear();
-		this.step();
-		this.continueRun(iterations);
-	}
-
-	public void continueRun(int iterations) {
-		for (int k = 0; k < iterations; k++) {
-			this.step();
+		for (Vehicle vehicle : remove) {
+			this.assignedVehicles.remove(vehicle.getId());
 		}
 	}
 
+	private void drawAssignment(Shipment shipment) {
+
+		final Map<Vehicle, Double> vehicle2utility = this.assignedVehicles.values().stream().collect(Collectors.toMap(
+				v -> v, v -> this.vehicleUtilityFunction.getUtility(shipment.getWeight_ton(), v, this.assignment)));
+
+		double remaining_ton = shipment.getWeight_ton();
+		while (remaining_ton > 1e-8) {
+
+			final Vehicle drawnVehicle = this.vehicleSampler.drawVehicle(shipment, vehicle2utility);
+			final Vehicle newVehicle;
+			if (drawnVehicle instanceof PrototypeVehicle) {
+				newVehicle = this.fleet.createVehicle(drawnVehicle.getType());
+				this.assignedVehicles.put(newVehicle.getId(), newVehicle);
+			} else {
+				newVehicle = drawnVehicle;
+			}
+
+			final double assigned_ton = Math.min(remaining_ton, this.assignment.getRemainingCapacity_ton(newVehicle));
+			this.assignment.assign(shipment, newVehicle, assigned_ton);
+			remaining_ton -= assigned_ton;
+
+			vehicle2utility.put(newVehicle,
+					this.vehicleUtilityFunction.getUtility(remaining_ton, newVehicle, this.assignment));
+		}
+	}
+
+	// -------------------- NEW SIMULATION LOGIC --------------------
+
+	public void init() {
+		this.assignment = new ShipmentVehicleAssignment();
+		this.assignedVehicles = new LinkedHashMap<>(this.fleet.createPrototypeVehicles());
+
+		Collections.shuffle(this.shipments);
+		for (Shipment shipment : this.shipments) {
+			this.drawAssignment(shipment);
+		}
+	}
+
+	public void step() {
+		Collections.shuffle(this.shipments);
+		for (Shipment shipment : this.shipments) {
+			this.assignment.unassign(shipment);
+			this.removeUnusedNonPrototypeVehicles();
+			this.drawAssignment(shipment);
+		}
+	}
 }

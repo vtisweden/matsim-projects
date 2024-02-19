@@ -24,9 +24,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Tuple;
+import se.vti.samgods.SamgodsConstants;
 
 /**
  * 
@@ -95,6 +98,10 @@ public class ShipmentVehicleAssignment {
 		this.shipment2vehicles.remove(shipment);
 	}
 
+	public boolean isUsed(final Vehicle vehicle) {
+		return this.vehicle2shipments.containsKey(vehicle) && (this.vehicle2shipments.get(vehicle).size() > 0);
+	}
+
 	public void clear() {
 		this.shipment2vehicles.clear();
 		this.vehicle2shipments.clear();
@@ -108,6 +115,41 @@ public class ShipmentVehicleAssignment {
 
 	public double getRemainingCapacity_ton(Vehicle vehicle) {
 		return ConsolidationUtils.getCapacity_ton(vehicle) - this.getPayload_ton(vehicle);
+	}
+
+	// -------------------- TODO --------------------
+
+	public interface CommodityAssignmentReport {
+		
+		public SamgodsConstants.Commodity getCommodity();
+		
+		public double getTotalAssignedTons();
+		
+		public long getTotalShipmentCount();
+		
+		public Map<Id<VehicleType>, Double> getVehicleType2shippedTons();
+
+		public Map<Id<VehicleType>, Integer> getVehicleType2shipmentCnt();
+
+	}
+	
+	public void createReport() {
+
+		double total_ton = 0.0;
+		long total_cnt = 0l;
+		
+		final Map<Id<VehicleType>, Double> vehicleTypeId2ton = new LinkedHashMap<>();
+		
+		final Map<Tuple<SamgodsConstants.Commodity, VehicleType>, Double> commodityAndVehicleType2ton = new LinkedHashMap<>();
+		final Map<Tuple<SamgodsConstants.Commodity, VehicleType>, Integer> commodityAndVehicleType2cnt = new LinkedHashMap<>();
+		for (Map.Entry<Tuple<Shipment, Vehicle>, Double> entry : this.shipmentAndVehicle2tons.entrySet()) {
+			final Shipment shipment = entry.getKey().getA();
+			final Vehicle vehicle = entry.getKey().getB();
+			vehicleTypeId2ton.compute(vehicle.getType().getId(),
+					(type, ton) -> ton == null ? entry.getValue() : ton + entry.getValue());
+		}
+
+		
 	}
 
 }
