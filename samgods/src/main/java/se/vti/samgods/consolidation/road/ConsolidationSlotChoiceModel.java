@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.consolidation.road;
 
+import java.util.List;
 import java.util.Map;
 
 import org.matsim.vehicles.Vehicle;
@@ -28,8 +29,31 @@ import org.matsim.vehicles.Vehicle;
  * @author GunnarF
  *
  */
-public interface VehicleSampler {
+public interface ConsolidationSlotChoiceModel {
 
-	public Vehicle drawVehicle(Shipment shipment, Map<Vehicle, Double> vehicle2utility);
+	public class Slot {
+		public final Vehicle vehicle;
+		public final int day;
+
+		public Slot(Vehicle vehicle, int day) {
+			this.vehicle = vehicle;
+			this.day = day;
+		}
+
+	}
+
+	public double getFixedCost(Vehicle vehicle, int day);
+
+	public double getCost_1_ton(Vehicle vehicle, int day, ShipmentVehicleAssignment assignment);
+
+	default public double getUtility(double maxAmount_ton, Vehicle vehicle, int day,
+			ShipmentVehicleAssignment assignment) {
+		final double potentiallyAssigned_ton = Math.min(maxAmount_ton, assignment.getRemainingCapacity_ton(vehicle));
+		return (this.getFixedCost(vehicle, day)
+				+ this.getCost_1_ton(vehicle, day, assignment) * potentiallyAssigned_ton)
+				/ Math.max(1e-8, potentiallyAssigned_ton);
+	}
+
+	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, Double>> vehicle2utilityOverDays);
 
 }

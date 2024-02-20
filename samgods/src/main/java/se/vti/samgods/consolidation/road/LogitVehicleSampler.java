@@ -29,38 +29,40 @@ import org.matsim.vehicles.Vehicle;
  * @author GunnarF
  *
  */
-public class LogitVehicleSampler implements VehicleSampler {
-
-	private final double scale;
-
-	private final Random rnd;
-
-	public LogitVehicleSampler(final double scale, final Random rnd) {
-		this.scale = scale;
-		this.rnd = rnd;
-	}
-
-	@Override
-	public Vehicle drawVehicle(final Shipment shipment, final Map<Vehicle, Double> vehicle2utility) {
-
-		if (vehicle2utility.size() == 0) {
-			return null;
-		}
-
-		final double maxUtility = vehicle2utility.values().stream().mapToDouble(v -> v).max().getAsDouble();
-		final double denom = vehicle2utility.values().stream().mapToDouble(v -> Math.exp(this.scale * (v - maxUtility)))
-				.sum();
-		final double threshold = this.rnd.nextDouble() * denom;
-		double sum = 0.0;
-		for (Map.Entry<Vehicle, Double> entry : vehicle2utility.entrySet()) {
-			sum += Math.exp(this.scale * (entry.getValue() - maxUtility));
-			if (sum >= threshold) {
-				return entry.getKey();
-			}
-		}
-
-		// should not happen unless for numerical reasons
-		return null;
-	}
+public class LogitVehicleSampler {
+	
+//	implements ConsolidationSlotChoiceModel {
+//
+//	private final double scale;
+//
+//	private final Random rnd;
+//
+//	public LogitVehicleSampler(final double scale, final Random rnd) {
+//		this.scale = scale;
+//		this.rnd = rnd;
+//	}
+//
+//	@Override
+//	public Vehicle drawSlot(final Shipment shipment, final Map<Vehicle, Double> vehicle2utility) {
+//
+//		if (vehicle2utility.size() == 0) {
+//			return null;
+//		}
+//
+//		final double maxUtility = vehicle2utility.values().stream().mapToDouble(v -> v).max().getAsDouble();
+//		final double denom = vehicle2utility.values().stream().mapToDouble(v -> Math.exp(this.scale * (v - maxUtility)))
+//				.sum();
+//		final double threshold = this.rnd.nextDouble() * denom;
+//		double sum = 0.0;
+//		for (Map.Entry<Vehicle, Double> entry : vehicle2utility.entrySet()) {
+//			sum += Math.exp(this.scale * (entry.getValue() - maxUtility));
+//			if (sum >= threshold) {
+//				return entry.getKey();
+//			}
+//		}
+//
+//		// should not happen unless for numerical reasons
+//		return null;
+//	}
 
 }

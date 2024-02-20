@@ -23,15 +23,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
-import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -46,9 +42,9 @@ public class Consolidator {
 
 	private final VehicleFleet fleet;
 
-	private final VehicleUtilityFunction vehicleUtilityFunction;
+	private final int shipmentPeriod_day;
 
-	private final VehicleSampler vehicleSampler;
+	private final ConsolidationSlotChoiceModel slotChoiceModel;
 
 	// -------------------- VARIABLES --------------------
 
@@ -58,18 +54,19 @@ public class Consolidator {
 
 	// endogeneous
 
-	private ShipmentVehicleAssignment assignment = null;
+	private Map<Shipment, Integer> shipment2day = null;
 
-	private Map<Id<Vehicle>, Vehicle> assignedVehicles = null;
+	private List<ShipmentVehicleAssignment> assignmentsOverDays = null;
+
+	private List<Map<Id<Vehicle>, Vehicle>> consideredVehiclesOverDays = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(VehicleFleet fleet, VehicleUtilityFunction vehicleUtilityFunction, VehicleSampler vehicleSampler) {
+	public Consolidator(VehicleFleet fleet, int shipmentPeriod_day, ConsolidationSlotChoiceModel vehicleSampler) {
 		this.fleet = fleet;
-		this.vehicleUtilityFunction = vehicleUtilityFunction;
-		this.vehicleSampler = vehicleSampler;
+		this.shipmentPeriod_day = shipmentPeriod_day;
+		this.slotChoiceModel = vehicleSampler;
 	}
-
 
 	// -------------------- SETTERS AND GETTERS --------------------
 
@@ -83,49 +80,53 @@ public class Consolidator {
 
 	// -------------------- INTERNALS --------------------
 
-	private void removeUnusedNonPrototypeVehicles() {
-		Set<Vehicle> remove = new LinkedHashSet<>();
-		for (Vehicle vehicle : this.assignedVehicles.values()) {
-			if (!this.assignment.isUsed(vehicle)) {
-				remove.add(vehicle);
-			}
-		}
-		for (Vehicle vehicle : remove) {
-			this.assignedVehicles.remove(vehicle.getId());
-		}
-	}
-
 	private void drawAssignment(Shipment shipment) {
 
-		final Map<Vehicle, Double> vehicle2utility = this.assignedVehicles.values().stream().collect(Collectors.toMap(
-				v -> v, v -> this.vehicleUtilityFunction.getUtility(shipment.getWeight_ton(), v, this.assignment)));
+		final List<Map<Vehicle, Double>> vehicle2utilityOverDays = new ArrayList<>(this.shipmentPeriod_day);
+		for (int day = 0; day < this.shipmentPeriod_day; day++) {
+			final Map<Vehicle, Double> veh2utl = new LinkedHashMap<>(this.consideredVehiclesOverDays.get(day).size());
+			for (Vehicle veh : this.consideredVehiclesOverDays.get(day).values()) {
+				veh2utl.put(veh, this.slotChoiceModel.getUtility(shipment.getWeight_ton(), veh, day,
+						this.assignmentsOverDays.get(day)));
+			}
+			vehicle2utilityOverDays.add(veh2utl);
+		}
 
 		double remaining_ton = shipment.getWeight_ton();
 		while (remaining_ton > 1e-8) {
 
-			final Vehicle drawnVehicle = this.vehicleSampler.drawVehicle(shipment, vehicle2utility);
+			final ConsolidationSlotChoiceModel.Slot slot = this.slotChoiceModel.drawSlot(shipment,
+					vehicle2utilityOverDays);
+
 			final Vehicle newVehicle;
-			if (drawnVehicle instanceof PrototypeVehicle) {
-				newVehicle = this.fleet.createVehicle(drawnVehicle.getType());
-				this.assignedVehicles.put(newVehicle.getId(), newVehicle);
+			if (slot.vehicle instanceof PrototypeVehicle) {
+				newVehicle = this.fleet.createVehicle(slot.vehicle.getType());
+				this.consideredVehiclesOverDays.get(slot.day).put(newVehicle.getId(), newVehicle);
 			} else {
-				newVehicle = drawnVehicle;
+				newVehicle = slot.vehicle;
 			}
 
-			final double assigned_ton = Math.min(remaining_ton, this.assignment.getRemainingCapacity_ton(newVehicle));
-			this.assignment.assign(shipment, newVehicle, assigned_ton);
+			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
+			final double assigned_ton = Math.min(remaining_ton, assignment.getRemainingCapacity_ton(newVehicle));
+			assignment.assign(shipment, newVehicle, assigned_ton);
 			remaining_ton -= assigned_ton;
 
-			vehicle2utility.put(newVehicle,
-					this.vehicleUtilityFunction.getUtility(remaining_ton, newVehicle, this.assignment));
+			vehicle2utilityOverDays.get(slot.day).put(newVehicle,
+					this.slotChoiceModel.getUtility(remaining_ton, newVehicle, slot.day, assignment));
 		}
 	}
 
 	// -------------------- NEW SIMULATION LOGIC --------------------
 
 	public void init() {
-		this.assignment = new ShipmentVehicleAssignment();
-		this.assignedVehicles = new LinkedHashMap<>(this.fleet.createPrototypeVehicles());
+
+		this.shipment2day = new LinkedHashMap<>();
+		this.assignmentsOverDays = new ArrayList<>(this.shipmentPeriod_day);
+		this.consideredVehiclesOverDays = new ArrayList<>(this.shipmentPeriod_day);
+		for (int day = 0; day < this.shipmentPeriod_day; day++) {
+			this.assignmentsOverDays.add(new ShipmentVehicleAssignment());
+			this.consideredVehiclesOverDays.add(new LinkedHashMap<>(this.fleet.createPrototypeVehicles()));
+		}
 
 		Collections.shuffle(this.shipments);
 		for (Shipment shipment : this.shipments) {
@@ -136,8 +137,18 @@ public class Consolidator {
 	public void step() {
 		Collections.shuffle(this.shipments);
 		for (Shipment shipment : this.shipments) {
-			this.assignment.unassign(shipment);
-			this.removeUnusedNonPrototypeVehicles();
+
+			final int day = this.shipment2day.get(shipment);
+			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(day);
+			final Map<Id<Vehicle>, Vehicle> consideredVehicles = this.consideredVehiclesOverDays.get(day);
+			assignment.unassign(shipment);
+			for (Vehicle vehicle : consideredVehicles.values()) {
+				if (!assignment.usesVehicle(vehicle) /* assignment uses no prototype vehicles */) {
+					consideredVehicles.remove(vehicle.getId());
+				}
+			}
+			this.shipment2day.remove(shipment);
+
 			this.drawAssignment(shipment);
 		}
 	}
