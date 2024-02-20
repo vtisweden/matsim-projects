@@ -56,11 +56,16 @@ public class ShipmentVehicleAssignment {
 		// TODO make unmodifiable
 		return this.shipment2vehicles.get(shipment);
 	}
-	
-	public boolean usesVehicle(Vehicle vehicle)  {
+
+	public List<Shipment> getShipments(Vehicle vehicle) {
+		// TODO make unmodifiable
+		return this.vehicle2shipments.get(vehicle);
+	}
+
+	public boolean usesVehicle(Vehicle vehicle) {
 		return this.vehicle2shipments.containsKey(vehicle);
 	}
-	
+
 	public void assign(final Shipment shipment, final Vehicle vehicle, final double tons) {
 		assert (!this.shipmentAndVehicle2tons.containsKey(new Tuple<>(shipment, vehicle)));
 

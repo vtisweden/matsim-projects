@@ -95,6 +95,7 @@ public class Consolidator {
 		double remaining_ton = shipment.getWeight_ton();
 		while (remaining_ton > 1e-8) {
 
+			// TODO DrawSlot (re)computes all choice probabilities each time when called.
 			final ConsolidationSlotChoiceModel.Slot slot = this.slotChoiceModel.drawSlot(shipment,
 					vehicle2utilityOverDays);
 

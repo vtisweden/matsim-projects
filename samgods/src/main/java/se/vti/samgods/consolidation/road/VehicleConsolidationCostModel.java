@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.consolidation.road;
 
+import java.util.List;
+
 import org.matsim.vehicles.Vehicle;
 
 /**
@@ -26,16 +28,10 @@ import org.matsim.vehicles.Vehicle;
  * @author GunnarF
  *
  */
-public interface VehicleUtilityFunction {
+public interface VehicleConsolidationCostModel {
 
-	public double getFixedCost(Vehicle vehicle);
+	double getFixedCost(Vehicle vehicle);
 
-	public double getCost_1_ton(Vehicle vehicle, ShipmentVehicleAssignment assignment);
-
-	default public double getUtility(double maxAmount_ton, Vehicle vehicle, ShipmentVehicleAssignment assignment) {
-		final double potentiallyAssigned_ton = Math.min(maxAmount_ton, assignment.getRemainingCapacity_ton(vehicle));
-		return (this.getFixedCost(vehicle) + this.getCost_1_ton(vehicle, assignment) * potentiallyAssigned_ton)
-				/ Math.max(1e-8, potentiallyAssigned_ton);
-	}
+	double getCost_1_ton(Vehicle vehicle, List<Shipment> shipments);
 
 }

@@ -39,7 +39,6 @@ public interface ConsolidationSlotChoiceModel {
 			this.vehicle = vehicle;
 			this.day = day;
 		}
-
 	}
 
 	public double getFixedCost(Vehicle vehicle, int day);
