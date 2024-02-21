@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
@@ -40,6 +41,8 @@ public class Consolidator {
 
 	// -------------------- CONSTANTS --------------------
 
+	private final Random rnd;
+	
 	private final VehicleFleet fleet;
 
 	private final int shipmentPeriod_day;
@@ -62,8 +65,9 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(VehicleFleet fleet, int shipmentPeriod_day, VehicleConsolidationCostModel costModel,
+	public Consolidator(Random rnd, VehicleFleet fleet, int shipmentPeriod_day, VehicleConsolidationCostModel costModel,
 			ConsolidationSlotChoiceModel choiceModel) {
+		this.rnd = rnd;
 		this.fleet = fleet;
 		this.shipmentPeriod_day = shipmentPeriod_day;
 		this.costModel = costModel;
@@ -88,6 +92,10 @@ public class Consolidator {
 
 	private void drawAssignment(Shipment shipment) {
 
+		if (this.rnd.nextDouble() >= shipment.getProbability()) {
+			return;
+		}
+		
 		final List<Map<Vehicle, Double>> vehicle2utilityOverDays = new ArrayList<>(this.shipmentPeriod_day);
 		for (int day = 0; day < this.shipmentPeriod_day; day++) {
 			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(day);

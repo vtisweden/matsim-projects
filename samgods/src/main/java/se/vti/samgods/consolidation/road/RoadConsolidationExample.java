@@ -48,20 +48,19 @@ public class RoadConsolidationExample {
 
 		VehicleConsolidationCostModel costModel = new VehicleConsolidationCostModel() {
 			@Override
-			public AssignmentCost getCost(Vehicle vehicle, List<Shipment> alreadyPresentShipments, Commodity addedCommodity,
-					double maxAddedAmount_ton, ShipmentVehicleAssignment assignment) {
+			public AssignmentCost getCost(Vehicle vehicle, List<Shipment> alreadyPresentShipments,
+					Commodity addedCommodity, double maxAddedAmount_ton, ShipmentVehicleAssignment assignment) {
 				final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
-				final double availableCapacity_ton = vehicleCapacity_ton
-						- assignment.getPayload_ton(vehicle);
+				final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
 				final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
 				final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton);
 				if (feasible) {
 					final double usageFraction = assignedWeight_ton / (assignedWeight_ton + availableCapacity_ton);
-					if (largeTruck == vehicle.getType()) {
+					if (largeTruck.getId().equals(vehicle.getType().getId())) {
 						return new AssignmentCost(true, assignedWeight_ton, usageFraction * 4.0);
 					} else {
 						return new AssignmentCost(true, assignedWeight_ton, usageFraction * 4.0);
-					}					
+					}
 				} else {
 					return new AssignmentCost(false, 0.0, 0.0);
 				}
@@ -70,23 +69,26 @@ public class RoadConsolidationExample {
 
 		ConsolidationSlotChoiceModel choiceModel = new LogitConsolidationSlotChoiceModel(costModel, 1.0, new Random());
 
-		Consolidator consolidator = new Consolidator(fleet, 7, costModel, choiceModel);
+		Consolidator consolidator = new Consolidator(new Random(), fleet, 2, costModel, choiceModel);
 
-		for (int day = 0; day < 7; day++) {
+		for (int day = 0; day < 2; day++) {
 			for (int i = 1; i <= 6; i++) {
-				consolidator.addShipment(new Shipment(SamgodsConstants.Commodity.AGRICULTURE, 0.999 * i, 1.0));
+				consolidator.addShipment(new Shipment(SamgodsConstants.Commodity.AGRICULTURE, 0.999 * i, Math.random()));
 			}
 		}
 
 		consolidator.init();
-		consolidator.step();
-		
-		ConsolidationReport report = new ConsolidationReport(consolidator.getAssignmentsOverDays());
-		
-		System.out.println();
-		System.out.println(report);
-		System.out.println();
-		
+		System.out.println("----- AFTER INIT -----\n");
+		System.out.println(new ConsolidationReport(consolidator.getAssignmentsOverDays()));
+
+		for (int step = 0; step < 3; step++) {
+			consolidator.step();
+			System.out.println("----- AFTER STEP -----\n");
+			System.out.println(new ConsolidationReport(consolidator.getAssignmentsOverDays()));
+		}
+
+
+
 		System.out.println("... DONE");
 	}
 
