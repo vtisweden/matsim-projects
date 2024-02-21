@@ -79,6 +79,10 @@ public class Consolidator {
 	public void addShipments(Collection<Shipment> shipments) {
 		this.shipments.addAll(shipments);
 	}
+	
+	public List<ShipmentVehicleAssignment> getAssignmentsOverDays() {
+		return this.assignmentsOverDays;
+	}
 
 	// -------------------- INTERNALS --------------------
 

@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
@@ -51,6 +53,21 @@ public class ShipmentVehicleAssignment {
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
+
+	public Map<Tuple<SamgodsConstants.Commodity, Id<VehicleType>>, Double> computeCommodityAndVehicleType2tons() {
+		return this.shipmentAndVehicle2tons.entrySet().stream()
+				.collect(Collectors.toMap(
+						e -> new Tuple<>(e.getKey().getA().getType(), e.getKey().getB().getVehicleType().getId()),
+						e -> e.getValue(), (oldVal, newVal) -> oldVal + newVal));
+	}
+
+	public Set<Vehicle> getVehicles() {
+		return this.vehicle2shipments.keySet();
+	}
+
+	public Set<Shipment> getShipments() {
+		return this.shipment2vehicles.keySet();
+	}
 
 	public List<Vehicle> getVehicles(Shipment shipment) {
 		// TODO make unmodifiable

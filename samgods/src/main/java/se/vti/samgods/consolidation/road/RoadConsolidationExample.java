@@ -81,6 +81,12 @@ public class RoadConsolidationExample {
 		consolidator.init();
 		consolidator.step();
 		
+		ConsolidationReport report = new ConsolidationReport(consolidator.getAssignmentsOverDays());
+		
+		System.out.println();
+		System.out.println(report);
+		System.out.println();
+		
 		System.out.println("... DONE");
 	}
 

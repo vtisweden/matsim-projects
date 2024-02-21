@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.logistics.RecurrentShipment;
 import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
@@ -35,9 +36,13 @@ import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
  */
 public class ConsolidationUtils {
 
-	public static double getCapacity_ton(Vehicle vehicle) {
-		return ((FreightVehicleTypeAttributes) vehicle.getType().getAttributes()
+	public static double getCapacity_ton(VehicleType vehicleType) {
+		return ((FreightVehicleTypeAttributes) vehicleType.getAttributes()
 				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME)).getCapacity_ton();
+	}
+
+	public static double getCapacity_ton(Vehicle vehicle) {
+		return getCapacity_ton(vehicle.getType());
 	}
 
 	public static double availableCapacity_ton(Vehicle vehicle, ShipmentVehicleAssignment assignment) {
