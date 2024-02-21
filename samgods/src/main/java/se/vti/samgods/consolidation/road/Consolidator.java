@@ -44,7 +44,9 @@ public class Consolidator {
 
 	private final int shipmentPeriod_day;
 
-	private final ConsolidationSlotChoiceModel slotChoiceModel;
+	private final VehicleConsolidationCostModel costModel;
+
+	private final ConsolidationSlotChoiceModel choiceModel;
 
 	// -------------------- VARIABLES --------------------
 
@@ -54,18 +56,18 @@ public class Consolidator {
 
 	// endogeneous
 
-	private Map<Shipment, Integer> shipment2day = null;
-
 	private List<ShipmentVehicleAssignment> assignmentsOverDays = null;
 
 	private List<Map<Id<Vehicle>, Vehicle>> consideredVehiclesOverDays = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(VehicleFleet fleet, int shipmentPeriod_day, ConsolidationSlotChoiceModel vehicleSampler) {
+	public Consolidator(VehicleFleet fleet, int shipmentPeriod_day, VehicleConsolidationCostModel costModel,
+			ConsolidationSlotChoiceModel choiceModel) {
 		this.fleet = fleet;
 		this.shipmentPeriod_day = shipmentPeriod_day;
-		this.slotChoiceModel = vehicleSampler;
+		this.costModel = costModel;
+		this.choiceModel = choiceModel;
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
@@ -84,10 +86,16 @@ public class Consolidator {
 
 		final List<Map<Vehicle, Double>> vehicle2utilityOverDays = new ArrayList<>(this.shipmentPeriod_day);
 		for (int day = 0; day < this.shipmentPeriod_day; day++) {
+			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(day);
 			final Map<Vehicle, Double> veh2utl = new LinkedHashMap<>(this.consideredVehiclesOverDays.get(day).size());
-			for (Vehicle veh : this.consideredVehiclesOverDays.get(day).values()) {
-				veh2utl.put(veh, this.slotChoiceModel.getUtility(shipment.getWeight_ton(), veh, day,
-						this.assignmentsOverDays.get(day)));
+			for (Vehicle vehicle : this.consideredVehiclesOverDays.get(day).values()) {
+				VehicleConsolidationCostModel.AssignmentCost vehCost = this.costModel.getCost(vehicle,
+						assignment.getShipments(vehicle), shipment.getType(), shipment.getWeight_ton(),
+						this.assignmentsOverDays.get(day));
+				if (vehCost.feasible) {
+					veh2utl.put(vehicle, -vehCost.cost);
+				}
+
 			}
 			vehicle2utilityOverDays.add(veh2utl);
 		}
@@ -96,24 +104,27 @@ public class Consolidator {
 		while (remaining_ton > 1e-8) {
 
 			// TODO DrawSlot (re)computes all choice probabilities each time when called.
-			final ConsolidationSlotChoiceModel.Slot slot = this.slotChoiceModel.drawSlot(shipment,
-					vehicle2utilityOverDays);
+			final ConsolidationSlotChoiceModel.Slot slot = this.choiceModel.drawSlot(shipment, vehicle2utilityOverDays);
 
-			final Vehicle newVehicle;
+			final Vehicle assignedVehicle;
 			if (slot.vehicle instanceof PrototypeVehicle) {
-				newVehicle = this.fleet.createVehicle(slot.vehicle.getType());
-				this.consideredVehiclesOverDays.get(slot.day).put(newVehicle.getId(), newVehicle);
+				assignedVehicle = this.fleet.createVehicle(slot.vehicle.getType());
+				this.consideredVehiclesOverDays.get(slot.day).put(assignedVehicle.getId(), assignedVehicle);
 			} else {
-				newVehicle = slot.vehicle;
+				assignedVehicle = slot.vehicle;
 			}
 
 			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
-			final double assigned_ton = Math.min(remaining_ton, assignment.getRemainingCapacity_ton(newVehicle));
-			assignment.assign(shipment, newVehicle, assigned_ton);
+			final double assigned_ton = Math.min(remaining_ton, assignment.getRemainingCapacity_ton(assignedVehicle));
+			assignment.assign(shipment, assignedVehicle, assigned_ton);
 			remaining_ton -= assigned_ton;
 
-			vehicle2utilityOverDays.get(slot.day).put(newVehicle,
-					this.slotChoiceModel.getUtility(remaining_ton, newVehicle, slot.day, assignment));
+			/*
+			 * Either the vehicle is full and hence useless or not full, or not full because
+			 * the shipment is completely assigned. In either case, it is not considered
+			 * again in this loop.
+			 */
+			vehicle2utilityOverDays.get(slot.day).remove(assignedVehicle);
 		}
 	}
 
@@ -121,7 +132,6 @@ public class Consolidator {
 
 	public void init() {
 
-		this.shipment2day = new LinkedHashMap<>();
 		this.assignmentsOverDays = new ArrayList<>(this.shipmentPeriod_day);
 		this.consideredVehiclesOverDays = new ArrayList<>(this.shipmentPeriod_day);
 		for (int day = 0; day < this.shipmentPeriod_day; day++) {
@@ -139,16 +149,9 @@ public class Consolidator {
 		Collections.shuffle(this.shipments);
 		for (Shipment shipment : this.shipments) {
 
-			final int day = this.shipment2day.get(shipment);
-			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(day);
-			final Map<Id<Vehicle>, Vehicle> consideredVehicles = this.consideredVehiclesOverDays.get(day);
-			assignment.unassign(shipment);
-			for (Vehicle vehicle : consideredVehicles.values()) {
-				if (!assignment.usesVehicle(vehicle) /* assignment uses no prototype vehicles */) {
-					consideredVehicles.remove(vehicle.getId());
-				}
+			for (ShipmentVehicleAssignment assignment : this.assignmentsOverDays) {				
+				assignment.unassign(shipment);
 			}
-			this.shipment2day.remove(shipment);
 
 			this.drawAssignment(shipment);
 		}

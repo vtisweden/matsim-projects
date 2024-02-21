@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.matsim.vehicles.Vehicle;
 
+import se.vti.samgods.SamgodsConstants;
+
 /**
  * 
  * @author GunnarF
@@ -30,8 +32,19 @@ import org.matsim.vehicles.Vehicle;
  */
 public interface VehicleConsolidationCostModel {
 
-	double getFixedCost(Vehicle vehicle);
+	class AssignmentCost {
+		public final boolean feasible;
+		public final double amount_ton;
+		public final double cost;
 
-	double getCost_1_ton(Vehicle vehicle, List<Shipment> shipments);
+		public AssignmentCost(boolean feasible, double amount_ton, double cost) {
+			this.feasible = feasible;
+			this.amount_ton = amount_ton;
+			this.cost = cost;
+		}
+	}
+
+	AssignmentCost getCost(Vehicle vehicle, List<Shipment> alreadyPresentShipments,
+			SamgodsConstants.Commodity addedCommodity, double maxAddedAmount_ton, ShipmentVehicleAssignment assignment);
 
 }

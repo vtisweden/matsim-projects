@@ -46,18 +46,6 @@ public class LogitConsolidationSlotChoiceModel implements ConsolidationSlotChoic
 	}
 
 	@Override
-	public double getFixedCost(Vehicle vehicle, int day) {
-		// TODO Uniformity incentive over days?
-		return this.vehicleCost.getFixedCost(vehicle);
-	}
-
-	@Override
-	public double getCost_1_ton(Vehicle vehicle, int day, ShipmentVehicleAssignment assignment) {
-		// TODO Uniformity incentive over days?
-		return this.vehicleCost.getCost_1_ton(vehicle, assignment.getShipments(vehicle));
-	}
-
-	@Override
 	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, Double>> vehicle2utilityOverDays) {
 
 		double maxUtility = Double.NEGATIVE_INFINITY;

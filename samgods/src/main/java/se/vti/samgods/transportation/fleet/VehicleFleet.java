@@ -21,7 +21,6 @@ package se.vti.samgods.transportation.fleet;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
@@ -52,7 +51,7 @@ public class VehicleFleet {
 		this.vehicles = VehicleUtils.createVehiclesContainer();
 	}
 
-	public void createAndAddVehicleType(final String key, final SamgodsConstants.TransportMode transportMode,
+	public VehicleType createAndAddVehicleType(final String key, final SamgodsConstants.TransportMode transportMode,
 			final double capacity_ton, final double speed_km_h) {
 
 		final Id<VehicleType> typeId = Id.create(key, VehicleType.class);
@@ -62,7 +61,8 @@ public class VehicleFleet {
 
 		final FreightVehicleTypeAttributes attributes = new FreightVehicleTypeAttributes(transportMode, capacity_ton);
 		type.getAttributes().putAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME, attributes);
-		// return attributes;
+
+		return type;
 	}
 
 	public Map<Id<Vehicle>, Vehicle> createPrototypeVehicles() {

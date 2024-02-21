@@ -41,18 +41,6 @@ public interface ConsolidationSlotChoiceModel {
 		}
 	}
 
-	public double getFixedCost(Vehicle vehicle, int day);
-
-	public double getCost_1_ton(Vehicle vehicle, int day, ShipmentVehicleAssignment assignment);
-
-	default public double getUtility(double maxAmount_ton, Vehicle vehicle, int day,
-			ShipmentVehicleAssignment assignment) {
-		final double potentiallyAssigned_ton = Math.min(maxAmount_ton, assignment.getRemainingCapacity_ton(vehicle));
-		return (this.getFixedCost(vehicle, day)
-				+ this.getCost_1_ton(vehicle, day, assignment) * potentiallyAssigned_ton)
-				/ Math.max(1e-8, potentiallyAssigned_ton);
-	}
-
 	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, Double>> vehicle2utilityOverDays);
 
 }
