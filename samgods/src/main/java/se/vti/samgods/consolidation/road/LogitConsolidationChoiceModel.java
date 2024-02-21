@@ -30,15 +30,15 @@ import org.matsim.vehicles.Vehicle;
  * @author GunnarF
  *
  */
-public class LogitConsolidationSlotChoiceModel implements ConsolidationSlotChoiceModel {
+public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 
-	private final VehicleConsolidationCostModel vehicleCost;
+	private final ConsolidationCostModel vehicleCost;
 
 	private final double scale;
 
 	private final Random rnd;
 
-	public LogitConsolidationSlotChoiceModel(final VehicleConsolidationCostModel vehicleCost, final double scale,
+	public LogitConsolidationChoiceModel(final ConsolidationCostModel vehicleCost, final double scale,
 			final Random rnd) {
 		this.vehicleCost = vehicleCost;
 		this.scale = scale;

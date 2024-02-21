@@ -47,9 +47,9 @@ public class Consolidator {
 
 	private final int shipmentPeriod_day;
 
-	private final VehicleConsolidationCostModel costModel;
+	private final ConsolidationCostModel costModel;
 
-	private final ConsolidationSlotChoiceModel choiceModel;
+	private final ConsolidationChoiceModel choiceModel;
 
 	// -------------------- VARIABLES --------------------
 
@@ -65,8 +65,8 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(Random rnd, VehicleFleet fleet, int shipmentPeriod_day, VehicleConsolidationCostModel costModel,
-			ConsolidationSlotChoiceModel choiceModel) {
+	public Consolidator(Random rnd, VehicleFleet fleet, int shipmentPeriod_day, ConsolidationCostModel costModel,
+			ConsolidationChoiceModel choiceModel) {
 		this.rnd = rnd;
 		this.fleet = fleet;
 		this.shipmentPeriod_day = shipmentPeriod_day;
@@ -101,7 +101,7 @@ public class Consolidator {
 			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(day);
 			final Map<Vehicle, Double> veh2utl = new LinkedHashMap<>(this.consideredVehiclesOverDays.get(day).size());
 			for (Vehicle vehicle : this.consideredVehiclesOverDays.get(day).values()) {
-				VehicleConsolidationCostModel.AssignmentCost vehCost = this.costModel.getCost(vehicle,
+				ConsolidationCostModel.AssignmentCost vehCost = this.costModel.getCost(vehicle,
 						assignment.getShipments(vehicle), shipment.getType(), shipment.getWeight_ton(),
 						this.assignmentsOverDays.get(day));
 				if (vehCost.feasible) {
@@ -116,7 +116,7 @@ public class Consolidator {
 		while (remaining_ton > 1e-8) {
 
 			// TODO DrawSlot (re)computes all choice probabilities each time when called.
-			final ConsolidationSlotChoiceModel.Slot slot = this.choiceModel.drawSlot(shipment, vehicle2utilityOverDays);
+			final ConsolidationChoiceModel.Slot slot = this.choiceModel.drawSlot(shipment, vehicle2utilityOverDays);
 
 			final Vehicle assignedVehicle;
 			if (slot.vehicle instanceof PrototypeVehicle) {

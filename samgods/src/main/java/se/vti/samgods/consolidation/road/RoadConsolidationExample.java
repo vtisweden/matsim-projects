@@ -46,7 +46,7 @@ public class RoadConsolidationExample {
 		VehicleType smallTruck = fleet.createAndAddVehicleType("small truck", SamgodsConstants.TransportMode.Road, 10.0,
 				80.0);
 
-		VehicleConsolidationCostModel costModel = new VehicleConsolidationCostModel() {
+		ConsolidationCostModel costModel = new ConsolidationCostModel() {
 			@Override
 			public AssignmentCost getCost(Vehicle vehicle, List<Shipment> alreadyPresentShipments,
 					Commodity addedCommodity, double maxAddedAmount_ton, ShipmentVehicleAssignment assignment) {
@@ -67,7 +67,7 @@ public class RoadConsolidationExample {
 			}
 		};
 
-		ConsolidationSlotChoiceModel choiceModel = new LogitConsolidationSlotChoiceModel(costModel, 1.0, new Random());
+		ConsolidationChoiceModel choiceModel = new LogitConsolidationChoiceModel(costModel, 1.0, new Random());
 
 		Consolidator consolidator = new Consolidator(new Random(), fleet, 2, costModel, choiceModel);
 

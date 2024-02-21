@@ -20,31 +20,27 @@
 package se.vti.samgods.consolidation.road;
 
 import java.util.List;
+import java.util.Map;
 
 import org.matsim.vehicles.Vehicle;
-
-import se.vti.samgods.SamgodsConstants;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface VehicleConsolidationCostModel {
+public interface ConsolidationChoiceModel {
 
-	class AssignmentCost {
-		public final boolean feasible;
-		public final double amount_ton;
-		public final double cost;
+	public class Slot {
+		public final Vehicle vehicle;
+		public final int day;
 
-		public AssignmentCost(boolean feasible, double amount_ton, double cost) {
-			this.feasible = feasible;
-			this.amount_ton = amount_ton;
-			this.cost = cost;
+		public Slot(Vehicle vehicle, int day) {
+			this.vehicle = vehicle;
+			this.day = day;
 		}
 	}
 
-	AssignmentCost getCost(Vehicle vehicle, List<Shipment> alreadyPresentShipments,
-			SamgodsConstants.Commodity addedCommodity, double maxAddedAmount_ton, ShipmentVehicleAssignment assignment);
+	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, Double>> vehicle2utilityOverDays);
 
 }
