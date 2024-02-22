@@ -36,6 +36,9 @@ import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
  */
 public class ConsolidationUtils {
 
+	private ConsolidationUtils() {		
+	}
+	
 	public static double getCapacity_ton(VehicleType vehicleType) {
 		return ((FreightVehicleTypeAttributes) vehicleType.getAttributes()
 				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME)).getCapacity_ton();
@@ -43,10 +46,6 @@ public class ConsolidationUtils {
 
 	public static double getCapacity_ton(Vehicle vehicle) {
 		return getCapacity_ton(vehicle.getType());
-	}
-
-	public static double availableCapacity_ton(Vehicle vehicle, ShipmentVehicleAssignment assignment) {
-		return getCapacity_ton(vehicle) - assignment.getPayload_ton(vehicle);
 	}
 
 	public static List<Shipment> disaggregate(RecurrentShipment recurrentShipment, int analysisPeriod_days) {
@@ -94,5 +93,4 @@ public class ConsolidationUtils {
 			System.out.println((realized - target) / target);
 		}
 	}
-
 }

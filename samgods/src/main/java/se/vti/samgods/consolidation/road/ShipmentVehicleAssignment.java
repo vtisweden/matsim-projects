@@ -23,15 +23,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
-import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Tuple;
-import se.vti.samgods.SamgodsConstants;
 
 /**
  * 
@@ -52,36 +47,25 @@ public class ShipmentVehicleAssignment {
 	public ShipmentVehicleAssignment() {
 	}
 
+	// -------------------- GETTERS --------------------
+
+	public Map<Shipment, LinkedList<Vehicle>> getShipment2vehicles() {
+		return shipment2vehicles;
+	}
+
+	public Map<Vehicle, LinkedList<Shipment>> getVehicle2shipments() {
+		return vehicle2shipments;
+	}
+
+	public Map<Tuple<Shipment, Vehicle>, Double> getShipmentAndVehicle2tons() {
+		return shipmentAndVehicle2tons;
+	}
+
+	public Map<Vehicle, Double> getVehicle2payload_ton() {
+		return vehicle2payload_ton;
+	}
+
 	// -------------------- IMPLEMENTATION --------------------
-
-	public Map<Tuple<SamgodsConstants.Commodity, Id<VehicleType>>, Double> computeCommodityAndVehicleType2tons() {
-		return this.shipmentAndVehicle2tons.entrySet().stream()
-				.collect(Collectors.toMap(
-						e -> new Tuple<>(e.getKey().getA().getType(), e.getKey().getB().getVehicleType().getId()),
-						e -> e.getValue(), (oldVal, newVal) -> oldVal + newVal));
-	}
-
-	public Set<Vehicle> getVehicles() {
-		return this.vehicle2shipments.keySet();
-	}
-
-	public Set<Shipment> getShipments() {
-		return this.shipment2vehicles.keySet();
-	}
-
-	public List<Vehicle> getVehicles(Shipment shipment) {
-		// TODO make unmodifiable
-		return this.shipment2vehicles.get(shipment);
-	}
-
-	public List<Shipment> getShipments(Vehicle vehicle) {
-		// TODO make unmodifiable
-		return this.vehicle2shipments.get(vehicle);
-	}
-
-	public boolean usesVehicle(Vehicle vehicle) {
-		return this.vehicle2shipments.containsKey(vehicle);
-	}
 
 	public void assign(final Shipment shipment, final Vehicle vehicle, final double tons) {
 		assert (!this.shipmentAndVehicle2tons.containsKey(new Tuple<>(shipment, vehicle)));
@@ -92,7 +76,8 @@ public class ShipmentVehicleAssignment {
 		this.vehicle2payload_ton.compute(vehicle, (v, pl) -> pl == null ? tons : pl + tons);
 	}
 
-	private void takeShipmentOutOfVehicle(final Shipment shipment, final Vehicle vehicle) {
+	public void unassign(final Shipment shipment, final Vehicle vehicle) {
+		final Tuple<Shipment, Vehicle> shipmentAndVehicle = new Tuple<>(shipment, vehicle);
 
 		final List<Vehicle> vehiclesUsedForShipment = this.shipment2vehicles.get(shipment);
 		if (vehiclesUsedForShipment.size() == 1) {
@@ -102,33 +87,24 @@ public class ShipmentVehicleAssignment {
 		}
 
 		final List<Shipment> shipmentsInVehicle = this.vehicle2shipments.get(vehicle);
-		final Tuple<Shipment, Vehicle> shipmentAndVehicle = new Tuple<>(shipment, vehicle);
 		if (shipmentsInVehicle.size() == 1) {
 			this.vehicle2shipments.remove(vehicle);
 			this.vehicle2payload_ton.remove(vehicle);
 		} else {
 			shipmentsInVehicle.remove(shipment);
-			final double removedTons = this.shipmentAndVehicle2tons.get(shipmentAndVehicle);
-			this.vehicle2payload_ton.compute(vehicle, (v, pl) -> pl - removedTons);
+			this.vehicle2payload_ton.compute(vehicle,
+					(v, pl) -> pl - this.shipmentAndVehicle2tons.get(shipmentAndVehicle));
 		}
 		this.shipmentAndVehicle2tons.remove(shipmentAndVehicle);
-	}
-
-	public void unassign(final Shipment shipment, final Vehicle vehicle) {
-		this.takeShipmentOutOfVehicle(shipment, vehicle);
 	}
 
 	public void unassign(final Shipment shipment) {
 		if (this.shipment2vehicles.containsKey(shipment)) {
 			for (Vehicle vehicle : this.shipment2vehicles.get(shipment)) {
-				this.takeShipmentOutOfVehicle(shipment, vehicle);
+				this.unassign(shipment, vehicle);
 			}
-			this.shipment2vehicles.remove(shipment);
+			assert (!this.shipment2vehicles.containsKey(shipment));
 		}
-	}
-
-	public boolean isUsed(final Vehicle vehicle) {
-		return this.vehicle2shipments.containsKey(vehicle) && (this.vehicle2shipments.get(vehicle).size() > 0);
 	}
 
 	public void clear() {
@@ -141,43 +117,4 @@ public class ShipmentVehicleAssignment {
 	public double getPayload_ton(Vehicle vehicle) {
 		return this.vehicle2payload_ton.getOrDefault(vehicle, 0.0);
 	}
-
-	public double getRemainingCapacity_ton(Vehicle vehicle) {
-		return ConsolidationUtils.getCapacity_ton(vehicle) - this.getPayload_ton(vehicle);
-	}
-
-	// -------------------- TODO --------------------
-
-	public interface CommodityAssignmentReport {
-
-		public SamgodsConstants.Commodity getCommodity();
-
-		public double getTotalAssignedTons();
-
-		public long getTotalShipmentCount();
-
-		public Map<Id<VehicleType>, Double> getVehicleType2shippedTons();
-
-		public Map<Id<VehicleType>, Integer> getVehicleType2shipmentCnt();
-
-	}
-
-	public void createReport() {
-
-		double total_ton = 0.0;
-		long total_cnt = 0l;
-
-		final Map<Id<VehicleType>, Double> vehicleTypeId2ton = new LinkedHashMap<>();
-
-		final Map<Tuple<SamgodsConstants.Commodity, VehicleType>, Double> commodityAndVehicleType2ton = new LinkedHashMap<>();
-		final Map<Tuple<SamgodsConstants.Commodity, VehicleType>, Integer> commodityAndVehicleType2cnt = new LinkedHashMap<>();
-		for (Map.Entry<Tuple<Shipment, Vehicle>, Double> entry : this.shipmentAndVehicle2tons.entrySet()) {
-			final Shipment shipment = entry.getKey().getA();
-			final Vehicle vehicle = entry.getKey().getB();
-			vehicleTypeId2ton.compute(vehicle.getType().getId(),
-					(type, ton) -> ton == null ? entry.getValue() : ton + entry.getValue());
-		}
-
-	}
-
 }

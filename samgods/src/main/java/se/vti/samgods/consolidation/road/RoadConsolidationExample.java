@@ -19,7 +19,6 @@
  */
 package se.vti.samgods.consolidation.road;
 
-import java.util.List;
 import java.util.Random;
 
 import org.matsim.vehicles.Vehicle;
@@ -48,8 +47,8 @@ public class RoadConsolidationExample {
 
 		ConsolidationCostModel costModel = new ConsolidationCostModel() {
 			@Override
-			public AssignmentCost getCost(Vehicle vehicle, List<Shipment> alreadyPresentShipments,
-					Commodity addedCommodity, double maxAddedAmount_ton, ShipmentVehicleAssignment assignment) {
+			public Cost getCost(Vehicle vehicle, Commodity addedCommodity, double maxAddedAmount_ton,
+					ShipmentVehicleAssignment assignment) {
 				final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
 				final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
 				final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
@@ -57,23 +56,26 @@ public class RoadConsolidationExample {
 				if (feasible) {
 					final double usageFraction = assignedWeight_ton / (assignedWeight_ton + availableCapacity_ton);
 					if (largeTruck.getId().equals(vehicle.getType().getId())) {
-						return new AssignmentCost(true, assignedWeight_ton, usageFraction * 4.0);
+						return new Cost(true, assignedWeight_ton, usageFraction * 4.0);
 					} else {
-						return new AssignmentCost(true, assignedWeight_ton, usageFraction * 4.0);
+						return new Cost(true, assignedWeight_ton, usageFraction * 4.0);
 					}
 				} else {
-					return new AssignmentCost(false, 0.0, 0.0);
+					return new Cost(false, 0.0, 0.0);
 				}
 			}
 		};
 
-		ConsolidationChoiceModel choiceModel = new LogitConsolidationChoiceModel(costModel, 1.0, new Random());
+		ConsolidationChoiceModel choiceModel = new LogitConsolidationChoiceModel(1.0, new Random());
 
-		Consolidator consolidator = new Consolidator(new Random(), fleet, 2, costModel, choiceModel);
+		final int days = 7;
 
-		for (int day = 0; day < 2; day++) {
+		Consolidator consolidator = new Consolidator(new Random(), fleet, days, costModel, choiceModel);
+
+		for (int day = 0; day < days; day++) {
 			for (int i = 1; i <= 6; i++) {
-				consolidator.addShipment(new Shipment(SamgodsConstants.Commodity.AGRICULTURE, 0.999 * i, Math.random()));
+				consolidator
+						.addShipment(new Shipment(SamgodsConstants.Commodity.AGRICULTURE, 0.999 * i, Math.random()));
 			}
 		}
 
@@ -86,8 +88,6 @@ public class RoadConsolidationExample {
 			System.out.println("----- AFTER STEP -----\n");
 			System.out.println(new ConsolidationReport(consolidator.getAssignmentsOverDays()));
 		}
-
-
 
 		System.out.println("... DONE");
 	}

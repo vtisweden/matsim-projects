@@ -26,9 +26,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
-import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -42,7 +43,7 @@ public class Consolidator {
 	// -------------------- CONSTANTS --------------------
 
 	private final Random rnd;
-	
+
 	private final VehicleFleet fleet;
 
 	private final int shipmentPeriod_day;
@@ -50,6 +51,8 @@ public class Consolidator {
 	private final ConsolidationCostModel costModel;
 
 	private final ConsolidationChoiceModel choiceModel;
+
+	private final Map<VehicleType, Vehicle> prototypeVehicles;
 
 	// -------------------- VARIABLES --------------------
 
@@ -61,7 +64,7 @@ public class Consolidator {
 
 	private List<ShipmentVehicleAssignment> assignmentsOverDays = null;
 
-	private List<Map<Id<Vehicle>, Vehicle>> consideredVehiclesOverDays = null;
+//	private List<Map<Id<Vehicle>, Vehicle>> consideredVehiclesOverDays = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -72,6 +75,7 @@ public class Consolidator {
 		this.shipmentPeriod_day = shipmentPeriod_day;
 		this.costModel = costModel;
 		this.choiceModel = choiceModel;
+		this.prototypeVehicles = Collections.unmodifiableMap(fleet.createPrototypeVehicles());
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
@@ -83,7 +87,7 @@ public class Consolidator {
 	public void addShipments(Collection<Shipment> shipments) {
 		this.shipments.addAll(shipments);
 	}
-	
+
 	public List<ShipmentVehicleAssignment> getAssignmentsOverDays() {
 		return this.assignmentsOverDays;
 	}
@@ -95,60 +99,81 @@ public class Consolidator {
 		if (this.rnd.nextDouble() >= shipment.getProbability()) {
 			return;
 		}
-		
-		final List<Map<Vehicle, Double>> vehicle2utilityOverDays = new ArrayList<>(this.shipmentPeriod_day);
-		for (int day = 0; day < this.shipmentPeriod_day; day++) {
-			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(day);
-			final Map<Vehicle, Double> veh2utl = new LinkedHashMap<>(this.consideredVehiclesOverDays.get(day).size());
-			for (Vehicle vehicle : this.consideredVehiclesOverDays.get(day).values()) {
-				ConsolidationCostModel.AssignmentCost vehCost = this.costModel.getCost(vehicle,
-						assignment.getShipments(vehicle), shipment.getType(), shipment.getWeight_ton(),
-						this.assignmentsOverDays.get(day));
-				if (vehCost.feasible) {
-					veh2utl.put(vehicle, -vehCost.cost);
-				}
 
+		/*
+		 * (1) Identify which vehicles are available and what they cost.
+		 */
+
+		final List<Map<Vehicle, ConsolidationCostModel.Cost>> vehicle2costOverDays = new ArrayList<>(
+				this.shipmentPeriod_day);
+		for (int day = 0; day < this.shipmentPeriod_day; day++) {
+			final Set<Vehicle> alreadyUsedVehicles = this.assignmentsOverDays.get(day).getVehicle2shipments().keySet();
+
+			final Map<Vehicle, ConsolidationCostModel.Cost> veh2cost = new LinkedHashMap<>(
+					this.prototypeVehicles.size() + alreadyUsedVehicles.size());
+			for (Vehicle vehicle : this.prototypeVehicles.values()) {
+				ConsolidationCostModel.Cost vehCost = this.costModel.getCost(vehicle, shipment.getCommodity(),
+						shipment.getWeight_ton(), this.assignmentsOverDays.get(day));
+				if (vehCost.feasible) {
+					veh2cost.put(vehicle, vehCost);
+				}
 			}
-			vehicle2utilityOverDays.add(veh2utl);
+			for (Vehicle vehicle : alreadyUsedVehicles) {
+				ConsolidationCostModel.Cost vehCost = this.costModel.getCost(vehicle, shipment.getCommodity(),
+						shipment.getWeight_ton(), this.assignmentsOverDays.get(day));
+				if (vehCost.feasible) {
+					veh2cost.put(vehicle, vehCost);
+				}
+			}
+
+			vehicle2costOverDays.add(veh2cost);
 		}
+
+		/*
+		 * (2) Repeatedly choose a vehicle and put as much load as possible into that
+		 * vehicle.
+		 * 
+		 * TODO: Attention. If we want sequence independence then cost must not depend
+		 * on earlier choices.
+		 */
 
 		double remaining_ton = shipment.getWeight_ton();
 		while (remaining_ton > 1e-8) {
 
 			// TODO DrawSlot (re)computes all choice probabilities each time when called.
-			final ConsolidationChoiceModel.Slot slot = this.choiceModel.drawSlot(shipment, vehicle2utilityOverDays);
+			final ConsolidationChoiceModel.Slot slot = this.choiceModel.drawSlot(shipment, vehicle2costOverDays);
 
 			final Vehicle assignedVehicle;
 			if (slot.vehicle instanceof PrototypeVehicle) {
-				assignedVehicle = this.fleet.createVehicle(slot.vehicle.getType());
-				this.consideredVehiclesOverDays.get(slot.day).put(assignedVehicle.getId(), assignedVehicle);
+				assignedVehicle = this.fleet.createAndAddVehicle(slot.vehicle.getType());
 			} else {
 				assignedVehicle = slot.vehicle;
 			}
 
 			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
-			final double assigned_ton = Math.min(remaining_ton, assignment.getRemainingCapacity_ton(assignedVehicle));
+			final double assigned_ton = Math.min(remaining_ton,
+					ConsolidationUtils.getCapacity_ton(assignedVehicle) - assignment.getPayload_ton(assignedVehicle));
 			assignment.assign(shipment, assignedVehicle, assigned_ton);
 			remaining_ton -= assigned_ton;
 
 			/*
-			 * Either the vehicle is full and hence useless or not full, or not full because
-			 * the shipment is completely assigned. In either case, it is not considered
-			 * again in this loop.
+			 * Either the vehicle is full and and more useful for the considered shipment,
+			 * or it is not not full because the shipment is completely assigned. In either
+			 * case, it will no longer be considered.
 			 */
-			vehicle2utilityOverDays.get(slot.day).remove(assignedVehicle);
+			assert (Math.abs(ConsolidationUtils.getCapacity_ton(assignedVehicle)
+					- assignment.getPayload_ton(assignedVehicle)) <= 1e-8 || remaining_ton <= 1e-8);
+			vehicle2costOverDays.get(slot.day).remove(assignedVehicle);
 		}
 	}
 
-	// -------------------- NEW SIMULATION LOGIC --------------------
+	// -------------------- SIMULATION LOGIC --------------------
 
 	public void init() {
 
 		this.assignmentsOverDays = new ArrayList<>(this.shipmentPeriod_day);
-		this.consideredVehiclesOverDays = new ArrayList<>(this.shipmentPeriod_day);
 		for (int day = 0; day < this.shipmentPeriod_day; day++) {
 			this.assignmentsOverDays.add(new ShipmentVehicleAssignment());
-			this.consideredVehiclesOverDays.add(new LinkedHashMap<>(this.fleet.createPrototypeVehicles()));
 		}
 
 		Collections.shuffle(this.shipments);
@@ -160,11 +185,9 @@ public class Consolidator {
 	public void step() {
 		Collections.shuffle(this.shipments);
 		for (Shipment shipment : this.shipments) {
-
-			for (ShipmentVehicleAssignment assignment : this.assignmentsOverDays) {				
+			for (ShipmentVehicleAssignment assignment : this.assignmentsOverDays) {
 				assignment.unassign(shipment);
 			}
-
 			this.drawAssignment(shipment);
 		}
 	}

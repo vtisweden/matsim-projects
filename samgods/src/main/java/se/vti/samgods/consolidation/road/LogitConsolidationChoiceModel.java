@@ -32,48 +32,51 @@ import org.matsim.vehicles.Vehicle;
  */
 public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 
-	private final ConsolidationCostModel vehicleCost;
-
 	private final double scale;
 
 	private final Random rnd;
 
-	public LogitConsolidationChoiceModel(final ConsolidationCostModel vehicleCost, final double scale,
-			final Random rnd) {
-		this.vehicleCost = vehicleCost;
+	public LogitConsolidationChoiceModel(final double scale, final Random rnd) {
 		this.scale = scale;
 		this.rnd = rnd;
 	}
 
 	@Override
-	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, Double>> vehicle2utilityOverDays) {
+	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, ConsolidationCostModel.Cost>> vehicle2costOverDays) {
 
 		double maxUtility = Double.NEGATIVE_INFINITY;
-		for (int day = 0; day < vehicle2utilityOverDays.size(); day++) {
-			for (Double utility : vehicle2utilityOverDays.get(day).values()) {
-				maxUtility = Math.max(maxUtility, utility);
+		for (Map<Vehicle, ConsolidationCostModel.Cost> vehicle2cost : vehicle2costOverDays) {
+			for (ConsolidationCostModel.Cost cost : vehicle2cost.values()) {
+				if (cost.feasible) {
+					maxUtility = Math.max(maxUtility, (-cost.cost));
+				}
 			}
 		}
 
 		double denom = 0.0;
-		for (int day = 0; day < vehicle2utilityOverDays.size(); day++) {
-			for (Double utility : vehicle2utilityOverDays.get(day).values()) {
-				denom += Math.exp(this.scale * (utility - maxUtility));
+		for (Map<Vehicle, ConsolidationCostModel.Cost> vehicle2cost : vehicle2costOverDays) {
+			for (ConsolidationCostModel.Cost cost : vehicle2cost.values()) {
+				if (cost.feasible) {
+					denom += Math.exp(this.scale * ((-cost.cost) - maxUtility));
+				}
 			}
 		}
 
 		final double threshold = this.rnd.nextDouble() * denom;
 		double sum = 0.0;
-		for (int day = 0; day < vehicle2utilityOverDays.size(); day++) {
-			for (Map.Entry<Vehicle, Double> veh2utl : vehicle2utilityOverDays.get(day).entrySet()) {
-				sum += Math.exp(this.scale * (veh2utl.getValue() - maxUtility));
-				if (sum >= threshold) {
-					return new Slot(veh2utl.getKey(), day);
+		for (int day = 0; day < vehicle2costOverDays.size(); day++) {
+			for (Map.Entry<Vehicle, ConsolidationCostModel.Cost> veh2cost : vehicle2costOverDays.get(day).entrySet()) {
+				if (veh2cost.getValue().feasible) {
+					sum += Math.exp(this.scale * ((-veh2cost.getValue().cost) - maxUtility));
+					if (sum >= threshold) {
+						return new Slot(veh2cost.getKey(), day);
+					}
 				}
 			}
 		}
 
-		// TODO should not happen unless for numerical reasons
+		// Happens at most very rarely and for numerical reasons.
+		// Hedge against that in calling function.
 		return null;
 	}
 }

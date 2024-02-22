@@ -48,13 +48,13 @@ public class Shipment {
 		return this.probability;
 	}
 
-	public Commodity getType() {
+	public Commodity getCommodity() {
 		return this.commodity;
 	}
 
 	@Override
 	public String toString() {
-		return this.commodity + "(weight=" + this.tons + "ton,proba=" + this.probability + ")";
+		return this.commodity + "(" + this.tons + "ton,Pr=" + this.probability + ")";
 	}
 
 }

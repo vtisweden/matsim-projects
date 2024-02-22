@@ -44,7 +44,7 @@ public class VehicleFleet {
 	private final Vehicles vehicles;
 
 	private long vehCnt = 0;
-	
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public VehicleFleet() {
@@ -57,58 +57,30 @@ public class VehicleFleet {
 		final Id<VehicleType> typeId = Id.create(key, VehicleType.class);
 		final VehicleType type = VehicleUtils.createVehicleType(typeId);
 		type.setMaximumVelocity(Units.M_S_PER_KM_H * speed_km_h);
-		this.vehicles.addVehicleType(type);
 
 		final FreightVehicleTypeAttributes attributes = new FreightVehicleTypeAttributes(transportMode, capacity_ton);
 		type.getAttributes().putAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME, attributes);
 
+		this.vehicles.addVehicleType(type);
 		return type;
 	}
 
-	public Map<Id<Vehicle>, Vehicle> createPrototypeVehicles() {
-		final Map<Id<Vehicle>, Vehicle> id2veh = new LinkedHashMap<>(this.vehicles.getVehicleTypes().size());
+	public Vehicle createAndAddVehicle(VehicleType type) {
+		assert (this.vehicles.getVehicleTypes().values().contains(type));
+		final Vehicle vehicle = this.vehicles.getFactory().createVehicle(Id.create(this.vehCnt++, Vehicle.class), type);
+		this.vehicles.addVehicle(vehicle);
+		return vehicle;
+	}
+
+	// TODO Consolidation-specific. Move there once getters of VehicleFleet are
+	// decided.
+	public Map<VehicleType, Vehicle> createPrototypeVehicles() {
+		final Map<VehicleType, Vehicle> type2veh = new LinkedHashMap<>(this.vehicles.getVehicleTypes().size());
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
 			final Vehicle prototype = new PrototypeVehicle(type);
-			id2veh.put(prototype.getId(), prototype);
+			type2veh.put(type, prototype);
 		}
-		return id2veh;
+		return type2veh;
 	}
 
-	public Vehicle createVehicle(VehicleType type) {
-		return this.vehicles.getFactory().createVehicle(Id.create(this.vehCnt++, Vehicle.class), type);
-	}
-	
-	// -------------------- IMPLEMENTATION --------------------
-
-	
-//	public FreightVehicleTypeAttributes getFreightVehicleAttributes(final Id<VehicleType> typeId) {
-//		return (FreightVehicleTypeAttributes) this.vehicles.getVehicleTypes().get(typeId).getAttributes()
-//				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME);
-//	}
-//
-//	public FreightVehicleTypeAttributes getFreightVehicleAttributes(final String key) {
-//		return this.getFreightVehicleAttributes(Id.create(key, VehicleType.class));
-//	}
-
-//	public TravelDisutility createEmptyVehicleTravelDisutility(final String vehicleKey) {
-//		final Id<VehicleType> vehicleTypeId = Id.create(vehicleKey, VehicleType.class);
-//		final VehicleType vehicleType = this.vehicles.getVehicleTypes().get(vehicleTypeId);
-//
-//		return new TravelDisutility() {
-//			@Override
-//			public double getLinkMinimumTravelDisutility(Link link) {
-//				final double length_km = Units.KM_PER_M * link.getLength();
-//				final double speed_km_h = Units.KM_H_PER_M_S
-//						* Math.min(link.getFreespeed(), vehicleType.getMaximumVelocity());
-//				final double traveltime_h = length_km / speed_km_h;
-//				final FreightVehicleAttributes attrs = getFreightVehicleAttributes(vehicleTypeId);
-//				return attrs.getFixedCost_1_km() * length_km + attrs.getFixedCost_1_h() * traveltime_h;
-//			}
-//
-//			@Override
-//			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-//				return this.getLinkMinimumTravelDisutility(link);
-//			}
-//		};
-//	}
 }

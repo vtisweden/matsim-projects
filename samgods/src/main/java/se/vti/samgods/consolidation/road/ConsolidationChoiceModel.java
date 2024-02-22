@@ -31,7 +31,7 @@ import org.matsim.vehicles.Vehicle;
  */
 public interface ConsolidationChoiceModel {
 
-	public class Slot {
+	class Slot {
 		public final Vehicle vehicle;
 		public final int day;
 
@@ -41,6 +41,6 @@ public interface ConsolidationChoiceModel {
 		}
 	}
 
-	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, Double>> vehicle2utilityOverDays);
+	Slot drawSlot(Shipment shipment, List<Map<Vehicle, ConsolidationCostModel.Cost>> vehicle2costOverDays);
 
 }
