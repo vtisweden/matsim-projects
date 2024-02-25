@@ -27,7 +27,7 @@ import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.logistics.RecurrentShipment;
-import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
+import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
  * 
@@ -36,12 +36,12 @@ import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
  */
 public class ConsolidationUtils {
 
-	private ConsolidationUtils() {		
+	private ConsolidationUtils() {
 	}
-	
+
 	public static double getCapacity_ton(VehicleType vehicleType) {
-		return ((FreightVehicleTypeAttributes) vehicleType.getAttributes()
-				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME)).getCapacity_ton();
+		return ((FreightVehicleFleet.TypeAttributes) vehicleType.getAttributes()
+				.getAttribute(FreightVehicleFleet.TypeAttributes.ATTRIBUTE_NAME)).capacity_ton;
 	}
 
 	public static double getCapacity_ton(Vehicle vehicle) {

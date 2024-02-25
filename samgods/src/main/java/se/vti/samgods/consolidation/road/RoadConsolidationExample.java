@@ -26,7 +26,7 @@ import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
  * 
@@ -39,11 +39,13 @@ public class RoadConsolidationExample {
 
 		System.out.println("STARTED ...");
 
-		VehicleFleet fleet = new VehicleFleet();
-		VehicleType largeTruck = fleet.createAndAddVehicleType("large truck", SamgodsConstants.TransportMode.Road, 35.0,
-				80.0);
-		VehicleType smallTruck = fleet.createAndAddVehicleType("small truck", SamgodsConstants.TransportMode.Road, 10.0,
-				80.0);
+		FreightVehicleFleet fleet = new FreightVehicleFleet();
+		VehicleType largeTruck = null;
+//				fleet.createAndAddVehicleType("large truck", SamgodsConstants.TransportMode.Road, 35.0,
+//				80.0);
+		VehicleType smallTruck = null;
+//		fleet.createAndAddVehicleType("small truck", SamgodsConstants.TransportMode.Road, 10.0,
+//				80.0);
 
 		ConsolidationCostModel costModel = new ConsolidationCostModel() {
 			@Override

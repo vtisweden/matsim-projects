@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
  * Packages the supply (carrier) side of the freight transport system.
@@ -51,11 +51,11 @@ public class TransportSupply {
 
 	private final Network network;
 
-	private final VehicleFleet vehicleFleet;
+	private final FreightVehicleFleet vehicleFleet;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public TransportSupply(Network network, VehicleFleet fleet) {
+	public TransportSupply(Network network, FreightVehicleFleet fleet) {
 		this.network = network;
 		this.vehicleFleet = fleet;
 	}
@@ -66,7 +66,7 @@ public class TransportSupply {
 		return this.network;
 	}
 
-	public VehicleFleet getVehicleFleet() {
+	public FreightVehicleFleet getVehicleFleet() {
 		return this.vehicleFleet;
 	}
 }

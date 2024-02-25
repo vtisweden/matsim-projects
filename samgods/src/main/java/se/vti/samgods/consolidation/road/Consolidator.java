@@ -31,7 +31,7 @@ import java.util.Set;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
  * 
@@ -44,7 +44,7 @@ public class Consolidator {
 
 	private final Random rnd;
 
-	private final VehicleFleet fleet;
+	private final FreightVehicleFleet fleet;
 
 	private final int shipmentPeriod_day;
 
@@ -68,7 +68,7 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(Random rnd, VehicleFleet fleet, int shipmentPeriod_day, ConsolidationCostModel costModel,
+	public Consolidator(Random rnd, FreightVehicleFleet fleet, int shipmentPeriod_day, ConsolidationCostModel costModel,
 			ConsolidationChoiceModel choiceModel) {
 		this.rnd = rnd;
 		this.fleet = fleet;
