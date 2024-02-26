@@ -47,6 +47,8 @@ public class FreightVehicleFleet {
 
 		public final Id<VehicleType> id;
 
+		public final String description;
+
 		public final SamgodsConstants.TransportMode mode;
 
 		public final double fixedCost_1_km;
@@ -77,9 +79,9 @@ public class FreightVehicleFleet {
 
 		public final Map<SamgodsConstants.Commodity, Double> transferTimeContainer_h;
 
-		private /* use builder */ TypeAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode mode,
-				double fixedCost_1_km, double fixedCost_1_h, double capacity_ton, double onFerryCost_1_km,
-				double onFerryCost_1_h, double maxSpeed_km_h,
+		private /* use builder */ TypeAttributes(Id<VehicleType> id, String description,
+				SamgodsConstants.TransportMode mode, double fixedCost_1_km, double fixedCost_1_h, double capacity_ton,
+				double onFerryCost_1_km, double onFerryCost_1_h, double maxSpeed_km_h,
 				Map<SamgodsConstants.Commodity, Double> loadCostNoContainer_1_ton,
 				Map<SamgodsConstants.Commodity, Double> loadTimeNoContainer_h,
 				Map<SamgodsConstants.Commodity, Double> transferCostNoContainer_1_ton,
@@ -89,6 +91,7 @@ public class FreightVehicleFleet {
 				Map<SamgodsConstants.Commodity, Double> transferCostContainer_1_ton,
 				Map<SamgodsConstants.Commodity, Double> transferTimeContainer_h) {
 			this.id = id;
+			this.description = description;
 			this.mode = mode;
 			this.fixedCost_1_km = fixedCost_1_km;
 			this.fixedCost_1_h = fixedCost_1_h;
@@ -112,6 +115,8 @@ public class FreightVehicleFleet {
 	public class TypeBuilder {
 
 		private Id<VehicleType> id = null;
+
+		private String description = null;
 
 		private SamgodsConstants.TransportMode mode = null;
 
@@ -151,11 +156,11 @@ public class FreightVehicleFleet {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
 			type.setMaximumVelocity(Units.M_S_PER_KM_H * this.maxSpeed_km_h);
 
-			TypeAttributes attributes = new TypeAttributes(this.id, this.mode, this.fixedCost_1_km, this.fixedCost_1_h,
-					this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.maxSpeed_km_h,
-					this.loadCostNoContainer_1_ton, this.loadTimeNoContainer_h, this.transferCostNoContainer_1_ton,
-					this.transferTimeNoContainer_h, this.loadCostContainer_1_ton, this.loadTimeContainer_h,
-					this.transferCostContainer_1_ton, this.transferTimeContainer_h);
+			TypeAttributes attributes = new TypeAttributes(this.id, this.description, this.mode, this.fixedCost_1_km,
+					this.fixedCost_1_h, this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h,
+					this.maxSpeed_km_h, this.loadCostNoContainer_1_ton, this.loadTimeNoContainer_h,
+					this.transferCostNoContainer_1_ton, this.transferTimeNoContainer_h, this.loadCostContainer_1_ton,
+					this.loadTimeContainer_h, this.transferCostContainer_1_ton, this.transferTimeContainer_h);
 			type.getAttributes().putAttribute(TypeAttributes.ATTRIBUTE_NAME, attributes);
 
 			vehicles.addVehicleType(type);
@@ -165,6 +170,11 @@ public class FreightVehicleFleet {
 
 		public TypeBuilder setName(String name) {
 			this.id = Id.create(name, VehicleType.class);
+			return this;
+		}
+
+		public TypeBuilder setDescription(String description) {
+			this.description = description;
 			return this;
 		}
 
