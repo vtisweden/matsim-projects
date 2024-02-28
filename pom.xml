@@ -22,6 +22,7 @@
 	<module>utils</module>
 	<module>tramodby</module>
 	<module>skellefteaV2X</module>
+	<module>roundtrips</module>
 	<module>od2roundtrips</module>
 
   </modules>
