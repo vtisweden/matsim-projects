@@ -30,15 +30,15 @@ import se.vti.utils.misc.math.MathHelpers;
  * @author GunnarF
  *
  */
-public class Episode {
+public class Episode<S extends VehicleState> {
 
 	protected MathHelpers math = new MathHelpers();
 
 	private Double duration_h = null;
 	private Double end_h = null;
 
-	private VehicleState initialState = null;
-	private VehicleState finalState = null;
+	private S initialState = null;
+	private S finalState = null;
 
 	public Episode() {
 	}
@@ -63,15 +63,15 @@ public class Episode {
 		return initialState;
 	}
 
-	public void setInitialState(VehicleState initialState) {
+	public void setInitialState(S initialState) {
 		this.initialState = initialState;
 	}
 
-	public VehicleState getFinalState() {
+	public S getFinalState() {
 		return finalState;
 	}
 
-	public void setFinalState(VehicleState finalState) {
+	public void setFinalState(S finalState) {
 		this.finalState = finalState;
 	}
 
@@ -107,7 +107,7 @@ public class Episode {
 	}
 
 	public synchronized static List<Tuple<Double, Double>> effectiveIntervals(double duration_h, double end_h) {
-		Episode e = new Episode();
+		Episode<?> e = new Episode<>();
 		e.setDuration_h(duration_h);
 		e.setEndTime_h(end_h);
 		return e.effectiveIntervals();

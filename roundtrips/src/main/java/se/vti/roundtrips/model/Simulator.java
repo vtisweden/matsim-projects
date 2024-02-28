@@ -30,49 +30,51 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class Simulator {
+public class Simulator<S extends VehicleState> {
 
-	public interface ParkingSimulator {
+	public interface ParkingSimulator<S extends VehicleState> {
 
-		public ParkingEpisode newParkingEpisode(Location location, Integer departure, double initialTime_h,
-				VehicleState initialState);
+		public ParkingEpisode<S> newParkingEpisode(Location location, Integer departure, double initialTime_h,
+				S initialState);
 
 	}
 
-	public interface DrivingSimulator {
+	public interface DrivingSimulator<S extends VehicleState> {
 
-		public DrivingEpisode newDrivingEpisode(Location origin, Location destination, double initialTime_h,
-				VehicleState initialState);
+		public DrivingEpisode<S> newDrivingEpisode(Location origin, Location destination, double initialTime_h,
+				S initialState);
 
 	}
 
 	private final Scenario scenario;
+	private final VehicleStateFactory<S> stateFactory;
 
-	private DrivingSimulator drivingSimulator;
-	private ParkingSimulator parkingSimulator;
+	private DrivingSimulator<S> drivingSimulator;
+	private ParkingSimulator<S> parkingSimulator;
 
-	public Simulator(Scenario scenario) {
+	public Simulator(Scenario scenario, VehicleStateFactory<S> stateFactory) {
 		this.scenario = scenario;
-		this.drivingSimulator = new DefaultDrivingSimulator(scenario);
-		this.parkingSimulator = new DefaultParkingSimulator(scenario);
+		this.stateFactory = stateFactory;
+		this.drivingSimulator = null; // new DefaultDrivingSimulator(scenario);
+		this.parkingSimulator = null; // new DefaultParkingSimulator(scenario);
 	}
 
 	public Scenario getScenario() {
 		return this.scenario;
 	}
 
-	public void setDrivingSimulator(DrivingSimulator drivingSimulator) {
+	public void setDrivingSimulator(DrivingSimulator<S> drivingSimulator) {
 		this.drivingSimulator = drivingSimulator;
 	}
 
-	public void setParkingSimulator(ParkingSimulator parkingSimulator) {
+	public void setParkingSimulator(ParkingSimulator<S> parkingSimulator) {
 		this.parkingSimulator = parkingSimulator;
 	}
 
-	public List<Episode> simulate(RoundTrip<Location> roundTrip) {
+	public List<Episode<S>> simulate(RoundTrip<Location> roundTrip) {
 
 		if (roundTrip.locationCnt() == 1) {
-			ParkingEpisode home = new ParkingEpisode(roundTrip.getLocation(0));
+			ParkingEpisode<S> home = new ParkingEpisode<>(roundTrip.getLocation(0));
 			home.setDuration_h(24.0);
 			home.setEndTime_h(24.0 - 1e-8); // wraparound
 //			double charge_kWh = (this.scenario.isAllowHomeCharging() && roundTrip.getCharging(0)
@@ -80,16 +82,16 @@ public class Simulator {
 //					: 0.0);
 //			home.setChargeAtStart_kWh(charge_kWh);
 //			home.setChargeAtEnd_kWh(charge_kWh);
-			home.setInitialState(new VehicleState());
-			home.setFinalState(new VehicleState());
+			home.setInitialState(this.stateFactory.createVehicleState());
+			home.setFinalState(this.stateFactory.createVehicleState());
 
 			return Collections.singletonList(home);
 		}
 
 		final double initialTime_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
 //		double initialCharge_kWh = this.scenario.getMaxCharge_kWh(); // initial guess
-		VehicleState initialState = new VehicleState();
-		List<Episode> episodes;
+		final S initialState = this.stateFactory.createVehicleState();
+		List<Episode<S>> episodes;
 		do {
 
 			episodes = new ArrayList<>(2 * roundTrip.locationCnt() - 1);
@@ -98,18 +100,18 @@ public class Simulator {
 
 			double time_h = initialTime_h;
 //			double charge_kWh = initialCharge_kWh;
-			VehicleState currentState = initialState;
+			S currentState = initialState;
 
 			for (int index = 0; index < roundTrip.locationCnt() - 1; index++) {
 
-				final DrivingEpisode driving = this.drivingSimulator.newDrivingEpisode(roundTrip.getLocation(index),
+				final DrivingEpisode<S> driving = this.drivingSimulator.newDrivingEpisode(roundTrip.getLocation(index),
 						roundTrip.getLocation(index + 1), time_h, initialState);
 				episodes.add(driving);
 				time_h = driving.getEndTime_h();
 //				charge_kWh = driving.getChargeAtEnd_kWh();
 				currentState = driving.getFinalState();
 
-				final ParkingEpisode parking = this.parkingSimulator.newParkingEpisode(roundTrip.getLocation(index + 1),
+				final ParkingEpisode<S> parking = this.parkingSimulator.newParkingEpisode(roundTrip.getLocation(index + 1),
 						roundTrip.getDeparture(index + 1), 
 //						roundTrip.getCharging(index + 1), 
 						time_h, currentState);
@@ -119,14 +121,14 @@ public class Simulator {
 				currentState = parking.getFinalState();
 			}
 
-			final DrivingEpisode driving = this.drivingSimulator.newDrivingEpisode(
+			final DrivingEpisode<S> driving = this.drivingSimulator.newDrivingEpisode(
 					roundTrip.getLocation(roundTrip.locationCnt() - 1), roundTrip.getLocation(0), time_h, currentState);
 			episodes.add(driving);
 			time_h = driving.getEndTime_h();
 //			charge_kWh = driving.getChargeAtEnd_kWh();
 			currentState = driving.getFinalState();
 
-			final ParkingEpisode home = this.parkingSimulator.newParkingEpisode(roundTrip.getLocation(0),
+			final ParkingEpisode<S> home = this.parkingSimulator.newParkingEpisode(roundTrip.getLocation(0),
 					roundTrip.getDeparture(0), 
 //					this.scenario.isAllowHomeCharging() && roundTrip.getCharging(0),
 					time_h - 24.0, currentState);

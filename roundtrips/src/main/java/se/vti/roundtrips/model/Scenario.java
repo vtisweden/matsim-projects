@@ -117,5 +117,5 @@ public class Scenario {
 
 	public int getMaxParkingEpisodes() {
 		return this.maxParkingEpisodes;
-	}
+	}	
 }

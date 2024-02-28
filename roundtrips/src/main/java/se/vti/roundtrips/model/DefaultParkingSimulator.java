@@ -26,38 +26,30 @@ import se.vti.roundtrips.model.Simulator.ParkingSimulator;
  * @author GunnarF
  *
  */
-public class DefaultParkingSimulator implements ParkingSimulator {
+public class DefaultParkingSimulator<S extends VehicleState> implements ParkingSimulator<S> {
 
 	private final Scenario scenario;
+	private final VehicleStateFactory<S> stateFactory;
 
-	public DefaultParkingSimulator(Scenario scenario) {
+	public DefaultParkingSimulator(Scenario scenario, VehicleStateFactory<S> stateFactory) {
 		this.scenario = scenario;
+		this.stateFactory = stateFactory;
 	}
 
-	public VehicleState computeFinalState(ParkingEpisode parking) {
-		return new VehicleState();
+	public S computeFinalState(ParkingEpisode<S> parking) {
+		return this.stateFactory.createVehicleState();
 	}
 
 	@Override
-	public ParkingEpisode newParkingEpisode(Location location, Integer departure, double time_h,
-			VehicleState initialState) {
-		final ParkingEpisode parking = new ParkingEpisode(location);
+	public ParkingEpisode<S> newParkingEpisode(Location location, Integer departure, double time_h,
+			S initialState) {
+		final ParkingEpisode<S> parking = new ParkingEpisode<>(location);
 		parking.setInitialState(initialState);
 
-//		parking.setChargeAtStart_kWh(charge_kWh);
 		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * departure));
 		parking.setDuration_h(parking.getEndTime_h() - time_h);
-//		if (location.getAllowsCharging() && charging) {
-//			double chargingDuration_h = Math.min(
-//					Math.max(0.0, this.scenario.getMaxCharge_kWh() - charge_kWh) / this.scenario.getChargingRate_kW(),
-//					parking.getDuration_h());
-//			charge_kWh = Math.min(this.scenario.getMaxCharge_kWh(),
-//					charge_kWh + this.scenario.getChargingRate_kW() * chargingDuration_h);
-//		}
-//		parking.setChargeAtEnd_kWh(charge_kWh);
-
-		VehicleState finalState = this.computeFinalState(parking);
-		parking.setFinalState(finalState);
+		
+		parking.setFinalState(this.computeFinalState(parking));
 
 		return parking;
 	}

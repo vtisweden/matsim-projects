@@ -1,5 +1,5 @@
 /**
- * se.vti.roundtrips
+ * org.vti.roundtrips
  * 
  * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -24,21 +24,11 @@ package se.vti.roundtrips.model;
  * @author GunnarF
  *
  */
-public class ParkingEpisode<S extends VehicleState> extends Episode<S> {
-	
-	private final Location location;
-	
-	public ParkingEpisode(Location location) {
-		this.location = location;
-	}
+public class DefaultVehicleStateFactory implements VehicleStateFactory<VehicleState> {
 
-	public Location getLocation() {
-		return location;
-	}
-	
 	@Override
-	public String toString() {
-		return super.toString() + ",loc(" + this.location + ")";
+	public VehicleState createVehicleState() {
+		return new VehicleState();
 	}
 
 }

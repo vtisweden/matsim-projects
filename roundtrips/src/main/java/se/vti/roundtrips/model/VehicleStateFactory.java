@@ -19,42 +19,13 @@
  */
 package se.vti.roundtrips.model;
 
-import java.util.List;
-
-import se.vti.roundtrips.single.RoundTrip;
-
 /**
  * 
  * @author GunnarF
  *
  */
-public class SimulatedRoundTrip extends RoundTrip<Location> {
+public interface VehicleStateFactory<S extends VehicleState> {
 
-	private List<Episode> episodes = null;
-
-	public SimulatedRoundTrip(List<Location> locations, List<Integer> departures, List<Boolean> charging) {
-		super(locations, departures, charging);
-	}
-
-	@Override
-	public SimulatedRoundTrip clone() {
-		return new SimulatedRoundTrip(cloneLocations(), cloneDepartures(), cloneChargings());
-	}
-
-	public int episodeCnt() {
-		return this.episodes.size();
-	}
-
-	public Location getHomeLocation() {
-		return ((ParkingEpisode) this.episodes.get(0)).getLocation();
-	}
-
-	public List<Episode> getEpisodes() {
-		return episodes;
-	}
-
-	public void setEpisodes(List<Episode> episodes) {
-		this.episodes = episodes;
-	}
-
+	S createVehicleState();
+	
 }

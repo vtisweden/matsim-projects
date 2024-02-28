@@ -24,7 +24,7 @@ package se.vti.roundtrips.model;
  * @author GunnarF
  *
  */
-public class DrivingEpisode extends Episode {
+public class DrivingEpisode<S extends VehicleState> extends Episode<S> {
 
 	private final Location origin;
 	private final Location destination;

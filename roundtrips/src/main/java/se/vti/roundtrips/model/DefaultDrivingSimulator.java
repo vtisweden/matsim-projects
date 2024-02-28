@@ -26,31 +26,29 @@ import se.vti.roundtrips.model.Simulator.DrivingSimulator;
  * @author GunnarF
  *
  */
-public class DefaultDrivingSimulator implements DrivingSimulator {
+public class DefaultDrivingSimulator<S extends VehicleState> implements DrivingSimulator<S> {
 
 	private final Scenario scenario;
+	private final VehicleStateFactory<S> stateFactory;
 
-	public DefaultDrivingSimulator(Scenario scenario) {
+	public DefaultDrivingSimulator(Scenario scenario, VehicleStateFactory<S> stateFactory) {
 		this.scenario = scenario;
+		this.stateFactory = stateFactory;
 	}
 
-	public VehicleState computeFinalState(DrivingEpisode driving) {
-		return new VehicleState();
+	public S computeFinalState(DrivingEpisode<S> driving) {
+		return this.stateFactory.createVehicleState();
 	}
 	
 	@Override
-	public DrivingEpisode newDrivingEpisode(Location origin, Location destination, double time_h, VehicleState initialState) {
-		final DrivingEpisode driving = new DrivingEpisode(origin, destination);
+	public DrivingEpisode<S> newDrivingEpisode(Location origin, Location destination, double time_h, S initialState) {
+		final DrivingEpisode<S> driving = new DrivingEpisode<>(origin, destination);
 		driving.setInitialState(initialState);
 		
-//		driving.setChargeAtStart_kWh(charge_kWh);
 		driving.setDuration_h(this.scenario.getTime_h(origin, destination));
 		driving.setEndTime_h(time_h + driving.getDuration_h());
-//		driving.setChargeAtEnd_kWh(charge_kWh
-//				- this.scenario.getDistance_km(origin, destination) * this.scenario.getConsumptionRate_kWh_km());
 
-		VehicleState finalState = this.computeFinalState(driving);
-		driving.setFinalState(finalState);
+		driving.setFinalState(this.computeFinalState(driving));
 		
 		return driving;
 	}
