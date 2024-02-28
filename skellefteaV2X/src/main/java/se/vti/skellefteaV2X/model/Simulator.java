@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import se.vti.skellefteaV2X.roundtrips.RoundTrip;
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.skellefteaV2X.simulators.DefaultDrivingSimulator;
 import se.vti.skellefteaV2X.simulators.DefaultParkingSimulator;
 

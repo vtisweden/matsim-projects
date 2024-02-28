@@ -19,9 +19,9 @@
  */
 package se.vti.skellefteaV2X.model;
 
-import se.vti.skellefteaV2X.roundtrips.RoundTrip;
-import se.vti.skellefteaV2X.roundtrips.RoundTripConfiguration;
-import se.vti.skellefteaV2X.roundtrips.RoundTripProposal;
+import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.RoundTripConfiguration;
+import se.vti.roundtrips.single.RoundTripProposal;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 

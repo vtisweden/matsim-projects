@@ -21,7 +21,7 @@ package se.vti.skellefteaV2X.model;
 
 import java.util.List;
 
-import se.vti.skellefteaV2X.roundtrips.RoundTrip;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 

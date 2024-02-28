@@ -19,13 +19,13 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
+import se.vti.roundtrips.single.RoundTripIgnoreChargingCombinations;
+import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;
+import se.vti.roundtrips.single.RoundTripIgnoreLocationCombinations;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
-import se.vti.skellefteaV2X.roundtrips.RoundTripIgnoreChargingCombinations;
-import se.vti.skellefteaV2X.roundtrips.RoundTripIgnoreDepartureCombinations;
-import se.vti.skellefteaV2X.roundtrips.RoundTripIgnoreLocationCombinations;
 
 /**
  * 

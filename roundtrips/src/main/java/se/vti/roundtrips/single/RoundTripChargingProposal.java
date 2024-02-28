@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.roundtrips;
+package se.vti.roundtrips.single;
 
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
@@ -29,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
+public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -37,23 +38,8 @@ public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripDepartureProposal(RoundTripConfiguration<L> config) {
+	public RoundTripChargingProposal(RoundTripConfiguration<L> config) {
 		this.config = config;
-	}
-
-	// -------------------- HELPERS --------------------
-
-	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, RoundTripConfiguration<?> scenario) {
-		return drawUnusedDeparture(state, scenario.getRandom(), scenario.getTimeBinCnt());
-	}
-
-	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, Random rnd, int timeBinCnt) {
-		while (true) {
-			final Integer dpt = rnd.nextInt(timeBinCnt);
-			if (!state.containsDeparture(dpt)) {
-				return dpt;
-			}
-		}
 	}
 
 	// -------------------- IMPLEMENTATION OF MHProposal --------------------
@@ -67,12 +53,32 @@ public class RoundTripDepartureProposal<L> implements MHProposal<RoundTrip<L>> {
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
-		final Integer newDeparture = drawUnusedDeparture(state, this.config);
-		final RoundTrip<L> newState = state.clone();
-		newState.setDepartureAndEnsureOrdering(this.config.getRandom().nextInt(state.locationCnt()), newDeparture);
+		final double flipProba = 1.0 / (state.locationCnt() + 1.0);
+		boolean flipped = false;
+		List<Boolean> newChargings;
+		double proba;
+		do {
+			newChargings = new ArrayList<>(state.locationCnt());
+			proba = 1.0;
+			for (int i = 0; i < state.locationCnt(); i++) {
+				if (this.config.getRandom().nextDouble() < flipProba) {
+					flipped = true;
+					newChargings.add(!state.getCharging(i));
+					proba *= flipProba;
+				} else {
+					newChargings.add(state.getCharging(i));
+					proba *= (1.0 - flipProba);
+				}
+			}
+		} while (!flipped);
 
-		final double fwdLogProba = -Math.log(state.locationCnt()) - Math.log(this.config.getTimeBinCnt() - state.locationCnt());
+		final double fwdLogProba = Math.log(proba) - state.locationCnt() * Math.log(1.0 - flipProba);
 		final double bwdLogProba = fwdLogProba;
+
+		final RoundTrip<L> newState = state.clone();
+		for (int i = 0; i < newState.locationCnt(); i++) {
+			newState.setCharging(i, newChargings.get(i));
+		}
 
 		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);
 	}

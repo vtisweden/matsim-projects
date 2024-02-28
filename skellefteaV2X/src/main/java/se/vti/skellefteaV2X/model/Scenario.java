@@ -29,8 +29,8 @@ import java.util.Random;
 import java.util.Set;
 
 import floetteroed.utilities.Tuple;
-import se.vti.skellefteaV2X.roundtrips.RoundTrip;
-import se.vti.skellefteaV2X.roundtrips.RoundTripConfiguration;
+import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**

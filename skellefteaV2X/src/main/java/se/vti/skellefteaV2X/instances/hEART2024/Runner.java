@@ -23,20 +23,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.Simulator;
 import se.vti.skellefteaV2X.preferences.HomeLocationShare;
-import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.OffHomeLocationShare;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.preferences.consistency.UniformOverLocationCount;
-import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 

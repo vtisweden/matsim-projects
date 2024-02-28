@@ -19,11 +19,11 @@
  */
 package se.vti.skellefteaV2X.analysis;
 
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
-import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
 /**

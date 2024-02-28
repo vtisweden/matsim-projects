@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.model.Location;
 import se.vti.skellefteaV2X.model.Preferences;
@@ -33,7 +34,6 @@ import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreferen
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.preferences.consistency.UniformOverLocationCount;
-import se.vti.skellefteaV2X.roundtrips.RoundTrip;
 import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
