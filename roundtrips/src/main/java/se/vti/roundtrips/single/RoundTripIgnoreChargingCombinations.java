@@ -1,7 +1,7 @@
 /**
- * se.vti.skellefteaV2X
+ * se.vti.roundtrips
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
