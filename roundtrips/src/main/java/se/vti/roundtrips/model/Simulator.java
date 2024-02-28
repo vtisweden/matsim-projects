@@ -36,14 +36,12 @@ public class Simulator<S extends VehicleState> {
 
 		public ParkingEpisode<S> newParkingEpisode(Location location, Integer departure, double initialTime_h,
 				S initialState);
-
 	}
 
 	public interface DrivingSimulator<S extends VehicleState> {
 
 		public DrivingEpisode<S> newDrivingEpisode(Location origin, Location destination, double initialTime_h,
 				S initialState);
-
 	}
 
 	private final Scenario scenario;
