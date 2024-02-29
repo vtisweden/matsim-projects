@@ -69,6 +69,10 @@ public class Simulator<S extends VehicleState> {
 		this.parkingSimulator = parkingSimulator;
 	}
 
+	public S keepOrChangeInitialState(S previousInitialState) {
+		return previousInitialState;
+	}
+
 	public List<Episode<S>> simulate(RoundTrip<Location> roundTrip) {
 
 		if (roundTrip.locationCnt() == 1) {
@@ -88,8 +92,8 @@ public class Simulator<S extends VehicleState> {
 
 		final double initialTime_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
 //		double initialCharge_kWh = this.scenario.getMaxCharge_kWh(); // initial guess
-		final S initialState = this.stateFactory.createVehicleState();
-		List<Episode<S>> episodes;
+		S initialState = this.stateFactory.createVehicleState();
+		List<Episode<S>> episodes = null;
 		do {
 
 			episodes = new ArrayList<>(2 * roundTrip.locationCnt() - 1);
@@ -109,10 +113,10 @@ public class Simulator<S extends VehicleState> {
 //				charge_kWh = driving.getChargeAtEnd_kWh();
 				currentState = driving.getFinalState();
 
-				final ParkingEpisode<S> parking = this.parkingSimulator.newParkingEpisode(roundTrip.getLocation(index + 1),
-						roundTrip.getDeparture(index + 1), 
+				final ParkingEpisode<S> parking = this.parkingSimulator
+						.newParkingEpisode(roundTrip.getLocation(index + 1), roundTrip.getDeparture(index + 1),
 //						roundTrip.getCharging(index + 1), 
-						time_h, currentState);
+								time_h, currentState);
 				episodes.add(parking);
 				time_h = parking.getEndTime_h();
 //				charge_kWh = parking.getChargeAtEnd_kWh();
@@ -127,17 +131,21 @@ public class Simulator<S extends VehicleState> {
 			currentState = driving.getFinalState();
 
 			final ParkingEpisode<S> home = this.parkingSimulator.newParkingEpisode(roundTrip.getLocation(0),
-					roundTrip.getDeparture(0), 
+					roundTrip.getDeparture(0),
 //					this.scenario.isAllowHomeCharging() && roundTrip.getCharging(0),
 					time_h - 24.0, currentState);
 			episodes.set(0, home);
 
-			// TODO postprocessing for wrap-around of battery level
 //			final double newInitialCharge_kWh = home.getChargeAtEnd_kWh();
 //			if ((newInitialCharge_kWh >= 0.0) && Math.abs(newInitialCharge_kWh - initialCharge_kWh) > 1e-3) {
 //				episodes = null;
 //				initialCharge_kWh = newInitialCharge_kWh;
 //			}
+			final S newInitialState = this.keepOrChangeInitialState(home.getFinalState());
+			if (newInitialState != initialState) {
+				episodes = null;
+				initialState = newInitialState;
+			}
 
 		} while (episodes == null);
 
