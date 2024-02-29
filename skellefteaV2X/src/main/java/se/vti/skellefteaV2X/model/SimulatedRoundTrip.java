@@ -21,6 +21,8 @@ package se.vti.skellefteaV2X.model;
 
 import java.util.List;
 
+import se.vti.roundtrips.model.Episode;
+import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -28,11 +30,11 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class SimulatedRoundTrip extends RoundTrip<Location> {
+public class SimulatedRoundTrip extends RoundTrip<ElectrifiedLocation> {
 
-	private List<Episode> episodes = null;
+	private List<Episode<ElectrifiedVehicleState>> episodes = null;
 
-	public SimulatedRoundTrip(List<Location> locations, List<Integer> departures, List<Boolean> charging) {
+	public SimulatedRoundTrip(List<ElectrifiedLocation> locations, List<Integer> departures, List<Boolean> charging) {
 		super(locations, departures, charging);
 	}
 
@@ -45,15 +47,15 @@ public class SimulatedRoundTrip extends RoundTrip<Location> {
 		return this.episodes.size();
 	}
 
-	public Location getHomeLocation() {
-		return ((ParkingEpisode) this.episodes.get(0)).getLocation();
+	public ElectrifiedLocation getHomeLocation() {
+		return ((ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) this.episodes.get(0)).getLocation();
 	}
 
-	public List<Episode> getEpisodes() {
+	public List<Episode<ElectrifiedVehicleState>> getEpisodes() {
 		return episodes;
 	}
 
-	public void setEpisodes(List<Episode> episodes) {
+	public void setEpisodes(List<Episode<ElectrifiedVehicleState>> episodes) {
 		this.episodes = episodes;
 	}
 

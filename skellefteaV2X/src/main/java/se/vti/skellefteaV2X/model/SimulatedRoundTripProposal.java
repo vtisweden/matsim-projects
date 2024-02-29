@@ -30,27 +30,27 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class SimulatedRoundTripProposal implements MHProposal<RoundTrip<Location>> {
+public class SimulatedRoundTripProposal implements MHProposal<RoundTrip<ElectrifiedLocation>> {
 
-	private final MHProposal<RoundTrip<Location>> proposal;
+	private final MHProposal<RoundTrip<ElectrifiedLocation>> proposal;
 	
-	private final Simulator simulator;
+	private final ElectrifiedSimulator simulator;
 
-	public SimulatedRoundTripProposal(RoundTripConfiguration<Location> config, Simulator simulator) {
-		this.proposal = new RoundTripProposal<Location>(config);
+	public SimulatedRoundTripProposal(RoundTripConfiguration<ElectrifiedLocation> config, ElectrifiedSimulator simulator) {
+		this.proposal = new RoundTripProposal<ElectrifiedLocation>(config);
 		this.simulator = simulator;
 	}
 
 	@Override
-	public RoundTrip<Location> newInitialState() {
+	public RoundTrip<ElectrifiedLocation> newInitialState() {
 		SimulatedRoundTrip state = (SimulatedRoundTrip) this.proposal.newInitialState();
 		state.setEpisodes(this.simulator.simulate(state));
 		return state;
 	}
 
 	@Override
-	public MHTransition<RoundTrip<Location>> newTransition(RoundTrip<Location> state) {
-		MHTransition<RoundTrip<Location>> transition = this.proposal.newTransition(state);
+	public MHTransition<RoundTrip<ElectrifiedLocation>> newTransition(RoundTrip<ElectrifiedLocation> state) {
+		MHTransition<RoundTrip<ElectrifiedLocation>> transition = this.proposal.newTransition(state);
 		SimulatedRoundTrip roundTrip = (SimulatedRoundTrip) transition.getNewState();
 		roundTrip.setEpisodes(this.simulator.simulate(roundTrip));
 		return transition;

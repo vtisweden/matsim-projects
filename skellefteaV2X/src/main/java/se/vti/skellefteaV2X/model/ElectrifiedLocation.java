@@ -1,7 +1,7 @@
 /**
- * se.vti.skellefteaV2X
+ * se.vti.skellefteaV2X.model
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,24 +17,29 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
+package se.vti.skellefteaV2X.model;
 
-import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import se.vti.roundtrips.model.Location;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class FewEpisodesPreference extends Component {
+public class ElectrifiedLocation extends Location {
 
-	public FewEpisodesPreference() {
+	private Boolean allowsCharging;
+
+	public ElectrifiedLocation(String name) {
+		super(name);
 	}
 
-	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		return Math.min(0.0, 1.0 - simulatedRoundTrip.locationCnt());
+	public void setAllowsCharging(boolean allowsCharging) {
+		this.allowsCharging = allowsCharging;
+	}
+
+	public boolean getAllowsCharging() {
+		return this.allowsCharging;
 	}
 
 }

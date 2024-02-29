@@ -19,12 +19,13 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
+import se.vti.roundtrips.model.Location;
+import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.single.RoundTripIgnoreChargingCombinations;
 import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;
 import se.vti.roundtrips.single.RoundTripIgnoreLocationCombinations;
-import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -34,11 +35,11 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class UniformOverLocationCount extends Preferences.Component {
 
-	private final RoundTripIgnoreChargingCombinations<Location> correctChargingCombinations;
-	private final RoundTripIgnoreDepartureCombinations<Location> correctDepartureCombinations;
-	private final RoundTripIgnoreLocationCombinations<Location> correctLocationCombinations;
+	private final RoundTripIgnoreChargingCombinations<ElectrifiedLocation> correctChargingCombinations;
+	private final RoundTripIgnoreDepartureCombinations<ElectrifiedLocation> correctDepartureCombinations;
+	private final RoundTripIgnoreLocationCombinations<ElectrifiedLocation> correctLocationCombinations;
 
-	public UniformOverLocationCount(Scenario scenario) {
+	public UniformOverLocationCount(Scenario<?> scenario) {
 		this.correctChargingCombinations = new RoundTripIgnoreChargingCombinations<>();
 		this.correctDepartureCombinations = new RoundTripIgnoreDepartureCombinations<>(scenario.getBinCnt());
 		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinations<>(scenario.getLocationCnt(), scenario.getMaxParkingEpisodes());

@@ -24,6 +24,6 @@ package od2roundtrips.model;
  * @author GunnarF
  *
  */
-public class Scenario extends se.vti.roundtrips.model.Scenario {
+public abstract class Scenario extends se.vti.roundtrips.model.Scenario {
 
 }

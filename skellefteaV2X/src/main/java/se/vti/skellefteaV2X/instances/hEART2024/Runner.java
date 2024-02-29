@@ -25,18 +25,21 @@ import java.util.concurrent.TimeUnit;
 
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
-import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.ElectrifiedDrivingSimulator;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
+import se.vti.skellefteaV2X.model.ElectrifiedScenario;
+import se.vti.skellefteaV2X.model.ElectrifiedSimulator;
+import se.vti.skellefteaV2X.model.ElectrifiedVehicleStateFactory;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.Scenario;
-import se.vti.skellefteaV2X.model.Simulator;
+import se.vti.skellefteaV2X.model.V2GParkingSimulator;
 import se.vti.skellefteaV2X.preferences.HomeLocationShare;
+import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.OffHomeLocationShare;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
 import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.preferences.consistency.UniformOverLocationCount;
-import se.vti.skellefteaV2X.simulators.V2GParkingSimulator;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
@@ -55,16 +58,23 @@ public class Runner {
 		final double distanceScale = 1.0;
 
 		// Scenario has setters for non-default scenario parameters.
-		Scenario scenario = new Scenario();
+		ElectrifiedScenario scenario = new ElectrifiedScenario();
 		scenario.setMaxParkingEpisodes(4);
 
-		Location boliden = scenario.createAndAddLocation("Boliden", true);
-		Location kage = scenario.createAndAddLocation("Kåge", true);
-		Location centrum = scenario.createAndAddLocation("Centrum", true);
-		Location campus = scenario.createAndAddLocation("Campus", true);
-		Location hamn = scenario.createAndAddLocation("Hamn", true);
-		Location burea = scenario.createAndAddLocation("Bureå", true);
-		Location burtrask = scenario.createAndAddLocation("Burträsk", true);
+		ElectrifiedLocation boliden = scenario.createAndAddLocation("Boliden");
+		boliden.setAllowsCharging(true);
+		ElectrifiedLocation kage = scenario.createAndAddLocation("Kåge");
+		kage.setAllowsCharging(true);
+		ElectrifiedLocation centrum = scenario.createAndAddLocation("Centrum");
+		centrum.setAllowsCharging(true);
+		ElectrifiedLocation campus = scenario.createAndAddLocation("Campus");
+		campus.setAllowsCharging(true);
+		ElectrifiedLocation hamn = scenario.createAndAddLocation("Hamn");
+		hamn.setAllowsCharging(true);
+		ElectrifiedLocation burea = scenario.createAndAddLocation("Bureå");
+		burea.setAllowsCharging(true);
+		ElectrifiedLocation burtrask = scenario.createAndAddLocation("Burträsk");
+		burtrask.setAllowsCharging(true);
 
 		// Scenario has setters for direction-specific distances.
 		// By default, travel times are inferred from distances.
@@ -101,9 +111,11 @@ public class Runner {
 		 */
 
 		// Simulator has default parking/charging and driving logics.
-		Simulator simulator = new Simulator(scenario);
+		ElectrifiedSimulator simulator = new ElectrifiedSimulator(scenario, new ElectrifiedVehicleStateFactory(),
+				scenario.getMaxCharge_kWh());
 		// Below an example of how alternative charging logics can be inserted.
-		simulator.setParkingSimulator(new V2GParkingSimulator(scenario, campus));
+		simulator.setDrivingSimulator(new ElectrifiedDrivingSimulator(scenario, new ElectrifiedVehicleStateFactory()));
+		simulator.setParkingSimulator(new V2GParkingSimulator(campus, scenario));
 
 		/*
 		 * Define preferences for round trip sampling.
@@ -146,8 +158,8 @@ public class Runner {
 
 		final Preferences importanceSamplingPreferences = new Preferences();
 
-//		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus, 10.0);
-//		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
+		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus, 10.0);
+		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
 
 		/*
 		 * Run MH algorithm.
@@ -155,7 +167,7 @@ public class Runner {
 
 		Preferences allPreferences = new Preferences(consistencyPreferences, modelingPreferences,
 				importanceSamplingPreferences);
-		MHAlgorithm<RoundTrip<Location>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
+		MHAlgorithm<RoundTrip<ElectrifiedLocation>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		final long targetSamples = 1000 * 1000;
 		final long burnInIterations = (iterations / 4);

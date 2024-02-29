@@ -20,7 +20,7 @@
 package se.vti.skellefteaV2X.preferences;
 
 import floetteroed.utilities.Tuple;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 import se.vti.utils.misc.math.MathHelpers;
@@ -47,7 +47,7 @@ public class LongOffHomeActivityPreferencePreference extends Preferences.Compone
 		double discrepancy_h = this.minTargetDuration_h;
 		if (simulatedRoundTrip.locationCnt() > 1) {
 			for (int i = 2; i < simulatedRoundTrip.episodeCnt(); i += 2) {
-				ParkingEpisode p = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(i);
+				ParkingEpisode<?, ?> p = (ParkingEpisode<?, ?>) simulatedRoundTrip.getEpisodes().get(i);
 				for (Tuple<Double, Double> interval : p.effectiveIntervals()) {
 					double insideOverlap_h = this.math.overlap(interval.getA(), interval.getB(), this.earliestStart_h,
 							this.latestEnd_h);

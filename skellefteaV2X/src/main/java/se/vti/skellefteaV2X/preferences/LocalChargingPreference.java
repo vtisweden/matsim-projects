@@ -19,11 +19,12 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
-import se.vti.skellefteaV2X.model.Episode;
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.roundtrips.model.Episode;
+import se.vti.roundtrips.model.Location;
+import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.ElectrifiedScenario;
+import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -33,13 +34,13 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class LocalChargingPreference extends Component {
 	
-	private final Scenario scenario;
+	private final ElectrifiedScenario scenario;
 	
 	private final Location location;
 
 	private final double minCharging_kWh;
 	
-	public LocalChargingPreference(Scenario scenario, Location location, double minCharging_kWh) {
+	public LocalChargingPreference(ElectrifiedScenario scenario, Location location, double minCharging_kWh) {
 		this.scenario = scenario;
 		this.location = location;
 		this.minCharging_kWh = minCharging_kWh;
@@ -49,11 +50,12 @@ public class LocalChargingPreference extends Component {
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
 		double amount_kWh = 0.0;
-		for (Episode e : roundTrip.getEpisodes()) {
+		for (Episode<ElectrifiedVehicleState> e : roundTrip.getEpisodes()) {
 			if (e instanceof ParkingEpisode) {
-				ParkingEpisode p = (ParkingEpisode) e;
+				ParkingEpisode<?, ElectrifiedVehicleState> p = (ParkingEpisode<?, ElectrifiedVehicleState>) e;
 				if (this.location.equals(p.getLocation())) {
-					amount_kWh += p.getChargeAtEnd_kWh() - p.getChargeAtStart_kWh();
+//					amount_kWh += p.getChargeAtEnd_kWh() - p.getChargeAtStart_kWh();
+					amount_kWh += p.getFinalState().getBatteryCharge_kWh() - p.getInitialState().getBatteryCharge_kWh();
 				}
 			}
 		}

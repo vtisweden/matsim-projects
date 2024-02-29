@@ -21,12 +21,7 @@ package se.vti.skellefteaV2X.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.single.RoundTrip;
@@ -38,80 +33,35 @@ import se.vti.utils.misc.metropolishastings.MHAlgorithm;
  * @author GunnarF
  *
  */
-public class Scenario {
+public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<ElectrifiedLocation> {
 
 	private final Random rnd;
 
 	private double chargingRate_kW = 11.0;
 	private double maxCharge_kWh = 60.0;
 	private double consumptionRate_kWh_km = 0.2;
-
 	private double defaultSpeed_km_h = 60.0;
-	private int timeBinCnt = 24;
-
-	private int maxParkingEpisodes = 4;
 	private boolean allowHomeCharging = true;
 
-	private final Set<Location> locations = new LinkedHashSet<>();
-
-	private final Map<Tuple<Location, Location>, Double> od2distance_km = new LinkedHashMap<>();
-
-	private final Map<Tuple<Location, Location>, Double> od2time_h = new LinkedHashMap<>();
-
-	public Scenario(Random rnd) {
+	public ElectrifiedScenario(Random rnd) {
+		super();
 		this.rnd = rnd;
 	}
 
-	public Scenario() {
+	public ElectrifiedScenario() {
 		this(new Random());
 	}
 
-	public Location createAndAddLocation(String name, boolean canCharge) {
-		Location result = new Location(name, canCharge);
-		this.locations.add(result);
-		return result;
+	@Override
+	protected ElectrifiedLocation createLocation(String name) {
+		// TODO need to explicitly set properties of this location
+		return new ElectrifiedLocation(name);
 	}
 
-	public Set<Location> getLocationsView() {
-		return Collections.unmodifiableSet(this.locations);
-	}
-
-	public int getLocationCnt() {
-		return this.locations.size();
-	}
-
-	public void setDistance_km(Location from, Location to, double dist_km) {
-		Tuple<Location, Location> od = new Tuple<>(from, to);
-		this.od2distance_km.put(od, dist_km);
-		if (!this.od2time_h.containsKey(od)) {
-			this.od2time_h.put(od, dist_km / this.defaultSpeed_km_h);
-		}
-	}
-
-	public void setSymmetricDistance_km(Location loc1, Location loc2, double dist_km) {
-		this.setDistance_km(loc1, loc2, dist_km);
-		this.setDistance_km(loc2, loc1, dist_km);
-	}
-
-	public Double getDistance_km(Location from, Location to) {
-		return this.od2distance_km.get(new Tuple<>(from, to));
-	}
-
-	public void setTime_h(Location from, Location to, double time_h) {
-		this.od2time_h.put(new Tuple<>(from, to), time_h);
-	}
-
-	public void setSymmetricTime_h(Location loc1, Location loc2, double time_h) {
-		this.setTime_h(loc1, loc2, time_h);
-		this.setTime_h(loc2, loc1, time_h);
-	}
-
-	public Double getTime_h(Location from, Location to) {
-		return this.od2time_h.get(new Tuple<>(from, to));
-	}
-
-	public double getBinSize_h() {
-		return 24.0 / this.getBinCnt();
+	@Override
+	public void setDistance_km(ElectrifiedLocation from, ElectrifiedLocation to, double dist_km) {
+		super.setDistance_km(from, to, dist_km);
+		super.setTime_h(from, to, dist_km / this.defaultSpeed_km_h);
 	}
 
 	public double getChargingRate_kW() {
@@ -130,10 +80,6 @@ public class Scenario {
 		return defaultSpeed_km_h;
 	}
 
-	public int getBinCnt() {
-		return timeBinCnt;
-	}
-
 	public void setChargingRate_kW(double chargingRate_kW) {
 		this.chargingRate_kW = chargingRate_kW;
 	}
@@ -150,34 +96,25 @@ public class Scenario {
 		this.defaultSpeed_km_h = defaultSpeed_km_h;
 	}
 
-	public void setTimeBinCnt(int timeBinCnt) {
-		this.timeBinCnt = timeBinCnt;
-	}
-
-	public void setMaxParkingEpisodes(int maxParkingEpisodes) {
-		this.maxParkingEpisodes = maxParkingEpisodes;
-	}
-	
-	public int getMaxParkingEpisodes() {
-		return this.maxParkingEpisodes;
-	}
-
-	public MHAlgorithm<RoundTrip<Location>> createMHAlgorithm(Preferences preferences, Simulator simulator) {
+	public MHAlgorithm<RoundTrip<ElectrifiedLocation>> createMHAlgorithm(Preferences preferences,
+			ElectrifiedSimulator simulator) {
 
 		double locationProposalWeight = 0.1;
 		double chargingProposalWeight = 0.3;
 		double departureProposalWeight = 0.59;
 		double doNothingWeight = 0.01; // for aperiodicity
 
-		final RoundTripConfiguration<Location> configuration = new RoundTripConfiguration<>(this.maxParkingEpisodes,
-				getBinCnt(), locationProposalWeight, departureProposalWeight, chargingProposalWeight, doNothingWeight);
+		final RoundTripConfiguration<ElectrifiedLocation> configuration = new RoundTripConfiguration<>(
+				this.getMaxParkingEpisodes(), getBinCnt(), locationProposalWeight, departureProposalWeight,
+				chargingProposalWeight, doNothingWeight);
 		configuration.addLocations(this.getLocationsView());
 		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(configuration, simulator);
-		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
+		MHAlgorithm<RoundTrip<ElectrifiedLocation>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
 
 		SimulatedRoundTrip initialState = new SimulatedRoundTrip(
-				Arrays.asList(new ArrayList<>(this.locations).get(this.rnd.nextInt(this.locations.size()))),
-				Arrays.asList(this.rnd.nextInt(this.timeBinCnt)), Arrays.asList(this.rnd.nextBoolean()));
+				Arrays.asList(
+						new ArrayList<>(this.getLocationsView()).get(this.rnd.nextInt(this.getLocationsView().size()))),
+				Arrays.asList(this.rnd.nextInt(this.getBinCnt())), Arrays.asList(this.rnd.nextBoolean()));
 		initialState.setEpisodes(simulator.simulate(initialState));
 		algo.setInitialState(initialState);
 

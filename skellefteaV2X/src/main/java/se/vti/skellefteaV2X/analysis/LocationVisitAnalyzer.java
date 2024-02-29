@@ -31,12 +31,14 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import floetteroed.utilities.Tuple;
-import se.vti.skellefteaV2X.model.DrivingEpisode;
-import se.vti.skellefteaV2X.model.Episode;
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.roundtrips.model.DrivingEpisode;
+import se.vti.roundtrips.model.Episode;
+import se.vti.roundtrips.model.Location;
+import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
+import se.vti.skellefteaV2X.model.ElectrifiedScenario;
+import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
@@ -55,37 +57,37 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 	private final String fileName;
 
-	private List<Map<Location, Double>> timeListOfLocation2homeVisits;
-	private List<Map<Location, Double>> timeListOfLocation2homeChargings_kWh;
+	private List<Map<ElectrifiedLocation, Double>> timeListOfLocation2homeVisits;
+	private List<Map<ElectrifiedLocation, Double>> timeListOfLocation2homeChargings_kWh;
 
-	private List<Map<Location, Double>> timeListOfLocation2enRouteVisits;
-	private List<Map<Location, Double>> timeListOfLocation2enRouteChargings_kWh;
+	private List<Map<ElectrifiedLocation, Double>> timeListOfLocation2enRouteVisits;
+	private List<Map<ElectrifiedLocation, Double>> timeListOfLocation2enRouteChargings_kWh;
 
 	private List<Double> timeListOfDriving;
 
-	private Map<List<Location>, Double> sequence2uses = new LinkedHashMap<>();
+	private Map<List<ElectrifiedLocation>, Double> sequence2uses = new LinkedHashMap<>();
 
-	private Map<Location, Double> location2isHomeCnt = new LinkedHashMap<>();
-	private Map<Location, Double> location2isOvernightCharging = new LinkedHashMap<>();
-	private Map<Location, Double> location2isEnTourCharging = new LinkedHashMap<>();
+	private Map<ElectrifiedLocation, Double> location2isHomeCnt = new LinkedHashMap<>();
+	private Map<ElectrifiedLocation, Double> location2isOvernightCharging = new LinkedHashMap<>();
+	private Map<ElectrifiedLocation, Double> location2isEnTourCharging = new LinkedHashMap<>();
 
 	private final double[] sizeCnt;
-	
+
 	double used_kWh = 0.0;
 	double charged_kWh = 0.0;
-	
+
 	private AllDayBatteryConstraintPreference batteryWrapAround;
 	private AllDayTimeConstraintPreference timeWrapAround;
 	private NonnegativeBatteryStatePreference nonnegativeBattery;
 	private StrategyRealizationConsistency consistentRealization;
-	
+
 	double batteryWrapAroundDiscrepancy_kWh = 0.0;
 	double timeWrapAroundDiscrepancy_h = 0.0;
 	double nonnegativeBatteryDiscrepancy_kWh = 0.0;
 	double ralizationDiscrepancy_h = 0.0;
 
-	public LocationVisitAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval, String fileName,
-			Preferences importanceSamplingPreferences) {
+	public LocationVisitAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,
+			String fileName, Preferences importanceSamplingPreferences) {
 		super(scenario, burnInIterations, samplingInterval, importanceSamplingPreferences);
 		this.fileName = fileName;
 		this.timeListOfLocation2homeVisits = new ArrayList<>(scenario.getBinCnt());
@@ -95,7 +97,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		this.timeListOfDriving = new ArrayList<>(scenario.getBinCnt());
 
 		this.sizeCnt = new double[scenario.getBinCnt() + 1];
-		
+
 		for (int i = 0; i < scenario.getBinCnt(); i++) {
 			this.timeListOfLocation2homeVisits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfLocation2homeChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
@@ -103,14 +105,15 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			this.timeListOfLocation2enRouteChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfDriving.add(0.0);
 		}
-		
+
 		this.batteryWrapAround = new AllDayBatteryConstraintPreference(scenario);
 		this.timeWrapAround = new AllDayTimeConstraintPreference();
 		this.nonnegativeBattery = new NonnegativeBatteryStatePreference(scenario);
 		this.consistentRealization = new StrategyRealizationConsistency(scenario);
 	}
 
-	public LocationVisitAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval, String fileName) {
+	public LocationVisitAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,
+			String fileName) {
 		this(scenario, burnInIterations, samplingInterval, fileName, new Preferences());
 	}
 
@@ -121,24 +124,32 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		this.timeWrapAroundDiscrepancy_h += sampleWeight * this.timeWrapAround.discrepancy_h(state);
 		this.nonnegativeBatteryDiscrepancy_kWh += sampleWeight * this.nonnegativeBattery.discrepancy_kWh(state);
 		this.ralizationDiscrepancy_h += sampleWeight * this.consistentRealization.discrepancy_h(state);
-		
+
 		this.sizeCnt[state.locationCnt()] += sampleWeight;
-		
-		final ParkingEpisode home = (ParkingEpisode) state.getEpisodes().get(0);
+
+		final ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> home = (ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) state
+				.getEpisodes().get(0);
 
 		this.sequence2uses.compute(state.getLocationsView(), (s, c) -> c == null ? sampleWeight : c + sampleWeight);
 		this.location2isHomeCnt.compute(state.getLocation(0), (l, c) -> c == null ? sampleWeight : c + sampleWeight);
 
 		assert (state.locationCnt() == 1 || state.episodeCnt() == 2 * state.locationCnt());
 
-		for (Episode e : state.getEpisodes()) {
+		for (Episode<ElectrifiedVehicleState> e : state.getEpisodes()) {
 
-			final ParkingEpisode parking = (e instanceof ParkingEpisode ? (ParkingEpisode) e : null);
-			final DrivingEpisode driving = (e instanceof DrivingEpisode ? (DrivingEpisode) e : null);
+			final ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> parking = (e instanceof ParkingEpisode
+					? (ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) e
+					: null);
+			final DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> driving = (e instanceof DrivingEpisode
+					? (DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) e
+					: null);
 
 			final double chargeChangeRate_kW;
 			if (e.getDuration_h() > 1e-8) {
-				chargeChangeRate_kW = Math.max(0.0, e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh())
+//				chargeChangeRate_kW = Math.max(0.0, e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh())
+//						/ e.getDuration_h();
+				chargeChangeRate_kW = Math.max(0.0,
+						e.getFinalState().getBatteryCharge_kWh() - e.getInitialState().getBatteryCharge_kWh())
 						/ e.getDuration_h();
 			} else {
 				chargeChangeRate_kW = 0.0;
@@ -210,13 +221,17 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		double myUsed_kWh = 0.0;
 
 		for (int i = 0; i < state.getEpisodes().size(); i += 2) {
-			ParkingEpisode e = (ParkingEpisode) state.getEpisodes().get(i);
-			myCharged_kWh += e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh();
+			ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) state
+					.getEpisodes().get(i);
+//			myCharged_kWh += e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh();
+			myCharged_kWh += e.getFinalState().getBatteryCharge_kWh() - e.getInitialState().getBatteryCharge_kWh();
 		}
 
 		for (int i = 1; i < state.getEpisodes().size(); i += 2) {
-			DrivingEpisode e = (DrivingEpisode) state.getEpisodes().get(i);
-			myUsed_kWh += e.getChargeAtStart_kWh() - e.getChargeAtEnd_kWh();
+			DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) state
+					.getEpisodes().get(i);
+//			myUsed_kWh += e.getChargeAtStart_kWh() - e.getChargeAtEnd_kWh();
+			myUsed_kWh += e.getInitialState().getBatteryCharge_kWh() - e.getFinalState().getBatteryCharge_kWh();
 		}
 
 		this.charged_kWh += sampleWeight * myCharged_kWh;
@@ -228,7 +243,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 
 		try {
 
-			List<Location> locations = new ArrayList<>(this.scenario.getLocationsView());
+			List<ElectrifiedLocation> locations = new ArrayList<>(this.scenario.getLocationsView());
 			Collections.sort(locations, new Comparator<Location>() {
 				@Override
 				public int compare(Location o1, Location o2) {
@@ -244,8 +259,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 				writer.print(l + "\t");
 			}
 			writer.println();
-			for (Map<Location, Double> location2visits : this.timeListOfLocation2homeVisits) {
-				for (Location l : locations) {
+			for (Map<ElectrifiedLocation, Double> location2visits : this.timeListOfLocation2homeVisits) {
+				for (ElectrifiedLocation l : locations) {
 					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
 				}
 				writer.println();
@@ -259,8 +274,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 				writer.print(l + "\t");
 			}
 			writer.println();
-			for (Map<Location, Double> location2chargings : this.timeListOfLocation2homeChargings_kWh) {
-				for (Location l : locations) {
+			for (Map<ElectrifiedLocation, Double> location2chargings : this.timeListOfLocation2homeChargings_kWh) {
+				for (ElectrifiedLocation l : locations) {
 					writer.print(location2chargings.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
 				}
 				writer.println();
@@ -274,8 +289,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 				writer.print(l + "\t");
 			}
 			writer.println();
-			for (Map<Location, Double> location2visits : this.timeListOfLocation2enRouteVisits) {
-				for (Location l : locations) {
+			for (Map<ElectrifiedLocation, Double> location2visits : this.timeListOfLocation2enRouteVisits) {
+				for (ElectrifiedLocation l : locations) {
 					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
 				}
 				writer.println();
@@ -289,8 +304,8 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 				writer.print(l + "\t");
 			}
 			writer.println();
-			for (Map<Location, Double> location2chargings : this.timeListOfLocation2enRouteChargings_kWh) {
-				for (Location l : locations) {
+			for (Map<ElectrifiedLocation, Double> location2chargings : this.timeListOfLocation2enRouteChargings_kWh) {
+				for (ElectrifiedLocation l : locations) {
 					writer.print(location2chargings.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
 				}
 				writer.println();
@@ -332,11 +347,14 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			writer.println();
 			writer.println("CONSISTENCY DEVIATIONS");
 			writer.println();
-			writer.println("battery wrap-around [kWh]\t" + this.batteryWrapAroundDiscrepancy_kWh / acceptedSampleWeightSum());
-			writer.println("nonnegative battery [kWh]\t" + this.nonnegativeBatteryDiscrepancy_kWh / acceptedSampleWeightSum());
-			writer.println("time wrap-around      [h]\t" + this.timeWrapAroundDiscrepancy_h / acceptedSampleWeightSum());
+			writer.println(
+					"battery wrap-around [kWh]\t" + this.batteryWrapAroundDiscrepancy_kWh / acceptedSampleWeightSum());
+			writer.println(
+					"nonnegative battery [kWh]\t" + this.nonnegativeBatteryDiscrepancy_kWh / acceptedSampleWeightSum());
+			writer.println(
+					"time wrap-around      [h]\t" + this.timeWrapAroundDiscrepancy_h / acceptedSampleWeightSum());
 			writer.println("strategy consistency  [h]\t" + this.ralizationDiscrepancy_h / acceptedSampleWeightSum());
-			
+
 			writer.println();
 			writer.println("ENERGY CONSUMPTION");
 			writer.println();
@@ -352,16 +370,15 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			writer.println("LOCATION COUNT DISTRIBUTION");
 			writer.println();
 			for (int i = 0; i < this.sizeCnt.length; i++) {
-				System.out.println(i+"\t" + this.sizeCnt[i] / this.acceptedSampleWeightSum());
+				System.out.println(i + "\t" + this.sizeCnt[i] / this.acceptedSampleWeightSum());
 			}
 			System.out.println();
-			
-			
-			final List<Map.Entry<List<Location>, Double>> usedLocs = this.sequence2uses.entrySet().stream()
+
+			final List<Map.Entry<List<ElectrifiedLocation>, Double>> usedLocs = this.sequence2uses.entrySet().stream()
 					.collect(Collectors.toList());
-			Collections.sort(usedLocs, new Comparator<Map.Entry<List<Location>, Double>>() {
+			Collections.sort(usedLocs, new Comparator<Map.Entry<List<ElectrifiedLocation>, Double>>() {
 				@Override
-				public int compare(Entry<List<Location>, Double> e1, Entry<List<Location>, Double> e2) {
+				public int compare(Entry<List<ElectrifiedLocation>, Double> e1, Entry<List<ElectrifiedLocation>, Double> e2) {
 					return -e1.getValue().compareTo(e2.getValue());
 				}
 			});
@@ -371,7 +388,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 			writer.println();
 			writer.println("locations\tprobability\tcumulative probability");
 			double cumulativeProba = 0.0;
-			for (Map.Entry<List<Location>, Double> e : usedLocs) {
+			for (Map.Entry<List<ElectrifiedLocation>, Double> e : usedLocs) {
 				final double proba = e.getValue() / acceptedSampleWeightSum();
 				cumulativeProba += proba;
 				writer.println(e.getKey() + "\t" + proba + "\t" + cumulativeProba);

@@ -19,9 +19,10 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
-import se.vti.skellefteaV2X.model.Episode;
+import se.vti.roundtrips.model.Episode;
+import se.vti.skellefteaV2X.model.ElectrifiedScenario;
+import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -31,24 +32,27 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class NonnegativeBatteryStatePreference extends Preferences.Component {
 
-	private final Scenario scenario;
-	
-	public NonnegativeBatteryStatePreference(Scenario scenario) {
+	private final ElectrifiedScenario scenario;
+
+	public NonnegativeBatteryStatePreference(ElectrifiedScenario scenario) {
 		this.scenario = scenario;
 	}
-	
+
 	public double discrepancy_kWh(SimulatedRoundTrip roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
 			double minCharge_kWh = Double.POSITIVE_INFINITY;
-			for (Episode e : roundTrip.getEpisodes()) {
-				minCharge_kWh = Math.min(minCharge_kWh, Math.min(e.getChargeAtStart_kWh(), e.getChargeAtEnd_kWh()));
+			for (Episode<ElectrifiedVehicleState> e : roundTrip.getEpisodes()) {
+				// minCharge_kWh = Math.min(minCharge_kWh, Math.min(e.getChargeAtStart_kWh(),
+				// e.getChargeAtEnd_kWh()));
+				minCharge_kWh = Math.min(minCharge_kWh,
+						Math.min(e.getInitialState().getBatteryCharge_kWh(), e.getFinalState().getBatteryCharge_kWh()));
 			}
 			return Math.max(0.0, -minCharge_kWh);
-		}		
+		}
 	}
-	
+
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
 		return -this.discrepancy_kWh(roundTrip) / this.scenario.getMaxCharge_kWh();

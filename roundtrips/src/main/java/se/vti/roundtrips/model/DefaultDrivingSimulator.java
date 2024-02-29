@@ -26,30 +26,30 @@ import se.vti.roundtrips.model.Simulator.DrivingSimulator;
  * @author GunnarF
  *
  */
-public class DefaultDrivingSimulator<S extends VehicleState> implements DrivingSimulator<S> {
+public class DefaultDrivingSimulator<L extends Location, S extends VehicleState> implements DrivingSimulator<L, S> {
 
-	private final Scenario scenario;
-	private final VehicleStateFactory<S> stateFactory;
+	protected final Scenario scenario;
+	protected final VehicleStateFactory<S> stateFactory;
 
 	public DefaultDrivingSimulator(Scenario scenario, VehicleStateFactory<S> stateFactory) {
 		this.scenario = scenario;
 		this.stateFactory = stateFactory;
 	}
 
-	public S computeFinalState(DrivingEpisode<S> driving) {
+	public S computeFinalState(DrivingEpisode<L, S> driving) {
 		return this.stateFactory.createVehicleState();
 	}
-	
+
 	@Override
-	public DrivingEpisode<S> newDrivingEpisode(Location origin, Location destination, double time_h, S initialState) {
-		final DrivingEpisode<S> driving = new DrivingEpisode<>(origin, destination);
+	public DrivingEpisode<L, S> newDrivingEpisode(L origin, L destination, double time_h, S initialState) {
+		final DrivingEpisode<L, S> driving = new DrivingEpisode<>(origin, destination);
 		driving.setInitialState(initialState);
-		
+
 		driving.setDuration_h(this.scenario.getTime_h(origin, destination));
 		driving.setEndTime_h(time_h + driving.getDuration_h());
 
 		driving.setFinalState(this.computeFinalState(driving));
-		
+
 		return driving;
 	}
 

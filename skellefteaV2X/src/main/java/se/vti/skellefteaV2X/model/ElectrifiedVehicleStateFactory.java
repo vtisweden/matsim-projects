@@ -1,7 +1,7 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.skellefteaV2X.model
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,34 +17,23 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
+package se.vti.skellefteaV2X.model;
 
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
-import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
+import se.vti.roundtrips.model.VehicleStateFactory;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class NotHomePreference extends Preferences.Component {
+public class ElectrifiedVehicleStateFactory implements VehicleStateFactory<ElectrifiedVehicleState> {
 
-	private final Location location;
-
-	public NotHomePreference(Location location) {
-		this.location = location;
+	public ElectrifiedVehicleStateFactory() {
 	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ParkingEpisode home = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(0);
-		if (this.location.equals(home.getLocation())) {
-			return -home.getDuration_h();
-		} else {
-			return 0.0;
-		}
+	public ElectrifiedVehicleState createVehicleState() {
+		return new ElectrifiedVehicleState();
 	}
 
 }

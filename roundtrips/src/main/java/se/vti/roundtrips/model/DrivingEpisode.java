@@ -24,21 +24,21 @@ package se.vti.roundtrips.model;
  * @author GunnarF
  *
  */
-public class DrivingEpisode<S extends VehicleState> extends Episode<S> {
+public final class DrivingEpisode<L extends Location, S extends VehicleState> extends Episode<S> {
 
-	private final Location origin;
-	private final Location destination;
-	
-	public DrivingEpisode(Location origin, Location destination) {
+	private final L origin;
+	private final L destination;
+
+	public DrivingEpisode(L origin, L destination) {
 		this.origin = origin;
 		this.destination = destination;
 	}
 
-	public Location getOrigin() {
+	public L getOrigin() {
 		return origin;
 	}
 
-	public Location getDestination() {
+	public L getDestination() {
 		return destination;
 	}
 

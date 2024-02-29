@@ -20,9 +20,9 @@
 package se.vti.skellefteaV2X.analysis;
 
 import se.vti.roundtrips.single.RoundTrip;
-import se.vti.skellefteaV2X.model.Location;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
+import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -31,9 +31,9 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<RoundTrip<Location>> {
+public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<RoundTrip<ElectrifiedLocation>> {
 
-	protected final Scenario scenario;
+	protected final ElectrifiedScenario scenario;
 
 	private final long burnInIterations;
 
@@ -47,7 +47,7 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 
 	private double acceptedSampleWeightSum = 0.0;
 	
-	public SimulatedRoundTripAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval,
+	public SimulatedRoundTripAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,
 			Preferences importanceSamplingPreferences) {
 		this.scenario = scenario;
 		this.burnInIterations = burnInIterations;
@@ -67,7 +67,7 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 	}
 
 	@Override
-	public final void processState(RoundTrip<Location> state) {
+	public final void processState(RoundTrip<ElectrifiedLocation> state) {
 		this.iteration++;
 		if ((this.iteration > this.burnInIterations) && (this.iteration % this.samplingInterval == 0)) {
 			final SimulatedRoundTrip simulatedRoundTrip = (SimulatedRoundTrip) state;

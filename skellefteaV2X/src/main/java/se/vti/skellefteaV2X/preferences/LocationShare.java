@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 
 import floetteroed.utilities.Tuple;
-import se.vti.skellefteaV2X.model.Episode;
-import se.vti.skellefteaV2X.model.Location;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.roundtrips.model.Episode;
+import se.vti.roundtrips.model.Location;
+import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.Preferences.Component;
 import se.vti.utils.misc.math.MathHelpers;
 
@@ -77,11 +77,11 @@ public abstract class LocationShare extends Component {
 //		}
 	}
 
-	protected double logWeight(List<ParkingEpisode> parkingEpisodes) {
+	protected double logWeight(List<ParkingEpisode<?,?>> parkingEpisodes) {
 
 		double maxOverlap_h = 0;
-		ParkingEpisode relevantEpisode = null;
-		for (ParkingEpisode p : parkingEpisodes) {
+		ParkingEpisode<?,?> relevantEpisode = null;
+		for (ParkingEpisode<?,?> p : parkingEpisodes) {
 			double overlap_h = p.overlap_h(this.targetIntervals);
 			if (relevantEpisode == null || overlap_h > maxOverlap_h) {
 				relevantEpisode = p;

@@ -19,9 +19,9 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.model.Scenario;
 import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -31,9 +31,9 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class StrategyRealizationConsistency extends Component {
 
-	private final Scenario scenario;
+	private final Scenario<?> scenario;
 
-	public StrategyRealizationConsistency(Scenario scenario) {
+	public StrategyRealizationConsistency(Scenario<?> scenario) {
 		this.scenario = scenario;
 	}
 
@@ -43,7 +43,7 @@ public class StrategyRealizationConsistency extends Component {
 		} else {
 			double discrepancy_h = 0.0;
 			for (int i = 0; i < simulatedRoundTrip.locationCnt(); i++) {
-				ParkingEpisode parking = (ParkingEpisode) simulatedRoundTrip.getEpisodes().get(2 * i);
+				ParkingEpisode<?, ?> parking = (ParkingEpisode<?, ?>) simulatedRoundTrip.getEpisodes().get(2 * i);
 				assert (parking.getEndTime_h() >= 0.0);
 				discrepancy_h += Math.abs(
 						this.scenario.getBinSize_h() * simulatedRoundTrip.getDeparture(i) - parking.getEndTime_h());

@@ -26,29 +26,28 @@ import se.vti.roundtrips.model.Simulator.ParkingSimulator;
  * @author GunnarF
  *
  */
-public class DefaultParkingSimulator<S extends VehicleState> implements ParkingSimulator<S> {
+public class DefaultParkingSimulator<L extends Location, S extends VehicleState> implements ParkingSimulator<L, S> {
 
-	private final Scenario scenario;
-	private final VehicleStateFactory<S> stateFactory;
+	protected final Scenario scenario;
+	protected final VehicleStateFactory<S> stateFactory;
 
 	public DefaultParkingSimulator(Scenario scenario, VehicleStateFactory<S> stateFactory) {
 		this.scenario = scenario;
 		this.stateFactory = stateFactory;
 	}
 
-	public S computeFinalState(ParkingEpisode<S> parking) {
+	public S computeFinalState(ParkingEpisode<L, S> parking) {
 		return this.stateFactory.createVehicleState();
 	}
 
 	@Override
-	public ParkingEpisode<S> newParkingEpisode(Location location, Integer departure, double time_h,
-			S initialState) {
-		final ParkingEpisode<S> parking = new ParkingEpisode<>(location);
+	public ParkingEpisode<L, S> newParkingEpisode(L location, Integer departure, double time_h, S initialState) {
+		final ParkingEpisode<L, S> parking = new ParkingEpisode<>(location);
 		parking.setInitialState(initialState);
 
 		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * departure));
 		parking.setDuration_h(parking.getEndTime_h() - time_h);
-		
+
 		parking.setFinalState(this.computeFinalState(parking));
 
 		return parking;

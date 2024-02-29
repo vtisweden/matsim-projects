@@ -21,7 +21,7 @@ package se.vti.skellefteaV2X.preferences;
 
 import java.util.ArrayList;
 
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -37,9 +37,9 @@ public class OffHomeLocationShare extends LocationShare {
 
 	@Override
 	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
-		ArrayList<ParkingEpisode> parkings = new ArrayList<>();
+		ArrayList<ParkingEpisode<?,?>> parkings = new ArrayList<>();
 		for (int i = 2; i < simulatedRoundTrip.episodeCnt(); i += 2) {
-			parkings.add((ParkingEpisode) simulatedRoundTrip.getEpisodes().get(i));
+			parkings.add((ParkingEpisode<?,?>) simulatedRoundTrip.getEpisodes().get(i));
 		}
 		return this.logWeight(parkings);
 	}

@@ -32,28 +32,29 @@ import floetteroed.utilities.Tuple;
  * @author GunnarF
  *
  */
-public class Scenario {
+public abstract class Scenario<L extends Location> {
 
-	private double defaultSpeed_km_h = 60.0;
 	private int timeBinCnt = 24;
 	private int maxParkingEpisodes = 4;
 
-	private final Set<Location> locations = new LinkedHashSet<>();
+	private final Set<L> locations = new LinkedHashSet<>();
 
-	private final Map<Tuple<Location, Location>, Double> od2distance_km = new LinkedHashMap<>();
+	private final Map<Tuple<L, L>, Double> od2distance_km = new LinkedHashMap<>();
 
-	private final Map<Tuple<Location, Location>, Double> od2time_h = new LinkedHashMap<>();
+	private final Map<Tuple<L, L>, Double> od2time_h = new LinkedHashMap<>();
 
 	public Scenario() {
 	}
 
-	public Location createAndAddLocation(String name) {
-		Location result = new Location(name);
+	protected abstract L createLocation(String name);
+
+	public L createAndAddLocation(String name) {
+		L result = this.createLocation(name);
 		this.locations.add(result);
 		return result;
 	}
 
-	public Set<Location> getLocationsView() {
+	public Set<L> getLocationsView() {
 		return Collections.unmodifiableSet(this.locations);
 	}
 
@@ -61,33 +62,30 @@ public class Scenario {
 		return this.locations.size();
 	}
 
-	public void setDistance_km(Location from, Location to, double dist_km) {
-		Tuple<Location, Location> od = new Tuple<>(from, to);
+	public void setDistance_km(L from, L to, double dist_km) {
+		Tuple<L, L> od = new Tuple<>(from, to);
 		this.od2distance_km.put(od, dist_km);
-		if (!this.od2time_h.containsKey(od)) {
-			this.od2time_h.put(od, dist_km / this.defaultSpeed_km_h);
-		}
 	}
 
-	public void setSymmetricDistance_km(Location loc1, Location loc2, double dist_km) {
+	public void setSymmetricDistance_km(L loc1, L loc2, double dist_km) {
 		this.setDistance_km(loc1, loc2, dist_km);
 		this.setDistance_km(loc2, loc1, dist_km);
 	}
 
-	public Double getDistance_km(Location from, Location to) {
+	public Double getDistance_km(L from, L to) {
 		return this.od2distance_km.get(new Tuple<>(from, to));
 	}
 
-	public void setTime_h(Location from, Location to, double time_h) {
+	public void setTime_h(L from, L to, double time_h) {
 		this.od2time_h.put(new Tuple<>(from, to), time_h);
 	}
 
-	public void setSymmetricTime_h(Location loc1, Location loc2, double time_h) {
+	public void setSymmetricTime_h(L loc1, L loc2, double time_h) {
 		this.setTime_h(loc1, loc2, time_h);
 		this.setTime_h(loc2, loc1, time_h);
 	}
 
-	public Double getTime_h(Location from, Location to) {
+	public Double getTime_h(L from, L to) {
 		return this.od2time_h.get(new Tuple<>(from, to));
 	}
 
@@ -95,16 +93,8 @@ public class Scenario {
 		return 24.0 / this.getBinCnt();
 	}
 
-	public double getDefaultSpeed_km_h() {
-		return this.defaultSpeed_km_h;
-	}
-
 	public int getBinCnt() {
 		return this.timeBinCnt;
-	}
-
-	public void setDefaultSpeed_km_h(double defaultSpeed_km_h) {
-		this.defaultSpeed_km_h = defaultSpeed_km_h;
 	}
 
 	public void setTimeBinCnt(int timeBinCnt) {

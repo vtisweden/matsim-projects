@@ -30,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  * @author GunnarF
  *
  */
-public class Preferences implements MHWeight<RoundTrip<Location>> {
+public class Preferences implements MHWeight<RoundTrip<ElectrifiedLocation>> {
 
 	public static abstract class Component {
 		
@@ -77,7 +77,7 @@ public class Preferences implements MHWeight<RoundTrip<Location>> {
 	}
 
 	@Override
-	public double logWeight(RoundTrip<Location> roundTrip) {
+	public double logWeight(RoundTrip<ElectrifiedLocation> roundTrip) {
 		double result = 0.0;
 		for (int i = 0; i < this.components.size(); i++) {
 			result += this.weights.get(i) * this.components.get(i).logWeight((SimulatedRoundTrip) roundTrip);

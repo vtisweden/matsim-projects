@@ -19,10 +19,11 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
-import se.vti.skellefteaV2X.model.DrivingEpisode;
-import se.vti.skellefteaV2X.model.ParkingEpisode;
+import se.vti.roundtrips.model.DrivingEpisode;
+import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.skellefteaV2X.model.ElectrifiedScenario;
+import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.Scenario;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
@@ -32,22 +33,25 @@ import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
  */
 public class AllDayBatteryConstraintPreference extends Preferences.Component {
 
-	private Scenario scenario;
-	
-	public AllDayBatteryConstraintPreference(Scenario scenario) {
+	private ElectrifiedScenario scenario;
+
+	public AllDayBatteryConstraintPreference(ElectrifiedScenario scenario) {
 		this.scenario = scenario;
 	}
-	
+
 	public double discrepancy_kWh(SimulatedRoundTrip roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
-			final ParkingEpisode home = (ParkingEpisode) roundTrip.getEpisodes().get(0);
-			final DrivingEpisode leaveHome = (DrivingEpisode) roundTrip.getEpisodes().get(1);
-			return Math.abs(home.getChargeAtEnd_kWh() - leaveHome.getChargeAtStart_kWh());
-		}		
+			final ParkingEpisode<?, ElectrifiedVehicleState> home = (ParkingEpisode<?, ElectrifiedVehicleState>) roundTrip
+					.getEpisodes().get(0);
+			final DrivingEpisode<?, ElectrifiedVehicleState> leaveHome = (DrivingEpisode<?, ElectrifiedVehicleState>) roundTrip
+					.getEpisodes().get(1);
+			// return Math.abs(home.getChargeAtEnd_kWh() - leaveHome.getChargeAtStart_kWh());			
+			return Math.abs(home.getFinalState().getBatteryCharge_kWh() - leaveHome.getInitialState().getBatteryCharge_kWh());
+		}
 	}
-	
+
 	@Override
 	public double logWeight(SimulatedRoundTrip roundTrip) {
 		return -this.discrepancy_kWh(roundTrip) / this.scenario.getMaxCharge_kWh();

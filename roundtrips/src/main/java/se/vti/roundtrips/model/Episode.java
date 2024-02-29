@@ -59,7 +59,7 @@ public class Episode<S extends VehicleState> {
 		this.duration_h = duration_h;
 	}
 
-	public VehicleState getInitialState() {
+	public S getInitialState() {
 		return initialState;
 	}
 

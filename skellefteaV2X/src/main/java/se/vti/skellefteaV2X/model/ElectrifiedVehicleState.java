@@ -1,7 +1,7 @@
 /**
- * se.vti.skellefeaV2X
+ * se.vti.skellefteaV2X.model
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -19,31 +19,23 @@
  */
 package se.vti.skellefteaV2X.model;
 
+import se.vti.roundtrips.model.VehicleState;
+
 /**
  * 
  * @author GunnarF
  *
  */
-public class DrivingEpisode extends Episode {
+public class ElectrifiedVehicleState extends VehicleState {
 
-	private final Location origin;
-	private final Location destination;
-	
-	public DrivingEpisode(Location origin, Location destination) {
-		this.origin = origin;
-		this.destination = destination;
+	private Double batteryCharge_kWh;
+
+	public void setBatteryCharge_kWh(double batteryCharge_kWh) {
+		this.batteryCharge_kWh = batteryCharge_kWh;
 	}
 
-	public Location getOrigin() {
-		return origin;
+	public double getBatteryCharge_kWh() {
+		return this.batteryCharge_kWh;
 	}
 
-	public Location getDestination() {
-		return destination;
-	}
-
-	@Override
-	public String toString() {
-		return super.toString() + ",od(" + this.origin + "," + this.destination + ")";
-	}
 }
