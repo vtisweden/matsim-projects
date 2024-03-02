@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
-import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
@@ -44,18 +43,12 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 	private boolean allowHomeCharging = true;
 
 	public ElectrifiedScenario(Random rnd) {
-		super();
+		super(new ElectrifiedLocationFactory());
 		this.rnd = rnd;
 	}
 
 	public ElectrifiedScenario() {
 		this(new Random());
-	}
-
-	@Override
-	protected ElectrifiedLocation createLocation(String name) {
-		// TODO need to explicitly set properties of this location
-		return new ElectrifiedLocation(name);
 	}
 
 	@Override

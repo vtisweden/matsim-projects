@@ -34,6 +34,8 @@ import floetteroed.utilities.Tuple;
  */
 public abstract class Scenario<L extends Location> {
 
+	private final LocationFactory<L> locationFactory;
+
 	private int timeBinCnt = 24;
 	private int maxParkingEpisodes = 4;
 
@@ -43,13 +45,12 @@ public abstract class Scenario<L extends Location> {
 
 	private final Map<Tuple<L, L>, Double> od2time_h = new LinkedHashMap<>();
 
-	public Scenario() {
+	public Scenario(LocationFactory<L> locationFactory) {
+		this.locationFactory = locationFactory;
 	}
 
-	protected abstract L createLocation(String name);
-
 	public L createAndAddLocation(String name) {
-		L result = this.createLocation(name);
+		L result = this.locationFactory.createLocation(name);
 		this.locations.add(result);
 		return result;
 	}
@@ -107,5 +108,5 @@ public abstract class Scenario<L extends Location> {
 
 	public int getMaxParkingEpisodes() {
 		return this.maxParkingEpisodes;
-	}	
+	}
 }

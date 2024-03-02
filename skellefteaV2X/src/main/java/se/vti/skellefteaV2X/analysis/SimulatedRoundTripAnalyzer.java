@@ -55,13 +55,6 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 		this.importanceSamplingPreferences = importanceSamplingPreferences;
 	}
 
-//	public SimulatedRoundTripAnalyzer(Scenario scenario, long burnInIterations, long samplingInterval) {
-//		this.scenario = scenario;
-//		this.burnInIterations = burnInIterations;
-//		this.samplingInterval = samplingInterval;
-//		this.importanceSamplingPreferences = new Preferences();
-//	}
-
 	@Override
 	public void start() {
 	}

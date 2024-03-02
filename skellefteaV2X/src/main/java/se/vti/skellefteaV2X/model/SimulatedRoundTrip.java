@@ -27,6 +27,8 @@ import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
+ * TODO extract to roundtrips project
+ * 
  * @author GunnarF
  *
  */

@@ -21,6 +21,7 @@ package se.vti.skellefteaV2X.model;
 
 import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.model.Simulator.ParkingSimulator;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
@@ -40,14 +41,17 @@ public class V2GParkingSimulator
 	}
 
 	@Override
-	public ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> newParkingEpisode(ElectrifiedLocation location,
-			Integer departure, double initialTime_h, ElectrifiedVehicleState initialState) {
-		if (this.v2gLocation.equals(location)) {
+	public ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> newParkingEpisode(
+			RoundTrip<ElectrifiedLocation> roundTrip, int roundTripIndex, double initialTime_h,
+			ElectrifiedVehicleState initialState) {
+		if (this.v2gLocation.equals(roundTrip.getLocation(roundTripIndex))) {
 			// >>>>> replace this by the desired V2G logic >>>>>
-			return this.defaultParkingSimulator.newParkingEpisode(location, departure, initialTime_h, initialState);
+			return this.defaultParkingSimulator.newParkingEpisode(roundTrip, roundTripIndex, initialTime_h,
+					initialState);
 			// <<<<< replace this by the desired V2G logic <<<<<
 		} else {
-			return this.defaultParkingSimulator.newParkingEpisode(location, departure, initialTime_h, initialState);
+			return this.defaultParkingSimulator.newParkingEpisode(roundTrip, roundTripIndex, initialTime_h,
+					initialState);
 		}
 	}
 

@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips
+ * se.vti.roundtrips.model
  * 
- * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -24,6 +24,8 @@ package se.vti.roundtrips.model;
  * @author GunnarF
  *
  */
-public class VehicleState {
-	
+public interface LocationFactory<L extends Location> {
+
+	L createLocation(String name);
+
 }

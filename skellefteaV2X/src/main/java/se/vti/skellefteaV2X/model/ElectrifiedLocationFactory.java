@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips
+ * se.vti.skellefteaV2X.model
  * 
- * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,13 +17,20 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.model;
+package se.vti.skellefteaV2X.model;
+
+import se.vti.roundtrips.model.LocationFactory;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class VehicleState {
-	
+public class ElectrifiedLocationFactory implements LocationFactory<ElectrifiedLocation> {
+
+	@Override
+	public ElectrifiedLocation createLocation(String name) {
+		return new ElectrifiedLocation(name);
+	}
+
 }

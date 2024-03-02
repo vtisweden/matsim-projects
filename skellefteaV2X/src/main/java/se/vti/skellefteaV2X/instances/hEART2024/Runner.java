@@ -111,8 +111,7 @@ public class Runner {
 		 */
 
 		// Simulator has default parking/charging and driving logics.
-		ElectrifiedSimulator simulator = new ElectrifiedSimulator(scenario, new ElectrifiedVehicleStateFactory(),
-				scenario.getMaxCharge_kWh());
+		ElectrifiedSimulator simulator = new ElectrifiedSimulator(scenario, new ElectrifiedVehicleStateFactory());
 		// Below an example of how alternative charging logics can be inserted.
 		simulator.setDrivingSimulator(new ElectrifiedDrivingSimulator(scenario, new ElectrifiedVehicleStateFactory()));
 		simulator.setParkingSimulator(new V2GParkingSimulator(campus, scenario));
@@ -125,10 +124,10 @@ public class Runner {
 
 		final Preferences consistencyPreferences = new Preferences();
 		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario), 1.0 /* must be one */);
-		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1);
-		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1);
-		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 4);
-		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1);
+		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
+		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
+		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 4.0);
+		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1.0);
 
 		// MODELING PREFERENCES
 
@@ -187,8 +186,8 @@ public class Runner {
 
 	public static void main(String[] args) {
 
-//		createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log").run();
-//		System.exit(0);
+		createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log").run();
+		System.exit(0);
 
 		final ExecutorService threadPool = Executors.newFixedThreadPool(4);
 		threadPool.execute(createMHAlgorithmRunnable(10 * 1000 * 1000, "10-000-000_skelleftea.log"));

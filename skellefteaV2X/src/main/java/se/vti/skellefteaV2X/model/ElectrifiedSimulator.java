@@ -19,7 +19,9 @@
  */
 package se.vti.skellefteaV2X.model;
 
+import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.model.VehicleStateFactory;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
@@ -31,15 +33,31 @@ public class ElectrifiedSimulator
 
 	private final double batteryCapacity_kWh;
 
-	public ElectrifiedSimulator(ElectrifiedScenario scenario, VehicleStateFactory<ElectrifiedVehicleState> stateFactory,
-			double batteryCapacity_kWh) {
+	public ElectrifiedSimulator(ElectrifiedScenario scenario,
+			VehicleStateFactory<ElectrifiedVehicleState> stateFactory) {
 		super(scenario, stateFactory);
-		this.batteryCapacity_kWh = batteryCapacity_kWh;
+		this.batteryCapacity_kWh = scenario.getMaxCharge_kWh();
 	}
 
 	@Override
-	public void initializeState(ElectrifiedVehicleState initialState) {
-		initialState.setBatteryCharge_kWh(this.batteryCapacity_kWh);
+	public ElectrifiedVehicleState createAndInitializeState() {
+		ElectrifiedVehicleState state = super.createAndInitializeState();
+		state.setBatteryCharge_kWh(this.batteryCapacity_kWh);
+		return state;
+	}
+
+	@Override
+	public ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> createHomeOnlyEpisode(
+			RoundTrip<ElectrifiedLocation> roundTrip) {
+		ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> home = super.createHomeOnlyEpisode(roundTrip);
+		if (roundTrip.getCharging(0) && roundTrip.getLocation(0).getAllowsCharging()) {
+			home.getInitialState().setBatteryCharge_kWh(this.batteryCapacity_kWh);
+			home.getFinalState().setBatteryCharge_kWh(this.batteryCapacity_kWh);
+		} else {
+			home.getInitialState().setBatteryCharge_kWh(0.0);
+			home.getFinalState().setBatteryCharge_kWh(0.0);
+		}
+		return home;
 	}
 
 	@Override
@@ -54,7 +72,6 @@ public class ElectrifiedSimulator
 		} else {
 			return oldInitialState;
 		}
-
 	}
 
 }

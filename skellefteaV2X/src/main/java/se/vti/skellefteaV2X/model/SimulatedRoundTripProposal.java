@@ -27,6 +27,8 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
 
 /**
  * 
+ * TODO extract to roundtrips project
+ * 
  * @author GunnarF
  *
  */

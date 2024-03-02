@@ -19,7 +19,6 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
-import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.single.RoundTripIgnoreChargingCombinations;
 import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;

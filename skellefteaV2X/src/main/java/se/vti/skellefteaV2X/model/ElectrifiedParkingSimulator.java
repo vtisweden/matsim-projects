@@ -21,6 +21,7 @@ package se.vti.skellefteaV2X.model;
 
 import se.vti.roundtrips.model.DefaultParkingSimulator;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
@@ -39,11 +40,15 @@ public class ElectrifiedParkingSimulator extends DefaultParkingSimulator<Electri
 	}
 
 	@Override
-	public ElectrifiedVehicleState computeFinalState(
+	public ElectrifiedVehicleState computeFinalState(RoundTrip<ElectrifiedLocation> roundTrip, int roundTripIndex,
 			ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> parking) {
-		ElectrifiedVehicleState finalState = super.computeFinalState(parking);
-		finalState.setBatteryCharge_kWh(Math.min(this.batteryCapacity_kWh,
-				parking.getInitialState().getBatteryCharge_kWh() + parking.getDuration_h() * this.chargingRate_kW));
+		ElectrifiedVehicleState finalState = super.computeFinalState(roundTrip, roundTripIndex, parking);
+		if (roundTrip.getCharging(roundTripIndex) && roundTrip.getLocation(roundTripIndex).getAllowsCharging()) {
+			finalState.setBatteryCharge_kWh(Math.min(this.batteryCapacity_kWh,
+					parking.getInitialState().getBatteryCharge_kWh() + parking.getDuration_h() * this.chargingRate_kW));
+		} else {
+			finalState.setBatteryCharge_kWh(parking.getInitialState().getBatteryCharge_kWh());
+		}
 		return finalState;
 	}
 
