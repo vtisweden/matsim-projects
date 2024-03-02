@@ -22,7 +22,6 @@ package se.vti.skellefteaV2X.analysis;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
 /**
@@ -62,7 +61,7 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Ele
 	public final void processState(ElectrifiedRoundTrip state) {
 		this.iteration++;
 		if ((this.iteration > this.burnInIterations) && (this.iteration % this.samplingInterval == 0)) {
-			final SimulatedRoundTrip simulatedRoundTrip = (SimulatedRoundTrip) state;
+			final ElectrifiedRoundTrip simulatedRoundTrip = state; // TODO
 			final double sampleWeight = 1.0
 					/ Math.exp(this.importanceSamplingPreferences.logWeight(simulatedRoundTrip));
 			this.sampleWeightSum += sampleWeight;
@@ -77,7 +76,7 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Ele
 	public void end() {
 	}
 
-	public abstract void processRelevantState(SimulatedRoundTrip state, double sampleWeight);
+	public abstract void processRelevantState(ElectrifiedRoundTrip state, double sampleWeight);
 
 	protected double sampleWeightSum() {
 		return this.sampleWeightSum;

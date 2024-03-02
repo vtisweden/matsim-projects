@@ -22,9 +22,9 @@ package se.vti.skellefteaV2X.preferences.consistency;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;
 import se.vti.roundtrips.single.RoundTripIgnoreLocationCombinations;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.RoundTripIgnoreChargingCombinations;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
  * 
@@ -45,7 +45,7 @@ public class UniformOverLocationCount extends Preferences.Component {
 	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
+	public double logWeight(ElectrifiedRoundTrip simulatedRoundTrip) {
 		return this.correctChargingCombinations.logWeight(simulatedRoundTrip)
 				+ this.correctDepartureCombinations.logWeight(simulatedRoundTrip)
 				+ this.correctLocationCombinations.logWeight(simulatedRoundTrip);

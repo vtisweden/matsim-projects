@@ -36,14 +36,17 @@ public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<
 
 	private final RoundTripConfiguration<L> config;
 
+	private final Simulator<L, R> simulator;
+
 	private final Map<MHProposal<R>, Double> proposal2weight = new LinkedHashMap<>();
 
 //	private final RoundTripLocationProposal<L> locationProposal;
 //	private final RoundTripDepartureProposal<L> timeBinProposal;
 //	private final RoundTripChargingProposal<L> chargingProposal;
 
-	public RoundTripProposal(RoundTripConfiguration<L> config) {
+	public RoundTripProposal(RoundTripConfiguration<L> config, Simulator<L, R> simulator) {
 		this.config = config;
+		this.simulator = simulator;
 //		this.addProposal(new RoundTripLocationProposal<>(config), config.getLocationProposalProbability());
 //		this.addProposal(new RoundTripDepartureProposal<>(config), config.getDepartureProposalProbability());
 //		this.locationProposal = new RoundTripLocationProposal<>(config);
@@ -73,6 +76,10 @@ public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<
 			weightSum += entry.getValue();
 			if (randomNumber < weightSum / allWeightSum) {
 				MHTransition<R> transition = entry.getKey().newTransition(state);
+
+				R newRoundTrip = transition.getNewState();
+				newRoundTrip.setEpisodes(this.simulator.simulate(newRoundTrip));
+
 				transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
 						Math.log(entry.getValue() / allWeightSum) + transition.getFwdLogProb(),
 						Math.log(entry.getValue() / allWeightSum) + transition.getBwdLogProb());

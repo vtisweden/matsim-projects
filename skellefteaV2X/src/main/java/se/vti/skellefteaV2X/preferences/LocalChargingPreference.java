@@ -19,13 +19,15 @@
  */
 package se.vti.skellefteaV2X.preferences;
 
+import java.util.List;
+
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
  * 
@@ -48,9 +50,9 @@ public class LocalChargingPreference extends Component {
 	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip roundTrip) {
+	public double logWeight(ElectrifiedRoundTrip roundTrip) {
 		double amount_kWh = 0.0;
-		for (Episode<ElectrifiedVehicleState> e : roundTrip.getEpisodes()) {
+		for (Episode<ElectrifiedVehicleState> e : (List<Episode<ElectrifiedVehicleState>>) roundTrip.getEpisodes()) {
 			if (e instanceof ParkingEpisode) {
 				ParkingEpisode<?, ElectrifiedVehicleState> p = (ParkingEpisode<?, ElectrifiedVehicleState>) e;
 				if (this.location.equals(p.getLocation())) {

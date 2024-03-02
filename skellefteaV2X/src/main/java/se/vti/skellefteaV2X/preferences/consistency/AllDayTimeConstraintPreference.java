@@ -21,8 +21,8 @@ package se.vti.skellefteaV2X.preferences.consistency;
 
 import se.vti.roundtrips.model.DrivingEpisode;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
  * 
@@ -41,7 +41,7 @@ public class AllDayTimeConstraintPreference extends Preferences.Component {
 		this(0.0);
 	}
 	
-	public double discrepancy_h(SimulatedRoundTrip roundTrip) {
+	public double discrepancy_h(ElectrifiedRoundTrip roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
@@ -54,7 +54,7 @@ public class AllDayTimeConstraintPreference extends Preferences.Component {
 	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip roundTrip) {
+	public double logWeight(ElectrifiedRoundTrip roundTrip) {
 		return -this.discrepancy_h(roundTrip) / 24.0;
 	}
 }

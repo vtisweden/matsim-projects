@@ -110,7 +110,7 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 				chargingProposalWeight, doNothingWeight);
 		configuration.addLocations(this.getLocationsView());
 
-		RoundTripProposal<ElectrifiedLocation, ElectrifiedRoundTrip> proposal0 = new RoundTripProposal<>(configuration);
+		RoundTripProposal<ElectrifiedLocation, ElectrifiedRoundTrip> proposal0 = new RoundTripProposal<>(configuration, simulator);
 		proposal0.addProposal(
 				new RoundTripLocationProposal<ElectrifiedRoundTrip, ElectrifiedLocation>(configuration, new PossibleTransitionFactory<ElectrifiedLocation, ElectrifiedRoundTrip>() {
 					@Override
@@ -125,10 +125,10 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 		proposal0.addProposal(new RoundTripChargingProposal(configuration),
 				configuration.getChargingProposalProbability());
 
-		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(proposal0, simulator);
-		MHAlgorithm<ElectrifiedRoundTrip> algo = new MHAlgorithm<ElectrifiedRoundTrip>(proposal, preferences, new Random());
+//		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(proposal0, simulator);
+		MHAlgorithm<ElectrifiedRoundTrip> algo = new MHAlgorithm<ElectrifiedRoundTrip>(proposal0, preferences, new Random());
 
-		SimulatedRoundTrip initialState = new SimulatedRoundTrip(
+		ElectrifiedRoundTrip initialState = new ElectrifiedRoundTrip(
 				Arrays.asList(
 						new ArrayList<>(this.getLocationsView()).get(this.rnd.nextInt(this.getLocationsView().size()))),
 				Arrays.asList(this.rnd.nextInt(this.getBinCnt())), Arrays.asList(this.rnd.nextBoolean()), this.rnd);

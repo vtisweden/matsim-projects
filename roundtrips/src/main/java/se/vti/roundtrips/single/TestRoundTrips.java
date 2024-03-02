@@ -54,15 +54,22 @@ public class TestRoundTrips {
 			scenario.addLocation(i);
 		}
 
-		RoundTripProposal<Integer, RoundTrip<Integer>> proposal = new RoundTripProposal<>(scenario);
-		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<Integer>, Integer>(scenario, new PossibleTransitionFactory<Integer, RoundTrip<Integer>>() {
-			@Override
-			public PossibleTransitions<Integer> createPossibleTransitions(RoundTrip<Integer> state,
-					RoundTripConfiguration<Integer> config, List<Integer> allLocations) {
-				return new PossibleTransitions<>(state, config, allLocations);
-			}
+		RoundTripProposal<Integer, RoundTrip<Integer>> proposal = new RoundTripProposal<>(scenario,
+				new Simulator<Integer, RoundTrip<Integer>>() {
+					@Override
+					public List<?> simulate(RoundTrip<Integer> roundTrip) {
+						return null;
+					}
+				});
+		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<Integer>, Integer>(scenario,
+				new PossibleTransitionFactory<Integer, RoundTrip<Integer>>() {
+					@Override
+					public PossibleTransitions<Integer> createPossibleTransitions(RoundTrip<Integer> state,
+							RoundTripConfiguration<Integer> config, List<Integer> allLocations) {
+						return new PossibleTransitions<>(state, config, allLocations);
+					}
 
-		}), scenario.getLocationProposalProbability());
+				}), scenario.getLocationProposalProbability());
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), scenario.getDepartureProposalProbability());
 
 		MHWeight<RoundTrip<Integer>> weight = new MHWeight<>() {

@@ -21,8 +21,8 @@ package se.vti.skellefteaV2X.preferences.consistency;
 
 import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.model.Scenario;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.Preferences.Component;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 
 /**
  * 
@@ -37,7 +37,7 @@ public class StrategyRealizationConsistency extends Component {
 		this.scenario = scenario;
 	}
 
-	public double discrepancy_h(SimulatedRoundTrip simulatedRoundTrip) {
+	public double discrepancy_h(ElectrifiedRoundTrip simulatedRoundTrip) {
 		if (simulatedRoundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
@@ -53,7 +53,7 @@ public class StrategyRealizationConsistency extends Component {
 	}
 
 	@Override
-	public double logWeight(SimulatedRoundTrip simulatedRoundTrip) {
+	public double logWeight(ElectrifiedRoundTrip simulatedRoundTrip) {
 		return -this.discrepancy_h(simulatedRoundTrip) / 24.0;
 	}
 

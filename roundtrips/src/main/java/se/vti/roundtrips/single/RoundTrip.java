@@ -34,6 +34,9 @@ public class RoundTrip<L> {
 
 	// -------------------- MEMBERS --------------------
 
+	// TODO not typesafe
+	private List<?> episodes = null;
+
 	private List<L> locations;
 
 	private List<Integer> departures;
@@ -44,7 +47,7 @@ public class RoundTrip<L> {
 		this.locations = locations;
 		this.departures = departures;
 	}
-
+	
 	// -------------------- INTERNALS --------------------
 
 	public int predecessorIndex(int i) {
@@ -84,7 +87,7 @@ public class RoundTrip<L> {
 	public List<L> getLocationsView() {
 		return Collections.unmodifiableList(this.locations);
 	}
-	
+
 	public void setLocation(int i, L location) {
 		this.locations.set(i, location);
 	}
@@ -111,7 +114,7 @@ public class RoundTrip<L> {
 		this.departures.add(i, departureBin);
 		Collections.sort(this.departures);
 	}
-	
+
 	public void remove(int locationChargingIndex, int departureIndex) {
 		this.locations.remove(locationChargingIndex);
 		this.departures.remove(departureIndex);
@@ -134,6 +137,13 @@ public class RoundTrip<L> {
 		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures());
 	}
 
+	public List<?> getEpisodes() {
+		return episodes;
+	}
+
+	public void setEpisodes(List<?> episodes) {
+		this.episodes = episodes;
+	}
 	// -------------------- OVERRIDING OF Object --------------------
 
 	@Override

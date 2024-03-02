@@ -40,11 +40,11 @@ public class Preferences implements MHWeight<ElectrifiedRoundTrip> {
 			this.logWeightThreshold = threshold;
 		}
 		
-		public boolean thresholdPassed(SimulatedRoundTrip simulatedRoundTrip) {
+		public boolean thresholdPassed(ElectrifiedRoundTrip simulatedRoundTrip) {
 			return (this.logWeight(simulatedRoundTrip) >= this.logWeightThreshold);
 		}
 
-		public abstract double logWeight(SimulatedRoundTrip simulatedRoundTrip);
+		public abstract double logWeight(ElectrifiedRoundTrip simulatedRoundTrip);
 
 	}
 
@@ -80,12 +80,12 @@ public class Preferences implements MHWeight<ElectrifiedRoundTrip> {
 	public double logWeight(ElectrifiedRoundTrip roundTrip) {
 		double result = 0.0;
 		for (int i = 0; i < this.components.size(); i++) {
-			result += this.weights.get(i) * this.components.get(i).logWeight((SimulatedRoundTrip) roundTrip);
+			result += this.weights.get(i) * this.components.get(i).logWeight((ElectrifiedRoundTrip) roundTrip);
 		}
 		return result;
 	}
 
-	public boolean thresholdPassed(SimulatedRoundTrip roundTrip) {
+	public boolean thresholdPassed(ElectrifiedRoundTrip roundTrip) {
 		for (Component component : this.components) {
 			if (!component.thresholdPassed(roundTrip)) {
 				return false;

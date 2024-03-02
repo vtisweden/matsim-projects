@@ -30,7 +30,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class Simulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> {
+public class Simulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> implements se.vti.roundtrips.single.Simulator<L, R> {
 
 	// -------------------- INTERFACES --------------------
 
@@ -96,6 +96,7 @@ public class Simulator<L extends Location, S extends VehicleState, R extends Rou
 
 	// -------------------- IMPLEMENTATION --------------------
 
+	@Override
 	public List<Episode<S>> simulate(R roundTrip) {
 
 		if (roundTrip.locationCnt() == 1) {

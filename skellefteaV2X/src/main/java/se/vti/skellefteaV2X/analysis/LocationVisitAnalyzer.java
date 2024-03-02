@@ -35,11 +35,11 @@ import se.vti.roundtrips.model.DrivingEpisode;
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 import se.vti.skellefteaV2X.model.Preferences;
-import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
@@ -118,7 +118,7 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 	}
 
 	@Override
-	public void processRelevantState(SimulatedRoundTrip state, double sampleWeight) {
+	public void processRelevantState(ElectrifiedRoundTrip state, double sampleWeight) {
 
 		this.batteryWrapAroundDiscrepancy_kWh += sampleWeight * this.batteryWrapAround.discrepancy_kWh(state);
 		this.timeWrapAroundDiscrepancy_h += sampleWeight * this.timeWrapAround.discrepancy_h(state);
@@ -133,9 +133,9 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		this.sequence2uses.compute(state.getLocationsView(), (s, c) -> c == null ? sampleWeight : c + sampleWeight);
 		this.location2isHomeCnt.compute(state.getLocation(0), (l, c) -> c == null ? sampleWeight : c + sampleWeight);
 
-		assert (state.locationCnt() == 1 || state.episodeCnt() == 2 * state.locationCnt());
+		assert (state.locationCnt() == 1 || ((List<?>) state.getEpisodes()).size() == 2 * state.locationCnt());
 
-		for (Episode<ElectrifiedVehicleState> e : state.getEpisodes()) {
+		for (Episode<ElectrifiedVehicleState> e : (List<Episode<ElectrifiedVehicleState>>) state.getEpisodes()) {
 
 			final ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> parking = (e instanceof ParkingEpisode
 					? (ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) e
@@ -221,15 +221,13 @@ public class LocationVisitAnalyzer extends SimulatedRoundTripAnalyzer {
 		double myUsed_kWh = 0.0;
 
 		for (int i = 0; i < state.getEpisodes().size(); i += 2) {
-			ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) state
-					.getEpisodes().get(i);
+			ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) state.getEpisodes().get(i);
 //			myCharged_kWh += e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh();
 			myCharged_kWh += e.getFinalState().getBatteryCharge_kWh() - e.getInitialState().getBatteryCharge_kWh();
 		}
 
 		for (int i = 1; i < state.getEpisodes().size(); i += 2) {
-			DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) state
-					.getEpisodes().get(i);
+			DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) state.getEpisodes().get(i);
 //			myUsed_kWh += e.getChargeAtStart_kWh() - e.getChargeAtEnd_kWh();
 			myUsed_kWh += e.getInitialState().getBatteryCharge_kWh() - e.getFinalState().getBatteryCharge_kWh();
 		}

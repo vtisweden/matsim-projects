@@ -1,7 +1,7 @@
 /**
- * se.vti.skellefteaV2X
+ * se.vti.roundtrips.single
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,27 +17,12 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences;
+package se.vti.roundtrips.single;
 
-import java.util.Arrays;
+import java.util.List;
 
-import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+public interface Simulator<L, R extends RoundTrip<L>> {
 
-/**
- * 
- * @author GunnarF
- *
- */
-public class HomeLocationShare extends LocationShare {
-
-	public HomeLocationShare(double targetDuration_h, double duration_h, double endTime_h, double overlapStrictness) {
-		super(targetDuration_h, duration_h, endTime_h, overlapStrictness);
-	}
-
-	@Override
-	public double logWeight(ElectrifiedRoundTrip simulatedRoundTrip) {
-		return this.logWeight(Arrays.asList((ParkingEpisode<?, ?>) simulatedRoundTrip.getEpisodes().get(0)));
-	}
+	List<?> simulate(R roundTrip);
 
 }
