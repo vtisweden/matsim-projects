@@ -21,10 +21,18 @@ package se.vti.skellefteaV2X.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.PossibleTransitionFactory;
+import se.vti.roundtrips.single.PossibleTransitions;
 import se.vti.roundtrips.single.RoundTripConfiguration;
+import se.vti.roundtrips.single.RoundTripDepartureProposal;
+import se.vti.roundtrips.single.RoundTripLocationProposal;
+import se.vti.roundtrips.single.RoundTripProposal;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.PossibleElectrifiedTransitions;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.RoundTripChargingProposal;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
@@ -89,7 +97,7 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 		this.defaultSpeed_km_h = defaultSpeed_km_h;
 	}
 
-	public MHAlgorithm<RoundTrip<ElectrifiedLocation>> createMHAlgorithm(Preferences preferences,
+	public MHAlgorithm<ElectrifiedRoundTrip> createMHAlgorithm(Preferences preferences,
 			ElectrifiedSimulator simulator) {
 
 		double locationProposalWeight = 0.1;
@@ -101,13 +109,29 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 				this.getMaxParkingEpisodes(), getBinCnt(), locationProposalWeight, departureProposalWeight,
 				chargingProposalWeight, doNothingWeight);
 		configuration.addLocations(this.getLocationsView());
-		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(configuration, simulator);
-		MHAlgorithm<RoundTrip<ElectrifiedLocation>> algo = new MHAlgorithm<>(proposal, preferences, new Random());
+
+		RoundTripProposal<ElectrifiedLocation, ElectrifiedRoundTrip> proposal0 = new RoundTripProposal<>(configuration);
+		proposal0.addProposal(
+				new RoundTripLocationProposal<ElectrifiedRoundTrip, ElectrifiedLocation>(configuration, new PossibleTransitionFactory<ElectrifiedLocation, ElectrifiedRoundTrip>() {
+					@Override
+					public PossibleTransitions<ElectrifiedLocation> createPossibleTransitions(
+							ElectrifiedRoundTrip state, RoundTripConfiguration<ElectrifiedLocation> config,
+							List<ElectrifiedLocation> allLocations) {
+						return new PossibleElectrifiedTransitions(state, config, allLocations);
+					}
+				}), configuration.getLocationProposalProbability());
+		proposal0.addProposal(new RoundTripDepartureProposal<>(configuration),
+				configuration.getDepartureProposalProbability());
+		proposal0.addProposal(new RoundTripChargingProposal(configuration),
+				configuration.getChargingProposalProbability());
+
+		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(proposal0, simulator);
+		MHAlgorithm<ElectrifiedRoundTrip> algo = new MHAlgorithm<ElectrifiedRoundTrip>(proposal, preferences, new Random());
 
 		SimulatedRoundTrip initialState = new SimulatedRoundTrip(
 				Arrays.asList(
 						new ArrayList<>(this.getLocationsView()).get(this.rnd.nextInt(this.getLocationsView().size()))),
-				Arrays.asList(this.rnd.nextInt(this.getBinCnt())), Arrays.asList(this.rnd.nextBoolean()));
+				Arrays.asList(this.rnd.nextInt(this.getBinCnt())), Arrays.asList(this.rnd.nextBoolean()), this.rnd);
 		initialState.setEpisodes(simulator.simulate(initialState));
 		algo.setInitialState(initialState);
 

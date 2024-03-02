@@ -23,8 +23,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import se.vti.roundtrips.single.RoundTrip;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedDrivingSimulator;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
@@ -166,7 +166,7 @@ public class Runner {
 
 		Preferences allPreferences = new Preferences(consistencyPreferences, modelingPreferences,
 				importanceSamplingPreferences);
-		MHAlgorithm<RoundTrip<ElectrifiedLocation>> algo = scenario.createMHAlgorithm(allPreferences, simulator);
+		MHAlgorithm<ElectrifiedRoundTrip> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		final long targetSamples = 1000 * 1000;
 		final long burnInIterations = (iterations / 4);

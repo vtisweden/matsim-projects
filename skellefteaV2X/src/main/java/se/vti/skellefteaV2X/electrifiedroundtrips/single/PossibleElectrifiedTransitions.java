@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips
+ * se.vti.skellefteaV2X.electrifiedroundtrips.single
  * 
- * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,34 +17,29 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.skellefteaV2X.electrifiedroundtrips.single;
 
-import se.vti.utils.misc.metropolishastings.MHWeight;
+import java.util.List;
+
+import se.vti.roundtrips.single.PossibleTransitions;
+import se.vti.roundtrips.single.RoundTripConfiguration;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 
 /**
  * 
  * @author GunnarF
  *
- * @param <L>
  */
-public class RoundTripIgnoreDepartureCombinations implements MHWeight<RoundTrip<?>> {
+public class PossibleElectrifiedTransitions extends PossibleTransitions<ElectrifiedLocation> {
 
-	private final int timeBinCnt;
-	
-	public RoundTripIgnoreDepartureCombinations(int timeBinCnt) {
-		this.timeBinCnt = timeBinCnt;
+	public PossibleElectrifiedTransitions(ElectrifiedRoundTrip state,
+			RoundTripConfiguration<ElectrifiedLocation> config, List<ElectrifiedLocation> allLocations) {
+		super(state, config, allLocations);
 	}
-	
-	@Override
-	public double logWeight(RoundTrip<?> state) {
-		double logSizeWithoutSorting = 0.0;
-		double logPermutations = 0.0;
-		for (int i = 0; i < state.locationCnt(); i++) {
-			logSizeWithoutSorting += Math.log(this.timeBinCnt - i);
-			logPermutations += Math.log(i + 1); // permutations
-		}
-		double logSizeWithSorting = logSizeWithoutSorting - logPermutations;
-		return -logSizeWithSorting;
+
+	public double concreteInsertProba(int index) {
+		// two possible charging states
+		return 0.5 * super.concreteInsertProba(index);
 	}
 
 }

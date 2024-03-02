@@ -22,7 +22,7 @@ package se.vti.skellefteaV2X.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
@@ -30,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  * @author GunnarF
  *
  */
-public class Preferences implements MHWeight<RoundTrip<ElectrifiedLocation>> {
+public class Preferences implements MHWeight<ElectrifiedRoundTrip> {
 
 	public static abstract class Component {
 		
@@ -77,7 +77,7 @@ public class Preferences implements MHWeight<RoundTrip<ElectrifiedLocation>> {
 	}
 
 	@Override
-	public double logWeight(RoundTrip<ElectrifiedLocation> roundTrip) {
+	public double logWeight(ElectrifiedRoundTrip roundTrip) {
 		double result = 0.0;
 		for (int i = 0; i < this.components.size(); i++) {
 			result += this.weights.get(i) * this.components.get(i).logWeight((SimulatedRoundTrip) roundTrip);

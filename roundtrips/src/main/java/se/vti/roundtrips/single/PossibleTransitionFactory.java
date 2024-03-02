@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips
+ * se.vti.roundtrips.single
  * 
- * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -19,19 +19,15 @@
  */
 package se.vti.roundtrips.single;
 
-import se.vti.utils.misc.metropolishastings.MHWeight;
+import java.util.List;
 
 /**
  * 
  * @author GunnarF
  *
- * @param <L>
  */
-public class RoundTripIgnoreChargingCombinations<L> implements MHWeight<RoundTrip<L>> {
+public interface PossibleTransitionFactory<L, R extends RoundTrip<L>> {
 
-	@Override
-	public double logWeight(RoundTrip<L> state) {
-		return -Math.log(2.0) * state.locationCnt();
-	}
-
+	public PossibleTransitions<L> createPossibleTransitions(R state, RoundTripConfiguration<L> config, List<L> allLocations);
+	
 }

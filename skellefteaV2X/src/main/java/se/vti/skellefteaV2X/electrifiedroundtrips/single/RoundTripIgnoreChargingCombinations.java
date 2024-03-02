@@ -17,34 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.skellefteaV2X.electrifiedroundtrips.single;
 
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
  * 
  * @author GunnarF
  *
- * @param <L>
  */
-public class RoundTripIgnoreDepartureCombinations implements MHWeight<RoundTrip<?>> {
+public class RoundTripIgnoreChargingCombinations implements MHWeight<RoundTrip<?>> {
 
-	private final int timeBinCnt;
-	
-	public RoundTripIgnoreDepartureCombinations(int timeBinCnt) {
-		this.timeBinCnt = timeBinCnt;
-	}
-	
 	@Override
 	public double logWeight(RoundTrip<?> state) {
-		double logSizeWithoutSorting = 0.0;
-		double logPermutations = 0.0;
-		for (int i = 0; i < state.locationCnt(); i++) {
-			logSizeWithoutSorting += Math.log(this.timeBinCnt - i);
-			logPermutations += Math.log(i + 1); // permutations
-		}
-		double logSizeWithSorting = logSizeWithoutSorting - logPermutations;
-		return -logSizeWithSorting;
+		return -Math.log(2.0) * state.locationCnt();
 	}
 
 }

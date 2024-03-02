@@ -27,7 +27,8 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class DefaultParkingSimulator<L extends Location, S extends VehicleState> implements ParkingSimulator<L, S> {
+public class DefaultParkingSimulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>>
+		implements ParkingSimulator<L, S, R> {
 
 	protected final Scenario<L> scenario;
 	protected final VehicleStateFactory<S> stateFactory;
@@ -37,13 +38,12 @@ public class DefaultParkingSimulator<L extends Location, S extends VehicleState>
 		this.stateFactory = stateFactory;
 	}
 
-	public S computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, ParkingEpisode<L, S> parking) {
+	public S computeFinalState(R roundTrip, int roundTripIndex, ParkingEpisode<L, S> parking) {
 		return this.stateFactory.createVehicleState();
 	}
 
 	@Override
-	public ParkingEpisode<L, S> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
-			S initialState) {
+	public ParkingEpisode<L, S> newParkingEpisode(R roundTrip, int roundTripIndex, double time_h, S initialState) {
 		final ParkingEpisode<L, S> parking = new ParkingEpisode<>(roundTrip.getLocation(roundTripIndex));
 		parking.setInitialState(initialState);
 

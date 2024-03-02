@@ -21,7 +21,7 @@ package se.vti.skellefteaV2X.model;
 
 import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.model.VehicleStateFactory;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 
 /**
  * 
@@ -29,7 +29,7 @@ import se.vti.roundtrips.single.RoundTrip;
  *
  */
 public class ElectrifiedSimulator
-		extends se.vti.roundtrips.model.Simulator<ElectrifiedLocation, ElectrifiedVehicleState> {
+		extends se.vti.roundtrips.model.Simulator<ElectrifiedLocation, ElectrifiedVehicleState, ElectrifiedRoundTrip> {
 
 	private final double batteryCapacity_kWh;
 
@@ -48,7 +48,7 @@ public class ElectrifiedSimulator
 
 	@Override
 	public ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> createHomeOnlyEpisode(
-			RoundTrip<ElectrifiedLocation> roundTrip) {
+			ElectrifiedRoundTrip roundTrip) {
 		ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> home = super.createHomeOnlyEpisode(roundTrip);
 		if (roundTrip.getCharging(0) && roundTrip.getLocation(0).getAllowsCharging()) {
 			home.getInitialState().setBatteryCharge_kWh(this.batteryCapacity_kWh);

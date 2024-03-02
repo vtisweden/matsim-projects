@@ -19,8 +19,7 @@
  */
 package se.vti.skellefteaV2X.analysis;
 
-import se.vti.roundtrips.single.RoundTrip;
-import se.vti.skellefteaV2X.model.ElectrifiedLocation;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.SimulatedRoundTrip;
@@ -31,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<RoundTrip<ElectrifiedLocation>> {
+public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<ElectrifiedRoundTrip> {
 
 	protected final ElectrifiedScenario scenario;
 
@@ -60,7 +59,7 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Rou
 	}
 
 	@Override
-	public final void processState(RoundTrip<ElectrifiedLocation> state) {
+	public final void processState(ElectrifiedRoundTrip state) {
 		this.iteration++;
 		if ((this.iteration > this.burnInIterations) && (this.iteration % this.samplingInterval == 0)) {
 			final SimulatedRoundTrip simulatedRoundTrip = (SimulatedRoundTrip) state;

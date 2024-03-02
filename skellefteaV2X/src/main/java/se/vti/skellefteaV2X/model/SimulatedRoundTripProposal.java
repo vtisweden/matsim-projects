@@ -19,9 +19,8 @@
  */
 package se.vti.skellefteaV2X.model;
 
-import se.vti.roundtrips.single.RoundTrip;
-import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.roundtrips.single.RoundTripProposal;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -32,27 +31,27 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class SimulatedRoundTripProposal implements MHProposal<RoundTrip<ElectrifiedLocation>> {
+public class SimulatedRoundTripProposal implements MHProposal<ElectrifiedRoundTrip> {
 
-	private final MHProposal<RoundTrip<ElectrifiedLocation>> proposal;
-	
+	private final MHProposal<ElectrifiedRoundTrip> proposal;
+
 	private final ElectrifiedSimulator simulator;
 
-	public SimulatedRoundTripProposal(RoundTripConfiguration<ElectrifiedLocation> config, ElectrifiedSimulator simulator) {
-		this.proposal = new RoundTripProposal<ElectrifiedLocation>(config);
+	public SimulatedRoundTripProposal(RoundTripProposal<ElectrifiedLocation, ElectrifiedRoundTrip> proposal, ElectrifiedSimulator simulator) {
+		this.proposal = proposal;
 		this.simulator = simulator;
 	}
 
 	@Override
-	public RoundTrip<ElectrifiedLocation> newInitialState() {
+	public ElectrifiedRoundTrip newInitialState() {
 		SimulatedRoundTrip state = (SimulatedRoundTrip) this.proposal.newInitialState();
 		state.setEpisodes(this.simulator.simulate(state));
 		return state;
 	}
 
 	@Override
-	public MHTransition<RoundTrip<ElectrifiedLocation>> newTransition(RoundTrip<ElectrifiedLocation> state) {
-		MHTransition<RoundTrip<ElectrifiedLocation>> transition = this.proposal.newTransition(state);
+	public MHTransition<ElectrifiedRoundTrip> newTransition(ElectrifiedRoundTrip state) {
+		MHTransition<ElectrifiedRoundTrip> transition = this.proposal.newTransition(state);
 		SimulatedRoundTrip roundTrip = (SimulatedRoundTrip) transition.getNewState();
 		roundTrip.setEpisodes(this.simulator.simulate(roundTrip));
 		return transition;

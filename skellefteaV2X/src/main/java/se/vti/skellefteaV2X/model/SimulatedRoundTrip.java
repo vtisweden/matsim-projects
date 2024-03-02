@@ -20,10 +20,11 @@
 package se.vti.skellefteaV2X.model;
 
 import java.util.List;
+import java.util.Random;
 
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 
 /**
  * 
@@ -32,17 +33,20 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class SimulatedRoundTrip extends RoundTrip<ElectrifiedLocation> {
+public class SimulatedRoundTrip extends ElectrifiedRoundTrip {
 
+	private final Random rnd;
+	
 	private List<Episode<ElectrifiedVehicleState>> episodes = null;
 
-	public SimulatedRoundTrip(List<ElectrifiedLocation> locations, List<Integer> departures, List<Boolean> charging) {
-		super(locations, departures, charging);
+	public SimulatedRoundTrip(List<ElectrifiedLocation> locations, List<Integer> departures, List<Boolean> charging, Random rnd) {
+		super(locations, departures, charging, rnd);
+		this.rnd = rnd;
 	}
 
 	@Override
 	public SimulatedRoundTrip clone() {
-		return new SimulatedRoundTrip(cloneLocations(), cloneDepartures(), cloneChargings());
+		return new SimulatedRoundTrip(cloneLocations(), cloneDepartures(), cloneChargings(), this.rnd);
 	}
 
 	public int episodeCnt() {

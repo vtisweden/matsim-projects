@@ -20,7 +20,6 @@
 package se.vti.roundtrips.single;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import se.vti.utils.misc.metropolishastings.MHProposal;
@@ -32,179 +31,36 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  *
  * @param <L> the location type
  */
-public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
+public class RoundTripLocationProposal<R extends RoundTrip<L>, L> implements MHProposal<R> {
 
 	// -------------------- CONSTANTS --------------------
 
 	private final RoundTripConfiguration<L> config;
 
 	private final List<L> allLocations;
+	
+	private final PossibleTransitionFactory<L, R> possibleTransitionFactory;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripLocationProposal(RoundTripConfiguration<L> config) {
+	public RoundTripLocationProposal(RoundTripConfiguration<L> config, PossibleTransitionFactory<L, R> possibleTransitionFactory) {
 		this.config = config;
 		this.allLocations = new ArrayList<>(config.getAllLocationsView());
-	}
-
-	// -------------------- INTERNALS --------------------
-
-	class PossibleTransitions {
-
-		final List<Integer> possibleInsertIndices;
-		final List<Integer> possibleRemoveIndices;
-		final List<Integer> possibleFlipIndices;
-
-		final List<List<L>> possibleInserts;
-		final List<List<L>> possibleFlips;
-
-		final double insertProba;
-		final double removeProba;
-		final double flipProba;
-
-		PossibleTransitions(RoundTrip<L> state) {
-
-			this.possibleInsertIndices = new ArrayList<>(state.locationCnt() + 1);
-			this.possibleRemoveIndices = new ArrayList<>(state.locationCnt());
-			this.possibleFlipIndices = new ArrayList<>(state.locationCnt());
-
-			this.possibleInserts = new ArrayList<>(state.locationCnt() + 1);
-			this.possibleFlips = new ArrayList<>(state.locationCnt());
-
-			double insertIndicator = 0.0;
-			double removeIndicator = 0.0;
-			double flipIndicator = 0.0;
-
-			for (int i = 0; i < state.locationCnt(); i++) {
-
-				final L pred = state.getPredecessorLocation(i);
-				final L curr = state.getLocation(i);
-				final L succ = state.getSuccessorLocation(i);
-
-				// analyze inserts
-
-				final List<L> localInserts;
-				if (state.locationCnt() == config.getMaxLocations()) {
-					localInserts = Collections.emptyList();
-				} else {
-					localInserts = new ArrayList<>(allLocations);
-					localInserts.remove(pred);
-					localInserts.remove(curr);
-				}
-				this.possibleInserts.add(localInserts);
-				if (localInserts.size() > 0) {
-					this.possibleInsertIndices.add(i);
-					insertIndicator = 1.0;
-				}
-
-				// analyze removes
-
-				if ((state.locationCnt() > 1) && (state.locationCnt() <= 3 || !pred.equals(succ))) {
-					this.possibleRemoveIndices.add(i);
-					removeIndicator = 1.0;
-				}
-
-				// analyze flips
-
-				final List<L> localFlips = new ArrayList<>(allLocations);
-				localFlips.remove(curr); // must change!
-				if (state.locationCnt() > 1) {
-					localFlips.remove(pred);
-					localFlips.remove(succ);
-				}
-				this.possibleFlips.add(localFlips);
-				if (localFlips.size() > 0) {
-					this.possibleFlipIndices.add(i);
-					flipIndicator = 1.0;
-				}
-			}
-
-			// analyze appends-to end of list
-
-			final List<L> lastInserts;
-			if (state.locationCnt() == config.getMaxLocations()) {
-				lastInserts = Collections.emptyList();
-			} else {
-				lastInserts = new ArrayList<>(allLocations);
-				lastInserts.remove(state.getLocation(state.locationCnt() - 1));
-				lastInserts.remove(state.getLocation(0));
-			}
-			this.possibleInserts.add(lastInserts);
-			if (lastInserts.size() > 0) {
-				this.possibleInsertIndices.add(state.locationCnt());
-				insertIndicator = 1.0;
-			}
-
-			// derived quantities
-
-			assert (insertIndicator + removeIndicator + flipIndicator > 0);
-			this.insertProba = insertIndicator / (insertIndicator + removeIndicator + flipIndicator);
-			this.removeProba = removeIndicator / (insertIndicator + removeIndicator + flipIndicator);
-			this.flipProba = flipIndicator / (insertIndicator + removeIndicator + flipIndicator);
-		}
-
-		private int fromStateLength() {
-			return this.possibleFlips.size();
-		}
-
-		private <X> X draw(List<X> list) {
-			return list.get(config.getRandom().nextInt(list.size()));
-		}
-
-		int drawInsertIndex() {
-			return this.draw(this.possibleInsertIndices);
-		}
-
-		L drawInsertValue(int index) {
-			return this.draw(this.possibleInserts.get(index));
-		}
-
-		int drawRemoveIndex() {
-			return this.draw(this.possibleRemoveIndices);
-		}
-
-		int drawFlipIndex() {
-			return this.draw(this.possibleFlipIndices);
-		}
-
-		L drawFlipValue(int index) {
-			return this.draw(this.possibleFlips.get(index));
-		}
-
-		double concreteInsertProba(int index) {
-			return this.insertProba // insert at all
-					* (1.0 / this.possibleInsertIndices.size() / this.possibleInserts.get(index).size()) // location
-					* (1.0 / (config.getTimeBinCnt() - this.fromStateLength())) // new depature in unused time slot
-					* 0.5; // charging
-		}
-
-		double concreteRemoveProba() {
-			return this.removeProba // remove at all
-					* (1.0 / this.possibleRemoveIndices.size()) // location
-					// removal is unconditional on charging
-					* (1.0 / this.fromStateLength()); // remove randomly selected departure
-		}
-
-		double concreteFlipProba(int index) {
-			return this.flipProba // flip at all
-					* (1.0 / this.possibleFlipIndices.size()) // location
-					* (1.0 / this.possibleFlips.get(index).size()); // new value
-			// flip is unconditional on departure or charging
-		}
+		this.possibleTransitionFactory = possibleTransitionFactory;
 	}
 
 	// --------------------IMPLEMENTATION OF MHProposal --------------------
 
 	@Override
-	public RoundTrip<L> newInitialState() {
+	public R newInitialState() {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
+	public MHTransition<R> newTransition(R state) {
 
 		final double randomNumber = this.config.getRandom().nextDouble();
-		PossibleTransitions fwdActions = new PossibleTransitions(state);
+		PossibleTransitions<L> fwdActions = this.possibleTransitionFactory.createPossibleTransitions(state, this.config, this.allLocations);
 
 		if (randomNumber < fwdActions.insertProba) {
 
@@ -213,16 +69,18 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 			final int whereToInsert = fwdActions.drawInsertIndex();
 			final L whatToInsert = fwdActions.drawInsertValue(whereToInsert);
 			final Integer newDeparture = RoundTripDepartureProposal.drawUnusedDeparture(state, this.config);
-			final Boolean charging = this.config.getRandom().nextBoolean();
+//			final Boolean charging = this.config.getRandom().nextBoolean();
 
-			final RoundTrip<L> newState = state.clone();
-			newState.addAndEnsureSortedDepartures(whereToInsert, whatToInsert, newDeparture, charging);
+			final R newState = (R) state.clone(); // TODO
+//			newState.addAndEnsureSortedDepartures(whereToInsert, whatToInsert, newDeparture, charging);
+			newState.addAndEnsureSortedDepartures(whereToInsert, whatToInsert, newDeparture);
 
 			final double fwdLogProba = Math.log(fwdActions.concreteInsertProba(whereToInsert));
-			final PossibleTransitions bwdActions = new PossibleTransitions(newState);
+			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.config,
+					this.allLocations);
 			final double bwdLogProba = Math.log(bwdActions.concreteRemoveProba());
 
-			return new MHTransition<RoundTrip<L>>(state, newState, fwdLogProba, bwdLogProba);
+			return new MHTransition<R>(state, newState, fwdLogProba, bwdLogProba);
 
 		} else if (randomNumber < fwdActions.insertProba + fwdActions.removeProba) {
 
@@ -230,14 +88,15 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 			final int whereToRemoveLocation = fwdActions.drawRemoveIndex();
 			final int whereToRemoveDeparture = this.config.getRandom().nextInt(state.locationCnt());
-			final RoundTrip<L> newState = state.clone();
+			final R newState = (R) state.clone(); // TODO
 			newState.remove(whereToRemoveLocation, whereToRemoveDeparture);
 
 			final double fwdLogProba = Math.log(fwdActions.concreteRemoveProba());
-			final PossibleTransitions bwdActions = new PossibleTransitions(newState);
+			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.config,
+					this.allLocations);
 			final double bwdLogProba = Math.log(bwdActions.concreteInsertProba(whereToRemoveLocation));
 
-			return new MHTransition<RoundTrip<L>>(state, newState, fwdLogProba, bwdLogProba);
+			return new MHTransition<R>(state, newState, fwdLogProba, bwdLogProba);
 
 		} else if (randomNumber < fwdActions.insertProba + fwdActions.removeProba + fwdActions.flipProba) {
 
@@ -245,14 +104,15 @@ public class RoundTripLocationProposal<L> implements MHProposal<RoundTrip<L>> {
 
 			final int whereToFlip = fwdActions.drawFlipIndex();
 			final L whatToFlip = fwdActions.drawFlipValue(whereToFlip);
-			final RoundTrip<L> newState = state.clone();
+			final R newState = (R) state.clone(); // TODO
 			newState.setLocation(whereToFlip, whatToFlip);
-			
+
 			final double fwdLogProba = Math.log(fwdActions.concreteFlipProba(whereToFlip));
-			final PossibleTransitions bwdActions = new PossibleTransitions(newState);
+			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.config,
+					this.allLocations);
 			final double bwdLogProba = Math.log(bwdActions.concreteFlipProba(whereToFlip));
 
-			return new MHTransition<RoundTrip<L>>(state, newState, fwdLogProba, bwdLogProba);
+			return new MHTransition<R>(state, newState, fwdLogProba, bwdLogProba);
 
 		} else {
 

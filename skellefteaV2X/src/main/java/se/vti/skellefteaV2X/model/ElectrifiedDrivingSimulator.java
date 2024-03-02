@@ -22,14 +22,14 @@ package se.vti.skellefteaV2X.model;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DrivingEpisode;
 import se.vti.roundtrips.model.VehicleStateFactory;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ElectrifiedDrivingSimulator extends DefaultDrivingSimulator<ElectrifiedLocation, ElectrifiedVehicleState> {
+public class ElectrifiedDrivingSimulator extends DefaultDrivingSimulator<ElectrifiedLocation, ElectrifiedVehicleState, ElectrifiedRoundTrip> {
 
 	private final double speed_km_h;
 	private final double consumptionRate_kWh_km;
@@ -42,7 +42,7 @@ public class ElectrifiedDrivingSimulator extends DefaultDrivingSimulator<Electri
 	}
 
 	@Override
-	public ElectrifiedVehicleState computeFinalState(RoundTrip<ElectrifiedLocation> roundTrip, int roundTripIndex,
+	public ElectrifiedVehicleState computeFinalState(ElectrifiedRoundTrip roundTrip, int roundTripIndex,
 			DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> driving) {
 		ElectrifiedVehicleState finalState = super.computeFinalState(roundTrip, roundTripIndex, driving);
 		finalState.setBatteryCharge_kWh(driving.getInitialState().getBatteryCharge_kWh()

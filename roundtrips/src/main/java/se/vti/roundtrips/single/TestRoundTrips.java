@@ -48,18 +48,31 @@ public class TestRoundTrips {
 		final double departureProba = 0.7;
 		final double chargingProba = 0.19;
 		final double doNothingProba = 0.01;
-		final RoundTripConfiguration<Integer> scenario = new RoundTripConfiguration<>(4, 8, locationProba, departureProba,
-				chargingProba, doNothingProba, new Random());
+		final RoundTripConfiguration<Integer> scenario = new RoundTripConfiguration<>(4, 8, locationProba,
+				departureProba, chargingProba, doNothingProba, new Random());
 		for (int i = 1; i <= 3; i++) {
 			scenario.addLocation(i);
 		}
 
-		RoundTripProposal<Integer> proposal = new RoundTripProposal<>(scenario);
+		RoundTripProposal<Integer, RoundTrip<Integer>> proposal = new RoundTripProposal<>(scenario);
+		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<Integer>, Integer>(scenario, new PossibleTransitionFactory<Integer, RoundTrip<Integer>>() {
+			@Override
+			public PossibleTransitions<Integer> createPossibleTransitions(RoundTrip<Integer> state,
+					RoundTripConfiguration<Integer> config, List<Integer> allLocations) {
+				return new PossibleTransitions<>(state, config, allLocations);
+			}
+
+		}), scenario.getLocationProposalProbability());
+		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), scenario.getDepartureProposalProbability());
 
 		MHWeight<RoundTrip<Integer>> weight = new MHWeight<>() {
+			MHWeight<RoundTrip<?>> loc = new RoundTripIgnoreLocationCombinations(3, 4);
+			MHWeight<RoundTrip<?>> dpt = new RoundTripIgnoreDepartureCombinations(8);
+
 			@Override
 			public double logWeight(RoundTrip<Integer> state) {
 				return 0.0;
+				// return loc.logWeight(state)+ dpt.logWeight(state);
 			}
 		};
 
@@ -97,7 +110,7 @@ public class TestRoundTrips {
 				for (long cnt : this.binCnts) {
 					System.out.println(cnt);
 				}
-				
+
 				Collections.sort(counts);
 				try {
 					PrintWriter w = new PrintWriter("counts.txt");
@@ -114,8 +127,9 @@ public class TestRoundTrips {
 
 		};
 
-		RoundTrip<Integer> initialState = new RoundTrip<>(Arrays.asList(1, 2, 3, 2), Arrays.asList(1, 3, 5, 7),
-				Arrays.asList(true, false, true, false));
+		RoundTrip<Integer> initialState = new RoundTrip<>(Arrays.asList(1, 2, 3, 2), Arrays.asList(1, 3, 5, 7)
+		// , Arrays.asList(true, false, true, false)
+		);
 
 		MHAlgorithm<RoundTrip<Integer>> algo = new MHAlgorithm<>(proposal, weight, rnd);
 		algo.addStateProcessor(prn);

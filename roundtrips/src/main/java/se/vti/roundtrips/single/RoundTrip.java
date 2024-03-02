@@ -38,14 +38,11 @@ public class RoundTrip<L> {
 
 	private List<Integer> departures;
 
-	private List<Boolean> chargings;
-
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTrip(List<L> locations, List<Integer> departures, List<Boolean> charging) {
+	public RoundTrip(List<L> locations, List<Integer> departures) {
 		this.locations = locations;
 		this.departures = departures;
-		this.chargings = charging;
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -92,18 +89,6 @@ public class RoundTrip<L> {
 		this.locations.set(i, location);
 	}
 
-	public void setCharging(int i, Boolean doCharge) {
-		this.chargings.set(i, doCharge);
-	}
-
-	public Boolean getCharging(int i) {
-		return this.chargings.get(i);
-	}
-
-	public Boolean getSuccessorCharging(int i) {
-		return this.chargings.get(this.successorIndex(i));
-	}
-
 	public void setDepartureAndEnsureOrdering(int i, Integer departureBin) {
 		this.departures.set(i, departureBin);
 		Collections.sort(this.departures);
@@ -121,16 +106,14 @@ public class RoundTrip<L> {
 		return this.departures.contains(bin);
 	}
 
-	public void addAndEnsureSortedDepartures(int i, L location, Integer departureBin, Boolean charging) {
+	public void addAndEnsureSortedDepartures(int i, L location, Integer departureBin) {
 		this.locations.add(i, location);
 		this.departures.add(i, departureBin);
-		this.chargings.add(i, charging);
 		Collections.sort(this.departures);
 	}
 	
 	public void remove(int locationChargingIndex, int departureIndex) {
 		this.locations.remove(locationChargingIndex);
-		this.chargings.remove(locationChargingIndex);
 		this.departures.remove(departureIndex);
 	}
 
@@ -146,13 +129,9 @@ public class RoundTrip<L> {
 		return new ArrayList<>(this.departures);
 	}
 
-	public ArrayList<Boolean> cloneChargings() {
-		return new ArrayList<>(this.chargings);
-	}
-
 	@Override
 	public RoundTrip<L> clone() {
-		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures(), this.cloneChargings());
+		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures());
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------
@@ -161,8 +140,7 @@ public class RoundTrip<L> {
 	public boolean equals(Object other) {
 		if (other instanceof RoundTrip) {
 			RoundTrip<?> otherRoundTrip = (RoundTrip<?>) other;
-			return this.locations.equals(otherRoundTrip.locations) && this.departures.equals(otherRoundTrip.departures)
-					&& this.chargings.equals(otherRoundTrip.chargings);
+			return this.locations.equals(otherRoundTrip.locations) && this.departures.equals(otherRoundTrip.departures);
 		} else {
 			return false;
 		}
@@ -170,13 +148,12 @@ public class RoundTrip<L> {
 
 	@Override
 	public int hashCode() {
-		return this.locations.hashCode() + 31 * (this.departures.hashCode() + 31 * this.chargings.hashCode());
+		return this.locations.hashCode() + 31 * this.departures.hashCode();
 	}
 
 	@Override
 	public String toString() {
 		return "locs[" + this.locations.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],bins["
-				+ this.departures.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],charge["
-				+ this.chargings.stream().map(c -> c ? "1" : "0").collect(Collectors.joining(",")) + "]";
+				+ this.departures.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "]";
 	}
 }

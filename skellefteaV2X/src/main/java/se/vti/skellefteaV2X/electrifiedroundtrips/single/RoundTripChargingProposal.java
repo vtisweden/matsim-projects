@@ -17,11 +17,13 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.skellefteaV2X.electrifiedroundtrips.single;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -30,28 +32,28 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
+public class RoundTripChargingProposal implements MHProposal<ElectrifiedRoundTrip> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripConfiguration<L> config;
+	private final RoundTripConfiguration<?> config;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripChargingProposal(RoundTripConfiguration<L> config) {
+	public RoundTripChargingProposal(RoundTripConfiguration<?> config) {
 		this.config = config;
 	}
 
 	// -------------------- IMPLEMENTATION OF MHProposal --------------------
 
 	@Override
-	public RoundTrip<L> newInitialState() {
+	public ElectrifiedRoundTrip newInitialState() {
 		// not to be used standalone
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
+	public MHTransition<ElectrifiedRoundTrip> newTransition(ElectrifiedRoundTrip state) {
 
 		final double flipProba = 1.0 / (state.locationCnt() + 1.0);
 		boolean flipped = false;
@@ -75,7 +77,7 @@ public class RoundTripChargingProposal<L> implements MHProposal<RoundTrip<L>> {
 		final double fwdLogProba = Math.log(proba) - state.locationCnt() * Math.log(1.0 - flipProba);
 		final double bwdLogProba = fwdLogProba;
 
-		final RoundTrip<L> newState = state.clone();
+		final ElectrifiedRoundTrip newState = state.clone();
 		for (int i = 0; i < newState.locationCnt(); i++) {
 			newState.setCharging(i, newChargings.get(i));
 		}

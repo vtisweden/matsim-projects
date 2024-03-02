@@ -27,7 +27,7 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  *
  * @param <L>
  */
-public class RoundTripIgnoreLocationCombinations<L> implements MHWeight<RoundTrip<L>> {
+public class RoundTripIgnoreLocationCombinations implements MHWeight<RoundTrip<?>> {
 
 	private final int locationCnt;
 
@@ -77,7 +77,7 @@ public class RoundTripIgnoreLocationCombinations<L> implements MHWeight<RoundTri
 	}
 
 	@Override
-	public double logWeight(RoundTrip<L> state) {
+	public double logWeight(RoundTrip<?> state) {
 		return -Math.log(this.size[state.locationCnt() - 1]);
 	}
 
@@ -105,13 +105,13 @@ public class RoundTripIgnoreLocationCombinations<L> implements MHWeight<RoundTri
 		}
 
 		{
-			System.out.println(new RoundTripIgnoreLocationCombinations<>(7, 4).size(4));
+			System.out.println(new RoundTripIgnoreLocationCombinations(7, 4).size(4));
 
 		}
 
 		for (int _N = 1; _N <= 10; _N++) {
 			for (int _J = 4; _J <= _N; _J++) {
-				RoundTripIgnoreLocationCombinations<Object> obj = new RoundTripIgnoreLocationCombinations<>(_N, _J);
+				RoundTripIgnoreLocationCombinations obj = new RoundTripIgnoreLocationCombinations(_N, _J);
 				double size1 = obj.size(_J);
 
 				double size2 = _N * Math.pow(_N - 1.0, _J - 2.0) ;

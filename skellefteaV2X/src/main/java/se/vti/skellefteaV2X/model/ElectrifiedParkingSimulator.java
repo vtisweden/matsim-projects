@@ -21,14 +21,15 @@ package se.vti.skellefteaV2X.model;
 
 import se.vti.roundtrips.model.DefaultParkingSimulator;
 import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ElectrifiedParkingSimulator extends DefaultParkingSimulator<ElectrifiedLocation, ElectrifiedVehicleState> {
+public class ElectrifiedParkingSimulator
+		extends DefaultParkingSimulator<ElectrifiedLocation, ElectrifiedVehicleState, ElectrifiedRoundTrip> {
 
 	private final double chargingRate_kW;
 	private final double batteryCapacity_kWh;
@@ -40,7 +41,7 @@ public class ElectrifiedParkingSimulator extends DefaultParkingSimulator<Electri
 	}
 
 	@Override
-	public ElectrifiedVehicleState computeFinalState(RoundTrip<ElectrifiedLocation> roundTrip, int roundTripIndex,
+	public ElectrifiedVehicleState computeFinalState(ElectrifiedRoundTrip roundTrip, int roundTripIndex,
 			ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> parking) {
 		ElectrifiedVehicleState finalState = super.computeFinalState(roundTrip, roundTripIndex, parking);
 		if (roundTrip.getCharging(roundTripIndex) && roundTrip.getLocation(roundTripIndex).getAllowsCharging()) {

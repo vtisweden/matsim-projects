@@ -30,19 +30,19 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class Simulator<L extends Location, S extends VehicleState> {
+public class Simulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> {
 
 	// -------------------- INTERFACES --------------------
 
-	public interface ParkingSimulator<L extends Location, S extends VehicleState> {
+	public interface ParkingSimulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> {
 
-		ParkingEpisode<L, S> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double initialTime_h,
+		ParkingEpisode<L, S> newParkingEpisode(R roundTrip, int roundTripIndex, double initialTime_h,
 				S initialState);
 	}
 
-	public interface DrivingSimulator<L extends Location, S extends VehicleState> {
+	public interface DrivingSimulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> {
 
-		DrivingEpisode<L, S> newDrivingEpisode(RoundTrip<L> roundTrip, int roundTripStartIndex, double initialTime_h,
+		DrivingEpisode<L, S> newDrivingEpisode(R roundTrip, int roundTripStartIndex, double initialTime_h,
 				S initialState);
 	}
 
@@ -51,8 +51,8 @@ public class Simulator<L extends Location, S extends VehicleState> {
 	protected final Scenario<L> scenario;
 	private final VehicleStateFactory<S> stateFactory;
 
-	private DrivingSimulator<L, S> drivingSimulator = null;
-	private ParkingSimulator<L, S> parkingSimulator = null;
+	private DrivingSimulator<L, S, R> drivingSimulator = null;
+	private ParkingSimulator<L, S, R> parkingSimulator = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -67,11 +67,11 @@ public class Simulator<L extends Location, S extends VehicleState> {
 		return this.scenario;
 	}
 
-	public void setDrivingSimulator(DrivingSimulator<L, S> drivingSimulator) {
+	public void setDrivingSimulator(DrivingSimulator<L, S, R> drivingSimulator) {
 		this.drivingSimulator = drivingSimulator;
 	}
 
-	public void setParkingSimulator(ParkingSimulator<L, S> parkingSimulator) {
+	public void setParkingSimulator(ParkingSimulator<L, S, R> parkingSimulator) {
 		this.parkingSimulator = parkingSimulator;
 	}
 
@@ -81,7 +81,7 @@ public class Simulator<L extends Location, S extends VehicleState> {
 		return this.stateFactory.createVehicleState();
 	}
 
-	public ParkingEpisode<L, S> createHomeOnlyEpisode(RoundTrip<L> roundTrip) {
+	public ParkingEpisode<L, S> createHomeOnlyEpisode(R roundTrip) {
 		ParkingEpisode<L, S> home = new ParkingEpisode<>(roundTrip.getLocation(0));
 		home.setDuration_h(24.0);
 		home.setEndTime_h(24.0 - 1e-8); // wraparound
@@ -96,7 +96,7 @@ public class Simulator<L extends Location, S extends VehicleState> {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public List<Episode<S>> simulate(RoundTrip<L> roundTrip) {
+	public List<Episode<S>> simulate(R roundTrip) {
 
 		if (roundTrip.locationCnt() == 1) {
 			return Collections.singletonList(this.createHomeOnlyEpisode(roundTrip));
