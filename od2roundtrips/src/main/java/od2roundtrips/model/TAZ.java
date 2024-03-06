@@ -1,5 +1,5 @@
 /**
- * se.vti.od2roundtrips
+ * od2roundtrips.model
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,11 +19,17 @@
  */
 package od2roundtrips.model;
 
+import se.vti.roundtrips.model.Location;
+
 /**
  * 
  * @author GunnarF
  *
  */
-public abstract class Scenario extends se.vti.roundtrips.model.Scenario {
+public class TAZ extends Location {
+
+	public TAZ(String name) {
+		super(name);
+	}
 
 }
