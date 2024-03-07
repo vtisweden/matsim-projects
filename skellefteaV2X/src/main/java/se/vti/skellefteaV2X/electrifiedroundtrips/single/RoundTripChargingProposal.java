@@ -22,7 +22,6 @@ package se.vti.skellefteaV2X.electrifiedroundtrips.single;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
@@ -56,8 +55,10 @@ public class RoundTripChargingProposal implements MHProposal<ElectrifiedRoundTri
 	public MHTransition<ElectrifiedRoundTrip> newTransition(ElectrifiedRoundTrip state) {
 
 		final double flipProba = 1.0 / (state.locationCnt() + 1.0);
-		boolean flipped = false;
+		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, state.locationCnt());
+		
 		List<Boolean> newChargings;
+		boolean flipped = false;
 		double proba;
 		do {
 			newChargings = new ArrayList<>(state.locationCnt());
@@ -74,7 +75,8 @@ public class RoundTripChargingProposal implements MHProposal<ElectrifiedRoundTri
 			}
 		} while (!flipped);
 
-		final double fwdLogProba = Math.log(proba) - state.locationCnt() * Math.log(1.0 - flipProba);
+		// FIXME normalization over all possible flips
+		final double fwdLogProba = Math.log(proba) - Math.log(atLeastOneFlipProba);
 		final double bwdLogProba = fwdLogProba;
 
 		final ElectrifiedRoundTrip newState = state.clone();
