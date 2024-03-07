@@ -132,11 +132,6 @@ public class RoundTrip<L> {
 		return new ArrayList<>(this.departures);
 	}
 
-	@Override
-	public RoundTrip<L> clone() {
-		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures());
-	}
-
 	public List<?> getEpisodes() {
 		return episodes;
 	}
@@ -145,6 +140,11 @@ public class RoundTrip<L> {
 		this.episodes = episodes;
 	}
 	// -------------------- OVERRIDING OF Object --------------------
+
+	@Override
+	public RoundTrip<L> clone() {
+		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures());
+	}
 
 	@Override
 	public boolean equals(Object other) {
