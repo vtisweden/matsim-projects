@@ -20,16 +20,17 @@
 package se.vti.skellefteaV2X.preferences.consistency;
 
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
-import se.vti.skellefteaV2X.model.Preferences.Component;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class StrategyRealizationConsistency extends Component {
+public class StrategyRealizationConsistency extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
 
 	private final Scenario<?> scenario;
 

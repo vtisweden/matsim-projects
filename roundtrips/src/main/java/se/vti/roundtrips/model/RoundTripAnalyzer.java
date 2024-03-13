@@ -1,5 +1,5 @@
 /**
- * se.vti.skellefteaV2X
+ * se.vti.roundtrips
  * 
  * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,11 +17,9 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.analysis;
+package se.vti.roundtrips.model;
 
-import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
-import se.vti.skellefteaV2X.model.ElectrifiedScenario;
-import se.vti.skellefteaV2X.model.Preferences;
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
 /**
@@ -29,25 +27,22 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<ElectrifiedRoundTrip> {
-
-	protected final ElectrifiedScenario scenario;
+public abstract class RoundTripAnalyzer<R extends RoundTrip<L>, L extends Location> implements MHStateProcessor<R> {
 
 	private final long burnInIterations;
 
 	private final long samplingInterval;
 
-	private final Preferences importanceSamplingPreferences;
+	private final Preferences<R, L> importanceSamplingPreferences;
 
 	protected long iteration = 0;
-	
+
 	private double sampleWeightSum = 0.0;
 
 	private double acceptedSampleWeightSum = 0.0;
-	
-	public SimulatedRoundTripAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,
-			Preferences importanceSamplingPreferences) {
-		this.scenario = scenario;
+
+	public RoundTripAnalyzer(long burnInIterations, long samplingInterval,
+			Preferences<R, L> importanceSamplingPreferences) {
 		this.burnInIterations = burnInIterations;
 		this.samplingInterval = samplingInterval;
 		this.importanceSamplingPreferences = importanceSamplingPreferences;
@@ -58,15 +53,13 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Ele
 	}
 
 	@Override
-	public final void processState(ElectrifiedRoundTrip state) {
+	public final void processState(R roundTrip) {
 		this.iteration++;
 		if ((this.iteration > this.burnInIterations) && (this.iteration % this.samplingInterval == 0)) {
-			final ElectrifiedRoundTrip simulatedRoundTrip = state; // TODO
-			final double sampleWeight = 1.0
-					/ Math.exp(this.importanceSamplingPreferences.logWeight(simulatedRoundTrip));
+			final double sampleWeight = 1.0 / Math.exp(this.importanceSamplingPreferences.logWeight(roundTrip));
 			this.sampleWeightSum += sampleWeight;
-			if (this.importanceSamplingPreferences.thresholdPassed(simulatedRoundTrip)) {
-				this.processRelevantState(simulatedRoundTrip, sampleWeight);
+			if (this.importanceSamplingPreferences.thresholdPassed(roundTrip)) {
+				this.processRelevantRoundTrip(roundTrip, sampleWeight);
 				this.acceptedSampleWeightSum += sampleWeight;
 			}
 		}
@@ -75,8 +68,6 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Ele
 	@Override
 	public void end() {
 	}
-
-	public abstract void processRelevantState(ElectrifiedRoundTrip state, double sampleWeight);
 
 	protected double sampleWeightSum() {
 		return this.sampleWeightSum;
@@ -89,5 +80,7 @@ public abstract class SimulatedRoundTripAnalyzer implements MHStateProcessor<Ele
 	protected double acceptanceRate() {
 		return this.acceptedSampleWeightSum / this.sampleWeightSum;
 	}
-	
+
+	public abstract void processRelevantRoundTrip(R roundTrip, double sampleWeight);
+
 }

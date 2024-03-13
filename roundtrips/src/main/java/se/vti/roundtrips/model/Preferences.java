@@ -1,7 +1,7 @@
 /**
- * se.vti.skellefeaV2X
+ * se.vti.roundtrips
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,12 +17,12 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.model;
+package se.vti.roundtrips.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
@@ -30,68 +30,61 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  * @author GunnarF
  *
  */
-public class Preferences implements MHWeight<ElectrifiedRoundTrip> {
+public class Preferences<R extends RoundTrip<L>, L extends Location> implements MHWeight<R> {
 
-	public static abstract class Component {
-		
+	public static abstract class Component<R extends RoundTrip<L>, L extends Location> {
+
 		private double logWeightThreshold = Double.NEGATIVE_INFINITY;
 
 		public void setLogWeightThreshold(double threshold) {
 			this.logWeightThreshold = threshold;
 		}
-		
-		public boolean thresholdPassed(ElectrifiedRoundTrip simulatedRoundTrip) {
+
+		public boolean thresholdPassed(R simulatedRoundTrip) {
 			return (this.logWeight(simulatedRoundTrip) >= this.logWeightThreshold);
 		}
 
-		public abstract double logWeight(ElectrifiedRoundTrip simulatedRoundTrip);
+		public abstract double logWeight(R simulatedRoundTrip);
 
 	}
 
-	private List<Component> components = new ArrayList<>();
+	private List<Component<R, L>> components = new ArrayList<>();
 
 	private List<Double> weights = new ArrayList<>();
 
 	public Preferences() {
 	}
 
-	public Preferences(Preferences... parents) {
-		for (Preferences p : parents) {
-			this.addPreferences(p);
-		}
-	}
-
-	public void addPreferences(Preferences other) {
+	public void addPreferences(Preferences<R, L> other) {
 		for (int i = 0; i < other.components.size(); i++) {
 			this.addComponent(other.components.get(i), other.weights.get(i));
 		}
 	}
 
-	public void addComponent(Component component, double weight) {
+	public void addComponent(Component<R, L> component, double weight) {
 		this.components.add(component);
 		this.weights.add(weight);
 	}
 
-	public void addComponent(Component component) {
+	public void addComponent(Component<R, L> component) {
 		this.addComponent(component, 1.0);
 	}
 
 	@Override
-	public double logWeight(ElectrifiedRoundTrip roundTrip) {
+	public double logWeight(R roundTrip) {
 		double result = 0.0;
 		for (int i = 0; i < this.components.size(); i++) {
-			result += this.weights.get(i) * this.components.get(i).logWeight((ElectrifiedRoundTrip) roundTrip);
+			result += this.weights.get(i) * this.components.get(i).logWeight(roundTrip);
 		}
 		return result;
 	}
 
-	public boolean thresholdPassed(ElectrifiedRoundTrip roundTrip) {
-		for (Component component : this.components) {
+	public boolean thresholdPassed(R roundTrip) {
+		for (Component<R, L> component : this.components) {
 			if (!component.thresholdPassed(roundTrip)) {
 				return false;
 			}
 		}
 		return true;
 	}
-
 }

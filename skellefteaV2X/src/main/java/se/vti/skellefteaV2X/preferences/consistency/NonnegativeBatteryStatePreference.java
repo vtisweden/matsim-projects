@@ -22,17 +22,19 @@ package se.vti.skellefteaV2X.preferences.consistency;
 import java.util.List;
 
 import se.vti.roundtrips.model.Episode;
+import se.vti.roundtrips.model.Preferences;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
-import se.vti.skellefteaV2X.model.Preferences;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class NonnegativeBatteryStatePreference extends Preferences.Component {
+public class NonnegativeBatteryStatePreference
+		extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
 
 	private final ElectrifiedScenario scenario;
 
@@ -45,7 +47,8 @@ public class NonnegativeBatteryStatePreference extends Preferences.Component {
 			return 0.0;
 		} else {
 			double minCharge_kWh = Double.POSITIVE_INFINITY;
-			for (Episode<ElectrifiedVehicleState> e : (List<Episode<ElectrifiedVehicleState>>) roundTrip.getEpisodes()) {
+			for (Episode<ElectrifiedVehicleState> e : (List<Episode<ElectrifiedVehicleState>>) roundTrip
+					.getEpisodes()) {
 				// minCharge_kWh = Math.min(minCharge_kWh, Math.min(e.getChargeAtStart_kWh(),
 				// e.getChargeAtEnd_kWh()));
 				minCharge_kWh = Math.min(minCharge_kWh,

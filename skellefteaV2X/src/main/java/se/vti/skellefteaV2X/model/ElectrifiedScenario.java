@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.single.PossibleTransitionFactory;
 import se.vti.roundtrips.single.PossibleTransitions;
 import se.vti.roundtrips.single.RoundTripConfiguration;
@@ -97,8 +98,8 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 		this.defaultSpeed_km_h = defaultSpeed_km_h;
 	}
 
-	public MHAlgorithm<ElectrifiedRoundTrip> createMHAlgorithm(Preferences preferences,
-			ElectrifiedSimulator simulator) {
+	public MHAlgorithm<ElectrifiedRoundTrip> createMHAlgorithm(
+			Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> preferences, ElectrifiedSimulator simulator) {
 
 		double locationProposalWeight = 0.1;
 		double chargingProposalWeight = 0.3;
@@ -110,9 +111,10 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 				chargingProposalWeight, doNothingWeight);
 		configuration.addLocations(this.getLocationsView());
 
-		RoundTripProposal<ElectrifiedLocation, ElectrifiedRoundTrip> proposal0 = new RoundTripProposal<>(configuration, simulator);
-		proposal0.addProposal(
-				new RoundTripLocationProposal<ElectrifiedRoundTrip, ElectrifiedLocation>(configuration, new PossibleTransitionFactory<ElectrifiedLocation, ElectrifiedRoundTrip>() {
+		RoundTripProposal<ElectrifiedLocation, ElectrifiedRoundTrip> proposal0 = new RoundTripProposal<>(configuration,
+				simulator);
+		proposal0.addProposal(new RoundTripLocationProposal<ElectrifiedRoundTrip, ElectrifiedLocation>(configuration,
+				new PossibleTransitionFactory<ElectrifiedLocation, ElectrifiedRoundTrip>() {
 					@Override
 					public PossibleTransitions<ElectrifiedLocation> createPossibleTransitions(
 							ElectrifiedRoundTrip state, RoundTripConfiguration<ElectrifiedLocation> config,
@@ -126,7 +128,8 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 				configuration.getChargingProposalProbability());
 
 //		SimulatedRoundTripProposal proposal = new SimulatedRoundTripProposal(proposal0, simulator);
-		MHAlgorithm<ElectrifiedRoundTrip> algo = new MHAlgorithm<ElectrifiedRoundTrip>(proposal0, preferences, new Random());
+		MHAlgorithm<ElectrifiedRoundTrip> algo = new MHAlgorithm<ElectrifiedRoundTrip>(proposal0, preferences,
+				new Random());
 
 		ElectrifiedRoundTrip initialState = new ElectrifiedRoundTrip(
 				Arrays.asList(

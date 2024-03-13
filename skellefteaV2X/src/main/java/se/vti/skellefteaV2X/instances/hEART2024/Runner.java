@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import se.vti.roundtrips.model.Preferences;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedDrivingSimulator;
@@ -30,7 +31,6 @@ import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedSimulator;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleStateFactory;
-import se.vti.skellefteaV2X.model.Preferences;
 import se.vti.skellefteaV2X.model.V2GParkingSimulator;
 import se.vti.skellefteaV2X.preferences.HomeLocationShare;
 import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
@@ -122,7 +122,7 @@ public class Runner {
 
 		// CONSISTENCY PREFERENCES
 
-		final Preferences consistencyPreferences = new Preferences();
+		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> consistencyPreferences = new Preferences<>();
 		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario), 1.0 /* must be one */);
 		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
 		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
@@ -131,7 +131,7 @@ public class Runner {
 
 		// MODELING PREFERENCES
 
-		final Preferences modelingPreferences = new Preferences();
+		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> modelingPreferences = new Preferences<>();
 
 		final HomeLocationShare homeShare = new HomeLocationShare(8.0, 12.0, 6.0, 10.0);
 		homeShare.setShare(boliden, 1.0);
@@ -155,7 +155,7 @@ public class Runner {
 
 		// ANALYSIS PREFERENCES
 
-		final Preferences importanceSamplingPreferences = new Preferences();
+		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> importanceSamplingPreferences = new Preferences<>();
 
 		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus, 10.0);
 		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
@@ -164,8 +164,10 @@ public class Runner {
 		 * Run MH algorithm.
 		 */
 
-		Preferences allPreferences = new Preferences(consistencyPreferences, modelingPreferences,
-				importanceSamplingPreferences);
+		Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> allPreferences = new Preferences<>();
+		allPreferences.addPreferences(consistencyPreferences);
+		allPreferences.addPreferences(modelingPreferences);
+		allPreferences.addPreferences(importanceSamplingPreferences);
 		MHAlgorithm<ElectrifiedRoundTrip> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		final long targetSamples = 1000 * 1000;

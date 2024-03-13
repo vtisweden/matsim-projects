@@ -19,19 +19,20 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
+import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;
 import se.vti.roundtrips.single.RoundTripIgnoreLocationCombinations;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.RoundTripIgnoreChargingCombinations;
-import se.vti.skellefteaV2X.model.Preferences;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class UniformOverLocationCount extends Preferences.Component {
+public class UniformOverLocationCount extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
 
 	private final RoundTripIgnoreChargingCombinations correctChargingCombinations;
 	private final RoundTripIgnoreDepartureCombinations correctDepartureCombinations;

@@ -28,7 +28,9 @@ import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.skellefteaV2X.model.Preferences.Component;
+import se.vti.roundtrips.model.Preferences;
+import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.utils.misc.math.MathHelpers;
 
 /**
@@ -36,7 +38,7 @@ import se.vti.utils.misc.math.MathHelpers;
  * @author GunnarF
  *
  */
-public abstract class LocationShare extends Component {
+public abstract class LocationShare extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
 
 	protected final MathHelpers math = new MathHelpers();
 

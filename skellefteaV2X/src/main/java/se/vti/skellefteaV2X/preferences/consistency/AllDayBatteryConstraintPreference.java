@@ -21,17 +21,18 @@ package se.vti.skellefteaV2X.preferences.consistency;
 
 import se.vti.roundtrips.model.DrivingEpisode;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.model.Preferences;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
-import se.vti.skellefteaV2X.model.Preferences;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class AllDayBatteryConstraintPreference extends Preferences.Component {
+public class AllDayBatteryConstraintPreference extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
 
 	private ElectrifiedScenario scenario;
 

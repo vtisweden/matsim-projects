@@ -24,17 +24,18 @@ import java.util.List;
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.model.Preferences;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
-import se.vti.skellefteaV2X.model.Preferences.Component;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class LocalChargingPreference extends Component {
+public class LocalChargingPreference extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
 	
 	private final ElectrifiedScenario scenario;
 	
