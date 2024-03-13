@@ -22,7 +22,6 @@ package se.vti.roundtrips.preferences;
 import se.vti.roundtrips.model.DrivingEpisode;
 import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**

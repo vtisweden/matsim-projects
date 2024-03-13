@@ -17,11 +17,12 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.model;
+package se.vti.roundtrips.preferences;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 

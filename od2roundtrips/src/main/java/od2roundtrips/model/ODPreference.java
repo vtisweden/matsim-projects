@@ -25,7 +25,7 @@ import java.util.Map;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 
 import floetteroed.utilities.Tuple;
-import se.vti.roundtrips.model.Preferences;
+import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**

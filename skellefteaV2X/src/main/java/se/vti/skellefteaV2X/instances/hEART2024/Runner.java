@@ -23,8 +23,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
+import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;

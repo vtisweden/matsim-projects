@@ -21,7 +21,7 @@ package se.vti.skellefteaV2X.preferences.consistency;
 
 import se.vti.roundtrips.model.DrivingEpisode;
 import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.roundtrips.model.Preferences;
+import se.vti.roundtrips.preferences.Preferences;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;

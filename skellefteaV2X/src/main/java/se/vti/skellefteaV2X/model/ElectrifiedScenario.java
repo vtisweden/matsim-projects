@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import se.vti.roundtrips.model.Preferences;
+import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.single.PossibleTransitionFactory;
 import se.vti.roundtrips.single.PossibleTransitions;
 import se.vti.roundtrips.single.RoundTripConfiguration;

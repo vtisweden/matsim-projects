@@ -20,7 +20,6 @@
 package se.vti.roundtrips.preferences;
 
 import se.vti.roundtrips.model.Location;
-import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;

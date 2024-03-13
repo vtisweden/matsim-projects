@@ -19,6 +19,7 @@
  */
 package se.vti.roundtrips.model;
 
+import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
