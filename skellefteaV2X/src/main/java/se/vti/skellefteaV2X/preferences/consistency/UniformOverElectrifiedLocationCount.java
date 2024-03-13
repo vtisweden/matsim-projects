@@ -19,10 +19,8 @@
  */
 package se.vti.skellefteaV2X.preferences.consistency;
 
-import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;
-import se.vti.roundtrips.single.RoundTripIgnoreLocationCombinations;
+import se.vti.roundtrips.preferences.UniformOverLocationCount;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.RoundTripIgnoreChargingCombinations;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
@@ -32,23 +30,18 @@ import se.vti.skellefteaV2X.model.ElectrifiedLocation;
  * @author GunnarF
  *
  */
-public class UniformOverLocationCount extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
+public class UniformOverElectrifiedLocationCount
+		extends UniformOverLocationCount<ElectrifiedRoundTrip, ElectrifiedLocation> {
 
 	private final RoundTripIgnoreChargingCombinations correctChargingCombinations;
-	private final RoundTripIgnoreDepartureCombinations correctDepartureCombinations;
-	private final RoundTripIgnoreLocationCombinations correctLocationCombinations;
 
-	public UniformOverLocationCount(Scenario<?> scenario) {
+	public UniformOverElectrifiedLocationCount(Scenario<?> scenario) {
+		super(scenario);
 		this.correctChargingCombinations = new RoundTripIgnoreChargingCombinations();
-		this.correctDepartureCombinations = new RoundTripIgnoreDepartureCombinations(scenario.getBinCnt());
-		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinations(scenario.getLocationCnt(),
-				scenario.getMaxParkingEpisodes());
 	}
 
 	@Override
-	public double logWeight(ElectrifiedRoundTrip simulatedRoundTrip) {
-		return this.correctChargingCombinations.logWeight(simulatedRoundTrip)
-				+ this.correctDepartureCombinations.logWeight(simulatedRoundTrip)
-				+ this.correctLocationCombinations.logWeight(simulatedRoundTrip);
+	public double logWeight(ElectrifiedRoundTrip roundTrip) {
+		return super.logWeight(roundTrip) + this.correctChargingCombinations.logWeight(roundTrip);
 	}
 }

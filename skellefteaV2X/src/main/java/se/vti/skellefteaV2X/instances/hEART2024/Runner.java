@@ -39,7 +39,7 @@ import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.OffHomeLocationShare;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
-import se.vti.skellefteaV2X.preferences.consistency.UniformOverLocationCount;
+import se.vti.skellefteaV2X.preferences.consistency.UniformOverElectrifiedLocationCount;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
@@ -123,7 +123,7 @@ public class Runner {
 		// CONSISTENCY PREFERENCES
 
 		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> consistencyPreferences = new Preferences<>();
-		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario), 1.0 /* must be one */);
+		consistencyPreferences.addComponent(new UniformOverElectrifiedLocationCount(scenario), 1.0 /* must be one */);
 		consistencyPreferences.addComponent(new StrategyRealizationConsistency<>(scenario), 1.0);
 		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference<>(), 1.0);
 		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 4.0);
