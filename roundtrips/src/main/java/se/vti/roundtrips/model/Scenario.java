@@ -39,8 +39,9 @@ public abstract class Scenario<L extends Location> {
 	private int timeBinCnt = 24;
 	private int maxParkingEpisodes = 4;
 
-	private final Set<L> locations = new LinkedHashSet<>();
-
+	// private final Set<L> locations = new LinkedHashSet<>();
+	private final Map<String, L> name2location = new LinkedHashMap<>();
+	
 	private final Map<Tuple<L, L>, Double> od2distance_km = new LinkedHashMap<>();
 
 	private final Map<Tuple<L, L>, Double> od2time_h = new LinkedHashMap<>();
@@ -51,18 +52,25 @@ public abstract class Scenario<L extends Location> {
 
 	public L createAndAddLocation(String name) {
 		L result = this.locationFactory.createLocation(name);
-		this.locations.add(result);
+		// this.locations.add(result);
+		this.name2location.put(name, result);
 		return result;
 	}
 
 	public Set<L> getLocationsView() {
-		return Collections.unmodifiableSet(this.locations);
+//		return Collections.unmodifiableSet(this.locations);
+		return Collections.unmodifiableSet(new LinkedHashSet<>(this.name2location.values()));
 	}
 
 	public int getLocationCnt() {
-		return this.locations.size();
+//		return this.locations.size();
+		return this.name2location.size();
 	}
 
+	public L getLocation(String name) {
+		return this.name2location.get(name);
+	}
+	
 	public void setDistance_km(L from, L to, double dist_km) {
 		Tuple<L, L> od = new Tuple<>(from, to);
 		this.od2distance_km.put(od, dist_km);

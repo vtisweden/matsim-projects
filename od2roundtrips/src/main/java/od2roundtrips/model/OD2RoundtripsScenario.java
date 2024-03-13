@@ -41,6 +41,8 @@ public class OD2RoundtripsScenario extends se.vti.roundtrips.model.Scenario<TAZ>
 		TAZ dobling = scenario.createAndAddLocation("Döbling");		
 		// ...
 		
+		TAZ recoveredFloridsdorf = scenario.getLocation("Floridsdorf");
+		
 		scenario.setSymmetricDistance_km(floridsdorf, dobling, 5.0);
 		scenario.setSymmetricTime_h(floridsdorf, dobling, 0.1);
 		// ...
