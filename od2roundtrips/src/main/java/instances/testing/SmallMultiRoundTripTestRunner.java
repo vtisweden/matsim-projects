@@ -48,10 +48,23 @@ public class SmallMultiRoundTripTestRunner {
 	public static void main(String[] args) {
 		System.out.println("STARTED ...");
 
-		OD2RoundtripsScenario scenario = SmallTest.createScenario();
+		OD2RoundtripsScenario scenario = new OD2RoundtripsScenario();
 
-		// TODO set distances etc
+		TAZ a = scenario.createAndAddLocation("A");
+		TAZ b = scenario.createAndAddLocation("B");
+		TAZ c = scenario.createAndAddLocation("C");
 
+		scenario.setSymmetricDistance_km(a, b, 10.0);
+		scenario.setSymmetricDistance_km(a, c, 10.0);
+		scenario.setSymmetricDistance_km(b, c, 10.0);
+
+		scenario.setSymmetricTime_h(a, b, 0.1);
+		scenario.setSymmetricTime_h(a, c, 0.1);
+		scenario.setSymmetricTime_h(b, c, 0.1);
+
+		scenario.setMaxParkingEpisodes(4);
+		scenario.setTimeBinCnt(24);
+		
 		Simulator<TAZ, VehicleState, RoundTrip<TAZ>> simulator = new Simulator<>(scenario, () -> new VehicleState());
 		simulator.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario, () -> new VehicleState()));
 		simulator.setParkingSimulator(new DefaultParkingSimulator<>(scenario, () -> new VehicleState()));

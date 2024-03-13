@@ -37,14 +37,14 @@ import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.model.RoundTripAnalyzer;
+import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
+import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
-import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
-import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
 import se.vti.utils.misc.math.MathHelpers;
 
 /**
@@ -80,9 +80,9 @@ public class LocationVisitAnalyzer extends RoundTripAnalyzer<ElectrifiedRoundTri
 	double charged_kWh = 0.0;
 
 	private AllDayBatteryConstraintPreference batteryWrapAround;
-	private AllDayTimeConstraintPreference timeWrapAround;
+	private AllDayTimeConstraintPreference<ElectrifiedRoundTrip, ElectrifiedLocation> timeWrapAround;
 	private NonnegativeBatteryStatePreference nonnegativeBattery;
-	private StrategyRealizationConsistency consistentRealization;
+	private StrategyRealizationConsistency<ElectrifiedRoundTrip, ElectrifiedLocation> consistentRealization;
 
 	double batteryWrapAroundDiscrepancy_kWh = 0.0;
 	double timeWrapAroundDiscrepancy_h = 0.0;
@@ -111,9 +111,9 @@ public class LocationVisitAnalyzer extends RoundTripAnalyzer<ElectrifiedRoundTri
 		}
 
 		this.batteryWrapAround = new AllDayBatteryConstraintPreference(scenario);
-		this.timeWrapAround = new AllDayTimeConstraintPreference();
+		this.timeWrapAround = new AllDayTimeConstraintPreference<>();
 		this.nonnegativeBattery = new NonnegativeBatteryStatePreference(scenario);
-		this.consistentRealization = new StrategyRealizationConsistency(scenario);
+		this.consistentRealization = new StrategyRealizationConsistency<>(scenario);
 	}
 
 	public LocationVisitAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,

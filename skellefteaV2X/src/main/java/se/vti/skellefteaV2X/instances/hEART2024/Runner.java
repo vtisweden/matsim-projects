@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import se.vti.roundtrips.model.Preferences;
+import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
+import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedDrivingSimulator;
@@ -36,9 +38,7 @@ import se.vti.skellefteaV2X.preferences.HomeLocationShare;
 import se.vti.skellefteaV2X.preferences.LocalChargingPreference;
 import se.vti.skellefteaV2X.preferences.OffHomeLocationShare;
 import se.vti.skellefteaV2X.preferences.consistency.AllDayBatteryConstraintPreference;
-import se.vti.skellefteaV2X.preferences.consistency.AllDayTimeConstraintPreference;
 import se.vti.skellefteaV2X.preferences.consistency.NonnegativeBatteryStatePreference;
-import se.vti.skellefteaV2X.preferences.consistency.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.preferences.consistency.UniformOverLocationCount;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
@@ -124,8 +124,8 @@ public class Runner {
 
 		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> consistencyPreferences = new Preferences<>();
 		consistencyPreferences.addComponent(new UniformOverLocationCount(scenario), 1.0 /* must be one */);
-		consistencyPreferences.addComponent(new StrategyRealizationConsistency(scenario), 1.0);
-		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference(), 1.0);
+		consistencyPreferences.addComponent(new StrategyRealizationConsistency<>(scenario), 1.0);
+		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference<>(), 1.0);
 		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 4.0);
 		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1.0);
 

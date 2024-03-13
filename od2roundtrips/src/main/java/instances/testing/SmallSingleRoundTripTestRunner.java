@@ -19,7 +19,27 @@
  */
 package instances.testing;
 
+import java.util.Arrays;
+import java.util.Random;
+
 import od2roundtrips.model.OD2RoundtripsScenario;
+import od2roundtrips.model.ODPreference;
+import od2roundtrips.model.TAZ;
+import se.vti.roundtrips.model.DefaultDrivingSimulator;
+import se.vti.roundtrips.model.DefaultParkingSimulator;
+import se.vti.roundtrips.model.Preferences;
+import se.vti.roundtrips.model.Simulator;
+import se.vti.roundtrips.model.VehicleState;
+import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
+import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
+import se.vti.roundtrips.preferences.UniformOverLocationCount;
+import se.vti.roundtrips.single.PossibleTransitions;
+import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.RoundTripConfiguration;
+import se.vti.roundtrips.single.RoundTripDepartureProposal;
+import se.vti.roundtrips.single.RoundTripLocationProposal;
+import se.vti.roundtrips.single.RoundTripProposal;
+import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
  * 
@@ -29,15 +49,83 @@ import od2roundtrips.model.OD2RoundtripsScenario;
 public class SmallSingleRoundTripTestRunner {
 
 	public static void main(String[] args) {
+
+		// Construct the scenario
+
+		OD2RoundtripsScenario scenario = new OD2RoundtripsScenario();
+
+		TAZ a = scenario.createAndAddLocation("A");
+		TAZ b = scenario.createAndAddLocation("B");
+		TAZ c = scenario.createAndAddLocation("C");
+
+		scenario.setSymmetricDistance_km(a, b, 10.0);
+		scenario.setSymmetricDistance_km(a, c, 10.0);
+		scenario.setSymmetricDistance_km(b, c, 10.0);
+
+		scenario.setSymmetricTime_h(a, b, 0.1);
+		scenario.setSymmetricTime_h(a, c, 0.1);
+		scenario.setSymmetricTime_h(b, c, 0.1);
+
+		scenario.setMaxParkingEpisodes(4);
+		scenario.setTimeBinCnt(24);
+
+		// Consistency preferences
+
+		final Preferences<RoundTrip<TAZ>, TAZ> consistencyPreferences = new Preferences<>();
+		consistencyPreferences.addComponent(new UniformOverLocationCount<>(scenario));
+		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference<>());
+		consistencyPreferences.addComponent(new StrategyRealizationConsistency<>(scenario));
+
+		// Modeling preferences
+
+		final Preferences<RoundTrip<TAZ>, TAZ> modelingPreferences = new Preferences<>();
+
+		ODPreference odPreference = new ODPreference();
+		odPreference.setODEntry(a, b, 1.0);
+		odPreference.setODEntry(b, a, 1.0);
+		odPreference.setODEntry(a, c, 1.0);
+		odPreference.setODEntry(c, a, 1.0);
+		odPreference.setODEntry(b, c, 1.0);
+		odPreference.setODEntry(c, b, 1.0);
+		modelingPreferences.addComponent(odPreference);
+
+		// Default physical simulator
+
+		Simulator<TAZ, VehicleState, RoundTrip<TAZ>> simulator = new Simulator<>(scenario, () -> new VehicleState());
+		simulator.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario, () -> new VehicleState()));
+		simulator.setParkingSimulator(new DefaultParkingSimulator<>(scenario, () -> new VehicleState()));
+
+		// Create MH algorithm
+
+		double locationProposalWeight = 0.5;
+		double departureProposalWeight = 0.5;
+		final RoundTripConfiguration<TAZ> configuration = new RoundTripConfiguration<>(scenario.getMaxParkingEpisodes(),
+				scenario.getBinCnt(), locationProposalWeight, departureProposalWeight, 0.0, 0.0);
+		// TODO configuration is still electrification-specific
+		configuration.addLocations(scenario.getLocationsView());
+
+		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(configuration, simulator);
+		proposal.addProposal(
+				new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(configuration,
+						(state, config, allLocs) -> new PossibleTransitions<>(state, config, allLocs)),
+				locationProposalWeight);
+		proposal.addProposal(new RoundTripDepartureProposal<>(configuration), departureProposalWeight);
+
+		Preferences<RoundTrip<TAZ>, TAZ> allPreferences = new Preferences<>();
+		allPreferences.addPreferences(consistencyPreferences);
+		allPreferences.addPreferences(modelingPreferences);
+
+		MHAlgorithm<RoundTrip<TAZ>> algo = new MHAlgorithm<>(proposal, allPreferences, new Random());
+
+		RoundTrip<TAZ> initialState = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
+		initialState.setEpisodes(simulator.simulate(initialState));
+		algo.setInitialState(initialState);
 		
-		System.out.println("STARTED ...");
+		algo.setMsgInterval(1);
+		
+		// Run MH algorithm
 
-		OD2RoundtripsScenario scenario = SmallTest.createScenario();
-
-		// TODO
-
-		System.out.println("... DONE");
-
+		algo.run(1000);
 	}
-	
+
 }

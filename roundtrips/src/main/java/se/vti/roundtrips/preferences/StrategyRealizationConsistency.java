@@ -17,20 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences.consistency;
+package se.vti.roundtrips.preferences;
 
+import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.model.Preferences;
 import se.vti.roundtrips.model.Scenario;
-import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
-import se.vti.skellefteaV2X.model.ElectrifiedLocation;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class StrategyRealizationConsistency extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
+public class StrategyRealizationConsistency<R extends RoundTrip<L>, L extends Location>
+		extends Preferences.Component<R, L> {
 
 	private final Scenario<?> scenario;
 
@@ -38,7 +39,7 @@ public class StrategyRealizationConsistency extends Preferences.Component<Electr
 		this.scenario = scenario;
 	}
 
-	public double discrepancy_h(ElectrifiedRoundTrip simulatedRoundTrip) {
+	public double discrepancy_h(R simulatedRoundTrip) {
 		if (simulatedRoundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
@@ -54,7 +55,7 @@ public class StrategyRealizationConsistency extends Preferences.Component<Electr
 	}
 
 	@Override
-	public double logWeight(ElectrifiedRoundTrip simulatedRoundTrip) {
+	public double logWeight(R simulatedRoundTrip) {
 		return -this.discrepancy_h(simulatedRoundTrip) / 24.0;
 	}
 

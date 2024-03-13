@@ -40,11 +40,11 @@ public class Preferences<R extends RoundTrip<L>, L extends Location> implements 
 			this.logWeightThreshold = threshold;
 		}
 
-		public boolean thresholdPassed(R simulatedRoundTrip) {
-			return (this.logWeight(simulatedRoundTrip) >= this.logWeightThreshold);
+		public boolean thresholdPassed(R roundTrip) {
+			return (this.logWeight(roundTrip) >= this.logWeightThreshold);
 		}
 
-		public abstract double logWeight(R simulatedRoundTrip);
+		public abstract double logWeight(R roundTrip);
 
 	}
 

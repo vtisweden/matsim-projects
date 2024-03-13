@@ -17,20 +17,20 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.skellefteaV2X.preferences.consistency;
+package se.vti.roundtrips.preferences;
 
 import se.vti.roundtrips.model.DrivingEpisode;
+import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.model.Preferences;
-import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
-import se.vti.skellefteaV2X.model.ElectrifiedLocation;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class AllDayTimeConstraintPreference extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
+public class AllDayTimeConstraintPreference<R extends RoundTrip<L>, L extends Location> extends Preferences.Component<R, L> {
 
 	private final double minHomeDuration_h;
 
@@ -42,7 +42,7 @@ public class AllDayTimeConstraintPreference extends Preferences.Component<Electr
 		this(0.0);
 	}
 	
-	public double discrepancy_h(ElectrifiedRoundTrip roundTrip) {
+	public double discrepancy_h(R roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
@@ -55,7 +55,7 @@ public class AllDayTimeConstraintPreference extends Preferences.Component<Electr
 	}
 
 	@Override
-	public double logWeight(ElectrifiedRoundTrip roundTrip) {
+	public double logWeight(R roundTrip) {
 		return -this.discrepancy_h(roundTrip) / 24.0;
 	}
 }
