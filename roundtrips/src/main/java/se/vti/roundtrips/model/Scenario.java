@@ -41,7 +41,7 @@ public abstract class Scenario<L extends Location> {
 
 	// private final Set<L> locations = new LinkedHashSet<>();
 	private final Map<String, L> name2location = new LinkedHashMap<>();
-	
+
 	private final Map<Tuple<L, L>, Double> od2distance_km = new LinkedHashMap<>();
 
 	private final Map<Tuple<L, L>, Double> od2time_h = new LinkedHashMap<>();
@@ -70,7 +70,7 @@ public abstract class Scenario<L extends Location> {
 	public L getLocation(String name) {
 		return this.name2location.get(name);
 	}
-	
+
 	public void setDistance_km(L from, L to, double dist_km) {
 		Tuple<L, L> od = new Tuple<>(from, to);
 		this.od2distance_km.put(od, dist_km);
@@ -79,6 +79,15 @@ public abstract class Scenario<L extends Location> {
 	public void setSymmetricDistance_km(L loc1, L loc2, double dist_km) {
 		this.setDistance_km(loc1, loc2, dist_km);
 		this.setDistance_km(loc2, loc1, dist_km);
+	}
+
+	public void setDistance_km(String from, String to, double dist_km) {
+		this.setDistance_km(this.name2location.get(from), this.name2location.get(to), dist_km);
+	}
+
+	public void setSymmetricDistance_km(String from, String to, double dist_km) {
+		this.setDistance_km(from, to, dist_km);
+		this.setDistance_km(to, from, dist_km);
 	}
 
 	public Double getDistance_km(L from, L to) {
@@ -92,6 +101,15 @@ public abstract class Scenario<L extends Location> {
 	public void setSymmetricTime_h(L loc1, L loc2, double time_h) {
 		this.setTime_h(loc1, loc2, time_h);
 		this.setTime_h(loc2, loc1, time_h);
+	}
+
+	public void setTime_h(String from, String to, double time_h) {
+		this.od2time_h.put(new Tuple<>(this.name2location.get(from), this.name2location.get(to)), time_h);
+	}
+
+	public void setSymmetricTime_h(String from, String to, double time_h) {
+		this.setTime_h(from, to, time_h);
+		this.setTime_h(to, from, time_h);
 	}
 
 	public Double getTime_h(L from, L to) {
