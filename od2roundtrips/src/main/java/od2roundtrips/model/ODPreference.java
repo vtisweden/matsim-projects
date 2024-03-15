@@ -46,6 +46,10 @@ public class ODPreference extends Preferences.Component<RoundTrip<TAZ>, TAZ> {
 		this.targetOdMatrix.put(new Tuple<>(origin, destination), value);
 	}
 
+	public Map<Tuple<TAZ, TAZ>, Double> getTargetOdMatrix() {
+		return this.targetOdMatrix;
+	}
+
 	@Override
 	public double logWeight(RoundTrip<TAZ> roundTrip) {
 

@@ -24,6 +24,7 @@ import java.util.Random;
 
 import od2roundtrips.model.OD2RoundtripsScenario;
 import od2roundtrips.model.ODPreference;
+import od2roundtrips.model.ODReproductionAnalyzerSingle;
 import od2roundtrips.model.TAZ;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
@@ -82,11 +83,11 @@ public class SmallSingleRoundTripTestRunner {
 
 		ODPreference odPreference = new ODPreference();
 		odPreference.setODEntry(a, b, 1.0);
-		odPreference.setODEntry(b, a, 1.0);
-		odPreference.setODEntry(a, c, 1.0);
-		odPreference.setODEntry(c, a, 1.0);
-		odPreference.setODEntry(b, c, 1.0);
-		odPreference.setODEntry(c, b, 1.0);
+		odPreference.setODEntry(b, a, 2.0);
+		odPreference.setODEntry(a, c, 3.0);
+		odPreference.setODEntry(c, a, 4.0);
+		odPreference.setODEntry(b, c, 5.0);
+		odPreference.setODEntry(c, b, 6.0);
 		modelingPreferences.addComponent(odPreference);
 
 		// Default physical simulator
@@ -117,15 +118,21 @@ public class SmallSingleRoundTripTestRunner {
 
 		MHAlgorithm<RoundTrip<TAZ>> algo = new MHAlgorithm<>(proposal, allPreferences, new Random());
 
+		ODReproductionAnalyzerSingle odAnalyzer = new ODReproductionAnalyzerSingle(100 * 1000, 100, odPreference.getTargetOdMatrix());
+		algo.addStateProcessor(odAnalyzer);
+		
 		RoundTrip<TAZ> initialState = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
 		initialState.setEpisodes(simulator.simulate(initialState));
 		algo.setInitialState(initialState);
 		
-		algo.setMsgInterval(1);
+		algo.setMsgInterval(1000);
 		
 		// Run MH algorithm
 
-		algo.run(1000);
+		algo.run(2 * 1000 * 1000);
+		
+		System.out.println();
+		System.out.println(odAnalyzer);
 	}
 
 }
