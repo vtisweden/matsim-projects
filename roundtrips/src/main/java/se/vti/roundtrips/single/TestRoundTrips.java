@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
@@ -55,10 +54,8 @@ public class TestRoundTrips {
 
 		RoundTripProposal<Location, RoundTrip<Location>> proposal = new RoundTripProposal<>(roundTrip -> null,
 				scenario.getRandom());
-		proposal.addProposal(
-				new RoundTripLocationProposal<RoundTrip<Location>, Location>(scenario,
-						(state, config, allLocations) -> new PossibleTransitions<Location>(state, config)),
-				locationProba);
+		proposal.addProposal(new RoundTripLocationProposal<>(scenario,
+				(state, scen) -> new PossibleTransitions<Location>(state, scen)), locationProba);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
@@ -112,8 +109,8 @@ public class TestRoundTrips {
 
 		};
 
-		RoundTrip<Location> initialState = new RoundTrip<>(
-				Arrays.asList(scenario.getLocation("1"), scenario.getLocation("2"), scenario.getLocation("3"), scenario.getLocation("2")),
+		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1"),
+				scenario.getLocation("2"), scenario.getLocation("3"), scenario.getLocation("2")),
 				Arrays.asList(1, 3, 5, 7));
 		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, state -> 0.0, rnd);
 		algo.addStateProcessor(prn);

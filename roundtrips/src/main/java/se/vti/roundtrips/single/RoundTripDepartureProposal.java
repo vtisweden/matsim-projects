@@ -30,15 +30,15 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class RoundTripDepartureProposal<R extends RoundTrip<L>, L> implements MHProposal<R> {
+public class RoundTripDepartureProposal<R extends RoundTrip<L>, L extends Location> implements MHProposal<R> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final Scenario<?> scenario;
+	private final Scenario<L> scenario;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripDepartureProposal(Scenario<?> scenario) {
+	public RoundTripDepartureProposal(Scenario<L> scenario) {
 		this.scenario = scenario;
 	}
 

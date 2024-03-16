@@ -26,9 +26,9 @@ import java.util.Map;
 
 import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.model.Episode;
-import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.model.ParkingEpisode;
 import se.vti.roundtrips.preferences.Preferences;
+import se.vti.roundtrips.single.Location;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.utils.misc.math.MathHelpers;

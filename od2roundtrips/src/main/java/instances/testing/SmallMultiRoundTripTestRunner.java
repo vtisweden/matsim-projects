@@ -80,15 +80,14 @@ public class SmallMultiRoundTripTestRunner {
 
 		// Modeling preferences
 
-		int roundTripCnt = 10;
 		final Preferences<RoundTrip<TAZ>, TAZ> modelingPreferences = new Preferences<>();
 		ODPreference odPreference = new ODPreference();
-		odPreference.setODEntry(a, b, 1.0 * roundTripCnt);
-		odPreference.setODEntry(b, a, 2.0 * roundTripCnt);
-		odPreference.setODEntry(a, c, 3.0 * roundTripCnt);
-		odPreference.setODEntry(c, a, 4.0 * roundTripCnt);
-		odPreference.setODEntry(b, c, 5.0 * roundTripCnt);
-		odPreference.setODEntry(c, b, 6.0 * roundTripCnt);
+		odPreference.setODEntry(a, b, 1.0);
+		odPreference.setODEntry(b, a, 2.0);
+		odPreference.setODEntry(a, c, 3.0);
+		odPreference.setODEntry(c, a, 4.0);
+		odPreference.setODEntry(b, c, 5.0);
+		odPreference.setODEntry(c, b, 6.0);
 		modelingPreferences.addComponent(odPreference);
 
 		// Default physical simulator
@@ -99,16 +98,15 @@ public class SmallMultiRoundTripTestRunner {
 
 		// Create MH algorithm
 
+		int roundTripCnt = 10;
 		double locationProposalWeight = 0.5;
 		double departureProposalWeight = 0.5;
 
 		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
-		proposal.addProposal(
-				new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
-						(state, config, allLocs) -> new PossibleTransitions<TAZ>(state, scenario)),
-				locationProposalWeight);
+		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
+				(state, scen) -> new PossibleTransitions<TAZ>(state, scen)), locationProposalWeight);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
-		MultiRoundTripProposal<TAZ, RoundTrip<TAZ>> proposalMulti = new MultiRoundTripProposal<>(new Random(),
+		MultiRoundTripProposal<TAZ, RoundTrip<TAZ>> proposalMulti = new MultiRoundTripProposal<>(scenario.getRandom(),
 				proposal);
 
 		final MultiRoundTripPreferences<RoundTrip<TAZ>, TAZ> preferencesMulti = new MultiRoundTripPreferences<>();

@@ -19,14 +19,15 @@
  */
 package se.vti.roundtrips.model;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import floetteroed.utilities.Tuple;
+import se.vti.roundtrips.single.Location;
 
 /**
  * 
@@ -36,9 +37,6 @@ import floetteroed.utilities.Tuple;
 public class Scenario<L extends Location> {
 
 	private final Random rnd = new Random();
-	public Random getRandom() {
-		return this.rnd;
-	}
 	
 	private final LocationFactory<L> locationFactory;
 
@@ -52,6 +50,8 @@ public class Scenario<L extends Location> {
 
 	private final Map<Tuple<L, L>, Double> od2time_h = new LinkedHashMap<>();
 
+	private List<L> locationsView = Collections.unmodifiableList(new ArrayList<>(0));
+	
 	public Scenario(LocationFactory<L> locationFactory) {
 		this.locationFactory = locationFactory;
 	}
@@ -60,12 +60,16 @@ public class Scenario<L extends Location> {
 		L result = this.locationFactory.createLocation(name);
 		// this.locations.add(result);
 		this.name2location.put(name, result);
+		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
 		return result;
 	}
 
-	public Set<L> getLocationsView() {
-//		return Collections.unmodifiableSet(this.locations);
-		return Collections.unmodifiableSet(new LinkedHashSet<>(this.name2location.values()));
+	public Random getRandom() {
+		return this.rnd;
+	}
+
+	public List<L> getLocationsView() {
+		return this.locationsView;
 	}
 
 	public int getLocationCnt() {

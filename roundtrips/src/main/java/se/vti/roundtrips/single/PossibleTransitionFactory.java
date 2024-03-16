@@ -19,8 +19,6 @@
  */
 package se.vti.roundtrips.single;
 
-import java.util.List;
-
 import se.vti.roundtrips.model.Scenario;
 
 /**
@@ -28,8 +26,8 @@ import se.vti.roundtrips.model.Scenario;
  * @author GunnarF
  *
  */
-public interface PossibleTransitionFactory<L, R extends RoundTrip<L>> {
+public interface PossibleTransitionFactory<L extends Location, R extends RoundTrip<L>> {
 
-	public PossibleTransitions<L> createPossibleTransitions(R state, Scenario<?> scenario, List<L> allLocations);
+	public PossibleTransitions<L> createPossibleTransitions(R state, Scenario<L> scenario);
 	
 }

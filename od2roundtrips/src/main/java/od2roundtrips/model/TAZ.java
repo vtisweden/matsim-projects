@@ -19,7 +19,7 @@
  */
 package od2roundtrips.model;
 
-import se.vti.roundtrips.model.Location;
+import se.vti.roundtrips.single.Location;
 
 /**
  * 

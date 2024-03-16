@@ -30,9 +30,9 @@ import se.vti.roundtrips.model.Scenario;
  * @author GunnarF
  *
  */
-public class PossibleTransitions<L> {
+public class PossibleTransitions<L extends Location> {
 
-	private final Scenario<?> scenario;
+	private final Scenario<L> scenario;
 	
 	final List<Integer> possibleInsertIndices;
 	final List<Integer> possibleRemoveIndices;
@@ -45,10 +45,9 @@ public class PossibleTransitions<L> {
 	final double removeProba;
 	final double flipProba;
 
-	public PossibleTransitions(RoundTrip<L> state, Scenario<?> scenario) {
+	public PossibleTransitions(RoundTrip<L> state, Scenario<L> scenario) {
 		
 		this.scenario = scenario;
-		List<L> allLocations = (List<L>) new ArrayList<>(scenario.getLocationsView());
 		
 		this.possibleInsertIndices = new ArrayList<>(state.locationCnt() + 1);
 		this.possibleRemoveIndices = new ArrayList<>(state.locationCnt());
@@ -73,7 +72,7 @@ public class PossibleTransitions<L> {
 			if (state.locationCnt() == scenario.getMaxParkingEpisodes()) {
 				localInserts = Collections.emptyList();
 			} else {
-				localInserts = new ArrayList<>(allLocations);
+				localInserts = new ArrayList<>(scenario.getLocationsView());
 				localInserts.remove(pred);
 				localInserts.remove(curr);
 			}
@@ -92,7 +91,7 @@ public class PossibleTransitions<L> {
 
 			// analyze flips
 
-			final List<L> localFlips = new ArrayList<>(allLocations);
+			final List<L> localFlips = new ArrayList<>(scenario.getLocationsView());
 			localFlips.remove(curr); // must change!
 			if (state.locationCnt() > 1) {
 				localFlips.remove(pred);
@@ -111,7 +110,7 @@ public class PossibleTransitions<L> {
 		if (state.locationCnt() == scenario.getMaxParkingEpisodes()) {
 			lastInserts = Collections.emptyList();
 		} else {
-			lastInserts = new ArrayList<>(allLocations);
+			lastInserts = new ArrayList<>(scenario.getLocationsView());
 			lastInserts.remove(state.getLocation(state.locationCnt() - 1));
 			lastInserts.remove(state.getLocation(0));
 		}

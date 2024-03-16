@@ -19,6 +19,8 @@
  */
 package se.vti.roundtrips.model;
 
+import se.vti.roundtrips.single.Location;
+
 /**
  * 
  * @author GunnarF

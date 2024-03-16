@@ -19,7 +19,7 @@
  */
 package se.vti.skellefteaV2X.model;
 
-import se.vti.roundtrips.model.Location;
+import se.vti.roundtrips.single.Location;
 
 /**
  * 

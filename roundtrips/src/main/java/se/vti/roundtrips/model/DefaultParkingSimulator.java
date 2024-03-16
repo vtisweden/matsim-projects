@@ -20,6 +20,7 @@
 package se.vti.roundtrips.model;
 
 import se.vti.roundtrips.model.Simulator.ParkingSimulator;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**

@@ -79,7 +79,6 @@ public class SmallSingleRoundTripTestRunner {
 		// Modeling preferences
 
 		final Preferences<RoundTrip<TAZ>, TAZ> modelingPreferences = new Preferences<>();
-
 		ODPreference odPreference = new ODPreference();
 		odPreference.setODEntry(a, b, 1.0);
 		odPreference.setODEntry(b, a, 2.0);
@@ -101,31 +100,30 @@ public class SmallSingleRoundTripTestRunner {
 		double departureProposalWeight = 0.5;
 
 		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
-		proposal.addProposal(
-				new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
-						(state, config, allLocs) -> new PossibleTransitions<TAZ>(state, scenario)),
-				locationProposalWeight);
+		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
+				(state, scen) -> new PossibleTransitions<TAZ>(state, scen)), locationProposalWeight);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
 
 		Preferences<RoundTrip<TAZ>, TAZ> allPreferences = new Preferences<>();
 		allPreferences.addPreferences(consistencyPreferences);
 		allPreferences.addPreferences(modelingPreferences);
 
-		MHAlgorithm<RoundTrip<TAZ>> algo = new MHAlgorithm<>(proposal, allPreferences, new Random());
+		MHAlgorithm<RoundTrip<TAZ>> algo = new MHAlgorithm<>(proposal, allPreferences, scenario.getRandom());
 
-		ODReproductionAnalyzerSingle odAnalyzer = new ODReproductionAnalyzerSingle(100 * 1000, 100, odPreference.getTargetOdMatrix());
+		ODReproductionAnalyzerSingle odAnalyzer = new ODReproductionAnalyzerSingle(100 * 1000, 100,
+				odPreference.getTargetOdMatrix());
 		algo.addStateProcessor(odAnalyzer);
-		
+
 		RoundTrip<TAZ> initialState = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
 		initialState.setEpisodes(simulator.simulate(initialState));
 		algo.setInitialState(initialState);
-		
+
 		algo.setMsgInterval(10 * 1000);
-		
+
 		// Run MH algorithm
 
 		algo.run(1000 * 1000);
-		
+
 		System.out.println();
 		System.out.println(odAnalyzer);
 	}

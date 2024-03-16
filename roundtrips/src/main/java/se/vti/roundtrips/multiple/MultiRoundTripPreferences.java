@@ -22,8 +22,8 @@ package se.vti.roundtrips.multiple;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.preferences.Preferences;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 

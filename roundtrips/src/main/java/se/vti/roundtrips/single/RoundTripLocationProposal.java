@@ -32,21 +32,18 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  *
  * @param <L> the location type
  */
-public class RoundTripLocationProposal<R extends RoundTrip<L>, L> implements MHProposal<R> {
+public class RoundTripLocationProposal<R extends RoundTrip<L>, L extends Location> implements MHProposal<R> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final Scenario<?> scenario;
+	private final Scenario<L> scenario;
 
-	private final List<L> allLocations;
-	
 	private final PossibleTransitionFactory<L, R> possibleTransitionFactory;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripLocationProposal(Scenario<?> scenario, PossibleTransitionFactory<L, R> possibleTransitionFactory) {
+	public RoundTripLocationProposal(Scenario<L> scenario, PossibleTransitionFactory<L, R> possibleTransitionFactory) {
 		this.scenario = scenario;
-		this.allLocations = (List<L>) new ArrayList<>(scenario.getLocationsView());
 		this.possibleTransitionFactory = possibleTransitionFactory;
 	}
 
@@ -61,7 +58,7 @@ public class RoundTripLocationProposal<R extends RoundTrip<L>, L> implements MHP
 	public MHTransition<R> newTransition(R state) {
 
 		final double randomNumber = this.scenario.getRandom().nextDouble();
-		PossibleTransitions<L> fwdActions = this.possibleTransitionFactory.createPossibleTransitions(state, this.scenario, this.allLocations);
+		PossibleTransitions<L> fwdActions = this.possibleTransitionFactory.createPossibleTransitions(state, this.scenario);
 
 		if (randomNumber < fwdActions.insertProba) {
 
@@ -77,8 +74,7 @@ public class RoundTripLocationProposal<R extends RoundTrip<L>, L> implements MHP
 			newState.addAndEnsureSortedDepartures(whereToInsert, whatToInsert, newDeparture);
 
 			final double fwdLogProba = Math.log(fwdActions.concreteInsertProba(whereToInsert));
-			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.scenario,
-					this.allLocations);
+			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.scenario);
 			final double bwdLogProba = Math.log(bwdActions.concreteRemoveProba());
 
 			return new MHTransition<R>(state, newState, fwdLogProba, bwdLogProba);
@@ -93,8 +89,7 @@ public class RoundTripLocationProposal<R extends RoundTrip<L>, L> implements MHP
 			newState.remove(whereToRemoveLocation, whereToRemoveDeparture);
 
 			final double fwdLogProba = Math.log(fwdActions.concreteRemoveProba());
-			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.scenario,
-					this.allLocations);
+			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.scenario);
 			final double bwdLogProba = Math.log(bwdActions.concreteInsertProba(whereToRemoveLocation));
 
 			return new MHTransition<R>(state, newState, fwdLogProba, bwdLogProba);
@@ -109,8 +104,7 @@ public class RoundTripLocationProposal<R extends RoundTrip<L>, L> implements MHP
 			newState.setLocation(whereToFlip, whatToFlip);
 
 			final double fwdLogProba = Math.log(fwdActions.concreteFlipProba(whereToFlip));
-			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.scenario,
-					this.allLocations);
+			final PossibleTransitions<L> bwdActions = this.possibleTransitionFactory.createPossibleTransitions(newState, this.scenario);
 			final double bwdLogProba = Math.log(bwdActions.concreteFlipProba(whereToFlip));
 
 			return new MHTransition<R>(state, newState, fwdLogProba, bwdLogProba);

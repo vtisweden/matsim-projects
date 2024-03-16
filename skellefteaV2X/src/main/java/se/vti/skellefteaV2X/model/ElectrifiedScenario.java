@@ -21,7 +21,6 @@ package se.vti.skellefteaV2X.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 
 import se.vti.roundtrips.model.Scenario;
@@ -116,8 +115,8 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 				new PossibleTransitionFactory<ElectrifiedLocation, ElectrifiedRoundTrip>() {
 					@Override
 					public PossibleTransitions<ElectrifiedLocation> createPossibleTransitions(
-							ElectrifiedRoundTrip state, Scenario<?> scenario, List<ElectrifiedLocation> allLocations) {
-						return new PossibleElectrifiedTransitions(state, (Scenario<ElectrifiedLocation>) scenario);
+							ElectrifiedRoundTrip state, Scenario<ElectrifiedLocation> scenario) {
+						return new PossibleElectrifiedTransitions(state, scenario);
 					}
 				}), locationProposalWeight);
 		proposal0.addProposal(new RoundTripDepartureProposal<>(this), departureProposalWeight);
