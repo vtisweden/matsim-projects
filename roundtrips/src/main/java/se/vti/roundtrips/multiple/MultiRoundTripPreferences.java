@@ -19,9 +19,13 @@
  */
 package se.vti.roundtrips.multiple;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import se.vti.roundtrips.model.Location;
 import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.single.RoundTrip;
+import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
  * 
@@ -30,20 +34,30 @@ import se.vti.roundtrips.single.RoundTrip;
  * @param <R>
  * @param <L>
  */
-public class MultiRoundTripPreference<M extends MultiRoundTrip<L, R>, R extends RoundTrip<L>, L extends Location> {
+public class MultiRoundTripPreferences<R extends RoundTrip<L>, L extends Location>
+		implements MHWeight<MultiRoundTrip<L, R>> {
 
-	final Preferences.Component<R, L> preference;
+	private final List<Preferences<R, L>> singleRoundTripPreferences = new ArrayList<>();
 
-	public MultiRoundTripPreference(Preferences.Component<R, L> preference) {
-		this.preference = preference;
+	public MultiRoundTripPreferences() {
 	}
 
-	public double logWeight(M multiRoundTrip) {
+	public MultiRoundTripPreferences(Preferences<R, L> singleRoundTripPreferences) {
+		this.singleRoundTripPreferences.add(singleRoundTripPreferences);
+	}
+
+	public void addPreferences(Preferences<R, L> singleRoundTripPreferences) {
+		this.singleRoundTripPreferences.add(singleRoundTripPreferences);
+	}
+
+	@Override
+	public double logWeight(MultiRoundTrip<L, R> multiRoundTrip) {
 		double result = 0.0;
-		for (int i = 0; i < multiRoundTrip.size(); i++) {
-			result += this.preference.logWeight(multiRoundTrip.getRoundTrip(i));
+		for (Preferences<R, L> preferences : singleRoundTripPreferences) {
+			for (R roundTrip : multiRoundTrip) {
+				result += preferences.logWeight(roundTrip);
+			}
 		}
 		return result;
 	}
-
 }

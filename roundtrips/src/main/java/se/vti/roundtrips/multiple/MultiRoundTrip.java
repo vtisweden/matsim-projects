@@ -20,7 +20,9 @@
 package se.vti.roundtrips.multiple;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import se.vti.roundtrips.single.RoundTrip;
 
@@ -30,7 +32,7 @@ import se.vti.roundtrips.single.RoundTrip;
  *
  * @param <L>
  */
-public class MultiRoundTrip<L, R extends RoundTrip<L>> {
+public class MultiRoundTrip<L, R extends RoundTrip<L>> implements Iterable<R> {
 
 	private final List<R> roundTrips;
 
@@ -53,6 +55,10 @@ public class MultiRoundTrip<L, R extends RoundTrip<L>> {
 		return this.roundTrips.size();
 	}
 
+	public int locationCnt() {
+		return this.roundTrips.stream().mapToInt(r -> r.locationCnt()).sum();
+	}
+
 	@Override
 	public MultiRoundTrip<L, R> clone() {
 		MultiRoundTrip<L, R> result = new MultiRoundTrip<L, R>(this.size());
@@ -60,6 +66,16 @@ public class MultiRoundTrip<L, R extends RoundTrip<L>> {
 			result.setRoundTrip(i, (R) this.getRoundTrip(i).clone());
 		}
 		return result;
+	}
+
+	@Override
+	public Iterator<R> iterator() {
+		return this.roundTrips.iterator();
+	}
+
+	@Override
+	public String toString() {
+		return "{" + this.roundTrips.stream().map(r -> "(" + r.toString() + ")").collect(Collectors.joining(",")) + "}";
 	}
 
 }

@@ -69,12 +69,14 @@ public class MultiRoundTripProposal<L, R extends RoundTrip<L>> implements MHProp
 					bwdLogProba += Math.log(flipProba) + transition.getBwdLogProb();
 					flipped = true;
 				} else {
+					newState.getRoundTrip(i)
+							.setEpisodes(this.singleProposal.getSimulator().simulate(newState.getRoundTrip(i)));
 					fwdLogProba += Math.log(1.0 - flipProba);
 					bwdLogProba += Math.log(1.0 - flipProba);
 				}
 			}
 		} while (!flipped);
-		
+
 		fwdLogProba -= Math.log(atLeastOneFlipProba);
 		bwdLogProba -= Math.log(atLeastOneFlipProba);
 		assert (fwdLogProba == bwdLogProba);

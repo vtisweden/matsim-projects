@@ -125,11 +125,11 @@ public class SmallSingleRoundTripTestRunner {
 		initialState.setEpisodes(simulator.simulate(initialState));
 		algo.setInitialState(initialState);
 		
-		algo.setMsgInterval(1000);
+		algo.setMsgInterval(10 * 1000);
 		
 		// Run MH algorithm
 
-		algo.run(2 * 1000 * 1000);
+		algo.run(1000 * 1000);
 		
 		System.out.println();
 		System.out.println(odAnalyzer);

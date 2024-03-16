@@ -58,6 +58,10 @@ public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<
 		this.proposal2weight.put(proposal, weight);
 	}
 
+	public Simulator<L,R> getSimulator() {
+		return this.simulator;
+	}
+	
 	// IMPLEMENTATION OF INTERFACE
 
 	@Override
