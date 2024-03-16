@@ -36,7 +36,6 @@ import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.roundtrips.preferences.UniformOverLocationCount;
 import se.vti.roundtrips.single.PossibleTransitions;
 import se.vti.roundtrips.single.RoundTrip;
-import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.roundtrips.single.RoundTripDepartureProposal;
 import se.vti.roundtrips.single.RoundTripLocationProposal;
 import se.vti.roundtrips.single.RoundTripProposal;
@@ -100,17 +99,13 @@ public class SmallSingleRoundTripTestRunner {
 
 		double locationProposalWeight = 0.5;
 		double departureProposalWeight = 0.5;
-		final RoundTripConfiguration<TAZ> configuration = new RoundTripConfiguration<>(scenario.getMaxParkingEpisodes(),
-				scenario.getBinCnt(), locationProposalWeight, departureProposalWeight, 0.0, 0.0);
-		// TODO configuration is still electrification-specific
-		configuration.addLocations(scenario.getLocationsView());
 
-		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(configuration, simulator);
+		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
 		proposal.addProposal(
-				new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(configuration,
-						(state, config, allLocs) -> new PossibleTransitions<>(state, config, allLocs)),
+				new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
+						(state, config, allLocs) -> new PossibleTransitions<TAZ>(state, scenario)),
 				locationProposalWeight);
-		proposal.addProposal(new RoundTripDepartureProposal<>(configuration), departureProposalWeight);
+		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
 
 		Preferences<RoundTrip<TAZ>, TAZ> allPreferences = new Preferences<>();
 		allPreferences.addPreferences(consistencyPreferences);

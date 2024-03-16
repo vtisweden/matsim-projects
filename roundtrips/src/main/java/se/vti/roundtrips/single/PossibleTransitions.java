@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import se.vti.roundtrips.model.Scenario;
+
 /**
  * 
  * @author GunnarF
@@ -30,7 +32,7 @@ import java.util.List;
  */
 public class PossibleTransitions<L> {
 
-	private final RoundTripConfiguration<L> config;
+	private final Scenario<?> scenario;
 	
 	final List<Integer> possibleInsertIndices;
 	final List<Integer> possibleRemoveIndices;
@@ -43,10 +45,11 @@ public class PossibleTransitions<L> {
 	final double removeProba;
 	final double flipProba;
 
-	public PossibleTransitions(RoundTrip<L> state, RoundTripConfiguration<L> config, List<L> allLocations) {
+	public PossibleTransitions(RoundTrip<L> state, Scenario<?> scenario) {
 		
-		this.config = config;
-
+		this.scenario = scenario;
+		List<L> allLocations = (List<L>) new ArrayList<>(scenario.getLocationsView());
+		
 		this.possibleInsertIndices = new ArrayList<>(state.locationCnt() + 1);
 		this.possibleRemoveIndices = new ArrayList<>(state.locationCnt());
 		this.possibleFlipIndices = new ArrayList<>(state.locationCnt());
@@ -67,7 +70,7 @@ public class PossibleTransitions<L> {
 			// analyze inserts
 
 			final List<L> localInserts;
-			if (state.locationCnt() == config.getMaxLocations()) {
+			if (state.locationCnt() == scenario.getMaxParkingEpisodes()) {
 				localInserts = Collections.emptyList();
 			} else {
 				localInserts = new ArrayList<>(allLocations);
@@ -105,7 +108,7 @@ public class PossibleTransitions<L> {
 		// analyze appends-to end of list
 
 		final List<L> lastInserts;
-		if (state.locationCnt() == config.getMaxLocations()) {
+		if (state.locationCnt() == scenario.getMaxParkingEpisodes()) {
 			lastInserts = Collections.emptyList();
 		} else {
 			lastInserts = new ArrayList<>(allLocations);
@@ -131,7 +134,7 @@ public class PossibleTransitions<L> {
 	}
 
 	private <X> X draw(List<X> list) {
-		return list.get(config.getRandom().nextInt(list.size()));
+		return list.get(this.scenario.getRandom().nextInt(list.size()));
 	}
 
 	public int drawInsertIndex() {
@@ -157,7 +160,7 @@ public class PossibleTransitions<L> {
 	public double concreteInsertProba(int index) {
 		return this.insertProba // insert at all
 				* (1.0 / this.possibleInsertIndices.size() / this.possibleInserts.get(index).size()) // location
-				* (1.0 / (config.getTimeBinCnt() - this.fromStateLength())) // new depature in unused time slot
+				* (1.0 / (this.scenario.getBinCnt() - this.fromStateLength())) // new depature in unused time slot
 				
 				* 1.0; // TODO CHARGING IS NO LONGER CONSIDERED HERE
 //				* 0.5; // charging

@@ -21,8 +21,8 @@ package se.vti.skellefteaV2X.electrifiedroundtrips.single;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
-import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -35,12 +35,12 @@ public class RoundTripChargingProposal implements MHProposal<ElectrifiedRoundTri
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripConfiguration<?> config;
+	private final Random rnd;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripChargingProposal(RoundTripConfiguration<?> config) {
-		this.config = config;
+	public RoundTripChargingProposal(Random rnd) {
+		this.rnd = rnd;
 	}
 
 	// -------------------- IMPLEMENTATION OF MHProposal --------------------
@@ -56,7 +56,7 @@ public class RoundTripChargingProposal implements MHProposal<ElectrifiedRoundTri
 
 		final double flipProba = 1.0 / (state.locationCnt() + 1.0);
 		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, state.locationCnt());
-		
+
 		List<Boolean> newChargings;
 		boolean flipped = false;
 		double proba;
@@ -64,7 +64,7 @@ public class RoundTripChargingProposal implements MHProposal<ElectrifiedRoundTri
 			newChargings = new ArrayList<>(state.locationCnt());
 			proba = 1.0;
 			for (int i = 0; i < state.locationCnt(); i++) {
-				if (this.config.getRandom().nextDouble() < flipProba) {
+				if (this.rnd.nextDouble() < flipProba) {
 					flipped = true;
 					newChargings.add(!state.getCharging(i));
 					proba *= flipProba;

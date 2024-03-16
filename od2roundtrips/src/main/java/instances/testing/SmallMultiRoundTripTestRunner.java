@@ -39,7 +39,6 @@ import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.roundtrips.preferences.UniformOverLocationCount;
 import se.vti.roundtrips.single.PossibleTransitions;
 import se.vti.roundtrips.single.RoundTrip;
-import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.roundtrips.single.RoundTripDepartureProposal;
 import se.vti.roundtrips.single.RoundTripLocationProposal;
 import se.vti.roundtrips.single.RoundTripProposal;
@@ -102,17 +101,13 @@ public class SmallMultiRoundTripTestRunner {
 
 		double locationProposalWeight = 0.5;
 		double departureProposalWeight = 0.5;
-		final RoundTripConfiguration<TAZ> configuration = new RoundTripConfiguration<>(scenario.getMaxParkingEpisodes(),
-				scenario.getBinCnt(), locationProposalWeight, departureProposalWeight, 0.0, 0.0);
-		// TODO configuration is still electrification-specific
-		configuration.addLocations(scenario.getLocationsView());
 
-		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(configuration, simulator);
+		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
 		proposal.addProposal(
-				new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(configuration,
-						(state, config, allLocs) -> new PossibleTransitions<>(state, config, allLocs)),
+				new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
+						(state, config, allLocs) -> new PossibleTransitions<TAZ>(state, scenario)),
 				locationProposalWeight);
-		proposal.addProposal(new RoundTripDepartureProposal<>(configuration), departureProposalWeight);
+		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
 		MultiRoundTripProposal<TAZ, RoundTrip<TAZ>> proposalMulti = new MultiRoundTripProposal<>(new Random(),
 				proposal);
 
@@ -122,17 +117,18 @@ public class SmallMultiRoundTripTestRunner {
 
 		MHAlgorithm<MultiRoundTrip<TAZ, RoundTrip<TAZ>>> algo = new MHAlgorithm<>(proposalMulti, preferencesMulti,
 				new Random());
-		
-		ODReproductionAnalyzerMultiple odAnalyzer = new ODReproductionAnalyzerMultiple(100 * 1000, 100, odPreference.getTargetOdMatrix());
+
+		ODReproductionAnalyzerMultiple odAnalyzer = new ODReproductionAnalyzerMultiple(100 * 1000, 100,
+				odPreference.getTargetOdMatrix());
 		algo.addStateProcessor(odAnalyzer);
 
 		final MultiRoundTrip<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTrip<>(roundTripCnt);
 		for (int i = 0; i < initialStateMulti.size(); i++) {
-		RoundTrip<TAZ> initialStateSingle = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
-		initialStateSingle.setEpisodes(simulator.simulate(initialStateSingle));
-		initialStateMulti.setRoundTrip(i, initialStateSingle);
+			RoundTrip<TAZ> initialStateSingle = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
+			initialStateSingle.setEpisodes(simulator.simulate(initialStateSingle));
+			initialStateMulti.setRoundTrip(i, initialStateSingle);
 		}
-		
+
 		algo.setInitialState(initialStateMulti);
 
 		algo.setMsgInterval(10 * 1000);
@@ -140,7 +136,7 @@ public class SmallMultiRoundTripTestRunner {
 		// Run MH algorithm
 
 		algo.run(1000 * 1000);
-		
+
 		System.out.println();
 		System.out.println(odAnalyzer);
 	}

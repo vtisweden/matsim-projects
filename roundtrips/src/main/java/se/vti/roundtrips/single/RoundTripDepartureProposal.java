@@ -21,6 +21,7 @@ package se.vti.roundtrips.single;
 
 import java.util.Random;
 
+import se.vti.roundtrips.model.Scenario;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -33,18 +34,18 @@ public class RoundTripDepartureProposal<R extends RoundTrip<L>, L> implements MH
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RoundTripConfiguration<L> config;
+	private final Scenario<?> scenario;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripDepartureProposal(RoundTripConfiguration<L> config) {
-		this.config = config;
+	public RoundTripDepartureProposal(Scenario<?> scenario) {
+		this.scenario = scenario;
 	}
 
 	// -------------------- HELPERS --------------------
 
-	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, RoundTripConfiguration<?> scenario) {
-		return drawUnusedDeparture(state, scenario.getRandom(), scenario.getTimeBinCnt());
+	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, Scenario<?> scenario) {
+		return drawUnusedDeparture(state, scenario.getRandom(), scenario.getBinCnt());
 	}
 
 	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, Random rnd, int timeBinCnt) {
@@ -67,11 +68,12 @@ public class RoundTripDepartureProposal<R extends RoundTrip<L>, L> implements MH
 	@Override
 	public MHTransition<R> newTransition(R state) {
 
-		final Integer newDeparture = drawUnusedDeparture(state, this.config);
+		final Integer newDeparture = drawUnusedDeparture(state, this.scenario);
 		final R newState = (R) state.clone(); // TODO
-		newState.setDepartureAndEnsureOrdering(this.config.getRandom().nextInt(state.locationCnt()), newDeparture);
+		newState.setDepartureAndEnsureOrdering(this.scenario.getRandom().nextInt(state.locationCnt()), newDeparture);
 
-		final double fwdLogProba = -Math.log(state.locationCnt()) - Math.log(this.config.getTimeBinCnt() - state.locationCnt());
+		final double fwdLogProba = -Math.log(state.locationCnt())
+				- Math.log(this.scenario.getBinCnt() - state.locationCnt());
 		final double bwdLogProba = fwdLogProba;
 
 		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);

@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import floetteroed.utilities.Tuple;
@@ -32,8 +33,13 @@ import floetteroed.utilities.Tuple;
  * @author GunnarF
  *
  */
-public abstract class Scenario<L extends Location> {
+public class Scenario<L extends Location> {
 
+	private final Random rnd = new Random();
+	public Random getRandom() {
+		return this.rnd;
+	}
+	
 	private final LocationFactory<L> locationFactory;
 
 	private int timeBinCnt = 24;

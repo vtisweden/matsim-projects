@@ -19,10 +19,8 @@
  */
 package se.vti.skellefteaV2X.electrifiedroundtrips.single;
 
-import java.util.List;
-
+import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.single.PossibleTransitions;
-import se.vti.roundtrips.single.RoundTripConfiguration;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 
 /**
@@ -33,8 +31,8 @@ import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 public class PossibleElectrifiedTransitions extends PossibleTransitions<ElectrifiedLocation> {
 
 	public PossibleElectrifiedTransitions(ElectrifiedRoundTrip state,
-			RoundTripConfiguration<ElectrifiedLocation> config, List<ElectrifiedLocation> allLocations) {
-		super(state, config, allLocations);
+			Scenario<ElectrifiedLocation> scenario) {
+		super(state, scenario);
 	}
 
 	public double concreteInsertProba(int index) {

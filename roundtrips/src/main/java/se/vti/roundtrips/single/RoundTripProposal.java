@@ -21,7 +21,9 @@ package se.vti.roundtrips.single;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
 
+import se.vti.roundtrips.model.Scenario;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -34,34 +36,25 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  */
 public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<R> {
 
-	private final RoundTripConfiguration<L> config;
-
 	private final Simulator<L, R> simulator;
+
+	private final Random rnd;
 
 	private final Map<MHProposal<R>, Double> proposal2weight = new LinkedHashMap<>();
 
-//	private final RoundTripLocationProposal<L> locationProposal;
-//	private final RoundTripDepartureProposal<L> timeBinProposal;
-//	private final RoundTripChargingProposal<L> chargingProposal;
-
-	public RoundTripProposal(RoundTripConfiguration<L> config, Simulator<L, R> simulator) {
-		this.config = config;
+	public RoundTripProposal(Simulator<L, R> simulator, Random rnd) {
 		this.simulator = simulator;
-//		this.addProposal(new RoundTripLocationProposal<>(config), config.getLocationProposalProbability());
-//		this.addProposal(new RoundTripDepartureProposal<>(config), config.getDepartureProposalProbability());
-//		this.locationProposal = new RoundTripLocationProposal<>(config);
-//		this.timeBinProposal = new RoundTripDepartureProposal<>(config);
-//		this.chargingProposal = new RoundTripChargingProposal<>(config);
+		this.rnd = rnd;
 	}
 
 	public void addProposal(MHProposal<R> proposal, double weight) {
 		this.proposal2weight.put(proposal, weight);
 	}
 
-	public Simulator<L,R> getSimulator() {
+	public Simulator<L, R> getSimulator() {
 		return this.simulator;
 	}
-	
+
 	// IMPLEMENTATION OF INTERFACE
 
 	@Override
@@ -72,7 +65,7 @@ public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<
 	@Override
 	public MHTransition<R> newTransition(R state) {
 
-		final double randomNumber = this.config.getRandom().nextDouble();
+		final double randomNumber = this.rnd.nextDouble();
 		final double allWeightSum = this.proposal2weight.values().stream().mapToDouble(w -> w).sum();
 		double weightSum = 0.0;
 
@@ -93,37 +86,5 @@ public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<
 
 		// should not happen
 		return null;
-
-//		if (randomNumber < this.config.getLocationProposalProbability()) {
-//
-//			MHTransition<RoundTrip<L>> transition = this.locationProposal.newTransition(state);
-//			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-//					Math.log(this.config.getLocationProposalProbability()) + transition.getFwdLogProb(),
-//					Math.log(this.config.getLocationProposalProbability()) + transition.getBwdLogProb());
-//			return transition;
-//
-//		} else if (randomNumber < this.config.getLocationProposalProbability()
-//				+ this.config.getDepartureProposalProbability()) {
-//
-//			MHTransition<RoundTrip<L>> transition = this.timeBinProposal.newTransition(state);
-//			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-//					Math.log(this.config.getDepartureProposalProbability()) + transition.getFwdLogProb(),
-//					Math.log(this.config.getDepartureProposalProbability()) + transition.getBwdLogProb());
-//			return transition;
-//
-//		} else if (randomNumber < this.config.getLocationProposalProbability()
-//				+ this.config.getDepartureProposalProbability() + this.config.getChargingProposalProbability()) {
-//
-//			MHTransition<RoundTrip<L>> transition = this.chargingProposal.newTransition(state);
-//			transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),
-//					Math.log(this.config.getChargingProposalProbability()) + transition.getFwdLogProb(),
-//					Math.log(this.config.getChargingProposalProbability()) + transition.getBwdLogProb());
-//			return transition;
-//
-//		} else { // do nothing
-//
-//			return new MHTransition<>(state, state.clone(), Math.log(this.config.getDoNothingProbability()),
-//					Math.log(this.config.getDoNothingProbability()));
-//		}
 	}
 }
