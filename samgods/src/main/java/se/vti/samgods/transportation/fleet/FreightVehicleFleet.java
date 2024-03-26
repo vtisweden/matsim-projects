@@ -51,9 +51,9 @@ public class FreightVehicleFleet {
 
 		public final SamgodsConstants.TransportMode mode;
 
-		public final double fixedCost_1_km;
+		public final double cost_1_km;
 
-		public final double fixedCost_1_h;
+		public final double cost_1_h;
 
 		public final double capacity_ton;
 
@@ -63,50 +63,37 @@ public class FreightVehicleFleet {
 
 		public final double maxSpeed_km_h;
 
-		public final Map<SamgodsConstants.Commodity, Double> loadCostNoContainer_1_ton;
+		public final boolean container;
 
-		public final Map<SamgodsConstants.Commodity, Double> loadTimeNoContainer_h;
+		public final Map<SamgodsConstants.Commodity, Double> loadCost_1_ton;
 
-		public final Map<SamgodsConstants.Commodity, Double> transferCostNoContainer_1_ton;
+		public final Map<SamgodsConstants.Commodity, Double> loadTime_h;
 
-		public final Map<SamgodsConstants.Commodity, Double> transferTimeNoContainer_h;
+		public final Map<SamgodsConstants.Commodity, Double> transferCost_1_ton;
 
-		public final Map<SamgodsConstants.Commodity, Double> loadCostContainer_1_ton;
-
-		public final Map<SamgodsConstants.Commodity, Double> loadTimeContainer_h;
-
-		public final Map<SamgodsConstants.Commodity, Double> transferCostContainer_1_ton;
-
-		public final Map<SamgodsConstants.Commodity, Double> transferTimeContainer_h;
+		public final Map<SamgodsConstants.Commodity, Double> transferTime_h;
 
 		private /* use builder */ TypeAttributes(Id<VehicleType> id, String description,
-				SamgodsConstants.TransportMode mode, double fixedCost_1_km, double fixedCost_1_h, double capacity_ton,
-				double onFerryCost_1_km, double onFerryCost_1_h, double maxSpeed_km_h,
-				Map<SamgodsConstants.Commodity, Double> loadCostNoContainer_1_ton,
-				Map<SamgodsConstants.Commodity, Double> loadTimeNoContainer_h,
-				Map<SamgodsConstants.Commodity, Double> transferCostNoContainer_1_ton,
-				Map<SamgodsConstants.Commodity, Double> transferTimeNoContainer_h,
-				Map<SamgodsConstants.Commodity, Double> loadCostContainer_1_ton,
-				Map<SamgodsConstants.Commodity, Double> loadTimeContainer_h,
-				Map<SamgodsConstants.Commodity, Double> transferCostContainer_1_ton,
-				Map<SamgodsConstants.Commodity, Double> transferTimeContainer_h) {
+				SamgodsConstants.TransportMode mode, double cost_1_km, double cost_1_h, double capacity_ton,
+				double onFerryCost_1_km, double onFerryCost_1_h, double maxSpeed_km_h, boolean container,
+				Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
+				Map<SamgodsConstants.Commodity, Double> loadTime_h,
+				Map<SamgodsConstants.Commodity, Double> transferCost_1_ton,
+				Map<SamgodsConstants.Commodity, Double> transferTime_h) {
 			this.id = id;
 			this.description = description;
 			this.mode = mode;
-			this.fixedCost_1_km = fixedCost_1_km;
-			this.fixedCost_1_h = fixedCost_1_h;
+			this.cost_1_km = cost_1_km;
+			this.cost_1_h = cost_1_h;
 			this.capacity_ton = capacity_ton;
 			this.onFerryCost_1_km = onFerryCost_1_km;
 			this.onFerryCost_1_h = onFerryCost_1_h;
 			this.maxSpeed_km_h = maxSpeed_km_h;
-			this.loadCostNoContainer_1_ton = loadCostNoContainer_1_ton;
-			this.loadTimeNoContainer_h = loadTimeNoContainer_h;
-			this.transferCostNoContainer_1_ton = transferCostNoContainer_1_ton;
-			this.transferTimeNoContainer_h = transferTimeNoContainer_h;
-			this.loadCostContainer_1_ton = loadCostContainer_1_ton;
-			this.loadTimeContainer_h = loadTimeContainer_h;
-			this.transferCostContainer_1_ton = transferCostContainer_1_ton;
-			this.transferTimeContainer_h = transferTimeContainer_h;
+			this.container = container;
+			this.loadCost_1_ton = loadCost_1_ton;
+			this.loadTime_h = loadTime_h;
+			this.transferCost_1_ton = transferCost_1_ton;
+			this.transferTime_h = transferTime_h;
 		}
 	}
 
@@ -120,9 +107,9 @@ public class FreightVehicleFleet {
 
 		private SamgodsConstants.TransportMode mode = null;
 
-		private Double fixedCost_1_km = null;
+		private Double cost_1_km = null;
 
-		private Double fixedCost_1_h = null;
+		private Double cost_1_h = null;
 
 		private Double capacity_ton = null;
 
@@ -132,21 +119,15 @@ public class FreightVehicleFleet {
 
 		private Double maxSpeed_km_h = null;
 
-		private Map<SamgodsConstants.Commodity, Double> loadCostNoContainer_1_ton = new LinkedHashMap<>(16);
+		private Boolean container = null;
 
-		private Map<SamgodsConstants.Commodity, Double> loadTimeNoContainer_h = new LinkedHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> loadCost_1_ton = new LinkedHashMap<>(16);
 
-		private Map<SamgodsConstants.Commodity, Double> transferCostNoContainer_1_ton = new LinkedHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> loadTime_h = new LinkedHashMap<>(16);
 
-		private Map<SamgodsConstants.Commodity, Double> transferTimeNoContainer_h = new LinkedHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> transferCost_1_ton = new LinkedHashMap<>(16);
 
-		private Map<SamgodsConstants.Commodity, Double> loadCostContainer_1_ton = new LinkedHashMap<>(16);
-
-		private Map<SamgodsConstants.Commodity, Double> loadTimeContainer_h = new LinkedHashMap<>(16);
-
-		private Map<SamgodsConstants.Commodity, Double> transferCostContainer_1_ton = new LinkedHashMap<>(16);
-
-		private Map<SamgodsConstants.Commodity, Double> transferTimeContainer_h = new LinkedHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> transferTime_h = new LinkedHashMap<>(16);
 
 		public TypeBuilder() {
 		}
@@ -156,11 +137,9 @@ public class FreightVehicleFleet {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
 			type.setMaximumVelocity(Units.M_S_PER_KM_H * this.maxSpeed_km_h);
 
-			TypeAttributes attributes = new TypeAttributes(this.id, this.description, this.mode, this.fixedCost_1_km,
-					this.fixedCost_1_h, this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h,
-					this.maxSpeed_km_h, this.loadCostNoContainer_1_ton, this.loadTimeNoContainer_h,
-					this.transferCostNoContainer_1_ton, this.transferTimeNoContainer_h, this.loadCostContainer_1_ton,
-					this.loadTimeContainer_h, this.transferCostContainer_1_ton, this.transferTimeContainer_h);
+			TypeAttributes attributes = new TypeAttributes(this.id, this.description, this.mode, this.cost_1_km,
+					this.cost_1_h, this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.maxSpeed_km_h,
+					this.container, this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 			type.getAttributes().putAttribute(TypeAttributes.ATTRIBUTE_NAME, attributes);
 
 			vehicles.addVehicleType(type);
@@ -183,13 +162,13 @@ public class FreightVehicleFleet {
 			return this;
 		}
 
-		public TypeBuilder setFixedCost_1_km(double fixedCost_1_km) {
-			this.fixedCost_1_km = fixedCost_1_km;
+		public TypeBuilder setCost_1_km(double fixedCost_1_km) {
+			this.cost_1_km = fixedCost_1_km;
 			return this;
 		}
 
-		public TypeBuilder setFixedCost_1_h(double fixedCost_1_h) {
-			this.fixedCost_1_h = fixedCost_1_h;
+		public TypeBuilder setCost_1_h(double fixedCost_1_h) {
+			this.cost_1_h = fixedCost_1_h;
 			return this;
 		}
 
@@ -213,53 +192,30 @@ public class FreightVehicleFleet {
 			return this;
 		}
 
-		public TypeBuilder setLoadCostNoContainer_1_Ton(SamgodsConstants.Commodity commodity,
-				Double loadCostNoContainer_1_Ton) {
-			this.loadCostNoContainer_1_ton.put(commodity, loadCostNoContainer_1_Ton);
+		public TypeBuilder setContainer(boolean container) {
+			this.container = container;
 			return this;
 		}
 
-		public TypeBuilder setLoadTimeNoContainer_h(SamgodsConstants.Commodity commodity,
-				Double loadTimeNoContainer_h) {
-			this.loadTimeNoContainer_h.put(commodity, loadTimeNoContainer_h);
+		public TypeBuilder setLoadCost_1_ton(SamgodsConstants.Commodity commodity, Double loadCost_1_Ton) {
+			this.loadCost_1_ton.put(commodity, loadCost_1_Ton);
 			return this;
 		}
 
-		public TypeBuilder setTransferCostNoContainer_1_ton(SamgodsConstants.Commodity commodity,
-				Double transferCostNoContainer_1_ton) {
-			this.transferCostNoContainer_1_ton.put(commodity, transferCostNoContainer_1_ton);
+		public TypeBuilder setLoadTime_h(SamgodsConstants.Commodity commodity, Double loadTime_h) {
+			this.loadTime_h.put(commodity, loadTime_h);
 			return this;
 		}
 
-		public TypeBuilder setTransferTimeNoContainer_h(SamgodsConstants.Commodity commodity,
-				Double transferTimeNoContainer_h) {
-			this.transferTimeNoContainer_h.put(commodity, transferTimeNoContainer_h);
+		public TypeBuilder setTransferCost_1_ton(SamgodsConstants.Commodity commodity, Double transferCost_1_ton) {
+			this.transferCost_1_ton.put(commodity, transferCost_1_ton);
 			return this;
 		}
 
-		public TypeBuilder setLoadCostContainer_1_Ton(SamgodsConstants.Commodity commodity,
-				Double loadCostContainer_1_Ton) {
-			this.loadCostContainer_1_ton.put(commodity, loadCostContainer_1_Ton);
+		public TypeBuilder setTransferTime_h(SamgodsConstants.Commodity commodity, Double transferTime_h) {
+			this.transferTime_h.put(commodity, transferTime_h);
 			return this;
 		}
-
-		public TypeBuilder setLoadTimeContainer_h(SamgodsConstants.Commodity commodity, Double loadTimeContainer_h) {
-			this.loadTimeContainer_h.put(commodity, loadTimeContainer_h);
-			return this;
-		}
-
-		public TypeBuilder setTransferCostContainer_1_ton(SamgodsConstants.Commodity commodity,
-				Double transferCostContainer_1_ton) {
-			this.transferCostContainer_1_ton.put(commodity, transferCostContainer_1_ton);
-			return this;
-		}
-
-		public TypeBuilder setTransferTimeContainer_h(SamgodsConstants.Commodity commodity,
-				Double transferTimeContainer_h) {
-			this.transferTimeContainer_h.put(commodity, transferTimeContainer_h);
-			return this;
-		}
-
 	}
 
 	// -------------------- MEMBERS --------------------

@@ -21,11 +21,16 @@ package se.vti.samgods.consolidation.road;
 
 import java.util.Random;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
@@ -58,12 +63,12 @@ public class RoadConsolidationExample {
 				if (feasible) {
 					final double usageFraction = assignedWeight_ton / (assignedWeight_ton + availableCapacity_ton);
 					if (largeTruck.getId().equals(vehicle.getType().getId())) {
-						return new Cost(true, assignedWeight_ton, usageFraction * 4.0);
+						return new Cost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
 					} else {
-						return new Cost(true, assignedWeight_ton, usageFraction * 4.0);
+						return new Cost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
 					}
 				} else {
-					return new Cost(false, 0.0, 0.0);
+					return new Cost(false, 0.0, 0.0, 0.0);
 				}
 			}
 		};
@@ -72,7 +77,12 @@ public class RoadConsolidationExample {
 
 		final int days = 7;
 
-		Consolidator consolidator = new Consolidator(new Random(), fleet, days, costModel, choiceModel);
+		TransportLeg leg = new TransportLeg(new OD(Id.createNodeId("from"), Id.createNodeId("to")), TransportMode.Road,
+				'?');
+		TransportChain transportChain = new TransportChain();
+		transportChain.addLeg(leg);
+
+		Consolidator consolidator = new Consolidator(new Random(), transportChain, fleet, days, costModel, choiceModel);
 
 		for (int day = 0; day < days; day++) {
 			for (int i = 1; i <= 6; i++) {

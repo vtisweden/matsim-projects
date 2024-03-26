@@ -26,8 +26,6 @@ import java.util.List;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.SamgodsConstants.TransportMode;
-
 /**
  * 
  * @author GunnarF
@@ -49,7 +47,19 @@ public class TransportChain {
 		this.legs.add(leg);
 	}
 
-	public List<TransportLeg> getLegs() {
+	public List<Id<Node>> createInternalNodeIds() {
+		List<Id<Node>> result = new ArrayList<>(this.legs.size() - 1);
+		for (int i = 0; i < this.legs.size() - 2; i++) {
+			result.add(this.legs.get(i).getDestination());
+		}
+		return result;
+	}
+
+	public int getInternalNodeCnt() {
+		return this.legs.size() - 1;
+	}
+
+	public LinkedList<TransportLeg> getLegs() {
 		return this.legs;
 	}
 
@@ -61,13 +71,13 @@ public class TransportChain {
 		return this.legs.get(this.legs.size() - 1).getDestination();
 	}
 
-	public List<TransportMode> getModeSequence() {
-		final List<TransportMode> result = new ArrayList<>(this.legs.size());
-		for (TransportLeg leg : this.legs) {
-			result.add(leg.getMode());
-		}		
-		return result;
-	}
+//	public List<TransportMode> getModeSequence() {
+//		final List<TransportMode> result = new ArrayList<>(this.legs.size());
+//		for (TransportLeg leg : this.legs) {
+//			result.add(leg.getMode());
+//		}
+//		return result;
+//	}
 
 	// FIXME Simplifies away transshipments within the same mode.
 //	public void mergeLegs() {

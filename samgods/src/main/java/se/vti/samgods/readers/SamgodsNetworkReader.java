@@ -36,6 +36,7 @@ import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHea
 import floetteroed.utilities.tabularfileparser.TabularFileHandler;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.transportation.TransportSupply;
 
 /**
  *
@@ -115,18 +116,18 @@ public class SamgodsNetworkReader {
 					final Double length_m = Units.M_PER_KM * this.getDoubleValue(LINK_LENGTH_KM);
 					final Double maxSpeed_km_h = this.getDoubleValue(LINK_MAXSPEED_KM_H); // may be null
 
-					final String matsimMode;
-					final Double maxSpeed_m_s;
-					final Double capacity_veh_h;
-					final Integer lanes;
+					final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode.valueOf(mode);
+					final String matsimMode = TransportSupply.samgodsMode2matsimMode.get(samgodsMode);
+					
+					Double maxSpeed_m_s = null;
+					Double capacity_veh_h = null;
+					Integer lanes = null;
 					if (SamgodsConstants.TransportMode.Road.toString().equals(mode)) {
-						matsimMode = TransportMode.car;
 						maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						capacity_veh_h = Units.VEH_H_PER_VEH_S * rhoMax_veh_m * maxSpeed_m_s * bwdWaveSpeed_m_s
 								/ (maxSpeed_m_s + bwdWaveSpeed_m_s);
 						lanes = 2;
 					} else if (SamgodsConstants.TransportMode.Rail.toString().equals(mode)) {
-						matsimMode = TransportMode.train;
 						maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						final Double capFromFile = this.getDoubleValue(LINK_CAPACITY_TRAINS_DAY);
 						if (capFromFile != null) {
@@ -136,8 +137,16 @@ public class SamgodsNetworkReader {
 							capacity_veh_h = 60.0;
 						}
 						lanes = 1;
-					} else if (SamgodsConstants.TransportMode.Sea.toString().equals(mode) || "Ferry".equals(mode)) {
-						matsimMode = TransportMode.ship;
+					} else if (SamgodsConstants.TransportMode.Ferry.toString().equals(mode)) {
+						if (maxSpeed_km_h != null) {
+							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
+						} else {
+							log.warn("Ferry link without max speed value, setting to 30 km/h.");
+							maxSpeed_m_s = Units.M_S_PER_KM_H * 30.0;
+						}
+						capacity_veh_h = 60.0;
+						lanes = 1;
+					} else if (SamgodsConstants.TransportMode.Sea.toString().equals(mode)) {
 						if (maxSpeed_km_h != null) {
 							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						} else {
@@ -147,7 +156,6 @@ public class SamgodsNetworkReader {
 						capacity_veh_h = 60.0;
 						lanes = 1;
 					} else if (SamgodsConstants.TransportMode.Air.toString().equals(mode)) {
-						matsimMode = TransportMode.airplane;
 						if (maxSpeed_km_h != null) {
 							maxSpeed_m_s = Units.M_S_PER_KM_H * maxSpeed_km_h;
 						} else {
@@ -156,12 +164,7 @@ public class SamgodsNetworkReader {
 						}
 						capacity_veh_h = 60.0;
 						lanes = 1;
-					} else {
-						matsimMode = null;
-						maxSpeed_m_s = null;
-						capacity_veh_h = null;
-						lanes = null;
-					}
+					} 
 
 					if (matsimMode != null) {
 						final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,

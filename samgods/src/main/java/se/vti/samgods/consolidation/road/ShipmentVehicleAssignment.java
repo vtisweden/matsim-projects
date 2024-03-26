@@ -27,6 +27,7 @@ import java.util.Map;
 import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Tuple;
+import se.vti.samgods.logistics.TransportChain;
 
 /**
  * 
@@ -37,6 +38,8 @@ public class ShipmentVehicleAssignment {
 
 	// -------------------- MEMBERS --------------------
 
+	private final TransportChain transportChain;
+
 	private final Map<Shipment, LinkedList<Vehicle>> shipment2vehicles = new LinkedHashMap<>();
 	private final Map<Vehicle, LinkedList<Shipment>> vehicle2shipments = new LinkedHashMap<>();
 	private final Map<Tuple<Shipment, Vehicle>, Double> shipmentAndVehicle2tons = new LinkedHashMap<>();
@@ -44,10 +47,15 @@ public class ShipmentVehicleAssignment {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ShipmentVehicleAssignment() {
+	public ShipmentVehicleAssignment(TransportChain transportChain) {
+		this.transportChain = transportChain;
 	}
 
 	// -------------------- GETTERS --------------------
+
+	public TransportChain getTransportChain() {
+		return this.transportChain;
+	}
 
 	public Map<Shipment, LinkedList<Vehicle>> getShipment2vehicles() {
 		return shipment2vehicles;
@@ -116,5 +124,5 @@ public class ShipmentVehicleAssignment {
 
 	public double getPayload_ton(Vehicle vehicle) {
 		return this.vehicle2payload_ton.getOrDefault(vehicle, 0.0);
-	}
+	}	
 }

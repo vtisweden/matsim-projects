@@ -45,6 +45,8 @@ public class TransportSupply {
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Rail, org.matsim.api.core.v01.TransportMode.train);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Sea, org.matsim.api.core.v01.TransportMode.ship);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Air, org.matsim.api.core.v01.TransportMode.airplane);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Ferry, "ferry" /* non-default matsim mode! */);
+		assert(samgodsMode2matsimMode.size() == SamgodsConstants.TransportMode.values().length);
 	}
 
 	// -------------------- MEMBERS --------------------

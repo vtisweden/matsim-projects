@@ -19,6 +19,11 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public interface ShipmentCost {
 
 	public double getMonetaryCost();

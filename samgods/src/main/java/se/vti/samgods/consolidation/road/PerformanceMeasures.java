@@ -1,7 +1,7 @@
 /**
- * se.vti.samgods
+ * se.vti.samgods.consolidation.road
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -19,32 +19,17 @@
  */
 package se.vti.samgods.consolidation.road;
 
-import org.matsim.vehicles.Vehicle;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.SamgodsConstants;
+public class PerformanceMeasures {
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface ConsolidationCostModel {
-
-	class Cost {
-		public final boolean feasible;
-		public final double amount_ton;
-		public final double cost;
-		public final double duration_h;
-
-		public Cost(boolean feasible, double amount_ton, double cost, double duration_h) {
-			this.feasible = feasible;
-			this.amount_ton = amount_ton;
-			this.cost = cost;
-			this.duration_h = duration_h;
-		}
+	public int getTotalArrivalDelay_h(Id<Node> nodeId) {
+		throw new UnsupportedOperationException();
 	}
 
-	Cost getCost(Vehicle vehicle, SamgodsConstants.Commodity addedCommodity, double maxAddedAmount_ton,
-			ShipmentVehicleAssignment assignment);
+	public int getTotalDepartureDelay_h(Id<Node> nodeId) {
+		throw new UnsupportedOperationException();
+	}
 
 }
