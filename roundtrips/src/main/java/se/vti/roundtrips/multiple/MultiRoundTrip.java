@@ -32,7 +32,7 @@ import se.vti.roundtrips.single.RoundTrip;
  *
  * @param <L>
  */
-public class MultiRoundTrip<L, R extends RoundTrip<L>> implements Iterable<R> {
+public class MultiRoundTrip<R extends RoundTrip<?>> implements Iterable<R> {
 
 	private final List<R> roundTrips;
 
@@ -60,8 +60,8 @@ public class MultiRoundTrip<L, R extends RoundTrip<L>> implements Iterable<R> {
 	}
 
 	@Override
-	public MultiRoundTrip<L, R> clone() {
-		MultiRoundTrip<L, R> result = new MultiRoundTrip<L, R>(this.size());
+	public MultiRoundTrip<R> clone() {
+		MultiRoundTrip<R> result = new MultiRoundTrip<R>(this.size());
 		for (int i = 0; i < this.size(); i++) {
 			result.setRoundTrip(i, (R) this.getRoundTrip(i).clone());
 		}

@@ -19,14 +19,11 @@
  */
 package od2roundtrips.model;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.commons.math3.util.CombinatoricsUtils;
-
 import floetteroed.utilities.Tuple;
-import se.vti.roundtrips.preferences.Preferences;
+import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -34,84 +31,47 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class ODPreference extends Preferences.Component<RoundTrip<TAZ>, TAZ> {
+public class ODPreference extends PreferenceComponent<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
 
-	private boolean odIsNormalized = false;
-	private final Map<Tuple<TAZ, TAZ>, Double> targetOdMatrix = new LinkedHashMap<>();
+	private final Map<Tuple<TAZ, TAZ>, Double> targetODMatrix = new LinkedHashMap<>();
+	private Double targetOdSum = null;
 
 	public ODPreference() {
 	}
 
 	public void setODEntry(TAZ origin, TAZ destination, double value) {
-		this.odIsNormalized = false;
-		this.targetOdMatrix.put(new Tuple<>(origin, destination), value);
+		if (origin.equals(destination)) {
+			return; // Attention, ignoring main diagonals!
+		}
+		this.targetODMatrix.put(new Tuple<>(origin, destination), value);
 	}
 
 	public Map<Tuple<TAZ, TAZ>, Double> getTargetOdMatrix() {
-		return this.targetOdMatrix;
+		return this.targetODMatrix;
 	}
 
-	public void assertNormalized() {
-		if (!this.odIsNormalized) {
-			final double odSum = this.targetOdMatrix.values().stream().mapToDouble(v -> v).sum();
-			for (Map.Entry<Tuple<TAZ, TAZ>, Double> entry : this.targetOdMatrix.entrySet()) {
-				entry.setValue(entry.getValue() / odSum);
-			}
-			this.odIsNormalized = true;
+	public double getNonNullTargetOdSum() {
+		if (this.targetOdSum == null) {
+			this.targetOdSum = this.targetODMatrix.values().stream().mapToDouble(v -> v).sum();
 		}
-	}
-
-	public Map<Tuple<TAZ, TAZ>, Integer> createRealizedMatrix(Iterable<RoundTrip<TAZ>> roundTrips) {
-		final Map<Tuple<TAZ, TAZ>, Integer> result = new LinkedHashMap<>();
-		for (RoundTrip<TAZ> roundTrip : roundTrips) {
-			for (int i = 0; i < roundTrip.locationCnt(); i++) {
-				final Tuple<TAZ, TAZ> od = new Tuple<>(roundTrip.getLocation(i), roundTrip.getSuccessorLocation(i));
-				result.compute(od, (k, v) -> v == null ? 1 : v + 1);
-			}
-		}
-		return result;
-	}
-
-	public double computePoissionLogWeight(Map<Tuple<TAZ, TAZ>, Integer> realizedOdMatrix, int realizedLocationCnt) {
-		double logWeight = 0.0;
-		for (Map.Entry<Tuple<TAZ, TAZ>, Integer> realizedEntry : realizedOdMatrix.entrySet()) {
-			final double lambda = Math.max(1e-8,
-					this.targetOdMatrix.getOrDefault(realizedEntry.getKey(), 0.0) * realizedLocationCnt);
-			final int k = realizedEntry.getValue();
-			logWeight += k * Math.log(lambda) - lambda - CombinatoricsUtils.factorialLog(k);
-		}
-		return logWeight;
+		return this.targetOdSum;
 	}
 
 	@Override
-	public double logWeight(RoundTrip<TAZ> roundTrip) {
+	public double logWeight(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
 
-		this.assertNormalized();
-//		if (!this.odIsNormalized) {
-//			final double odSum = this.targetOdMatrix.values().stream().mapToDouble(v -> v).sum();
-//			for (Map.Entry<Tuple<TAZ, TAZ>, Double> entry : this.targetOdMatrix.entrySet()) {
-//				entry.setValue(entry.getValue() / odSum);
-//			}
-//			this.odIsNormalized = true;
-//		}
+		final Map<Tuple<TAZ, TAZ>, Integer> realizedOdMatrix = multiRoundTrip.getODView();
+		final double realizedTripCnt = multiRoundTrip.getSingleTripCnt();
+		final double targetTripCnt = this.getNonNullTargetOdSum();
 
-		final Map<Tuple<TAZ, TAZ>, Integer> realizedOdMatrix = this
-				.createRealizedMatrix(Collections.singletonList(roundTrip));
-//				new LinkedHashMap<>();
-//		for (int i = 0; i < roundTrip.locationCnt(); i++) {
-//			final Tuple<TAZ, TAZ> od = new Tuple<>(roundTrip.getLocation(i), roundTrip.getSuccessorLocation(i));
-//			realizedOdMatrix.compute(od, (k, v) -> v == null ? 1 : v + 1);
-//		}
+		double slack = 0.5 / targetTripCnt;
+		double err = 0.0;
+		for (Map.Entry<Tuple<TAZ, TAZ>, Double> target : this.targetODMatrix.entrySet()) {
+			err += Math.max(0.0, Math.abs(realizedOdMatrix.getOrDefault(target.getKey(), 0) / realizedTripCnt
+					- target.getValue() / targetTripCnt) - slack);
+		}
+		multiRoundTrip.setODReproductionError(err);
 
-		return this.computePoissionLogWeight(realizedOdMatrix, roundTrip.locationCnt());
-//		double logWeight = 0.0;
-//		for (Map.Entry<Tuple<TAZ, TAZ>, Integer> realizedEntry : realizedOdMatrix.entrySet()) {
-//			final double lambda = Math.max(1e-8,
-//					this.targetOdMatrix.getOrDefault(realizedEntry.getKey(), 0.0) * roundTrip.locationCnt());
-//			final int k = realizedEntry.getValue();
-//			logWeight += k * Math.log(lambda) - lambda - CombinatoricsUtils.factorialLog(k);
-//		}
-//		return logWeight;
+		return (-1.0) * multiRoundTrip.size() * (err + slack * this.targetODMatrix.size());
 	}
-
 }

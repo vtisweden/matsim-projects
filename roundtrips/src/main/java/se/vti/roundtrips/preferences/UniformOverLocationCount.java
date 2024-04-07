@@ -30,7 +30,7 @@ import se.vti.roundtrips.single.RoundTripIgnoreLocationCombinations;
  * @author GunnarF
  *
  */
-public class UniformOverLocationCount<R extends RoundTrip<L>, L extends Location> extends Preferences.Component<R, L> {
+public class UniformOverLocationCount<R extends RoundTrip<L>, L extends Location> extends PreferenceComponent<R> {
 
 	private final RoundTripIgnoreDepartureCombinations correctDepartureCombinations;
 	private final RoundTripIgnoreLocationCombinations correctLocationCombinations;

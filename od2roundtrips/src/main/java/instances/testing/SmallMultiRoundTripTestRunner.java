@@ -22,16 +22,16 @@ package instances.testing;
 import java.util.Arrays;
 import java.util.Random;
 
+import od2roundtrips.model.MultiRoundTripWithOD;
 import od2roundtrips.model.OD2RoundtripsScenario;
 import od2roundtrips.model.ODPreference;
 import od2roundtrips.model.ODReproductionAnalyzerMultiple;
+import od2roundtrips.model.SingleToMultiComponent;
 import od2roundtrips.model.TAZ;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
 import se.vti.roundtrips.model.Simulator;
 import se.vti.roundtrips.model.VehicleState;
-import se.vti.roundtrips.multiple.MultiRoundTrip;
-import se.vti.roundtrips.multiple.MultiRoundTripPreferences;
 import se.vti.roundtrips.multiple.MultiRoundTripProposal;
 import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
 import se.vti.roundtrips.preferences.Preferences;
@@ -71,16 +71,16 @@ public class SmallMultiRoundTripTestRunner {
 		scenario.setMaxParkingEpisodes(4);
 		scenario.setTimeBinCnt(24);
 
+		final Preferences<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> allPreferences = new Preferences<>();
+
 		// Consistency preferences
 
-		final Preferences<RoundTrip<TAZ>, TAZ> consistencyPreferences = new Preferences<>();
-		consistencyPreferences.addComponent(new UniformOverLocationCount<>(scenario));
-		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference<>());
-		consistencyPreferences.addComponent(new StrategyRealizationConsistency<>(scenario));
+		allPreferences.addComponent(new SingleToMultiComponent(new UniformOverLocationCount<>(scenario)));
+		allPreferences.addComponent(new SingleToMultiComponent(new AllDayTimeConstraintPreference<>()));
+		allPreferences.addComponent(new SingleToMultiComponent(new StrategyRealizationConsistency<>(scenario)));
 
 		// Modeling preferences
 
-		final Preferences<RoundTrip<TAZ>, TAZ> modelingPreferences = new Preferences<>();
 		ODPreference odPreference = new ODPreference();
 		odPreference.setODEntry(a, b, 1.0);
 		odPreference.setODEntry(b, a, 2.0);
@@ -88,7 +88,7 @@ public class SmallMultiRoundTripTestRunner {
 		odPreference.setODEntry(c, a, 4.0);
 		odPreference.setODEntry(b, c, 5.0);
 		odPreference.setODEntry(c, b, 6.0);
-		modelingPreferences.addComponent(odPreference);
+		allPreferences.addComponent(odPreference, 100);
 
 		// Default physical simulator
 
@@ -102,25 +102,21 @@ public class SmallMultiRoundTripTestRunner {
 		double locationProposalWeight = 0.5;
 		double departureProposalWeight = 0.5;
 
-		RoundTripProposal<TAZ, RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
+		RoundTripProposal<RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
 		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
 				(state, scen) -> new PossibleTransitions<TAZ>(state, scen)), locationProposalWeight);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
-		MultiRoundTripProposal<TAZ, RoundTrip<TAZ>> proposalMulti = new MultiRoundTripProposal<>(scenario.getRandom(),
-				proposal);
+		MultiRoundTripProposal<RoundTrip<TAZ>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> proposalMulti = new MultiRoundTripProposal<>(
+				scenario.getRandom(), proposal);
 
-		final MultiRoundTripPreferences<RoundTrip<TAZ>, TAZ> preferencesMulti = new MultiRoundTripPreferences<>();
-		preferencesMulti.addPreferences(consistencyPreferences);
-		preferencesMulti.addPreferences(modelingPreferences);
-
-		MHAlgorithm<MultiRoundTrip<TAZ, RoundTrip<TAZ>>> algo = new MHAlgorithm<>(proposalMulti, preferencesMulti,
+		MHAlgorithm<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> algo = new MHAlgorithm<>(proposalMulti, allPreferences,
 				new Random());
 
 		ODReproductionAnalyzerMultiple odAnalyzer = new ODReproductionAnalyzerMultiple(100 * 1000, 100,
 				odPreference.getTargetOdMatrix());
 		algo.addStateProcessor(odAnalyzer);
 
-		final MultiRoundTrip<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTrip<>(roundTripCnt);
+		final MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTripWithOD<>(roundTripCnt);
 		for (int i = 0; i < initialStateMulti.size(); i++) {
 			RoundTrip<TAZ> initialStateSingle = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
 			initialStateSingle.setEpisodes(simulator.simulate(initialStateSingle));

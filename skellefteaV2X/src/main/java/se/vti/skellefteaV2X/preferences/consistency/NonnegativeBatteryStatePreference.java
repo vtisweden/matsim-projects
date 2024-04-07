@@ -22,9 +22,8 @@ package se.vti.skellefteaV2X.preferences.consistency;
 import java.util.List;
 
 import se.vti.roundtrips.model.Episode;
-import se.vti.roundtrips.preferences.Preferences;
+import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
-import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
 import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
 
@@ -33,8 +32,7 @@ import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
  * @author GunnarF
  *
  */
-public class NonnegativeBatteryStatePreference
-		extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
+public class NonnegativeBatteryStatePreference extends PreferenceComponent<ElectrifiedRoundTrip> {
 
 	private final ElectrifiedScenario scenario;
 

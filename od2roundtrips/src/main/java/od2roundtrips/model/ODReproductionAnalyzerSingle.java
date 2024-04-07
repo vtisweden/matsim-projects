@@ -49,14 +49,17 @@ public class ODReproductionAnalyzerSingle extends RoundTripAnalyzer<RoundTrip<TA
 	@Override
 	public void processRelevantRoundTrip(RoundTrip<TAZ> roundTrip, double sampleWeight) {
 		for (int i = 0; i < roundTrip.locationCnt(); i++) {
-			this.sampleOdMatrix.compute(new Tuple<>(roundTrip.getLocation(i), roundTrip.getSuccessorLocation(i)),
-					(od, c) -> c == null ? sampleWeight : c + sampleWeight);
+			Tuple<TAZ, TAZ> od = new Tuple<>(roundTrip.getLocation(i), roundTrip.getSuccessorLocation(i));
+			if (!od.getA().equals(od.getB())) {
+				this.sampleOdMatrix.compute(od, (od2, c) -> c == null ? sampleWeight : c + sampleWeight);
+			}
 		}
 	}
 
 	@Override
 	public String toString() {
-		final double odWeightSum = this.sampleOdMatrix.values().stream().mapToDouble(v -> v).sum();
+		final double fact = this.targetOdMatrix.values().stream().mapToDouble(v -> v).sum()
+				/ this.sampleOdMatrix.values().stream().mapToDouble(v -> v).sum();
 		StringBuffer result = new StringBuffer("from\tto\ttarget\trealized\n");
 		for (Tuple<TAZ, TAZ> od : SetUtils.union(this.targetOdMatrix.keySet(), this.sampleOdMatrix.keySet())) {
 			result.append(od.getA());
@@ -65,10 +68,10 @@ public class ODReproductionAnalyzerSingle extends RoundTripAnalyzer<RoundTrip<TA
 			result.append("\t");
 			result.append(this.targetOdMatrix.getOrDefault(od, 0.0));
 			result.append("\t");
-			result.append(this.sampleOdMatrix.getOrDefault(od, 0.0) / odWeightSum);
+			result.append(fact * this.sampleOdMatrix.getOrDefault(od, 0.0));
 			result.append("\n");
-		}		
+		}
 		return result.toString();
 	}
-	
+
 }

@@ -22,7 +22,6 @@ package od2roundtrips.model;
 import java.util.Map;
 
 import floetteroed.utilities.Tuple;
-import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -31,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public class ODReproductionAnalyzerMultiple implements MHStateProcessor<MultiRoundTrip<TAZ, RoundTrip<TAZ>>> {
+public class ODReproductionAnalyzerMultiple implements MHStateProcessor<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
 
 	private ODReproductionAnalyzerSingle analyzer;
 
@@ -46,7 +45,7 @@ public class ODReproductionAnalyzerMultiple implements MHStateProcessor<MultiRou
 	}
 
 	@Override
-	public void processState(MultiRoundTrip<TAZ, RoundTrip<TAZ>> state) {
+	public void processState(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> state) {
 		for (int i = 0; i < state.size(); i++) {
 			this.analyzer.processState(state.getRoundTrip(i));
 		}

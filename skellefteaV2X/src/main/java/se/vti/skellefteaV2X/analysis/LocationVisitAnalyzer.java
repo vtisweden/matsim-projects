@@ -90,7 +90,7 @@ public class LocationVisitAnalyzer extends RoundTripAnalyzer<ElectrifiedRoundTri
 	double ralizationDiscrepancy_h = 0.0;
 
 	public LocationVisitAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,
-			String fileName, Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> importanceSamplingPreferences) {
+			String fileName, Preferences<ElectrifiedRoundTrip> importanceSamplingPreferences) {
 		super(burnInIterations, samplingInterval, importanceSamplingPreferences);
 		this.scenario = scenario;
 		this.fileName = fileName;

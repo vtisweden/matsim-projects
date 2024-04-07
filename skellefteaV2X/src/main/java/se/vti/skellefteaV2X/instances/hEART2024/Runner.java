@@ -120,18 +120,17 @@ public class Runner {
 		 * Define preferences for round trip sampling.
 		 */
 
+		final Preferences<ElectrifiedRoundTrip> allPreferences = new Preferences<>();
+
 		// CONSISTENCY PREFERENCES
 
-		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> consistencyPreferences = new Preferences<>();
-		consistencyPreferences.addComponent(new UniformOverElectrifiedLocationCount(scenario), 1.0 /* must be one */);
-		consistencyPreferences.addComponent(new StrategyRealizationConsistency<>(scenario), 1.0);
-		consistencyPreferences.addComponent(new AllDayTimeConstraintPreference<>(), 1.0);
-		consistencyPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 4.0);
-		consistencyPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1.0);
+		allPreferences.addComponent(new UniformOverElectrifiedLocationCount(scenario), 1.0 /* must be one */);
+		allPreferences.addComponent(new StrategyRealizationConsistency<>(scenario), 1.0);
+		allPreferences.addComponent(new AllDayTimeConstraintPreference<>(), 1.0);
+		allPreferences.addComponent(new AllDayBatteryConstraintPreference(scenario), 4.0);
+		allPreferences.addComponent(new NonnegativeBatteryStatePreference(scenario), 1.0);
 
 		// MODELING PREFERENCES
-
-		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> modelingPreferences = new Preferences<>();
 
 		final HomeLocationShare homeShare = new HomeLocationShare(8.0, 12.0, 6.0, 10.0);
 		homeShare.setShare(boliden, 1.0);
@@ -141,7 +140,7 @@ public class Runner {
 		homeShare.setShare(hamn, 0.01);
 		homeShare.setShare(burea, 1.0);
 		homeShare.setShare(burtrask, 1.0);
-		modelingPreferences.addComponent(homeShare, 1.0 /* must be one */);
+		allPreferences.addComponent(homeShare, 1.0 /* must be one */);
 
 		final OffHomeLocationShare offHomeShare = new OffHomeLocationShare(8.0, 12.0, 18.0, 10.0);
 		offHomeShare.setShare(boliden, 1.0);
@@ -151,23 +150,20 @@ public class Runner {
 		offHomeShare.setShare(hamn, 2.0);
 		offHomeShare.setShare(burea, 1.0);
 		offHomeShare.setShare(burtrask, 1.0);
-		modelingPreferences.addComponent(offHomeShare, 1.0 /* must be one */);
+		allPreferences.addComponent(offHomeShare, 1.0 /* must be one */);
 
 		// ANALYSIS PREFERENCES
 
-		final Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> importanceSamplingPreferences = new Preferences<>();
+		final Preferences<ElectrifiedRoundTrip> importanceSamplingPreferences = new Preferences<>();
 
 		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus, 10.0);
 		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
+		allPreferences.addComponent(localChargingPreference, 1.0);
 
 		/*
 		 * Run MH algorithm.
 		 */
 
-		Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> allPreferences = new Preferences<>();
-		allPreferences.addPreferences(consistencyPreferences);
-		allPreferences.addPreferences(modelingPreferences);
-		allPreferences.addPreferences(importanceSamplingPreferences);
 		MHAlgorithm<ElectrifiedRoundTrip> algo = scenario.createMHAlgorithm(allPreferences, simulator);
 
 		final long targetSamples = 1000 * 1000;

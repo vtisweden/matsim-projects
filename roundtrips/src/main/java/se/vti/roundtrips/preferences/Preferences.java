@@ -22,8 +22,6 @@ package se.vti.roundtrips.preferences;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.vti.roundtrips.single.Location;
-import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
@@ -31,61 +29,39 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  * @author GunnarF
  *
  */
-public class Preferences<R extends RoundTrip<L>, L extends Location> implements MHWeight<R> {
+public class Preferences<X> implements MHWeight<X> {
 
-	public static abstract class Component<R extends RoundTrip<L>, L extends Location> {
-
-		private double logWeightThreshold = Double.NEGATIVE_INFINITY;
-
-		public void setLogWeightThreshold(double threshold) {
-			this.logWeightThreshold = threshold;
-		}
-
-		public boolean thresholdPassed(R roundTrip) {
-			return (this.logWeight(roundTrip) >= this.logWeightThreshold);
-		}
-
-		public abstract double logWeight(R roundTrip);
-
-	}
-
-	private List<Component<R, L>> components = new ArrayList<>();
+	private List<PreferenceComponent<X>> components = new ArrayList<>();
 
 	private List<Double> weights = new ArrayList<>();
 
 	public Preferences() {
 	}
 
-	public void addPreferences(Preferences<R, L> other) {
-		for (int i = 0; i < other.components.size(); i++) {
-			this.addComponent(other.components.get(i), other.weights.get(i));
-		}
-	}
-
-	public void addComponent(Component<R, L> component, double weight) {
+	public void addComponent(PreferenceComponent<X> component, double weight) {
 		this.components.add(component);
 		this.weights.add(weight);
 	}
 
-	public void addComponent(Component<R, L> component) {
+	public void addComponent(PreferenceComponent<X> component) {
 		this.addComponent(component, 1.0);
 	}
 
-	@Override
-	public double logWeight(R roundTrip) {
-		double result = 0.0;
-		for (int i = 0; i < this.components.size(); i++) {
-			result += this.weights.get(i) * this.components.get(i).logWeight(roundTrip);
-		}
-		return result;
-	}
-
-	public boolean thresholdPassed(R roundTrip) {
-		for (Component<R, L> component : this.components) {
-			if (!component.thresholdPassed(roundTrip)) {
+	public boolean thresholdPassed(X state) {
+		for (PreferenceComponent<X> component : this.components) {
+			if (!component.thresholdPassed(state)) {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	@Override
+	public double logWeight(X state) {
+		double result = 0.0;
+		for (int i = 0; i < this.components.size(); i++) {
+			result += this.weights.get(i) * this.components.get(i).logWeight(state);
+		}
+		return result;
 	}
 }

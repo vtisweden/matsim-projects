@@ -33,15 +33,15 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  *
  * @param <L> the location type
  */
-public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<R> {
+public class RoundTripProposal<R extends RoundTrip<?>> implements MHProposal<R> {
 
-	private final Simulator<L, R> simulator;
+	private final Simulator<R> simulator;
 
 	private final Random rnd;
 
 	private final Map<MHProposal<R>, Double> proposal2weight = new LinkedHashMap<>();
 
-	public RoundTripProposal(Simulator<L, R> simulator, Random rnd) {
+	public RoundTripProposal(Simulator<R> simulator, Random rnd) {
 		this.simulator = simulator;
 		this.rnd = rnd;
 	}
@@ -50,7 +50,7 @@ public class RoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<
 		this.proposal2weight.put(proposal, weight);
 	}
 
-	public Simulator<L, R> getSimulator() {
+	public Simulator<R> getSimulator() {
 		return this.simulator;
 	}
 

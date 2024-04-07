@@ -35,7 +35,7 @@ public abstract class RoundTripAnalyzer<R extends RoundTrip<L>, L extends Locati
 
 	private final long samplingInterval;
 
-	private final Preferences<R, L> importanceSamplingPreferences;
+	private final Preferences<R> importanceSamplingPreferences;
 
 	protected long iteration = 0;
 
@@ -44,7 +44,7 @@ public abstract class RoundTripAnalyzer<R extends RoundTrip<L>, L extends Locati
 	private double acceptedSampleWeightSum = 0.0;
 
 	public RoundTripAnalyzer(long burnInIterations, long samplingInterval,
-			Preferences<R, L> importanceSamplingPreferences) {
+			Preferences<R> importanceSamplingPreferences) {
 		this.burnInIterations = burnInIterations;
 		this.samplingInterval = samplingInterval;
 		this.importanceSamplingPreferences = importanceSamplingPreferences;

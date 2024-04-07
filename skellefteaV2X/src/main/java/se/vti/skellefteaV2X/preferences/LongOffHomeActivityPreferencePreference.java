@@ -21,12 +21,11 @@ package se.vti.skellefteaV2X.preferences;
 
 import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.roundtrips.preferences.Preferences;
+import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
-import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.utils.misc.math.MathHelpers;
 
-public class LongOffHomeActivityPreferencePreference extends Preferences.Component<ElectrifiedRoundTrip, ElectrifiedLocation> {
+public class LongOffHomeActivityPreferencePreference extends PreferenceComponent<ElectrifiedRoundTrip> {
 
 	private final MathHelpers math = new MathHelpers();
 

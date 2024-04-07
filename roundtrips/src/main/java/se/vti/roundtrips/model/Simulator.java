@@ -31,7 +31,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class Simulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> implements se.vti.roundtrips.single.Simulator<L, R> {
+public class Simulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> implements se.vti.roundtrips.single.Simulator<R> {
 
 	// -------------------- INTERFACES --------------------
 

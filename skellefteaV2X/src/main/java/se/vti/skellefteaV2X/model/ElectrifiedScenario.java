@@ -98,7 +98,7 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 	}
 
 	public MHAlgorithm<ElectrifiedRoundTrip> createMHAlgorithm(
-			Preferences<ElectrifiedRoundTrip, ElectrifiedLocation> preferences, ElectrifiedSimulator simulator) {
+			Preferences<ElectrifiedRoundTrip> preferences, ElectrifiedSimulator simulator) {
 
 		double locationProposalWeight = 0.1;
 		double departureProposalWeight = 0.6;
@@ -109,7 +109,7 @@ public class ElectrifiedScenario extends se.vti.roundtrips.model.Scenario<Electr
 //				chargingProposalWeight, doNothingWeight);
 //		configuration.addLocations(this.getLocationsView());
 
-		RoundTripProposal<ElectrifiedLocation, ElectrifiedRoundTrip> proposal0 = new RoundTripProposal<>(simulator,
+		RoundTripProposal<ElectrifiedRoundTrip> proposal0 = new RoundTripProposal<>(simulator,
 				this.rnd);
 		proposal0.addProposal(new RoundTripLocationProposal<ElectrifiedRoundTrip, ElectrifiedLocation>(this,
 				new PossibleTransitionFactory<ElectrifiedLocation, ElectrifiedRoundTrip>() {

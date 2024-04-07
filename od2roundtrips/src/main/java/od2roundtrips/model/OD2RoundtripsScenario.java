@@ -30,7 +30,6 @@ public class OD2RoundtripsScenario extends se.vti.roundtrips.model.Scenario<TAZ>
 		super(name -> new TAZ(name));
 	}
 	
-
 	public static void main(String[] args) {
 		
 		// Example for building an example

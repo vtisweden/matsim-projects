@@ -29,7 +29,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class AllDayTimeConstraintPreference<R extends RoundTrip<L>, L extends Location> extends Preferences.Component<R, L> {
+public class AllDayTimeConstraintPreference<R extends RoundTrip<L>, L extends Location> extends PreferenceComponent<R> {
 
 	private final double minHomeDuration_h;
 

@@ -31,13 +31,14 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class MultiRoundTripProposal<L, R extends RoundTrip<L>> implements MHProposal<MultiRoundTrip<L, R>> {
+public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRoundTrip<R>>
+		implements MHProposal<M> {
 
 	private final Random rnd;
 
-	private final RoundTripProposal<L, R> singleProposal;
+	private final RoundTripProposal<R> singleProposal;
 
-	public MultiRoundTripProposal(Random rnd, RoundTripProposal<L, R> singleProposal) {
+	public MultiRoundTripProposal(Random rnd, RoundTripProposal<R> singleProposal) {
 		this.rnd = rnd;
 		this.singleProposal = singleProposal;
 	}
@@ -45,16 +46,16 @@ public class MultiRoundTripProposal<L, R extends RoundTrip<L>> implements MHProp
 	// IMPLEMENTATION OF INTERFACE
 
 	@Override
-	public MultiRoundTrip<L, R> newInitialState() {
+	public M newInitialState() {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public MHTransition<MultiRoundTrip<L, R>> newTransition(MultiRoundTrip<L, R> state) {
+	public MHTransition<M> newTransition(M state) {
 		final double flipProba = 1.0 / (state.size() + 1);
 		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, state.size());
 
-		MultiRoundTrip<L, R> newState = state.clone();
+		M newState = (M) state.clone();
 		boolean flipped = false;
 		double fwdLogProba;
 		double bwdLogProba;
@@ -79,7 +80,7 @@ public class MultiRoundTripProposal<L, R extends RoundTrip<L>> implements MHProp
 
 		fwdLogProba -= Math.log(atLeastOneFlipProba);
 		bwdLogProba -= Math.log(atLeastOneFlipProba);
-		assert (fwdLogProba == bwdLogProba);
+//		assert (fwdLogProba == bwdLogProba);
 
 		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);
 	}

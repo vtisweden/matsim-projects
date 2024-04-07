@@ -1,5 +1,5 @@
 /**
- * od2roundtrips.model
+ * se.vti.roundtrips.preferences
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,34 +17,24 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package od2roundtrips.model;
-
-import java.util.Map;
-
-import floetteroed.utilities.Tuple;
-import se.vti.roundtrips.multiple.MultiRoundTrip;
-import se.vti.roundtrips.single.RoundTrip;
-import se.vti.utils.misc.metropolishastings.MHWeight;
+package se.vti.roundtrips.preferences;
 
 /**
  * 
  * @author GunnarF
- *
  */
-public class ODPreferenceMultiple implements MHWeight<MultiRoundTrip<TAZ, RoundTrip<TAZ>>> {
+public abstract class PreferenceComponent<X> {
 
-	private final ODPreference odPreferenceSingle;
+	private double logWeightThreshold = Double.NEGATIVE_INFINITY;
 
-	public ODPreferenceMultiple(ODPreference odPreferenceSingle) {
-		this.odPreferenceSingle = odPreferenceSingle;
+	public void setLogWeightThreshold(double threshold) {
+		this.logWeightThreshold = threshold;
 	}
 
-	@Override
-	public double logWeight(MultiRoundTrip<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
-		this.odPreferenceSingle.assertNormalized();
-		final Map<Tuple<TAZ, TAZ>, Integer> realizedOdMatrix = this.odPreferenceSingle
-				.createRealizedMatrix(multiRoundTrip);
-		return this.odPreferenceSingle.computePoissionLogWeight(realizedOdMatrix, multiRoundTrip.locationCnt());
+	public boolean thresholdPassed(X roundTrip) {
+		return (this.logWeight(roundTrip) >= this.logWeightThreshold);
 	}
+
+	public abstract double logWeight(X roundTrip);
 
 }
