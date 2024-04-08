@@ -64,7 +64,7 @@ public class ODPreference extends PreferenceComponent<MultiRoundTripWithOD<TAZ, 
 		final double realizedTripCnt = multiRoundTrip.getSingleTripCnt();
 		final double targetTripCnt = this.getNonNullTargetOdSum();
 
-		double slack = 0.5 / targetTripCnt;
+		double slack = 0.5 / realizedTripCnt; // targetTripCnt;
 		double err = 0.0;
 		for (Map.Entry<Tuple<TAZ, TAZ>, Double> target : this.targetODMatrix.entrySet()) {
 			err += Math.max(0.0, Math.abs(realizedOdMatrix.getOrDefault(target.getKey(), 0) / realizedTripCnt
