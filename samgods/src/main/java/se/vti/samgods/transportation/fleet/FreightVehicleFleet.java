@@ -30,7 +30,7 @@ import org.matsim.vehicles.Vehicles;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.consolidation.road.PrototypeVehicle;
+import se.vti.samgods.transportation.consolidation.road.PrototypeVehicle;
 
 /**
  * 

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.consolidation.road;
+package se.vti.samgods.transportation.consolidation.road;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.utils.objectattributes.attributable.Attributes;

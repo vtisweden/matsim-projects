@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.consolidation.road;
+package se.vti.samgods.transportation.consolidation.road;
 
 import java.util.List;
 
@@ -54,10 +54,12 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 	@Override
 	public Cost getCost(Vehicle vehicle, Commodity addedCommodity, double maxAddedAmount_ton,
 			ShipmentVehicleAssignment assignment) {
+
 		final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
 		final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
 		final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
 		final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton); // TODO
+
 		if (feasible) {
 
 			final FreightVehicleFleet.TypeAttributes vehicleAttributess = ConsolidationUtils

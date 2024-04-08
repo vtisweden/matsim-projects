@@ -1,7 +1,7 @@
 /**
- * se.vti.samgods.consolidation.road
+ * se.vti.samgods
  * 
- * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,19 +17,30 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.consolidation.road;
+package se.vti.samgods.transportation.consolidation.road;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
+import java.util.List;
+import java.util.Map;
 
-public class PerformanceMeasures {
+import org.matsim.vehicles.Vehicle;
 
-	public int getTotalArrivalDelay_h(Id<Node> nodeId) {
-		throw new UnsupportedOperationException();
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public interface ConsolidationChoiceModel {
+
+	class Slot {
+		public final Vehicle vehicle;
+		public final int day;
+
+		public Slot(Vehicle vehicle, int day) {
+			this.vehicle = vehicle;
+			this.day = day;
+		}
 	}
 
-	public int getTotalDepartureDelay_h(Id<Node> nodeId) {
-		throw new UnsupportedOperationException();
-	}
+	Slot drawSlot(Shipment shipment, List<Map<Vehicle, ConsolidationCostModel.Cost>> vehicle2costOverDays);
 
 }

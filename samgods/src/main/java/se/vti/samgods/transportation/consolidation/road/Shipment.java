@@ -17,34 +17,44 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.consolidation.road;
+package se.vti.samgods.transportation.consolidation.road;
 
-import org.matsim.vehicles.Vehicle;
-
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ConsolidationCostModel {
+public class Shipment {
 
-	class Cost {
-		public final boolean feasible;
-		public final double amount_ton;
-		public final double cost;
-		public final double duration_h;
+	private final Commodity commodity;
 
-		public Cost(boolean feasible, double amount_ton, double cost, double duration_h) {
-			this.feasible = feasible;
-			this.amount_ton = amount_ton;
-			this.cost = cost;
-			this.duration_h = duration_h;
-		}
+	private final double tons;
+
+	private final double probability;
+
+	public Shipment(final Commodity commodity, final double tons, double probability) {
+		this.commodity = commodity;
+		this.tons = tons;
+		this.probability = probability;
 	}
 
-	Cost getCost(Vehicle vehicle, SamgodsConstants.Commodity addedCommodity, double maxAddedAmount_ton,
-			ShipmentVehicleAssignment assignment);
+	public double getWeight_ton() {
+		return this.tons;
+	}
+
+	public double getProbability() {
+		return this.probability;
+	}
+
+	public Commodity getCommodity() {
+		return this.commodity;
+	}
+
+	@Override
+	public String toString() {
+		return this.commodity + "(" + this.tons + "ton,Pr=" + this.probability + ")";
+	}
 
 }
