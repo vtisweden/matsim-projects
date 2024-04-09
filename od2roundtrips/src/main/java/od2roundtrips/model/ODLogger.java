@@ -44,6 +44,7 @@ public class ODLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, Roun
 	final String errorsFile = "errors.txt";
 	final String odFile = "ods.txt";
 	final String locationsFile = "locationCounts.txt";
+	final String departuresFile = "departures.txt";
 
 	private final Scenario<?> scenario;
 
@@ -73,6 +74,7 @@ public class ODLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, Roun
 		new File(this.errorsFile).delete();
 		new File(this.odFile).delete();
 		new File(this.locationsFile).delete();
+		new File(this.departuresFile).delete();
 	}
 
 	@Override
@@ -80,10 +82,10 @@ public class ODLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, Roun
 
 		if (this.iteration++ % this.interval == 0) {
 
-			// 
+			//
 			this.append("" + state.getODReproductionError(), this.errorsFile);
 
-			// 
+			//
 			final Map<Tuple<TAZ, TAZ>, Integer> realizedOdMatrix = state.getODView();
 			new File(this.odFile).delete();
 			try {
@@ -97,14 +99,28 @@ public class ODLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, Roun
 			} catch (FileNotFoundException e) {
 				throw new RuntimeException(e);
 			}
-			
-			// 
+
+			//
 			final int[] lengths = new int[scenario.getMaxParkingEpisodes()];
 			for (RoundTrip<TAZ> r : state) {
-					lengths[r.locationCnt() - 1]++;
+				lengths[r.locationCnt() - 1]++;
 			}
 			this.append(Arrays.stream(lengths).mapToObj(l -> "" + l).collect(Collectors.joining("\t")),
 					this.locationsFile);
+
+			//
+			final int[] departures = new int[scenario.getBinCnt()];
+			for (RoundTrip<TAZ> r : state) {
+				if (r.locationCnt() > 1) {
+					for (int i = 0; i < r.locationCnt(); i++) {
+						departures[r.getDeparture(i)]++;
+					}
+				}
+			}
+			this.append(Arrays.stream(departures).mapToObj(l -> "" + l).collect(Collectors.joining("\t")),
+					this.departuresFile);
+
+
 		}
 	}
 
