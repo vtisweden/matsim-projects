@@ -454,7 +454,7 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 			writer.println("procentage of must charge vehicle at campus at daytime: "+this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
 			writer.println("procentage of V2G vehicle at campus at daytime: "+this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
 			System.out.println("procentage of must charge vehicle at campus at daytime: "+this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
-			System.out.println("procentage of must charge vehicle at campus at daytime: "+this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
+			System.out.println("procentage of V2G vehicle at campus at daytime: "+this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
 			
 			writer.flush();
 			writer.close();
