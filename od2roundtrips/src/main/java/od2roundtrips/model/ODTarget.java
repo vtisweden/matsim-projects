@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import floetteroed.utilities.Tuple;
-import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -31,12 +30,11 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class ODPreference extends PreferenceComponent<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
+public class ODTarget extends Target {
 
 	private final Map<Tuple<TAZ, TAZ>, Double> targetODMatrix = new LinkedHashMap<>();
-	private Double targetOdSum = null;
 
-	public ODPreference() {
+	public ODTarget() {
 	}
 
 	public void setODEntry(TAZ origin, TAZ destination, double value) {
@@ -50,28 +48,27 @@ public class ODPreference extends PreferenceComponent<MultiRoundTripWithOD<TAZ, 
 		return this.targetODMatrix;
 	}
 
-	public double getNonNullTargetOdSum() {
-		if (this.targetOdSum == null) {
-			this.targetOdSum = this.targetODMatrix.values().stream().mapToDouble(v -> v).sum();
+	private double[] od2array(Map<Tuple<TAZ, TAZ>, ? extends Number> od) {
+		double[] result = new double[this.targetODMatrix.size()];
+		int i = 0;
+		for (Map.Entry<Tuple<TAZ, TAZ>, Double> targetEntry : this.targetODMatrix.entrySet()) {
+			if (od.containsKey(targetEntry.getKey())) {
+				result[i++] = od.get(targetEntry.getKey()).doubleValue();
+			} else {
+				result[i++] = 0.0;
+			}
 		}
-		return this.targetOdSum;
+		return result;
 	}
 
 	@Override
-	public double logWeight(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
-
-		final Map<Tuple<TAZ, TAZ>, Integer> realizedOdMatrix = multiRoundTrip.getODView();
-		final double realizedTripCnt = multiRoundTrip.getSingleTripCnt();
-		final double targetTripCnt = this.getNonNullTargetOdSum();
-
-		double slack = 0.5 / realizedTripCnt; // targetTripCnt;
-		double err = 0.0;
-		for (Map.Entry<Tuple<TAZ, TAZ>, Double> target : this.targetODMatrix.entrySet()) {
-			err += Math.max(0.0, Math.abs(realizedOdMatrix.getOrDefault(target.getKey(), 0) / realizedTripCnt
-					- target.getValue() / targetTripCnt) - slack);
-		}
-		multiRoundTrip.setODReproductionError(err);
-
-		return (-1.0) * multiRoundTrip.size() * (err + slack * this.targetODMatrix.size());
+	public double[] computeTarget() {
+		return this.od2array(this.targetODMatrix);
 	}
+
+	@Override
+	public double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+		return this.od2array(multiRoundTrip.getODView());
+	}
+
 }

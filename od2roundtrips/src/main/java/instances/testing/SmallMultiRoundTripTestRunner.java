@@ -24,7 +24,7 @@ import java.util.Random;
 
 import od2roundtrips.model.MultiRoundTripWithOD;
 import od2roundtrips.model.OD2RoundtripsScenario;
-import od2roundtrips.model.ODPreference;
+import od2roundtrips.model.ODTarget;
 import od2roundtrips.model.ODReproductionAnalyzerMultiple;
 import od2roundtrips.model.SingleToMultiComponent;
 import od2roundtrips.model.TAZ;
@@ -81,7 +81,7 @@ public class SmallMultiRoundTripTestRunner {
 
 		// Modeling preferences
 
-		ODPreference odPreference = new ODPreference();
+		ODTarget odPreference = new ODTarget();
 		odPreference.setODEntry(a, b, 1.0);
 		odPreference.setODEntry(b, a, 2.0);
 		odPreference.setODEntry(a, c, 3.0);

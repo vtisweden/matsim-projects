@@ -37,9 +37,9 @@ public class MultiRoundTripWithOD<L, R extends RoundTrip<L>> extends MultiRoundT
 
 	private final Map<Tuple<L, L>, Integer> odMatrix = new LinkedHashMap<>();
 
-	int singleTripCnt = 0;
+	private int singleTripCnt = 0;
 
-	Double error = null;
+	private Double error = null;
 	
 	public MultiRoundTripWithOD(int size) {
 		super(size);
