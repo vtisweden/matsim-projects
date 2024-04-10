@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.od2roundtrips.model;
+package se.vti.od2roundtrips.targets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
+import se.vti.od2roundtrips.model.TAZ;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**

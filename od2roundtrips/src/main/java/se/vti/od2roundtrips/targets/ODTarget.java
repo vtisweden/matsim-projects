@@ -25,7 +25,6 @@ import java.util.Map;
 import floetteroed.utilities.Tuple;
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
 import se.vti.od2roundtrips.model.TAZ;
-import se.vti.od2roundtrips.model.Target;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**

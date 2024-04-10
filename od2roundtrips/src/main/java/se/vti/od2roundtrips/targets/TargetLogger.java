@@ -25,7 +25,6 @@ import java.io.PrintWriter;
 
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
 import se.vti.od2roundtrips.model.TAZ;
-import se.vti.od2roundtrips.model.Target;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 

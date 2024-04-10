@@ -17,11 +17,13 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.od2roundtrips.model;
+package se.vti.od2roundtrips.targets;
 
 import java.util.Arrays;
 import java.util.function.Function;
 
+import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
+import se.vti.od2roundtrips.model.TAZ;
 import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.roundtrips.single.RoundTrip;
 
@@ -62,7 +64,7 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 		multiRoundTrip = this.filter.apply(multiRoundTrip);
 
 		final double[] sample = this.computeSample(multiRoundTrip);
-		final double sampleSize = Arrays.stream(sample).sum();
+		final double sampleSize = Math.max(Arrays.stream(sample).sum(), 1e-8);
 
 		if (this.target == null) {
 			this.target = this.computeTarget();
@@ -80,7 +82,7 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 	}
 
 	public abstract String[] createLabels();
-	
+
 	public abstract double[] computeTarget();
 
 	public abstract double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip);

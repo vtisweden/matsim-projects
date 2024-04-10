@@ -16,12 +16,12 @@ import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHea
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
 import se.vti.od2roundtrips.model.OD2RoundtripsScenario;
-import se.vti.od2roundtrips.model.PopulationGrouping;
 import se.vti.od2roundtrips.model.SimpleStatsLogger;
 import se.vti.od2roundtrips.model.SingleToMultiComponent;
 import se.vti.od2roundtrips.model.TAZ;
 import se.vti.od2roundtrips.targets.HomeLocationTarget;
 import se.vti.od2roundtrips.targets.ODTarget;
+import se.vti.od2roundtrips.targets.PopulationGrouping;
 import se.vti.od2roundtrips.targets.TargetLogger;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
