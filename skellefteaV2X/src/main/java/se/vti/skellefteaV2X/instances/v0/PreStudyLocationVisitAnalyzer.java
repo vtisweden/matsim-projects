@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import floetteroed.utilities.Tuple;
@@ -98,9 +99,9 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 	 * dayTime is defined as 5:00 - 20:00
 	 */
 	
-	private double totalWeightOfMustChargeVehiclesAtCampusAtDayTime=0;
-	private double totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime=0;
-	private double totalWeightOfAllVehiclesAtCampusAtDayTime=0;
+	private List<Map<ElectrifiedLocation, Double>> totalWeightOfMustChargeVehiclesAtCampusAtDayTime;
+	private List<Map<ElectrifiedLocation, Double>> totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime;
+	private List<Map<ElectrifiedLocation, Double>> totalWeightOfAllVehiclesAtCampusAtDayTime;
 	
 	public PreStudyLocationVisitAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,
 			String fileName, Preferences<ElectrifiedRoundTrip> importanceSamplingPreferences) {
@@ -112,6 +113,15 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 		this.timeListOfLocation2enRouteVisits = new ArrayList<>(scenario.getBinCnt());
 		this.timeListOfLocation2enRouteChargings_kWh = new ArrayList<>(scenario.getBinCnt());
 		this.timeListOfDriving = new ArrayList<>(scenario.getBinCnt());
+		
+		/*-----------------------
+		 * Bookkeeping of pre-study related metrics
+		 * dayTime is defined as 5:00 - 20:00
+		 */
+		this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime=new ArrayList<>(scenario.getBinCnt());
+		this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime=new ArrayList<>(scenario.getBinCnt());
+		this.totalWeightOfAllVehiclesAtCampusAtDayTime=new ArrayList<>(scenario.getBinCnt());
+		
 
 		this.sizeCnt = new double[scenario.getBinCnt() + 1];
 
@@ -121,6 +131,14 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 			this.timeListOfLocation2enRouteVisits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfLocation2enRouteChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfDriving.add(0.0);
+			
+			/*-----------------------
+			 * Bookkeeping of pre-study related metrics
+			 * dayTime is defined as 5:00 - 20:00
+			 */
+			this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime.add(new LinkedHashMap<>(scenario.getLocationCnt()));
+			this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime.add(new LinkedHashMap<>(scenario.getLocationCnt()));
+			this.totalWeightOfAllVehiclesAtCampusAtDayTime.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 		}
 
 		this.batteryWrapAround = new AllDayBatteryConstraintPreference(scenario);
@@ -237,7 +255,8 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 							String parkingLocation=parking.getLocation().getName();
 							double startTime_h = parking.getEndTime_h()-parking.getDuration_h();
 							if (parkingLocation.equals("Campus") & (startTime_h>=5 & startTime_h<=20)) {
-								this.totalWeightOfAllVehiclesAtCampusAtDayTime+=weightedRelativeOverlap;
+								this.totalWeightOfAllVehiclesAtCampusAtDayTime.get(bin).compute(parking.getLocation(),
+										(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
 								
 								// battery level at campus
 								double batteryLevelWhenArriveAtCampus = e.getInitialState().getBatteryCharge_kWh();
@@ -262,10 +281,12 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 								
 								// if batter level is not enough so it must need charging, add to the bookkeeping.
 								if (batteryLevelWhenArriveAtCampus<requiredBatterLevel) {
-									this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime+=weightedRelativeOverlap;
+									this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime.get(bin).compute(parking.getLocation(),
+											(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
 								}
 								if (batteryLevelWhenArriveAtCampus>(requiredBatterLevel+2)) {
-									this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime+=weightedRelativeOverlap;
+									this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime.get(bin).compute(parking.getLocation(),
+											(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
 								}
 							}
 							
@@ -451,10 +472,39 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 			}
 			
 			writer.println();
-			writer.println("procentage of must charge vehicle at campus at daytime: "+this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
-			writer.println("procentage of V2G vehicle at campus at daytime: "+this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
-			System.out.println("procentage of must charge vehicle at campus at daytime: "+this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
-			System.out.println("procentage of V2G vehicle at campus at daytime: "+this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime/this.totalWeightOfAllVehiclesAtCampusAtDayTime);
+			writer.println("Pr[campus daytime parking]");
+			writer.println();
+			for (Map<ElectrifiedLocation, Double> location2visits : this.totalWeightOfAllVehiclesAtCampusAtDayTime) {
+				Set<ElectrifiedLocation> allLocations = location2visits.keySet();
+				for (ElectrifiedLocation l : allLocations) {
+					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
+				}
+				writer.println();
+			}
+			
+			writer.println();
+			writer.println("Pr[campus daytime parking must charge]");
+			writer.println();
+			for (Map<ElectrifiedLocation, Double> location2visits : this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime) {
+				Set<ElectrifiedLocation> allLocations = location2visits.keySet();
+				for (ElectrifiedLocation l : allLocations) {
+					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
+				}
+				writer.println();
+			}
+			
+			writer.println();
+			writer.println("Pr[campus daytime parking can supply grid]");
+			writer.println();
+			for (Map<ElectrifiedLocation, Double> location2visits : this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime) {
+				Set<ElectrifiedLocation> allLocations = location2visits.keySet();
+				for (ElectrifiedLocation l : allLocations) {
+					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
+				}
+				writer.println();
+			}
+
+			
 			
 			writer.flush();
 			writer.close();
