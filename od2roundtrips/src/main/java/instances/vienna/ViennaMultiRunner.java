@@ -1,10 +1,11 @@
 
-package viennaRunner_rup;
+package instances.vienna;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,17 +14,15 @@ import java.util.Random;
 
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
-import od2roundtrips.model.MultiRoundTripWithOD;
-import od2roundtrips.model.OD2RoundtripsScenario;
-import od2roundtrips.model.ODLogger;
-import od2roundtrips.model.ODReproductionAnalyzerMultiple;
-import od2roundtrips.model.PopulationGrouping;
-import od2roundtrips.model.SingleToMultiComponent;
-import od2roundtrips.model.TAZ;
-import od2roundtrips_rup.DistrictNamesFromCsvToList;
-import od2roundtrips_rup.ValuesFromCsvToList;
+import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
+import se.vti.od2roundtrips.model.OD2RoundtripsScenario;
+import se.vti.od2roundtrips.model.PopulationGrouping;
+import se.vti.od2roundtrips.model.SimpleStatsLogger;
+import se.vti.od2roundtrips.model.SingleToMultiComponent;
+import se.vti.od2roundtrips.model.TAZ;
 import se.vti.od2roundtrips.targets.HomeLocationTarget;
 import se.vti.od2roundtrips.targets.ODTarget;
+import se.vti.od2roundtrips.targets.TargetLogger;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
 import se.vti.roundtrips.model.Simulator;
@@ -179,6 +178,8 @@ public class ViennaMultiRunner {
 
 			final Preferences<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> allPreferences = new Preferences<>();
 
+			final List<TargetLogger> targetLoggers = new ArrayList<>();
+
 			// Consistency preferences
 
 			allPreferences.addComponent(new SingleToMultiComponent(new UniformOverLocationCount<>(scenario)));
@@ -197,7 +198,7 @@ public class ViennaMultiRunner {
 
 			// Double Loop for ODPreference
 
-			ODTarget odPreference = new ODTarget();
+			ODTarget odTarget = new ODTarget();
 
 			for (int i = 0; i < odMatrice.size(); i++) {
 
@@ -217,8 +218,7 @@ public class ViennaMultiRunner {
 
 					double numberOfTrips = Double.parseDouble(row.get(j));
 
-					odPreference.setODEntry(scenario.getLocation(origin), scenario.getLocation(destination),
-							numberOfTrips);
+					odTarget.setODEntry(scenario.getLocation(origin), scenario.getLocation(destination), numberOfTrips);
 
 					System.out.println("Origin: " + origin);
 
@@ -232,7 +232,8 @@ public class ViennaMultiRunner {
 
 			}
 
-			allPreferences.addComponent(odPreference, 10);
+			allPreferences.addComponent(odTarget, 10);
+			targetLoggers.add(new TargetLogger(1000, odTarget, "odTarget.log"));
 
 			// parse home location file
 
@@ -275,6 +276,7 @@ public class ViennaMultiRunner {
 				}
 				target.setFilter(grouping.createFilter(group2xEntry.getKey()));
 				allPreferences.addComponent(target, 10.0);
+				targetLoggers.add(new TargetLogger(1000, target, "homeTarget_" + group2xEntry.getKey() + ".log"));
 			}
 
 			// Default physical simulator
@@ -311,14 +313,12 @@ public class ViennaMultiRunner {
 
 					new Random());
 
-			ODReproductionAnalyzerMultiple odAnalyzer = new ODReproductionAnalyzerMultiple(10 * 1000 * 1000, 100,
+			algo.addStateProcessor(new SimpleStatsLogger(scenario, 1000));
 
-					odPreference.getTargetOdMatrix());
-
-			algo.addStateProcessor(odAnalyzer);
-
-			algo.addStateProcessor(new ODLogger(scenario, odPreference.getTargetOdMatrix(), 1000));
-
+			for (TargetLogger targetLogger : targetLoggers) {
+				algo.addStateProcessor(targetLogger);
+			}
+			
 			final MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTripWithOD<>(
 					roundTripCnt);
 
@@ -361,10 +361,6 @@ public class ViennaMultiRunner {
 			// Run MH algorithm
 
 			algo.run(100 * 1000);
-
-			System.out.println();
-
-			System.out.println(odAnalyzer);
 
 			// Close file output stream
 

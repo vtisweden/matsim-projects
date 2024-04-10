@@ -161,13 +161,11 @@ public class Runner {
 		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
 		allPreferences.addComponent(localChargingPreference, 1.0);
 
-		// Here we look specifically at those who would fail (SOC at least 5kWh below
-		// zero) if not charging on campus.
-		WouldFailWithoutChargingPreference wouldFailWithoutChargingPreference = new WouldFailWithoutChargingPreference(
-				scenario, campus, 5.0);
+		// Here we look specifically at those who would fail (SOC at least 5kWh below zero) if not charging on campus.
+		WouldFailWithoutChargingPreference wouldFailWithoutChargingPreference = new WouldFailWithoutChargingPreference(scenario, campus, 5.0);
 		importanceSamplingPreferences.addComponent(wouldFailWithoutChargingPreference, 1.0);
 		allPreferences.addComponent(wouldFailWithoutChargingPreference, 1.0);
-
+		
 		/*
 		 * Run MH algorithm.
 		 */

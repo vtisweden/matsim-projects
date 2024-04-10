@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package od2roundtrips.model;
+package se.vti.od2roundtrips.model;
 
 import java.util.Arrays;
 import java.util.function.Function;
@@ -79,6 +79,8 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 		return (-1.0) * multiRoundTrip.size() * (this.lastDeviationError + this.lastDiscretizationError);
 	}
 
+	public abstract String[] createLabels();
+	
 	public abstract double[] computeTarget();
 
 	public abstract double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip);

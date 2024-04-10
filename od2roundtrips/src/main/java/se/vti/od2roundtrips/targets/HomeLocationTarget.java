@@ -23,9 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import od2roundtrips.model.MultiRoundTripWithOD;
-import od2roundtrips.model.TAZ;
-import od2roundtrips.model.Target;
+import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
+import se.vti.od2roundtrips.model.TAZ;
+import se.vti.od2roundtrips.model.Target;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -58,5 +58,16 @@ public class HomeLocationTarget extends Target {
 		}
 		return home2sample.values().stream().mapToDouble(c -> c).toArray();
 	}
+
+	@Override
+	public String[] createLabels() {
+		String[] result = new String[this.home2target.size()];
+		int i = 0;
+		for (TAZ taz : this.home2target.keySet()) {
+			result[i++] = taz.toString();
+		}
+		return result;
+	}
+	
 
 }

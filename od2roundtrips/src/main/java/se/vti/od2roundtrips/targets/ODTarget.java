@@ -23,9 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import floetteroed.utilities.Tuple;
-import od2roundtrips.model.MultiRoundTripWithOD;
-import od2roundtrips.model.TAZ;
-import od2roundtrips.model.Target;
+import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
+import se.vti.od2roundtrips.model.TAZ;
+import se.vti.od2roundtrips.model.Target;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -72,6 +72,16 @@ public class ODTarget extends Target {
 	@Override
 	public double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
 		return this.od2array(multiRoundTrip.getODView());
+	}
+
+	@Override
+	public String[] createLabels() {
+		String[] result = new String[this.targetODMatrix.size()];
+		int i = 0;
+		for (Tuple<TAZ, TAZ> od : this.targetODMatrix.keySet()) {
+			result[i++] = od.getA() + "->" + od.getB();
+		}
+		return result;
 	}
 
 }

@@ -22,11 +22,10 @@ package instances.testing;
 import java.util.Arrays;
 import java.util.Random;
 
-import od2roundtrips.model.MultiRoundTripWithOD;
-import od2roundtrips.model.OD2RoundtripsScenario;
-import od2roundtrips.model.ODReproductionAnalyzerMultiple;
-import od2roundtrips.model.SingleToMultiComponent;
-import od2roundtrips.model.TAZ;
+import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
+import se.vti.od2roundtrips.model.OD2RoundtripsScenario;
+import se.vti.od2roundtrips.model.SingleToMultiComponent;
+import se.vti.od2roundtrips.model.TAZ;
 import se.vti.od2roundtrips.targets.ODTarget;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
@@ -112,10 +111,6 @@ public class SmallMultiRoundTripTestRunner {
 		MHAlgorithm<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> algo = new MHAlgorithm<>(proposalMulti, allPreferences,
 				new Random());
 
-		ODReproductionAnalyzerMultiple odAnalyzer = new ODReproductionAnalyzerMultiple(100 * 1000, 100,
-				odPreference.getTargetOdMatrix());
-		algo.addStateProcessor(odAnalyzer);
-
 		final MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTripWithOD<>(roundTripCnt);
 		for (int i = 0; i < initialStateMulti.size(); i++) {
 			RoundTrip<TAZ> initialStateSingle = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
@@ -130,8 +125,5 @@ public class SmallMultiRoundTripTestRunner {
 		// Run MH algorithm
 
 		algo.run(1000 * 1000);
-
-		System.out.println();
-		System.out.println(odAnalyzer);
 	}
 }

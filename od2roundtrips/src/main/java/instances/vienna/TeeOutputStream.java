@@ -1,4 +1,4 @@
-package viennaRunner_rup;
+package instances.vienna;
 
 import java.io.IOException;
 import java.io.OutputStream;

@@ -1,5 +1,5 @@
 /**
- * od2roundtrips.model
+ * instances.testing
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,19 +17,31 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package od2roundtrips.model;
+package se.vti.od2roundtrips.model;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.preferences.PreferenceComponent;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class TAZ extends Location {
+public class SingleToMultiComponent extends PreferenceComponent<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
 
-	public TAZ(String name) {
-		super(name);
+	private final PreferenceComponent<RoundTrip<TAZ>> singleComponent;
+
+	public SingleToMultiComponent(PreferenceComponent<RoundTrip<TAZ>> singleComponent) {
+		this.singleComponent = singleComponent;
+	}
+
+	@Override
+	public double logWeight(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+		double logWeight = 0.0;
+		for (RoundTrip<TAZ> roundTrip : multiRoundTrip) {
+			logWeight += this.singleComponent.logWeight(roundTrip);
+		}
+		return logWeight;
 	}
 
 }

@@ -1,4 +1,4 @@
-package od2roundtrips_rup;
+package instances.vienna;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
