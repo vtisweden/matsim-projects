@@ -237,13 +237,13 @@ public class ViennaMultiRunner {
 
 			// parse home location file
 
-			Map<String, Map<TAZ, Double>> group2zone2target = new LinkedHashMap<>();
-
+			Map<String, Map<TAZ, Double>> group2homeZone2target = new LinkedHashMap<>();
+			
 			AbstractTabularFileHandlerWithHeaderLine homeHandler = new AbstractTabularFileHandlerWithHeaderLine() {
 				@Override
 				public void startDataRow(final String[] row) {
 					Map<TAZ, Double> zone2target = new LinkedHashMap<>();
-					group2zone2target.put(row[0], zone2target);
+					group2homeZone2target.put(row[0], zone2target);
 					for (Map.Entry<String, Integer> e : this.label2index.entrySet()) {
 						if (e.getValue() > 0 && row[e.getValue()].length() > 0) {
 							zone2target.put(scenario.getLocation(e.getKey()), Double.parseDouble(row[e.getValue()]));
@@ -262,14 +262,13 @@ public class ViennaMultiRunner {
 			int roundTripCnt = 1000; // Change number of RT inside one set-of-RT here
 
 			PopulationGrouping grouping = new PopulationGrouping(roundTripCnt);
-
-			for (Map.Entry<String, Map<TAZ, Double>> entry : group2zone2target.entrySet()) {
+			for (Map.Entry<String, Map<TAZ, Double>> entry : group2homeZone2target.entrySet()) {
 				grouping.addGroup(entry.getKey(), entry.getValue().values().stream().mapToDouble(c -> c).sum());
 			}
 
 			// create home preferences
 
-			for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2zone2target.entrySet()) {
+			for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2homeZone2target.entrySet()) {
 				HomeLocationTarget target = new HomeLocationTarget();
 				for (Map.Entry<TAZ, Double> zone2targetEntry : group2xEntry.getValue().entrySet()) {
 					target.setTarget(zone2targetEntry.getKey(), zone2targetEntry.getValue());
