@@ -60,7 +60,8 @@ public abstract class RoundTripAnalyzer<R extends RoundTrip<L>, L extends Locati
 		if ((this.iteration > this.burnInIterations) && (this.iteration % this.samplingInterval == 0)) {
 			final double sampleWeight = 1.0 / Math.exp(this.importanceSamplingPreferences.logWeight(roundTrip));
 			this.sampleWeightSum += sampleWeight;
-			if (this.importanceSamplingPreferences.thresholdPassed(roundTrip)) {
+//			if (this.importanceSamplingPreferences.thresholdPassed(roundTrip)) {
+			if (this.importanceSamplingPreferences.accept(roundTrip)) {
 				this.processRelevantRoundTrip(roundTrip, sampleWeight);
 				this.acceptedSampleWeightSum += sampleWeight;
 			}

@@ -47,9 +47,18 @@ public class Preferences<X> implements MHWeight<X> {
 		this.addComponent(component, 1.0);
 	}
 
-	public boolean thresholdPassed(X state) {
+//	public boolean thresholdPassed(X state) {
+//		for (PreferenceComponent<X> component : this.components) {
+//			if (!component.thresholdPassed(state)) {
+//				return false;
+//			}
+//		}
+//		return true;
+//	}
+
+	public boolean accept(X state) {
 		for (PreferenceComponent<X> component : this.components) {
-			if (!component.thresholdPassed(state)) {
+			if (!component.accept(state)) {
 				return false;
 			}
 		}

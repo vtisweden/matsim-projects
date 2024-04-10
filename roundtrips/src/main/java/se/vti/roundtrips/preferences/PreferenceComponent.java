@@ -25,16 +25,20 @@ package se.vti.roundtrips.preferences;
  */
 public abstract class PreferenceComponent<X> {
 
-	private double logWeightThreshold = Double.NEGATIVE_INFINITY;
+//	private double logWeightThreshold = Double.NEGATIVE_INFINITY;
+//
+//	public void setLogWeightThreshold(double threshold) {
+//		this.logWeightThreshold = threshold;
+//	}
+//
+//	public boolean thresholdPassed(X roundTrip) {
+//		return (this.logWeight(roundTrip) >= this.logWeightThreshold);
+//	}
 
-	public void setLogWeightThreshold(double threshold) {
-		this.logWeightThreshold = threshold;
+	public boolean accept(X roundTrip) {
+		return true;
 	}
-
-	public boolean thresholdPassed(X roundTrip) {
-		return (this.logWeight(roundTrip) >= this.logWeightThreshold);
-	}
-
+	
 	public abstract double logWeight(X roundTrip);
 
 }

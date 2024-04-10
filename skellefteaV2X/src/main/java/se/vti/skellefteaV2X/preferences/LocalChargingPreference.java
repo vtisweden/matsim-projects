@@ -35,33 +35,40 @@ import se.vti.skellefteaV2X.model.ElectrifiedVehicleState;
  *
  */
 public class LocalChargingPreference extends PreferenceComponent<ElectrifiedRoundTrip> {
-	
+
 	private final ElectrifiedScenario scenario;
-	
+
 	private final Location location;
 
 	private final double minCharging_kWh;
-	
+
 	public LocalChargingPreference(ElectrifiedScenario scenario, Location location, double minCharging_kWh) {
 		this.scenario = scenario;
 		this.location = location;
 		this.minCharging_kWh = minCharging_kWh;
-		this.setLogWeightThreshold(-1e-8);
 	}
 
-	@Override
-	public double logWeight(ElectrifiedRoundTrip roundTrip) {
+	private double amountChargedAtLocation_kWh(ElectrifiedRoundTrip roundTrip) {
 		double amount_kWh = 0.0;
 		for (Episode<ElectrifiedVehicleState> e : (List<Episode<ElectrifiedVehicleState>>) roundTrip.getEpisodes()) {
 			if (e instanceof ParkingEpisode) {
 				ParkingEpisode<?, ElectrifiedVehicleState> p = (ParkingEpisode<?, ElectrifiedVehicleState>) e;
 				if (this.location.equals(p.getLocation())) {
-//					amount_kWh += p.getChargeAtEnd_kWh() - p.getChargeAtStart_kWh();
 					amount_kWh += p.getFinalState().getBatteryCharge_kWh() - p.getInitialState().getBatteryCharge_kWh();
 				}
 			}
 		}
-		return Math.min(0.0, amount_kWh - this.minCharging_kWh) / this.scenario.getMaxCharge_kWh();
+		return amount_kWh;
+	}
+
+	@Override
+	public boolean accept(ElectrifiedRoundTrip roundTrip) {
+		return (this.amountChargedAtLocation_kWh(roundTrip) >= this.minCharging_kWh);
+	}
+
+	@Override
+	public double logWeight(ElectrifiedRoundTrip roundTrip) {
+		return this.amountChargedAtLocation_kWh(roundTrip) / this.scenario.getMaxCharge_kWh() - 1.0;
 	}
 
 }
