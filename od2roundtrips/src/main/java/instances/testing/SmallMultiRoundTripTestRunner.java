@@ -24,10 +24,10 @@ import java.util.Random;
 
 import od2roundtrips.model.MultiRoundTripWithOD;
 import od2roundtrips.model.OD2RoundtripsScenario;
-import od2roundtrips.model.ODTarget;
 import od2roundtrips.model.ODReproductionAnalyzerMultiple;
 import od2roundtrips.model.SingleToMultiComponent;
 import od2roundtrips.model.TAZ;
+import se.vti.od2roundtrips.targets.ODTarget;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
 import se.vti.roundtrips.model.Simulator;
