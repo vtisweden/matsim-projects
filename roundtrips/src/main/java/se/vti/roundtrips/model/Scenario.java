@@ -81,6 +81,15 @@ public class Scenario<L extends Location> {
 		return this.name2location.get(name);
 	}
 
+	public L getOrCreateAndAddLocation(String name) {
+		L loc = this.name2location.get(name);
+		if (loc == null) {
+			loc = this.createAndAddLocation(name);
+		}
+		return loc;
+	}
+	
+	
 	public void setDistance_km(L from, L to, double dist_km) {
 		Tuple<L, L> od = new Tuple<>(from, to);
 		this.od2distance_km.put(od, dist_km);

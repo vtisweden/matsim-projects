@@ -1,7 +1,6 @@
 
 package instances.vienna;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -12,8 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
-import floetteroed.utilities.tabularfileparser.TabularFileParser;
+import floetteroed.utilities.Tuple;
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
 import se.vti.od2roundtrips.model.OD2RoundtripsScenario;
 import se.vti.od2roundtrips.model.SimpleStatsLogger;
@@ -49,334 +47,186 @@ public class ViennaMultiRunner {
 
 		// Erstelle einen FileOutputStream für die Datei
 
-		try {
+		FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
 
-			FileOutputStream fileOutputStream = new FileOutputStream(outputFileName);
+		PrintStream consolePrintStream = System.out;
 
-			PrintStream consolePrintStream = System.out;
+		PrintStream filePrintStream = new PrintStream(fileOutputStream);
 
-			PrintStream filePrintStream = new PrintStream(fileOutputStream);
+		PrintStream combinedPrintStream = new PrintStream(new TeeOutputStream(consolePrintStream, filePrintStream));
 
-			PrintStream combinedPrintStream = new PrintStream(new TeeOutputStream(consolePrintStream, filePrintStream));
+		System.setOut(combinedPrintStream);
 
-			System.setOut(combinedPrintStream);
+		// Creating the scenario
 
-			// Creating the scenario
+		OD2RoundtripsScenario scenario = new OD2RoundtripsScenario();
 
-			OD2RoundtripsScenario scenario = new OD2RoundtripsScenario();
+		scenario.setMaxParkingEpisodes(4);
 
-			// Reads in district names from .csv and safes to namesOfDistrics
+		scenario.setTimeBinCnt(24);
 
-			DistrictNamesFromCsvToList districtNamesFromCsvToList = new DistrictNamesFromCsvToList();
+		// Load skim matrices and feed into scenario
 
-			List<String> namesOfDistricts = districtNamesFromCsvToList.readCSV("input/districts_skim_km.csv", 24);
+		for (Map.Entry<Tuple<String, String>, Double> entry : MatrixDataReader.read("./input/districts_skim_km.csv")
+				.entrySet()) {
+			TAZ from = scenario.getOrCreateAndAddLocation(entry.getKey().getA());
+			TAZ to = scenario.getOrCreateAndAddLocation(entry.getKey().getB());
+			scenario.setDistance_km(from, to, entry.getValue());
+		}
 
-			System.out.println("List namesOfDistrics: " + namesOfDistricts);
+		for (Map.Entry<Tuple<String, String>, Double> entry : MatrixDataReader.read("./input/districts_skim_h.csv")
+				.entrySet()) {
+			TAZ from = scenario.getOrCreateAndAddLocation(entry.getKey().getA());
+			TAZ to = scenario.getOrCreateAndAddLocation(entry.getKey().getB());
+			scenario.setTime_h(from, to, entry.getValue());
+		}
 
-			// Create each district once; the scenario will memorize it by name
+		// Create sampling preferences
 
-			for (int i = 0; i < namesOfDistricts.size(); i++) {
+		final Preferences<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> allPreferences = new Preferences<>();
 
-				String name = namesOfDistricts.get(i);
+		final List<TargetLogger> targetLoggers = new ArrayList<>();
 
-				scenario.createAndAddLocation(name);
+		int roundTripCnt = 1000; // Change number of RT inside one set-of-RT here
 
+		// Consistency preferences
+
+		allPreferences.addComponent(new SingleToMultiComponent(new UniformOverLocationCount<>(scenario)));
+
+		allPreferences.addComponent(new SingleToMultiComponent(new AllDayTimeConstraintPreference<>()));
+
+		allPreferences.addComponent(new SingleToMultiComponent(new StrategyRealizationConsistency<>(scenario)));
+
+		// OD reproduction preference
+
+		ODTarget odTarget = new ODTarget();
+
+		for (Map.Entry<Tuple<String, String>, Double> entry : MatrixDataReader.read("./input/districts_od.csv")
+				.entrySet()) {
+			TAZ from = scenario.getOrCreateAndAddLocation(entry.getKey().getA());
+			TAZ to = scenario.getOrCreateAndAddLocation(entry.getKey().getB());
+			odTarget.setODEntry(from, to, entry.getValue());
+		}
+
+		allPreferences.addComponent(odTarget, 10);
+		targetLoggers.add(new TargetLogger(1000, odTarget, "odTarget.log"));
+
+		// home location preferences and population group segmentation
+
+		Map<String, Map<TAZ, Double>> group2home2target = new LinkedHashMap<>();
+		for (Map.Entry<Tuple<String, String>, Double> entry : MatrixDataReader
+				.read("./input/districts_home_locations.csv").entrySet()) {
+			String group = entry.getKey().getA();
+			Map<TAZ, Double> home2target = group2home2target.computeIfAbsent(group, g -> new LinkedHashMap<>());
+			TAZ home = scenario.getLocation(entry.getKey().getB());
+			double target = entry.getValue();
+			home2target.put(home, target);
+		}
+
+		PopulationGrouping grouping = new PopulationGrouping(roundTripCnt);
+		for (Map.Entry<String, Map<TAZ, Double>> entry : group2home2target.entrySet()) {
+			grouping.addGroup(entry.getKey(), entry.getValue().values().stream().mapToDouble(c -> c).sum());
+		}
+
+		for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2home2target.entrySet()) {
+			HomeLocationTarget target = new HomeLocationTarget();
+			for (Map.Entry<TAZ, Double> home2targetEntry : group2xEntry.getValue().entrySet()) {
+				target.setTarget(home2targetEntry.getKey(), home2targetEntry.getValue());
 			}
+			target.setFilter(grouping.createFilter(group2xEntry.getKey()));
+			allPreferences.addComponent(target, 10.0);
+			targetLoggers.add(new TargetLogger(1000, target, "homeTarget_" + group2xEntry.getKey() + ".log"));
+		}
 
-			// Reads in distance between districts [km] from .csv and safes to
-			// distanceBetweenDistrictsKm
+		// Default physical simulator
 
-			ValuesFromCsvToList distanceFromCsvToList = new ValuesFromCsvToList();
+		Simulator<TAZ, VehicleState, RoundTrip<TAZ>> simulator = new Simulator<>(scenario, () -> new VehicleState());
 
-			List<List<String>> distanceBetweenDistrictsKm = distanceFromCsvToList.readCSV("input/districts_skim_km.csv",
-					24);
+		simulator.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario, () -> new VehicleState()));
 
-			System.out.println(distanceBetweenDistrictsKm);
+		simulator.setParkingSimulator(new DefaultParkingSimulator<>(scenario, () -> new VehicleState()));
 
-			// System.out.println(distanceBetweenDistrictsKm.size());
+		// Create MH algorithm
 
-			// Double Loop that adds distance [km] to scenario
+		double locationProposalWeight = 0.5;
 
-			for (int i = 0; i < distanceBetweenDistrictsKm.size(); i++) {
+		double departureProposalWeight = 0.5;
 
-				List<String> row = distanceBetweenDistrictsKm.get(i);
+		RoundTripProposal<RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
 
-				// System.out.println(row.size());
+		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
 
-				String origin = namesOfDistricts.get(i);
+				(state, scen) -> new PossibleTransitions<TAZ>(state, scen)), locationProposalWeight);
 
-				System.out.println("Current row in distanceBetweenDistrictsKm: " + row);
+		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
 
-				System.out.println();
+		MultiRoundTripProposal<RoundTrip<TAZ>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> proposalMulti = new MultiRoundTripProposal<>(
 
-				for (int j = 1; j < row.size(); j++) {
+				scenario.getRandom(),
 
-					String destination = namesOfDistricts.get(j - 1);
+				proposal);
 
-					double dist_km = Double.parseDouble(row.get(j));
+		MHAlgorithm<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> algo = new MHAlgorithm<>(proposalMulti, allPreferences,
 
-					scenario.setSymmetricDistance_km(origin, destination, dist_km);
+				new Random());
 
-					System.out.println("Origin: " + origin);
+		algo.addStateProcessor(new SimpleStatsLogger(scenario, 1000));
 
-					System.out.println("Destination: " + destination);
+		for (TargetLogger targetLogger : targetLoggers) {
+			algo.addStateProcessor(targetLogger);
+		}
 
-					System.out.println("Distance: " + dist_km);
+		final MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTripWithOD<>(roundTripCnt);
 
-					System.out.println();
+		Random rnd = new Random();
+
+		for (int i = 0; i < initialStateMulti.size(); i++) {
+
+			RoundTrip<TAZ> initialStateSingle = null;
+
+			do {
+
+				TAZ loc1 = scenario.getLocationsView().get(rnd.nextInt(scenario.getLocationsView().size()));
+
+				TAZ loc2 = scenario.getLocationsView().get(rnd.nextInt(scenario.getLocationsView().size()));
+
+				int time1 = rnd.nextInt(scenario.getBinCnt());
+
+				int time2 = rnd.nextInt(scenario.getBinCnt());
+
+				if (!loc1.equals(loc2) && (time1 != time2)) {
+
+					initialStateSingle = new RoundTrip<TAZ>(Arrays.asList(loc1, loc2),
+
+							Arrays.asList(Math.min(time1, time2), Math.max(time1, time2)));
 
 				}
 
-			}
+			} while (initialStateSingle == null);
 
-			// Reads in travel-time between districts [h] from .csv and safes to
-			// distanceBetweenDistrictsH
+			initialStateSingle.setEpisodes(simulator.simulate(initialStateSingle));
 
-			ValuesFromCsvToList hFromCsvToList = new ValuesFromCsvToList();
-
-			List<List<String>> distanceBetweenDistrictsH = hFromCsvToList.readCSV("input/districts_skim_h.csv", 24);
-
-			// System.out.println(distanceBetweenDistrictsMin);
-
-			// Double Loop that adds travel-time [h] to scenario
-
-			for (int i = 0; i < distanceBetweenDistrictsH.size(); i++) {
-
-				List<String> row = distanceBetweenDistrictsH.get(i);
-
-				// System.out.println(row.size());
-
-				String origin = namesOfDistricts.get(i);
-
-				System.out.println("Current row in distanceBetweenDistrictsH: " + row);
-
-				System.out.println();
-
-				for (int j = 1; j < row.size(); j++) {
-
-					String destination = namesOfDistricts.get(j - 1);
-
-					double dist_h = Double.parseDouble(row.get(j));
-
-					scenario.setSymmetricTime_h(origin, destination, dist_h);
-
-					System.out.println("Origin: " + origin);
-
-					System.out.println("Destination: " + destination);
-
-					System.out.println("Travel Time: " + dist_h);
-
-					System.out.println();
-
-				}
-
-			}
-
-			scenario.setMaxParkingEpisodes(4);
-
-			scenario.setTimeBinCnt(24);
-
-			final Preferences<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> allPreferences = new Preferences<>();
-
-			final List<TargetLogger> targetLoggers = new ArrayList<>();
-
-			// Consistency preferences
-
-			allPreferences.addComponent(new SingleToMultiComponent(new UniformOverLocationCount<>(scenario)));
-
-			allPreferences.addComponent(new SingleToMultiComponent(new AllDayTimeConstraintPreference<>()));
-
-			allPreferences.addComponent(new SingleToMultiComponent(new StrategyRealizationConsistency<>(scenario)));
-
-			// Reads in number-of-trips (OD) from .csv and safes to odMatrice
-
-			ValuesFromCsvToList numberOfTripsFromCsvToList = new ValuesFromCsvToList();
-
-			List<List<String>> odMatrice = numberOfTripsFromCsvToList.readCSV("input/districts_od.csv", 24);
-
-			// System.out.println(odMatrice);
-
-			// Double Loop for ODPreference
-
-			ODTarget odTarget = new ODTarget();
-
-			for (int i = 0; i < odMatrice.size(); i++) {
-
-				List<String> row = odMatrice.get(i);
-
-				// System.out.println(row.size());
-
-				String origin = namesOfDistricts.get(i);
-
-				System.out.println("Current row in odMatrice: " + row);
-
-				System.out.println();
-
-				for (int j = 1; j < row.size(); j++) {
-
-					String destination = namesOfDistricts.get(j - 1);
-
-					double numberOfTrips = Double.parseDouble(row.get(j));
-
-					odTarget.setODEntry(scenario.getLocation(origin), scenario.getLocation(destination), numberOfTrips);
-
-					System.out.println("Origin: " + origin);
-
-					System.out.println("Destination: " + destination);
-
-					System.out.println("Number of Trips: " + numberOfTrips);
-
-					System.out.println();
-
-				}
-
-			}
-
-			allPreferences.addComponent(odTarget, 10);
-			targetLoggers.add(new TargetLogger(1000, odTarget, "odTarget.log"));
-
-			// parse home location file
-
-			Map<String, Map<TAZ, Double>> group2homeZone2target = new LinkedHashMap<>();
-			
-			AbstractTabularFileHandlerWithHeaderLine homeHandler = new AbstractTabularFileHandlerWithHeaderLine() {
-				@Override
-				public void startDataRow(final String[] row) {
-					Map<TAZ, Double> zone2target = new LinkedHashMap<>();
-					group2homeZone2target.put(row[0], zone2target);
-					for (Map.Entry<String, Integer> e : this.label2index.entrySet()) {
-						if (e.getValue() > 0 && row[e.getValue()].length() > 0) {
-							zone2target.put(scenario.getLocation(e.getKey()), Double.parseDouble(row[e.getValue()]));
-						}
-					}
-				}
-			};
-
-			TabularFileParser parser = new TabularFileParser();
-			parser.setDelimiterTags(new String[] { "," });
-			parser.setOmitEmptyColumns(false);
-			parser.parse("./input/districts_home_locations.csv", homeHandler);
-
-			// create population segmentation
-
-			int roundTripCnt = 1000; // Change number of RT inside one set-of-RT here
-
-			PopulationGrouping grouping = new PopulationGrouping(roundTripCnt);
-			for (Map.Entry<String, Map<TAZ, Double>> entry : group2homeZone2target.entrySet()) {
-				grouping.addGroup(entry.getKey(), entry.getValue().values().stream().mapToDouble(c -> c).sum());
-			}
-
-			// create home preferences
-
-			for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2homeZone2target.entrySet()) {
-				HomeLocationTarget target = new HomeLocationTarget();
-				for (Map.Entry<TAZ, Double> zone2targetEntry : group2xEntry.getValue().entrySet()) {
-					target.setTarget(zone2targetEntry.getKey(), zone2targetEntry.getValue());
-				}
-				target.setFilter(grouping.createFilter(group2xEntry.getKey()));
-				allPreferences.addComponent(target, 10.0);
-				targetLoggers.add(new TargetLogger(1000, target, "homeTarget_" + group2xEntry.getKey() + ".log"));
-			}
-
-			// Default physical simulator
-
-			Simulator<TAZ, VehicleState, RoundTrip<TAZ>> simulator = new Simulator<>(scenario,
-					() -> new VehicleState());
-
-			simulator.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario, () -> new VehicleState()));
-
-			simulator.setParkingSimulator(new DefaultParkingSimulator<>(scenario, () -> new VehicleState()));
-
-			// Create MH algorithm
-
-			double locationProposalWeight = 0.5;
-
-			double departureProposalWeight = 0.5;
-
-			RoundTripProposal<RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
-
-			proposal.addProposal(new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
-
-					(state, scen) -> new PossibleTransitions<TAZ>(state, scen)), locationProposalWeight);
-
-			proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
-
-			MultiRoundTripProposal<RoundTrip<TAZ>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> proposalMulti = new MultiRoundTripProposal<>(
-
-					scenario.getRandom(),
-
-					proposal);
-
-			MHAlgorithm<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> algo = new MHAlgorithm<>(proposalMulti,
-					allPreferences,
-
-					new Random());
-
-			algo.addStateProcessor(new SimpleStatsLogger(scenario, 1000));
-
-			for (TargetLogger targetLogger : targetLoggers) {
-				algo.addStateProcessor(targetLogger);
-			}
-			
-			final MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTripWithOD<>(
-					roundTripCnt);
-
-			Random rnd = new Random();
-
-			for (int i = 0; i < initialStateMulti.size(); i++) {
-
-				RoundTrip<TAZ> initialStateSingle = null;
-
-				do {
-
-					TAZ loc1 = scenario.getLocationsView().get(rnd.nextInt(scenario.getLocationsView().size()));
-
-					TAZ loc2 = scenario.getLocationsView().get(rnd.nextInt(scenario.getLocationsView().size()));
-
-					int time1 = rnd.nextInt(scenario.getBinCnt());
-
-					int time2 = rnd.nextInt(scenario.getBinCnt());
-
-					if (!loc1.equals(loc2) && (time1 != time2)) {
-
-						initialStateSingle = new RoundTrip<TAZ>(Arrays.asList(loc1, loc2),
-
-								Arrays.asList(Math.min(time1, time2), Math.max(time1, time2)));
-
-					}
-
-				} while (initialStateSingle == null);
-
-				initialStateSingle.setEpisodes(simulator.simulate(initialStateSingle));
-
-				initialStateMulti.setRoundTrip(i, initialStateSingle);
-
-			}
-
-			algo.setInitialState(initialStateMulti);
-
-			algo.setMsgInterval(1000);
-
-			// Run MH algorithm
-
-			algo.run(100 * 1000);
-
-			// Close file output stream
-
-			fileOutputStream.close();
-
-			// Close file print stream
-
-			combinedPrintStream.close();
-
-			filePrintStream.close();
-
-		} catch (FileNotFoundException e) {
-
-			e.printStackTrace();
+			initialStateMulti.setRoundTrip(i, initialStateSingle);
 
 		}
 
+		algo.setInitialState(initialStateMulti);
+
+		algo.setMsgInterval(1000);
+
+		// Run MH algorithm
+
+		algo.run(100 * 1000);
+
+		// Close file output stream
+
+		fileOutputStream.close();
+
+		// Close file print stream
+
+		combinedPrintStream.close();
+
+		filePrintStream.close();
 	}
 
 }
