@@ -58,10 +58,14 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 		return this.lastDiscretizationError;
 	}
 
+	public MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> filter(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+		return this.filter.apply(multiRoundTrip);
+	}
+
 	@Override
 	public double logWeight(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
 
-		multiRoundTrip = this.filter.apply(multiRoundTrip);
+		multiRoundTrip = this.filter(multiRoundTrip);
 
 		final double[] sample = this.computeSample(multiRoundTrip);
 		final double sampleSize = Math.max(Arrays.stream(sample).sum(), 1e-8);
@@ -85,6 +89,6 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 
 	public abstract double[] computeTarget();
 
-	public abstract double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip);
+	public abstract double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> filteredMultiRoundTrip);
 
 }

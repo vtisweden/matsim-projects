@@ -56,7 +56,9 @@ public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, 
 	}
 
 	@Override
-	public void processState(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> state) {
+	public void processState(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+
+		multiRoundTrip = this.target.filter(multiRoundTrip);
 
 		if (this.iteration++ % this.interval == 0) {
 
@@ -64,11 +66,11 @@ public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, 
 			try {
 				PrintWriter writer = new PrintWriter(this.fileName);
 				double[] targets = this.target.computeTarget();
-				double[] samples = this.target.computeSample(state);
+				double[] samples = this.target.computeSample(multiRoundTrip);
 				String[] labels = this.target.createLabels();
 				writer.println("label\ttarget\tsample");
 				for (int i = 0; i < targets.length; i++) {
-					writer.println(labels[i] + "\t"+ targets[i] + "\t" + samples[i]);
+					writer.println(labels[i] + "\t" + targets[i] + "\t" + samples[i]);
 				}
 				writer.flush();
 				writer.close();
