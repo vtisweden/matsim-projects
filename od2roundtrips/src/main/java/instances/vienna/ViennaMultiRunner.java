@@ -17,6 +17,7 @@ import se.vti.od2roundtrips.model.OD2RoundtripsScenario;
 import se.vti.od2roundtrips.model.SimpleStatsLogger;
 import se.vti.od2roundtrips.model.SingleToMultiComponent;
 import se.vti.od2roundtrips.model.TAZ;
+import se.vti.od2roundtrips.preferences.AtHomeOverNightPreference;
 import se.vti.od2roundtrips.targets.HomeLocationTarget;
 import se.vti.od2roundtrips.targets.ODTarget;
 import se.vti.od2roundtrips.targets.PopulationGrouping;
@@ -138,6 +139,21 @@ public class ViennaMultiRunner {
 			targetLoggers.add(new TargetLogger(1000, target, "homeTarget_" + group2xEntry.getKey() + ".log"));
 		}
 
+		// Preference for staying at home
+		
+		/*-
+		 * Parameters
+		 * 1. minimal duration actually spent at home
+		 * 2. length of interval during which at-home is considered
+		 * 3. end time of interval during which at-home is considered
+		 * 4. technical, do not change.
+		 * 
+		 * So 10,12,7,.. means: Spend at least 10 hours at home between 19:00 and 7:00.
+		 */
+		
+		allPreferences.addComponent(new SingleToMultiComponent(
+				new AtHomeOverNightPreference(10.0, 12.0, 7.0, 10.0)), 10.0);
+		
 		// Default physical simulator
 
 		Simulator<TAZ, VehicleState, RoundTrip<TAZ>> simulator = new Simulator<>(scenario, () -> new VehicleState());
