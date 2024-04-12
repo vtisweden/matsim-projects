@@ -28,6 +28,7 @@ import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.skellefteaV2X.instances.v0.PreStudyLocationVisitAnalyzer;
 import se.vti.skellefteaV2X.model.ElectrifiedDrivingSimulator;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
@@ -175,8 +176,11 @@ public class Runner {
 		final long targetSamples = 1000 * 1000;
 		final long burnInIterations = (iterations / 4);
 		final long samplingInterval = (iterations - burnInIterations) / targetSamples;
-		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
+//		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
+//				importanceSamplingPreferences));
+		algo.addStateProcessor(new PreStudyLocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
 				importanceSamplingPreferences));
+		
 
 		algo.setMsgInterval(samplingInterval);
 
