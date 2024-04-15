@@ -129,6 +129,9 @@ public class preStudyRunner {
 		offHomeShare.setShare(burtrask, 1.0);
 		allPreferences.addComponent(offHomeShare, 1.0 /* must be one */);
 
+		double shareOfHomeChargers = 0.5;
+		allPreferences.addComponent(new ChargeAtHomePreference(shareOfHomeChargers));
+		
 		// ANALYSIS PREFERENCES
 
 		final Preferences<ElectrifiedRoundTrip> importanceSamplingPreferences = new Preferences<>();
