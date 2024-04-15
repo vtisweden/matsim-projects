@@ -178,7 +178,7 @@ public class Runner {
 		final long samplingInterval = (iterations - burnInIterations) / targetSamples;
 //		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
 //				importanceSamplingPreferences));
-		algo.addStateProcessor(new PreStudyLocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
+		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
 				importanceSamplingPreferences));
 		
 

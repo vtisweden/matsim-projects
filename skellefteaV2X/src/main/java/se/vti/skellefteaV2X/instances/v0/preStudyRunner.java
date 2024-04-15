@@ -9,6 +9,7 @@ import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.skellefteaV2X.analysis.LocationVisitAnalyzer;
 import se.vti.skellefteaV2X.electrifiedroundtrips.single.ElectrifiedRoundTrip;
+import se.vti.skellefteaV2X.instances.prestudy.WouldFailWithoutChargingPreference;
 import se.vti.skellefteaV2X.model.ElectrifiedDrivingSimulator;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 import se.vti.skellefteaV2X.model.ElectrifiedScenario;
@@ -24,7 +25,6 @@ import se.vti.skellefteaV2X.preferences.consistency.UniformOverElectrifiedLocati
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 public class preStudyRunner {
-
 
 	static Runnable createMHAlgorithmRunnable(long iterations, String outputFileName) {
 		/*
@@ -133,10 +133,34 @@ public class preStudyRunner {
 
 		final Preferences<ElectrifiedRoundTrip> importanceSamplingPreferences = new Preferences<>();
 
-//		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus, 10.0);
-//		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
-//		allPreferences.addComponent(localChargingPreference, 1.0);
+		// Here we look specifically at those who charge at least 10kWh on campus.
+		LocalChargingPreference localChargingPreference = new LocalChargingPreference(scenario, campus, 10.0);
+		importanceSamplingPreferences.addComponent(localChargingPreference, 1.0);
+		allPreferences.addComponent(localChargingPreference, 1.0);
 
+		// Here we look specifically at those who would fail (SOC at least 5kWh below zero) if not charging on campus.
+		WouldFailWithoutChargingPreference wouldFailWithoutChargingPreference = new WouldFailWithoutChargingPreference(scenario, campus, 5.0);
+		importanceSamplingPreferences.addComponent(wouldFailWithoutChargingPreference, 1.0);
+		allPreferences.addComponent(wouldFailWithoutChargingPreference, 1.0);
+		
+		// add home charging preferences
+		HomeChargingPreference bolidenHomeChargingPreference= new HomeChargingPreference(scenario, boliden, 0.1,0.6);
+		importanceSamplingPreferences.addComponent(bolidenHomeChargingPreference, 1.0);
+		allPreferences.addComponent(bolidenHomeChargingPreference, 1.0);
+		HomeChargingPreference kageHomeChargingPreference= new HomeChargingPreference(scenario, kage, 0.1,0.6);
+		importanceSamplingPreferences.addComponent(kageHomeChargingPreference, 1.0);
+		allPreferences.addComponent(kageHomeChargingPreference, 1.0);
+		HomeChargingPreference centrumHomeChargingPreference= new HomeChargingPreference(scenario, centrum, 0.1,0.6);
+		importanceSamplingPreferences.addComponent(centrumHomeChargingPreference, 1.0);
+		allPreferences.addComponent(centrumHomeChargingPreference, 1.0);
+		HomeChargingPreference bureaHomeChargingPreference= new HomeChargingPreference(scenario, burea, 0.1,0.6);
+		importanceSamplingPreferences.addComponent(bureaHomeChargingPreference, 1.0);
+		allPreferences.addComponent(bureaHomeChargingPreference, 1.0);
+		HomeChargingPreference burtraskHomeChargingPreference= new HomeChargingPreference(scenario, burtrask, 0.1,0.6);
+		importanceSamplingPreferences.addComponent(burtraskHomeChargingPreference, 1.0);
+		allPreferences.addComponent(burtraskHomeChargingPreference, 1.0);
+		
+		
 		/*
 		 * Run MH algorithm.
 		 */
@@ -146,8 +170,11 @@ public class preStudyRunner {
 		final long targetSamples = 1000 * 1000;
 		final long burnInIterations = (iterations / 4);
 		final long samplingInterval = (iterations - burnInIterations) / targetSamples;
+//		algo.addStateProcessor(new LocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
+//				importanceSamplingPreferences));
 		algo.addStateProcessor(new PreStudyLocationVisitAnalyzer(scenario, iterations / 2, samplingInterval, outputFileName,
 				importanceSamplingPreferences));
+		
 
 		algo.setMsgInterval(samplingInterval);
 
@@ -177,5 +204,4 @@ public class preStudyRunner {
 			return;
 		}
 	}
-
 }

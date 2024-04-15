@@ -86,6 +86,9 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 
 	double used_kWh = 0.0;
 	double charged_kWh = 0.0;
+	
+	double totalDistance=0.0;
+	double totalWeight=0.0;
 
 	private AllDayBatteryConstraintPreference batteryWrapAround;
 	private AllDayTimeConstraintPreference<ElectrifiedRoundTrip, ElectrifiedLocation> timeWrapAround;
@@ -103,9 +106,9 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 	 * dayTime is defined as 5:00 - 20:00
 	 */
 	
-	private List<Map<ElectrifiedLocation, Double>> totalWeightOfMustChargeVehiclesAtCampusAtDayTime;
-	private List<Map<ElectrifiedLocation, Double>> totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime;
-	private List<Map<ElectrifiedLocation, Double>> totalWeightOfAllChargedVehiclesAtCampusAtDayTime;
+	private double totalWeightOfMustChargeVehiclesAtCampusAtDayTime=0.0;
+	private double totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime=0.0;
+	private double totalWeightOfAllChargedVehiclesAtCampusAtDayTime=0.0;
 	
 	public PreStudyLocationVisitAnalyzer(ElectrifiedScenario scenario, long burnInIterations, long samplingInterval,
 			String fileName, Preferences<ElectrifiedRoundTrip> importanceSamplingPreferences) {
@@ -118,13 +121,6 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 		this.timeListOfLocation2enRouteChargings_kWh = new ArrayList<>(scenario.getBinCnt());
 		this.timeListOfDriving = new ArrayList<>(scenario.getBinCnt());
 		
-		/*-----------------------
-		 * Bookkeeping of pre-study related metrics
-		 * dayTime is defined as 5:00 - 20:00
-		 */
-		this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime=new ArrayList<>(scenario.getBinCnt());
-		this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime=new ArrayList<>(scenario.getBinCnt());
-		this.totalWeightOfAllChargedVehiclesAtCampusAtDayTime=new ArrayList<>(scenario.getBinCnt());
 		
 
 		this.sizeCnt = new double[scenario.getBinCnt() + 1];
@@ -135,14 +131,6 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 			this.timeListOfLocation2enRouteVisits.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfLocation2enRouteChargings_kWh.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 			this.timeListOfDriving.add(0.0);
-			
-			/*-----------------------
-			 * Bookkeeping of pre-study related metrics
-			 * dayTime is defined as 5:00 - 20:00
-			 */
-			this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime.add(new LinkedHashMap<>(scenario.getLocationCnt()));
-			this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime.add(new LinkedHashMap<>(scenario.getLocationCnt()));
-			this.totalWeightOfAllChargedVehiclesAtCampusAtDayTime.add(new LinkedHashMap<>(scenario.getLocationCnt()));
 		}
 
 		this.batteryWrapAround = new AllDayBatteryConstraintPreference(scenario);
@@ -158,6 +146,7 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 
 	@Override
 	public void processRelevantRoundTrip(ElectrifiedRoundTrip roundTrip, double sampleWeight) {
+		
 		
 		ElectrifiedSimulator simulator = new ElectrifiedSimulator(scenario, new ElectrifiedVehicleStateFactory());
 		simulator.setDrivingSimulator(new ElectrifiedDrivingSimulator(scenario, new ElectrifiedVehicleStateFactory()));
@@ -261,67 +250,6 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 									(l, c) -> c == null ? weightedEffectiveCharging_kWh
 											: c + weightedEffectiveCharging_kWh);
 							
-							/*-----------------------
-							 * do the bookkeeping of pre-study related metrics.
-							 * we start here where we have identified a parking episode at campus.
-							 */
-							// if parking is campus and the time is at daytime, we start bookkeeping.
-							String parkingLocation=parking.getLocation().getName();
-							double startTime_h = parking.getEndTime_h()-parking.getDuration_h();
-							double amountCharged = parking.getFinalState().getBatteryCharge_kWh()-parking.getInitialState().getBatteryCharge_kWh();
-							if (parkingLocation.equals("Campus") & amountCharged>0) {
-								
-								this.totalWeightOfAllChargedVehiclesAtCampusAtDayTime.get(bin).compute(parking.getLocation(),
-										(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
-								
-								// battery level at campus
-								double batteryLevelWhenArriveAtCampus = parking.getInitialState().getBatteryCharge_kWh();
-								double requiredBatterLevel=0;
-								
-								// here we need to identify the subsequent episode, loop these episodes and 
-								// calculate the required kWh if the vehicle is not charged at campus
-								ElectrifiedRoundTrip noChargingRoundTrip = roundTrip.clone();
-								for (int i = 0; i < noChargingRoundTrip.locationCnt(); i++) {
-									if (parking.getLocation().equals(noChargingRoundTrip.getLocation(i))) {
-										noChargingRoundTrip.setCharging(i, false);
-									}
-								}
-								List<Episode<ElectrifiedVehicleState>> noChargingEpisodes = simulator.simulate(noChargingRoundTrip);
-								double minSOC_kWh = Double.POSITIVE_INFINITY;
-								for (Episode<ElectrifiedVehicleState> e1 : noChargingEpisodes) {
-									if (e1 instanceof DrivingEpisode) {
-										DrivingEpisode<?, ElectrifiedVehicleState> drive = (DrivingEpisode<?, ElectrifiedVehicleState>) e1;
-										minSOC_kWh = Math.min(minSOC_kWh, drive.getFinalState().getBatteryCharge_kWh());
-									}
-								}
-								requiredBatterLevel=Math.max(0, -minSOC_kWh);
-								
-//								int locationIndex = roundTrip.getEpisodes().indexOf(e);
-//								for (int k=locationIndex+1; k<roundTrip.getEpisodes().size(); k++) {
-//									
-//									Episode<ElectrifiedVehicleState> subsequentEpisode = (Episode<ElectrifiedVehicleState>) roundTrip.getEpisodes().get(k);
-//									if (subsequentEpisode instanceof DrivingEpisode) {
-//										final DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> subsequentDriving = (subsequentEpisode instanceof DrivingEpisode
-//												? (DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) subsequentEpisode
-//												: null);
-//										// if the subsequentDriving actually consumes battery (it should always be true since all vehicles are EVs and a driving will consume battery?)
-//										if(subsequentDriving.getInitialState().getBatteryCharge_kWh()-subsequentDriving.getFinalState().getBatteryCharge_kWh()>0) {
-//											requiredBatterLevel+=subsequentDriving.getInitialState().getBatteryCharge_kWh()-subsequentDriving.getFinalState().getBatteryCharge_kWh();
-//										}
-//									}
-//								}
-								
-								// if batter level is not enough so it must need charging, add to the bookkeeping.
-								if (batteryLevelWhenArriveAtCampus<requiredBatterLevel) {
-									this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime.get(bin).compute(parking.getLocation(),
-											(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
-								}
-								if (batteryLevelWhenArriveAtCampus>(requiredBatterLevel+2)) {
-									this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime.get(bin).compute(parking.getLocation(),
-											(l, c) -> c == null ? weightedRelativeOverlap : c + weightedRelativeOverlap);
-								}
-							}
-							
 						}
 					}
 				}
@@ -330,21 +258,73 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 
 		double myCharged_kWh = 0.0;
 		double myUsed_kWh = 0.0;
+		
+		double roundTripWeight=1;
+		double roundTripDistanceWeight=0;
 
+		boolean isCounted=false;
 		for (int i = 0; i < roundTrip.getEpisodes().size(); i += 2) {
 			ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (ParkingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) roundTrip.getEpisodes().get(i);
 //			myCharged_kWh += e.getChargeAtEnd_kWh() - e.getChargeAtStart_kWh();
 			myCharged_kWh += e.getFinalState().getBatteryCharge_kWh() - e.getInitialState().getBatteryCharge_kWh();
+			
+			
+			/*-----------------------
+			 * do the bookkeeping of pre-study related metrics.
+			 * we start here where we have identified a parking episode at campus.
+			 */
+			// if parking is campus and the time is at daytime, we start bookkeeping.
+			String parkingLocation=e.getLocation().getName();
+			double amountCharged = e.getFinalState().getBatteryCharge_kWh()-e.getInitialState().getBatteryCharge_kWh();
+			if (parkingLocation.equals("Campus") & amountCharged>0 &(!isCounted)) {
+				isCounted=true;
+				this.totalWeightOfAllChargedVehiclesAtCampusAtDayTime+=sampleWeight*1;
+				
+				// battery level at campus
+				double batteryLevelWhenArriveAtCampus = e.getInitialState().getBatteryCharge_kWh();
+				double requiredBatterLevel=0;
+				
+				// here we need to identify the subsequent episode, loop these episodes and 
+				// calculate the required kWh if the vehicle is not charged at campus
+				ElectrifiedRoundTrip noChargingRoundTrip = roundTrip.clone();
+				for (int n = 0; n < noChargingRoundTrip.locationCnt(); n++) {
+					if (e.getLocation().equals(noChargingRoundTrip.getLocation(n))) {
+						noChargingRoundTrip.setCharging(n, false);
+					}
+				}
+				List<Episode<ElectrifiedVehicleState>> noChargingEpisodes = simulator.simulate(noChargingRoundTrip);
+				double minSOC_kWh = Double.POSITIVE_INFINITY;
+				for (Episode<ElectrifiedVehicleState> e1 : noChargingEpisodes) {
+					if (e1 instanceof DrivingEpisode) {
+						DrivingEpisode<?, ElectrifiedVehicleState> drive = (DrivingEpisode<?, ElectrifiedVehicleState>) e1;
+						minSOC_kWh = Math.min(minSOC_kWh, drive.getFinalState().getBatteryCharge_kWh());
+					}
+				}
+				requiredBatterLevel=Math.max(0, -minSOC_kWh);
+				if (batteryLevelWhenArriveAtCampus<requiredBatterLevel) {
+					this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime+=sampleWeight*1;
+				}
+				if (batteryLevelWhenArriveAtCampus>(requiredBatterLevel+2)) {
+					this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime+=sampleWeight*1;
+				}
+				
+			}
+			
 		}
 
 		for (int i = 1; i < roundTrip.getEpisodes().size(); i += 2) {
 			DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState> e = (DrivingEpisode<ElectrifiedLocation, ElectrifiedVehicleState>) roundTrip.getEpisodes().get(i);
 //			myUsed_kWh += e.getChargeAtStart_kWh() - e.getChargeAtEnd_kWh();
 			myUsed_kWh += e.getInitialState().getBatteryCharge_kWh() - e.getFinalState().getBatteryCharge_kWh();
+			double distanceKm=e.getDuration_h()*this.scenario.getDefaultSpeed_km_h();
+			roundTripDistanceWeight+=distanceKm;
 		}
 
 		this.charged_kWh += sampleWeight * myCharged_kWh;
 		this.used_kWh += sampleWeight * myUsed_kWh;
+		
+		this.totalDistance+=sampleWeight *roundTripDistanceWeight;
+		this.totalWeight+=sampleWeight *roundTripWeight;
 	}
 
 	@Override
@@ -503,39 +483,19 @@ public class PreStudyLocationVisitAnalyzer extends RoundTripAnalyzer<Electrified
 				writer.println(e.getKey() + "\t" + proba + "\t" + cumulativeProba);
 			}
 			
-			writer.println();
-			writer.println("Pr[campus daytime parking]");
-			writer.println();
-			for (Map<ElectrifiedLocation, Double> location2visits : this.totalWeightOfAllChargedVehiclesAtCampusAtDayTime) {
-				Set<ElectrifiedLocation> allLocations = location2visits.keySet();
-				for (ElectrifiedLocation l : allLocations) {
-					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
-				}
-				writer.println();
-			}
-			
-			writer.println();
-			writer.println("Pr[campus daytime parking must charge]");
-			writer.println();
-			for (Map<ElectrifiedLocation, Double> location2visits : this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime) {
-				Set<ElectrifiedLocation> allLocations = location2visits.keySet();
-				for (ElectrifiedLocation l : allLocations) {
-					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
-				}
-				writer.println();
-			}
-			
-			writer.println();
-			writer.println("Pr[campus daytime parking can supply grid]");
-			writer.println();
-			for (Map<ElectrifiedLocation, Double> location2visits : this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime) {
-				Set<ElectrifiedLocation> allLocations = location2visits.keySet();
-				for (ElectrifiedLocation l : allLocations) {
-					writer.print(location2visits.getOrDefault(l, 0.0) / acceptedSampleWeightSum() + "\t");
-				}
-				writer.println();
-			}
 
+			writer.println();
+			writer.println("Round trip distance");
+			writer.println("used            " + this.totalDistance / acceptedSampleWeightSum());
+			writer.println("charged         " + this.totalWeight / acceptedSampleWeightSum());
+			writer.println();
+			
+			writer.println();
+			writer.println("Round trip campus charging metrics");
+			writer.println("total weight N vehicles charging  at campus: " + this.totalWeightOfAllChargedVehiclesAtCampusAtDayTime / acceptedSampleWeightSum());
+			writer.println("total weight N vehicles that must charge  at campus: " + this.totalWeightOfMustChargeVehiclesAtCampusAtDayTime / acceptedSampleWeightSum());
+			writer.println("total weight N vehicles that can supply grid (have 2 kwh left at end)  at campus: " + this.totalWeightOfCanSupplyGridVehiclesAtCampusAtDayTime / acceptedSampleWeightSum());
+			writer.println();
 			
 			
 			writer.flush();
