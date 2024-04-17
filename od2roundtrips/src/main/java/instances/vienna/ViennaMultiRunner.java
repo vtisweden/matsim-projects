@@ -160,18 +160,18 @@ public class ViennaMultiRunner {
 
 		// main activity location preference
 
-		Map<String, Map<TAZ, Double>> group2main2target = new LinkedHashMap<>();
+		Map<String, Map<TAZ, Double>> group2work2target = new LinkedHashMap<>();
 		// Replace table, this currently uses home locations as main activity locations.
 		for (Map.Entry<Tuple<String, String>, Double> entry : MatrixDataReader
-				.read("./input/districts_home_locations.csv").entrySet()) {
+				.read("./input/workLocations.csv").entrySet()) {
 			String group = entry.getKey().getA();
-			Map<TAZ, Double> main2target = group2main2target.computeIfAbsent(group, g -> new LinkedHashMap<>());
-			TAZ main = scenario.getLocation(entry.getKey().getB());
+			Map<TAZ, Double> work2target = group2work2target.computeIfAbsent(group, g -> new LinkedHashMap<>());
+			TAZ work = scenario.getLocation(entry.getKey().getB());
 			double target = entry.getValue();
-			main2target.put(main, target);
+			work2target.put(work, target);
 		}
 
-		for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2main2target.entrySet()) {
+		for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2work2target.entrySet()) {
 			// everybody is active for 9hrs between during the 12h interval ending at 19:00.
 			AtMainActivityTarget target = new AtMainActivityTarget(9.0, 12.0, 19.0);
 			for (Map.Entry<TAZ, Double> main2targetEntry : group2xEntry.getValue().entrySet()) {
@@ -179,7 +179,7 @@ public class ViennaMultiRunner {
 			}
 			target.setFilter(grouping.createFilter(group2xEntry.getKey()));
 			allPreferences.addComponent(target, 10.0);
-			targetLoggers.add(new TargetLogger(1000, target, "longOutOfHomeTarget_" + group2xEntry.getKey() + ".log"));
+			targetLoggers.add(new TargetLogger(1000, target, "workTarget_" + group2xEntry.getKey() + ".log"));
 		}
 
 		// Default physical simulator
