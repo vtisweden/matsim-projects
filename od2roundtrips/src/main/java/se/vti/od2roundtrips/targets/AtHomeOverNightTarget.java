@@ -1,7 +1,7 @@
 /**
- * org.matsim.contrib.emulation
+ * se.vti.od2roundtrips.targets
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,46 +17,56 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.od2roundtrips.preferences;
+package se.vti.od2roundtrips.targets;
 
 import java.util.Collections;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
+import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
 import se.vti.od2roundtrips.model.TAZ;
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.ParkingEpisode;
-import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.roundtrips.single.RoundTrip;
-import se.vti.utils.misc.math.MathHelpers;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class AtHomeOverNightPreference extends PreferenceComponent<RoundTrip<TAZ>> {
-
-	private final MathHelpers math = new MathHelpers();
+public class AtHomeOverNightTarget extends Target {
 
 	private final double targetDuration_h;
-	private final double overlapStrictness;
 	private final List<Tuple<Double, Double>> targetIntervals;
+	private final double target;
 
-	public AtHomeOverNightPreference(double targetDuration_h, double intervalDuration_h, double endTime_h,
-			double overlapStrictness) {
+	public AtHomeOverNightTarget(double targetDuration_h, double intervalDuration_h, double endTime_h, double target) {
 		this.targetDuration_h = targetDuration_h;
-		this.overlapStrictness = overlapStrictness;
 		this.targetIntervals = Collections.unmodifiableList(Episode.effectiveIntervals(intervalDuration_h, endTime_h));
+		this.target = target;
 	}
 
 	@Override
-	public double logWeight(RoundTrip<TAZ> roundTrip) {
-		final ParkingEpisode<?, ?> home = (ParkingEpisode<?, ?>) roundTrip.getEpisodes().get(0);
-		final double overlap_h = Math.max(Math.min(home.overlap_h(this.targetIntervals), this.targetDuration_h),
-				0.001 * this.targetDuration_h);
-		return this.overlapStrictness * (Math.log(overlap_h) - Math.log(this.targetDuration_h));
-
+	public String[] createLabels() {
+		return new String[] { "at home overnight", "NOT at home overnight" };
 	}
 
+	@Override
+	public double[] computeTarget() {
+		return new double[] { this.target, 0.0 }; 
+	}
+
+	@Override
+	public double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> filteredMultiRoundTrip) {
+		double total = 0.0;
+		double cnt = 0.0;
+		for (RoundTrip<TAZ> roundTrip : filteredMultiRoundTrip) {
+			total++;
+			final ParkingEpisode<?, ?> home = (ParkingEpisode<?, ?>) roundTrip.getEpisodes().get(0);
+			if (home.overlap_h(this.targetIntervals) >= this.targetDuration_h) {
+				cnt++;
+			}
+		}
+		return new double[] { cnt, total - cnt };
+	}
 }

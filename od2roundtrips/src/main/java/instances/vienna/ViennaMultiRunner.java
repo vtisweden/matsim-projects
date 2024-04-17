@@ -17,7 +17,8 @@ import se.vti.od2roundtrips.model.OD2RoundtripsScenario;
 import se.vti.od2roundtrips.model.SimpleStatsLogger;
 import se.vti.od2roundtrips.model.SingleToMultiComponent;
 import se.vti.od2roundtrips.model.TAZ;
-import se.vti.od2roundtrips.preferences.AtHomeOverNightPreference;
+import se.vti.od2roundtrips.targets.AtHomeOverNightTarget;
+import se.vti.od2roundtrips.targets.AtMainActivityTarget;
 import se.vti.od2roundtrips.targets.HomeLocationTarget;
 import se.vti.od2roundtrips.targets.ODTarget;
 import se.vti.od2roundtrips.targets.PopulationGrouping;
@@ -124,9 +125,12 @@ public class ViennaMultiRunner {
 			home2target.put(home, target);
 		}
 
+		double populationSize = 0.0; // needed further below
 		PopulationGrouping grouping = new PopulationGrouping(roundTripCnt);
 		for (Map.Entry<String, Map<TAZ, Double>> entry : group2home2target.entrySet()) {
-			grouping.addGroup(entry.getKey(), entry.getValue().values().stream().mapToDouble(c -> c).sum());
+			double groupSize = entry.getValue().values().stream().mapToDouble(c -> c).sum();
+			grouping.addGroup(entry.getKey(), groupSize);
+			populationSize += groupSize;
 		}
 
 		for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2home2target.entrySet()) {
@@ -140,20 +144,44 @@ public class ViennaMultiRunner {
 		}
 
 		// Preference for staying at home
-		
+
 		/*-
 		 * Parameters
 		 * 1. minimal duration actually spent at home
 		 * 2. length of interval during which at-home is considered
 		 * 3. end time of interval during which at-home is considered
-		 * 4. technical, do not change.
 		 * 
-		 * So 10,12,7,.. means: Spend at least 10 hours at home between 19:00 and 7:00.
+		 * So 10,12,7 means: Spend at least 10 hours at home between 19:00 and 7:00.
 		 */
-		
-		allPreferences.addComponent(new SingleToMultiComponent(
-				new AtHomeOverNightPreference(10.0, 12.0, 7.0, 10.0)), 10.0);
-		
+
+		AtHomeOverNightTarget atHomeOverNightTarget = new AtHomeOverNightTarget(10.0, 12.0, 7.0, populationSize);
+		allPreferences.addComponent(atHomeOverNightTarget, 10.0);
+		targetLoggers.add(new TargetLogger(1000, atHomeOverNightTarget, "atHomeOverNight.log"));
+
+		// main activity location preference
+
+		Map<String, Map<TAZ, Double>> group2main2target = new LinkedHashMap<>();
+		// Replace table, this currently uses home locations as main activity locations.
+		for (Map.Entry<Tuple<String, String>, Double> entry : MatrixDataReader
+				.read("./input/districts_home_locations.csv").entrySet()) {
+			String group = entry.getKey().getA();
+			Map<TAZ, Double> main2target = group2main2target.computeIfAbsent(group, g -> new LinkedHashMap<>());
+			TAZ main = scenario.getLocation(entry.getKey().getB());
+			double target = entry.getValue();
+			main2target.put(main, target);
+		}
+
+		for (Map.Entry<String, Map<TAZ, Double>> group2xEntry : group2main2target.entrySet()) {
+			// everybody is active for 9hrs between during the 12h interval ending at 19:00.
+			AtMainActivityTarget target = new AtMainActivityTarget(9.0, 12.0, 19.0);
+			for (Map.Entry<TAZ, Double> main2targetEntry : group2xEntry.getValue().entrySet()) {
+				target.setTarget(main2targetEntry.getKey(), main2targetEntry.getValue());
+			}
+			target.setFilter(grouping.createFilter(group2xEntry.getKey()));
+			allPreferences.addComponent(target, 10.0);
+			targetLoggers.add(new TargetLogger(1000, target, "longOutOfHomeTarget_" + group2xEntry.getKey() + ".log"));
+		}
+
 		// Default physical simulator
 
 		Simulator<TAZ, VehicleState, RoundTrip<TAZ>> simulator = new Simulator<>(scenario, () -> new VehicleState());
