@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips.single
+ * se.vti.roundtrips
  * 
- * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -19,26 +19,26 @@
  */
 package se.vti.roundtrips.single;
 
-public interface PossibleTransitions<L extends Location> {
+import se.vti.utils.misc.metropolishastings.MHWeight;
 
-	double getInsertProba();
-	double getRemoveProba();
-	double getFlipProba();
-	
-	int drawInsertIndex();
+/**
+ * 
+ * @author GunnarF
+ *
+ * @param <L>
+ */
+public class RoundTripIgnoreLocationCombinationsWithoutLocationConstraints implements MHWeight<RoundTrip<?>> {
 
-	L drawInsertValue(int index);
+	private final double logOfAvailableLocationCnt;
 
-	int drawRemoveIndex();
+	public RoundTripIgnoreLocationCombinationsWithoutLocationConstraints(int availableLocationCnt) {
+		this.logOfAvailableLocationCnt = Math.log(availableLocationCnt);
+	}
 
-	int drawFlipIndex();
-
-	L drawFlipValue(int index);
-
-	double concreteInsertProba(int index);
-
-	double concreteRemoveProba();
-
-	double concreteFlipProba(int index);
-
+	@Override
+	public double logWeight(RoundTrip<?> state) {
+//		final double size = Math.pow(this.locationCnt, state.locationCnt());
+//		return -Math.log(size);
+		return -state.locationCnt() * this.logOfAvailableLocationCnt;
+	}
 }

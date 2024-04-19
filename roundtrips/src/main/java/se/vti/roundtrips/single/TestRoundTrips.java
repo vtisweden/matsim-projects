@@ -55,7 +55,7 @@ public class TestRoundTrips {
 		RoundTripProposal<RoundTrip<Location>> proposal = new RoundTripProposal<>(roundTrip -> null,
 				scenario.getRandom());
 		proposal.addProposal(new RoundTripLocationProposal<>(scenario,
-				(state, scen) -> new PossibleTransitions<Location>(state, scen)), locationProba);
+				(state, scen) -> new PossibleTransitionsWithAlternatingLocations<Location>(state, scen)), locationProba);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
