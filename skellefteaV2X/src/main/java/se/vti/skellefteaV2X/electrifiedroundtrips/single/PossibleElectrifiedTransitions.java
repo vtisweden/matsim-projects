@@ -20,7 +20,7 @@
 package se.vti.skellefteaV2X.electrifiedroundtrips.single;
 
 import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.single.PossibleTransitions;
+import se.vti.roundtrips.single.PossibleTransitionsWithAlternatingLocations;
 import se.vti.skellefteaV2X.model.ElectrifiedLocation;
 
 /**
@@ -28,7 +28,7 @@ import se.vti.skellefteaV2X.model.ElectrifiedLocation;
  * @author GunnarF
  *
  */
-public class PossibleElectrifiedTransitions extends PossibleTransitions<ElectrifiedLocation> {
+public class PossibleElectrifiedTransitions extends PossibleTransitionsWithAlternatingLocations<ElectrifiedLocation> {
 
 	public PossibleElectrifiedTransitions(ElectrifiedRoundTrip state,
 			Scenario<ElectrifiedLocation> scenario) {
