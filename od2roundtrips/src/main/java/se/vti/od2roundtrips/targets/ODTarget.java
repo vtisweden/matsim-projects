@@ -40,9 +40,6 @@ public class ODTarget extends Target {
 	}
 
 	public void setODEntry(TAZ origin, TAZ destination, double value) {
-		if (origin.equals(destination)) {
-			return; // Attention, ignoring main diagonals!
-		}
 		this.targetODMatrix.put(new Tuple<>(origin, destination), value);
 	}
 

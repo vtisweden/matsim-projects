@@ -36,7 +36,7 @@ import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
 import se.vti.roundtrips.preferences.Preferences;
 import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.roundtrips.preferences.UniformOverLocationCount;
-import se.vti.roundtrips.single.PossibleTransitions;
+import se.vti.roundtrips.single.PossibleTransitionsWithAlternatingLocations;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripDepartureProposal;
 import se.vti.roundtrips.single.RoundTripLocationProposal;
@@ -103,7 +103,7 @@ public class SmallMultiRoundTripTestRunner {
 
 		RoundTripProposal<RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
 		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
-				(state, scen) -> new PossibleTransitions<TAZ>(state, scen)), locationProposalWeight);
+				(state, scen) -> new PossibleTransitionsWithAlternatingLocations<TAZ>(state, scen)), locationProposalWeight);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
 		MultiRoundTripProposal<RoundTrip<TAZ>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> proposalMulti = new MultiRoundTripProposal<>(
 				scenario.getRandom(), proposal);
