@@ -81,7 +81,7 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 			this.lastDeviationError += Math.max(0.0,
 					Math.abs(sample[i] / sampleSize - this.target[i] / this.targetSize) - slack);
 		}
-		this.lastDiscretizationError = slack * this.target.length;
+		this.lastDiscretizationError = 0.5 * slack * this.target.length;
 		return (-1.0) * multiRoundTrip.size() * (this.lastDeviationError + this.lastDiscretizationError);
 	}
 
