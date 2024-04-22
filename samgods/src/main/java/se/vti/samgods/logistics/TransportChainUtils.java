@@ -46,67 +46,67 @@ public class TransportChainUtils {
 	private TransportChainUtils() {
 	}
 
-	public static Set<TransportMode> extractUsedModes(final Collection<List<TransportChain>> collectionOfListOfChains) {
-		return collectionOfListOfChains.stream().flatMap(l -> l.stream()).flatMap(c -> c.getLegs().stream())
-				.map(l -> l.getMode()).collect(Collectors.toSet());
-	}
+//	public static Set<TransportMode> extractUsedModes(final Collection<List<TransportChain>> collectionOfListOfChains) {
+//		return collectionOfListOfChains.stream().flatMap(l -> l.stream()).flatMap(c -> c.getLegs().stream())
+//				.map(l -> l.getMode()).collect(Collectors.toSet());
+//	}
 
-	public static void reduceToMainModeLegs(final Collection<List<TransportChain>> collectionOfListOfChains) {
-		collectionOfListOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegs(c));
-	}
+//	public static void reduceToMainModeLegs(final Collection<List<TransportChain>> collectionOfListOfChains) {
+//		collectionOfListOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegs(c));
+//	}
 
-	public static void reduceToMainModeLegs(final TransportChain chain) {
-		if (chain.getLegs().size() < 2) {
-			return;
-		}
-		final List<TransportLeg> newLegs = new LinkedList<TransportLeg>();
-		Id<Node> currentOrigin = chain.getOrigin();
-		TransportMode currentMode = chain.getLegs().get(0).getMode();
-		for (TransportLeg leg : chain.getLegs()) {
-			if (!leg.getMode().equals(currentMode)) {
-				newLegs.add(new TransportLeg(currentOrigin, leg.getOrigin(), currentMode, '?'));
-				currentOrigin = leg.getOrigin();
-				currentMode = leg.getMode();
-			}
-		}
-		newLegs.add(new TransportLeg(currentOrigin, chain.getDestination(), currentMode, '?'));
-		chain.getLegs().clear();
-		chain.getLegs().addAll(newLegs);
-	}
+//	public static void reduceToMainModeLegs(final TransportChain chain) {
+//		if (chain.getLegs().size() < 2) {
+//			return;
+//		}
+//		final List<TransportLeg> newLegs = new LinkedList<TransportLeg>();
+//		Id<Node> currentOrigin = chain.getOrigin();
+//		TransportMode currentMode = chain.getLegs().get(0).getMode();
+//		for (TransportLeg leg : chain.getLegs()) {
+//			if (!leg.getMode().equals(currentMode)) {
+//				newLegs.add(new TransportLeg(currentOrigin, leg.getOrigin(), currentMode, '?'));
+//				currentOrigin = leg.getOrigin();
+//				currentMode = leg.getMode();
+//			}
+//		}
+//		newLegs.add(new TransportLeg(currentOrigin, chain.getDestination(), currentMode, '?'));
+//		chain.getLegs().clear();
+//		chain.getLegs().addAll(newLegs);
+//	}
 
-	public static void reduceToMainModeLegsVerbose(final Collection<List<TransportChain>> collectionOfListOfChains) {
-		collectionOfListOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegsVerbose(c));
-	}
+//	public static void reduceToMainModeLegsVerbose(final Collection<List<TransportChain>> collectionOfListOfChains) {
+//		collectionOfListOfChains.stream().flatMap(l -> l.stream()).forEach(c -> reduceToMainModeLegsVerbose(c));
+//	}
 
-	public static void reduceToMainModeLegsVerbose(final TransportChain chain) {
-		for (TransportLeg leg : chain.getLegs()) {
-			System.out.print(leg.getMode() + " ");
-		}
-		reduceToMainModeLegs(chain);
-		System.out.print(" -->  ");
-		for (TransportLeg leg : chain.getLegs()) {
-			System.out.print(leg.getMode() + " ");
-		}
-		System.out.println();
-	}
+//	public static void reduceToMainModeLegsVerbose(final TransportChain chain) {
+//		for (TransportLeg leg : chain.getLegs()) {
+//			System.out.print(leg.getMode() + " ");
+//		}
+//		reduceToMainModeLegs(chain);
+//		System.out.print(" -->  ");
+//		for (TransportLeg leg : chain.getLegs()) {
+//			System.out.print(leg.getMode() + " ");
+//		}
+//		System.out.println();
+//	}
 
-	public static void removeChainsByLegCondition(final Collection<List<TransportChain>> collectionOfListOfChains,
-			final Function<TransportLeg, Boolean> removeCondition) {
-		for (List<TransportChain> testedListOfChains : collectionOfListOfChains) {
-			List<TransportChain> chainsToRemove = new ArrayList<>();
-			for (TransportChain chain : testedListOfChains) {
-				boolean remove = false;
-				for (Iterator<TransportLeg> it = chain.getLegs().iterator(); it.hasNext() && !remove;) {
-					TransportLeg leg = it.next();
-					if (removeCondition.apply(leg)) {
-						chainsToRemove.add(chain);
-						remove = true;
-					}
-				}
-			}
-			testedListOfChains.removeAll(chainsToRemove);
-		}
-	}
+//	public static void removeChainsByLegCondition(final Collection<List<TransportChain>> collectionOfListOfChains,
+//			final Function<TransportLeg, Boolean> removeCondition) {
+//		for (List<TransportChain> testedListOfChains : collectionOfListOfChains) {
+//			List<TransportChain> chainsToRemove = new ArrayList<>();
+//			for (TransportChain chain : testedListOfChains) {
+//				boolean remove = false;
+//				for (Iterator<TransportLeg> it = chain.getLegs().iterator(); it.hasNext() && !remove;) {
+//					TransportLeg leg = it.next();
+//					if (removeCondition.apply(leg)) {
+//						chainsToRemove.add(chain);
+//						remove = true;
+//					}
+//				}
+//			}
+//			testedListOfChains.removeAll(chainsToRemove);
+//		}
+//	}
 
 	// TODO CHECKED UNTIL HERE
 
@@ -118,13 +118,13 @@ public class TransportChainUtils {
 		}
 	}
 
-	public static Map<TransportMode, Double> computeLengthPerMainMode_m(TransportChain chain) {
-		final Map<TransportMode, Double> result = new LinkedHashMap<>(SamgodsConstants.TransportMode.values().length);
-		for (TransportLeg leg : chain.getLegs()) {
-			final double length_m = TransportChainUtils.computeLength_m(leg);
-			result.compute(leg.getMode(), (m, l) -> l == null ? length_m : l + length_m);
-		}
-		return result;
-	}
+//	public static Map<TransportMode, Double> computeLengthPerMainMode_m(TransportChain chain) {
+//		final Map<TransportMode, Double> result = new LinkedHashMap<>(SamgodsConstants.TransportMode.values().length);
+//		for (TransportLeg leg : chain.getLegs()) {
+//			final double length_m = TransportChainUtils.computeLength_m(leg);
+//			result.compute(leg.getMode(), (m, l) -> l == null ? length_m : l + length_m);
+//		}
+//		return result;
+//	}
 
 }

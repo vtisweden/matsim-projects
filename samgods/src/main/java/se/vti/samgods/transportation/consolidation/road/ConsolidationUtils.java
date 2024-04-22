@@ -26,10 +26,7 @@ import java.util.Random;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.RecurrentShipment;
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
@@ -44,63 +41,63 @@ public class ConsolidationUtils {
 
 	// Transport chain specific.
 
-	public List<TransportChain> splitIntoConsolidatableChains(TransportChain chain) {
-		final List<TransportChain> result = new ArrayList<>();
+//	public List<TransportChain> splitIntoConsolidatableChains(TransportChain chain) {
+//		final List<TransportChain> result = new ArrayList<>();
+//
+//		TransportChain currentChain = new TransportChain();
+//		SamgodsConstants.TransportMode currentModeNotFerry = null;
+//
+//		for (TransportLeg leg : chain.getLegs()) {
+//
+//			if (leg.getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
+//
+//				if (currentModeNotFerry == null) {
+//					throw new IllegalArgumentException(SamgodsConstants.TransportMode.Ferry
+//							+ " must not be the first mode of a of a consolidateable chain.");
+//				} else {
+//					currentChain.addLeg(leg);
+//				}
+//
+//			} else {
+//
+//				if (currentModeNotFerry == null || leg.getMode().equals(currentModeNotFerry)) {
+//					currentChain.addLeg(leg);
+//					currentModeNotFerry = leg.getMode();
+//				} else {
+//					if (currentChain.getLegs().get(currentChain.getLegs().size() - 1).getMode()
+//							.equals(SamgodsConstants.TransportMode.Ferry)) {
+//						throw new IllegalArgumentException(SamgodsConstants.TransportMode.Ferry
+//								+ " must not be the last mode of a of a consolidateable chain.");
+//					}
+//					result.add(currentChain);
+//					currentChain = new TransportChain();
+//					currentModeNotFerry = null;
+//				}
+//			}
+//		}
+//
+//		return result;
+//	}
 
-		TransportChain currentChain = new TransportChain();
-		SamgodsConstants.TransportMode currentModeNotFerry = null;
-
-		for (TransportLeg leg : chain.getLegs()) {
-
-			if (leg.getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
-
-				if (currentModeNotFerry == null) {
-					throw new IllegalArgumentException(SamgodsConstants.TransportMode.Ferry
-							+ " must not be the first mode of a of a consolidateable chain.");
-				} else {
-					currentChain.addLeg(leg);
-				}
-
-			} else {
-
-				if (currentModeNotFerry == null || leg.getMode().equals(currentModeNotFerry)) {
-					currentChain.addLeg(leg);
-					currentModeNotFerry = leg.getMode();
-				} else {
-					if (currentChain.getLegs().get(currentChain.getLegs().size() - 1).getMode()
-							.equals(SamgodsConstants.TransportMode.Ferry)) {
-						throw new IllegalArgumentException(SamgodsConstants.TransportMode.Ferry
-								+ " must not be the last mode of a of a consolidateable chain.");
-					}
-					result.add(currentChain);
-					currentChain = new TransportChain();
-					currentModeNotFerry = null;
-				}
-			}
-		}
-
-		return result;
-	}
-
-	public boolean isConsolidateable(TransportChain chain) {
-		if (chain.getLegs().size() == 0) {
-			return false;
-		}
-		if (chain.getLegs().getFirst().getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
-			return false;
-		}
-		if (chain.getLegs().getLast().getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
-			return false;
-		}
-		SamgodsConstants.TransportMode mainMode = null;
-		for (TransportLeg leg : chain.getLegs()) {
-			if ((mainMode != null) && !leg.getMode().equals(mainMode)
-					&& !leg.getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
-				return false;
-			}
-		}
-		return true;
-	}
+//	public boolean isConsolidateable(TransportChain chain) {
+//		if (chain.getLegs().size() == 0) {
+//			return false;
+//		}
+//		if (chain.getLegs().getFirst().getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
+//			return false;
+//		}
+//		if (chain.getLegs().getLast().getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
+//			return false;
+//		}
+//		SamgodsConstants.TransportMode mainMode = null;
+//		for (TransportLeg leg : chain.getLegs()) {
+//			if ((mainMode != null) && !leg.getMode().equals(mainMode)
+//					&& !leg.getMode().equals(SamgodsConstants.TransportMode.Ferry)) {
+//				return false;
+//			}
+//		}
+//		return true;
+//	}
 
 	// Vehicle (type) specific.
 

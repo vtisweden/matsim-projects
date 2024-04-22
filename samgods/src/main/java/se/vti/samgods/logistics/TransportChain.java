@@ -19,9 +19,7 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
@@ -33,73 +31,41 @@ import org.matsim.api.core.v01.network.Node;
  */
 public class TransportChain {
 
-	private final LinkedList<TransportLeg> legs = new LinkedList<>();
+	private final LinkedList<TransportEpisode> episodes = new LinkedList<>();
 
 	public TransportChain() {
 	}
 
-	public void addLeg(final TransportLeg leg) {
-		if (this.legs.size() > 0) {
-			if (!this.legs.getLast().getDestination().equals(leg.getOrigin())) {
+	public void addEpisode(final TransportEpisode episode) {
+		if (this.episodes.size() > 0) {
+			if (!this.episodes.getLast().getUnloadingNode().equals(episode.getLoadingNode())) {
 				throw new IllegalArgumentException();
 			}
 		}
-		this.legs.add(leg);
+		this.episodes.add(episode);
 	}
 
-	public List<Id<Node>> createInternalNodeIds() {
-		List<Id<Node>> result = new ArrayList<>(this.legs.size() - 1);
-		for (int i = 0; i < this.legs.size() - 2; i++) {
-			result.add(this.legs.get(i).getDestination());
-		}
-		return result;
-	}
-
-	public int getInternalNodeCnt() {
-		return this.legs.size() - 1;
-	}
-
-	public LinkedList<TransportLeg> getLegs() {
-		return this.legs;
-	}
-
-	public Id<Node> getOrigin() {
-		return this.legs.get(0).getOrigin();
-	}
-
-	public Id<Node> getDestination() {
-		return this.legs.get(this.legs.size() - 1).getDestination();
-	}
-
-//	public List<TransportMode> getModeSequence() {
-//		final List<TransportMode> result = new ArrayList<>(this.legs.size());
-//		for (TransportLeg leg : this.legs) {
-//			result.add(leg.getMode());
+//	public List<Id<Node>> createInternalNodeIds() {
+//		List<Id<Node>> result = new ArrayList<>(this.episodes.size() - 1);
+//		for (int i = 0; i < this.episodes.size() - 2; i++) {
+//			result.add(this.episodes.get(i).getDestination());
 //		}
 //		return result;
 //	}
-
-	// FIXME Simplifies away transshipments within the same mode.
-//	public void mergeLegs() {
-//		if (this.legs.size() == 0) {
-//			return;
-//		}
-//		final LinkedList<TransportLeg> mergedLegs = new LinkedList<>();
 //
-//		TransportMode currentMode = this.legs.getFirst().getMode();
-//		Id<Node> currentOrigin = this.legs.getFirst().getOrigin();
-//		for (TransportLeg nextLeg : this.legs) {
-//			if (!nextLeg.getMode().equals(currentMode)) {
-//				mergedLegs.add(new TransportLeg(new OD(currentOrigin, nextLeg.getOrigin()), currentMode));
-//				currentOrigin = nextLeg.getOrigin();
-//				currentMode = nextLeg.getMode();
-//			}
-//		}
-//		mergedLegs.add(new TransportLeg(new OD(currentOrigin, this.legs.getLast().getDestination()),
-//				this.legs.getLast().getMode()));
-//		
-//		this.legs.clear();
-//		this.legs.addAll(mergedLegs);
+//	public int getInternalNodeCnt() {
+//		return this.episodes.size() - 1;
 //	}
 
+	public LinkedList<TransportEpisode> getEpisodes() {
+		return this.episodes;
+	}
+
+	public Id<Node> getOrigin() {
+		return this.episodes.get(0).getLoadingNode();
+	}
+
+	public Id<Node> getDestination() {
+		return this.episodes.getLast().getUnloadingNode();
+	}
 }

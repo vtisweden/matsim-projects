@@ -163,8 +163,11 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
 			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
 			final char samgodsMode = chainType.charAt(i);
-			transportChain.addLeg(new TransportLeg(Id.createNodeId(intermedOrigin),
-					Id.createNodeId(intermedDestination), code2mode.get(samgodsMode), samgodsMode));
+			
+			throw new RuntimeException("COMPOSE TRANSPORT CHAIN OF EPISODES");
+//			transportChain.addLeg(new TransportLeg(Id.createNodeId(intermedOrigin),
+//					Id.createNodeId(intermedDestination), code2mode.get(samgodsMode), samgodsMode));
+
 		}
 		this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
 

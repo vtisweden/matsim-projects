@@ -51,15 +51,16 @@ public class SaanaTransportChainReducer {
 		final Map<TransportMode, Double> mode2maxLength_m = new LinkedHashMap<>(
 				SamgodsConstants.TransportMode.values().length);
 		for (TransportChain chain : chains) {
-			for (Map.Entry<TransportMode, Double> entry : TransportChainUtils.computeLengthPerMainMode_m(chain)
-					.entrySet()) {
-				final TransportMode mode = entry.getKey();
-				final double length_m = entry.getValue();
-				if (length_m > mode2maxLength_m.getOrDefault(mode, Double.NEGATIVE_INFINITY)) {
-					mode2representativeChain.put(mode, chain);
-					mode2maxLength_m.put(mode, length_m);
-				}
-			}
+			throw new RuntimeException("Commented out non-compiling code.");
+//			for (Map.Entry<TransportMode, Double> entry : TransportChainUtils.computeLengthPerMainMode_m(chain)
+//					.entrySet()) {
+//				final TransportMode mode = entry.getKey();
+//				final double length_m = entry.getValue();
+//				if (length_m > mode2maxLength_m.getOrDefault(mode, Double.NEGATIVE_INFINITY)) {
+//					mode2representativeChain.put(mode, chain);
+//					mode2maxLength_m.put(mode, length_m);
+//				}
+//			}
 		}
 		chains.clear();
 		chains.addAll(new LinkedHashSet<>(mode2representativeChain.values()));

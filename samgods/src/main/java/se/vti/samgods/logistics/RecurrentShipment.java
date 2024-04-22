@@ -19,7 +19,7 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -44,7 +44,8 @@ public class RecurrentShipment {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RecurrentShipment(Commodity commodity, TransportChain transportChain, double size_ton, double frequency_1_yr) {
+	public RecurrentShipment(Commodity commodity, TransportChain transportChain, double size_ton,
+			double frequency_1_yr) {
 		this.commodity = commodity;
 		this.transportChain = transportChain;
 		this.size_ton = size_ton;
@@ -62,9 +63,11 @@ public class RecurrentShipment {
 	}
 
 	public List<TransportMode> getModeSequence() {
-		final List<TransportMode> result = new ArrayList<>(this.transportChain.getLegs().size());
-		for (TransportLeg leg : this.transportChain.getLegs()) {
-			result.add(leg.getMode());
+		final List<TransportMode> result = new LinkedList<>();
+		for (TransportEpisode episode : this.transportChain.getEpisodes()) {
+			for (TransportLeg leg : episode.getLegs()) {
+				result.add(leg.getMode());
+			}
 		}
 		return result;
 	}

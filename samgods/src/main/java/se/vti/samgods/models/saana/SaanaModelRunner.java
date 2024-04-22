@@ -27,10 +27,8 @@ import org.apache.log4j.Logger;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.RecurrentShipment;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportChainUtils;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.choicemodel.Alternative;
 import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
@@ -42,7 +40,6 @@ import se.vti.samgods.readers.SamgodsPriceReader;
 import se.vti.samgods.transportation.NetworkRouter;
 import se.vti.samgods.transportation.TransportSupply;
 import se.vti.samgods.transportation.pricing.BasicShipmentCost;
-import se.vti.samgods.transportation.pricing.BasicShipmentCostFunction;
 import se.vti.samgods.transportation.pricing.ProportionalShipmentPrices;
 import se.vti.samgods.transportation.pricing.ProportionalTransshipmentPrices;
 import se.vti.samgods.transportation.pricing.TransportPrices;
@@ -87,10 +84,10 @@ public class SaanaModelRunner {
 		 */
 		for (Commodity commodity : consideredCommodities) {
 			if (!Commodity.AIR.equals(commodity)) {
-				TransportChainUtils.removeChainsByLegCondition(demand.getTransportChains(commodity).values(),
-						l -> TransportMode.Air.equals(l.getMode()));
+//				TransportChainUtils.removeChainsByLegCondition(demand.getTransportChains(commodity).values(),
+//						l -> TransportMode.Air.equals(l.getMode()));
 			}
-			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
+//			TransportChainUtils.reduceToMainModeLegs(demand.getTransportChains(commodity).values());
 		}
 
 		/*
@@ -129,7 +126,10 @@ public class SaanaModelRunner {
 		 * example.
 		 */
 		// (Monetary) shipment cost, given its characteristics and transport prices.
-		BasicShipmentCostFunction costFunction = new BasicShipmentCostFunction(transportPrices);
+
+		// SamgodsShipmentCostFunction costFunction = new
+		// SamgodsShipmentCostFunction(transportPrices);
+
 		// (Choice model) shipment utility, given its properties and (monetary) cost.
 		ShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new ShipmentUtilityFunction<>() {
 			public double computeUtility(RecurrentShipment shipment, BasicShipmentCost shipmentCost) {
@@ -137,8 +137,8 @@ public class SaanaModelRunner {
 			}
 		};
 		// Create choice sets by combining transport chains and shipment sizes.
-		ChoiceSetGenerator<BasicShipmentCost> choiceSetGenerator = new ChoiceSetGenerator<>(costFunction,
-				utilityFunction, SaanaShipmentSizeClass.values());
+		ChoiceSetGenerator<BasicShipmentCost> choiceSetGenerator = new ChoiceSetGenerator<>(null, utilityFunction,
+				SaanaShipmentSizeClass.values());
 		// Basic choice model functionality
 		ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 

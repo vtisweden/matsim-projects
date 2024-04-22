@@ -51,6 +51,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.pricing.TransportPrices;
 import se.vti.samgods.transportation.pricing.TransportPrices.ShipmentPrices;
@@ -112,37 +113,39 @@ public class NetworkRouter {
 		@Override
 		public void run() {
 			for (TransportChain chain : this.chains) {
-				for (TransportLeg leg : chain.getLegs()) {
-					Map<Id<Node>, ? extends Node> nodes;
-					try {
-						nodes = this.mode2network.get(leg.getMode()).getNodes();
-					} catch (Exception e) {
-						e.printStackTrace();
-						System.exit(0);
-						nodes = null;
-					}
-					final Node from = nodes.get(leg.getOrigin());
-					final Node to = nodes.get(leg.getDestination());
-					if ((from != null) && (to != null)) {
-						List<Link> links = this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null,
-								null).links;
-						leg.setRoute(links);
-						routedLegCnt.addAndGet(1);
-						routedLinkCnt.addAndGet(links.size());
+				for (TransportEpisode episode : chain.getEpisodes()) {
+					for (TransportLeg leg : episode.getLegs()) {
+						Map<Id<Node>, ? extends Node> nodes;
+						try {
+							nodes = this.mode2network.get(leg.getMode()).getNodes();
+						} catch (Exception e) {
+							e.printStackTrace();
+							System.exit(0);
+							nodes = null;
+						}
+						final Node from = nodes.get(leg.getOrigin());
+						final Node to = nodes.get(leg.getDestination());
+						if ((from != null) && (to != null)) {
+							List<Link> links = this.mode2router.get(leg.getMode()).calcLeastCostPath(from, to, 0, null,
+									null).links;
+							leg.setRoute(links);
+							routedLegCnt.addAndGet(1);
+							routedLinkCnt.addAndGet(links.size());
 //						for (Link link : links) {
 //							System.out.print(link.getId() + " ");
 //						}
 //						System.out.println();
-					} else {
-						if (from == null) {
-							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
-									.add(leg.getOrigin());
+						} else {
+							if (from == null) {
+								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+										.add(leg.getOrigin());
 //							System.out.println("NO ORIGIN");
-						}
-						if (to == null) {
-							mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
-									.add(leg.getDestination());
+							}
+							if (to == null) {
+								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
+										.add(leg.getDestination());
 //							System.out.println("NO DESTINATION");
+							}
 						}
 					}
 				}

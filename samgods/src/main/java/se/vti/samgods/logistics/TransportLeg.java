@@ -39,7 +39,7 @@ public class TransportLeg {
 
 	private final OD od;
 
-	private final SamgodsConstants.TransportMode mode;
+	private final TransportMode mode;
 
 	private final char samgodsMode;
 

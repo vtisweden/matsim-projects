@@ -31,7 +31,7 @@ import java.util.Set;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
@@ -45,7 +45,7 @@ public class Consolidator {
 
 	private final Random rnd;
 
-	private final TransportChain transportChain;
+	private final TransportEpisode transportEpisode;
 
 	private final FreightVehicleFleet fleet;
 
@@ -71,10 +71,10 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(Random rnd, TransportChain transportChain, FreightVehicleFleet fleet, int shipmentPeriod_day,
+	public Consolidator(Random rnd, TransportEpisode transportEpisode, FreightVehicleFleet fleet, int shipmentPeriod_day,
 			ConsolidationCostModel costModel, ConsolidationChoiceModel choiceModel) {
 		this.rnd = rnd;
-		this.transportChain = transportChain;
+		this.transportEpisode = transportEpisode;
 		this.fleet = fleet;
 		this.shipmentPeriod_day = shipmentPeriod_day;
 		this.costModel = costModel;
@@ -177,7 +177,7 @@ public class Consolidator {
 
 		this.assignmentsOverDays = new ArrayList<>(this.shipmentPeriod_day);
 		for (int day = 0; day < this.shipmentPeriod_day; day++) {
-			this.assignmentsOverDays.add(new ShipmentVehicleAssignment(this.transportChain));
+			this.assignmentsOverDays.add(new ShipmentVehicleAssignment(this.transportEpisode));
 		}
 
 		Collections.shuffle(this.shipments);

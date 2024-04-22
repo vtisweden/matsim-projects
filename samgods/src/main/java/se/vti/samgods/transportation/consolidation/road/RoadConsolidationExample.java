@@ -29,7 +29,7 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
@@ -77,12 +77,11 @@ public class RoadConsolidationExample {
 
 		final int days = 7;
 
-		TransportLeg leg = new TransportLeg(new OD(Id.createNodeId("from"), Id.createNodeId("to")), TransportMode.Road,
-				'?');
-		TransportChain transportChain = new TransportChain();
-		transportChain.addLeg(leg);
+		TransportEpisode episode = new TransportEpisode(TransportMode.Road);
+		episode.addLeg(
+				new TransportLeg(new OD(Id.createNodeId("from"), Id.createNodeId("to")), TransportMode.Road, '?'));
 
-		Consolidator consolidator = new Consolidator(new Random(), transportChain, fleet, days, costModel, choiceModel);
+		Consolidator consolidator = new Consolidator(new Random(), episode, fleet, days, costModel, choiceModel);
 
 		for (int day = 0; day < days; day++) {
 			for (int i = 1; i <= 6; i++) {

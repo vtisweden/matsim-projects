@@ -19,8 +19,6 @@
  */
 package se.vti.samgods.transportation.consolidation.road;
 
-import java.util.List;
-
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.vehicles.Vehicle;
@@ -64,7 +62,6 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 
 			final FreightVehicleFleet.TypeAttributes vehicleAttributess = ConsolidationUtils
 					.getFreightAttributes(vehicle);
-			final List<TransportLeg> legs = assignment.getTransportChain().getLegs();
 
 			// Total transport duration.
 			double duration_h = 0.0;
@@ -77,8 +74,10 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 			 * shared.
 			 */
 
-			duration_h += this.performanceMeasures.getTotalDepartureDelay_h(assignment.getTransportChain().getOrigin())
-					+ this.performanceMeasures.getTotalArrivalDelay_h(assignment.getTransportChain().getDestination());
+			duration_h += this.performanceMeasures
+					.getTotalDepartureDelay_h(assignment.getTransportEpisode().getLoadingNode())
+					+ this.performanceMeasures
+							.getTotalArrivalDelay_h(assignment.getTransportEpisode().getUnloadingNode());
 			vehicleCost += 2.0 * vehicleAttributess.loadCost_1_ton.get(addedCommodity)
 					* Math.max(minTransferredAmount_ton, assignedWeight_ton);
 
@@ -89,11 +88,11 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 			 */
 
 			// The transfer cost arises once at each transfer point.
-			vehicleCost += assignment.getTransportChain().getInternalNodeCnt()
+			vehicleCost += assignment.getTransportEpisode().getTransferNodeCnt()
 					* vehicleAttributess.transferCost_1_ton.get(addedCommodity)
 					* Math.max(minTransferredAmount_ton, assignedWeight_ton);
 
-			for (Id<Node> internalNodeId : assignment.getTransportChain().createInternalNodeIds()) {
+			for (Id<Node> internalNodeId : assignment.getTransportEpisode().createTransferNodesList()) {
 				duration_h += this.performanceMeasures.getTotalArrivalDelay_h(internalNodeId)
 						+ this.performanceMeasures.getTotalDepartureDelay_h(internalNodeId);
 			}
@@ -103,7 +102,7 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 			 */
 
 			double sharedCost = 0.0;
-			for (TransportLeg leg : assignment.getTransportChain().getLegs()) {
+			for (TransportLeg leg : assignment.getTransportEpisode().getLegs()) {
 				final double legDur_h = Units.H_PER_S * leg.getDuration_s();
 				final double legLen_km = Units.KM_PER_M * leg.getLength_m();
 				duration_h += legDur_h;

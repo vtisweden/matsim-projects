@@ -27,7 +27,7 @@ import java.util.Map;
 import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Tuple;
-import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 
@@ -38,7 +38,7 @@ public class ShipmentVehicleAssignment {
 
 	// -------------------- MEMBERS --------------------
 
-	private final TransportChain transportChain;
+	private final TransportEpisode transportEpisode;
 
 	private final Map<Shipment, LinkedList<Vehicle>> shipment2vehicles = new LinkedHashMap<>();
 	private final Map<Vehicle, LinkedList<Shipment>> vehicle2shipments = new LinkedHashMap<>();
@@ -47,14 +47,14 @@ public class ShipmentVehicleAssignment {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ShipmentVehicleAssignment(TransportChain transportChain) {
-		this.transportChain = transportChain;
+	public ShipmentVehicleAssignment(TransportEpisode transportEpisode) {
+		this.transportEpisode = transportEpisode;
 	}
 
 	// -------------------- GETTERS --------------------
 
-	public TransportChain getTransportChain() {
-		return this.transportChain;
+	public TransportEpisode getTransportEpisode() {
+		return this.transportEpisode;
 	}
 
 	public Map<Shipment, LinkedList<Vehicle>> getShipment2vehicles() {
