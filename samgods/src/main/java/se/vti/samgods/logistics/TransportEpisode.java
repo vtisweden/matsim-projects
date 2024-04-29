@@ -25,7 +25,10 @@ import java.util.List;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.transportation.ntmcalc.Episode2NTMCalcSerializer;
 
 /**
  * 

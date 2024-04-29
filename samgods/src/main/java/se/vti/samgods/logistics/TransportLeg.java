@@ -26,15 +26,19 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.transportation.ntmcalc.Leg2NTMCalcSerializer;
 
 /**
  * 
  * @author GunnarF
  *
  */
+@JsonSerialize(using = Leg2NTMCalcSerializer.class)
 public class TransportLeg {
 
 	private final OD od;
@@ -43,7 +47,9 @@ public class TransportLeg {
 
 	private final char samgodsMode;
 
+	
 	private List<Link> route = null;
+	
 	private Double length_m = null;
 	private Double duration_s = null;
 
