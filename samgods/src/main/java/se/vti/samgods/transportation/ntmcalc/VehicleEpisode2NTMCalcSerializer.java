@@ -21,6 +21,7 @@ package se.vti.samgods.transportation.ntmcalc;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,16 +32,21 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
+import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.VehicleUtils;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 
 /**
@@ -48,54 +54,52 @@ import se.vti.samgods.logistics.TransportLeg;
  * @author GunnarF
  *
  */
-public class Leg2NTMCalcSerializer extends JsonSerializer<TransportLeg> {
 
-	private final JsonSerializer<List<Link>> linkListSerializer = new JsonSerializer<>() {
-
-		@Override
-		public void serialize(List<Link> linkList, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-			gen.writeFieldName("links");
-			gen.writeStartArray();
-			for (Link link : linkList) {
-				gen.writeStartObject();
-				gen.writeStringField("link", link.getId().toString());
-				gen.writeNumberField("length_m", link.getLength());
-
-				gen.writeFieldName("modes");
-				gen.writeStartArray();
-				for(String mode : link.getAllowedModes()) {
-					gen.writeString(mode);
-				}
-				gen.writeEndArray();
-				
-				//				gen.writeArrayFieldStart("modes");
-//				serializers.defaultSerializeValue(link.getAllowedModes().stream().toArray(), gen);
-
-				
-				gen.writeEndObject();
-
-			}
-			gen.writeEndArray();
-		}
-		
-	};
-	
-	public Leg2NTMCalcSerializer() {
-	}
+public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpisode> {
 
 	@Override
-	public void serialize(TransportLeg leg, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+	public void serialize(VehicleEpisode vehicleEpisode, JsonGenerator gen, SerializerProvider serializers)
+			throws IOException {
 
-		gen.writeStartObject(); 
+		final String globalMode = vehicleEpisode.getTransportEpisode().getMode().toString();
 
-		gen.writeNullField("legId");
-		gen.writeStringField("originNode", leg.getOrigin().toString());
-		gen.writeStringField("destinationNode", leg.getDestination().toString());
-		gen.writeStringField("mode", leg.getMode().toString());
+		gen.writeStartObject();
 
-		this.linkListSerializer.serialize(leg.getRouteView(), gen, serializers);
+		gen.writeNullField("episodeId");
+		gen.writeStringField("vehicleId", vehicleEpisode.getVehicle().getId().toString());
+		gen.writeStringField("vehicleType", vehicleEpisode.getVehicle().getType().getId().toString());
+		gen.writeNumberField("load_ton", vehicleEpisode.getLoad_ton());
+		gen.writeStringField("mode", globalMode);
 
-		gen.writeEndObject(); 
+		gen.writeFieldName("links");
+		gen.writeStartArray();
+		for (TransportLeg leg : vehicleEpisode.getTransportEpisode().getLegs()) {
+			for (Link link : leg.getRouteView()) {
+				gen.writeStartObject();
+				gen.writeStringField("linkId", link.getId().toString());
+				gen.writeNumberField("length_m", link.getLength());
+
+				if (link.getAllowedModes().size() != 1) {
+					throw new RuntimeException(
+							"Link " + link.getId() + " has not exactly one mode: " + link.getAllowedModes());
+				}
+				List<String> deviatingModes = link.getAllowedModes().stream().filter(m -> !globalMode.equals(m))
+						.toList();
+				if (deviatingModes != null) {
+					gen.writeFieldName("mode");
+					gen.writeStartArray();
+					for (String mode : deviatingModes) {
+						gen.writeString(mode);
+					}
+					gen.writeEndArray();
+				}
+
+				gen.writeEndObject();
+			}
+		}
+		gen.writeEndArray();
+
+		gen.writeEndObject();
 	}
 
 	public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException {
@@ -106,16 +110,29 @@ public class Leg2NTMCalcSerializer extends JsonSerializer<TransportLeg> {
 		Node node = NetworkUtils.createAndAddNode(network, Id.createNodeId("node"), new Coord());
 		Link link1 = NetworkUtils.createAndAddLink(network, Id.createLinkId(1), node, node, 100, 0, 0, 0, "", "");
 		Link link2 = NetworkUtils.createAndAddLink(network, Id.createLinkId(2), node, node, 200, 0, 0, 0, "", "");
-		link2.setAllowedModes(new LinkedHashSet<>(Arrays.asList("car", "ferry")));
-		
+		link1.setAllowedModes(new LinkedHashSet<>(Arrays.asList(SamgodsConstants.TransportMode.Road.toString())));
+		link2.setAllowedModes(new LinkedHashSet<>(Arrays.asList(SamgodsConstants.TransportMode.Ferry.toString())));
+
 		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()), SamgodsConstants.TransportMode.Road,
 				'?');
 		leg.setRoute(Arrays.asList(link1, link2));
 
+		Vehicle veh = VehicleUtils.createVehicle(Id.createVehicleId("veh1"),
+				VehicleUtils.createVehicleType(Id.create("vehType", VehicleType.class)));
+
+		TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road);
+		episode.addLeg(leg);
+
+		VehicleEpisode vehicleEpisode = new VehicleEpisode(veh, 123.45, episode);
+
+		List<VehicleEpisode> episodes = new ArrayList<>();
+		episodes.add(vehicleEpisode);
+		episodes.add(vehicleEpisode);
+
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.writeValue(new File("transportLeg.json"), leg);
+		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+		mapper.writeValue(new File("episode.json"), episodes);
 
 		System.out.println("... DONE");
 	}
-
 }

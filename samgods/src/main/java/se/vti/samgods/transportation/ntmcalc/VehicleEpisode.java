@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.transportation.trajectories
+ * se.vti.samgods.transportation.ntmcalc
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,42 +19,42 @@
  */
 package se.vti.samgods.transportation.ntmcalc;
 
-import java.io.IOException;
+import org.matsim.vehicles.Vehicle;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Episode2NTMCalcSerializer extends JsonSerializer<TransportEpisode> {
+@JsonSerialize(using = VehicleEpisode2NTMCalcSerializer.class)
+public class VehicleEpisode {
 
-	// TODO Continue here. Add freight annotation.
+	private final Vehicle vehicle;
 	
-	@Override
-	public void serialize(TransportEpisode episode, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+	private final double load_ton;
 
-		gen.writeStartObject(); 
-
-		gen.writeNullField("episodeId");
-		gen.writeStringField("mode", episode.getMode().toString());
-
-		gen.writeFieldName("legs");
-		gen.writeStartArray();
-		for (TransportLeg leg : episode.getLegs()) {
-			gen.writeObject(leg);
-		}
-		gen.writeEndArray();
-
-		gen.writeEndObject(); 
-
-
+	private final TransportEpisode transportEpisode;
+		
+	public VehicleEpisode(Vehicle vehicle, double load_ton, TransportEpisode episode) {
+		this.vehicle = vehicle;
+		this.load_ton = load_ton;
+		this.transportEpisode = episode;
+	}
+	
+	public Vehicle getVehicle() {
+		return this.vehicle;
+	}
+	
+	public double getLoad_ton() {
+		return this.load_ton;
+	}
+	
+	public TransportEpisode getTransportEpisode() {
+		return this.transportEpisode;
 	}
 
 }

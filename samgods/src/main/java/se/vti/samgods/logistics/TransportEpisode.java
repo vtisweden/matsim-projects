@@ -28,7 +28,7 @@ import org.matsim.api.core.v01.network.Node;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.transportation.ntmcalc.Episode2NTMCalcSerializer;
+import se.vti.samgods.transportation.ntmcalc.VehicleEpisode2NTMCalcSerializer;
 
 /**
  * 
