@@ -44,6 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
@@ -78,22 +79,12 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 				gen.writeStartObject();
 				gen.writeStringField("linkId", link.getId().toString());
 				gen.writeNumberField("length_m", link.getLength());
-
+				gen.writeNumberField("maxSpeed_km_h", Math.round(Units.KM_H_PER_M_S * link.getFreespeed()));
 				if (link.getAllowedModes().size() != 1) {
 					throw new RuntimeException(
 							"Link " + link.getId() + " has not exactly one mode: " + link.getAllowedModes());
 				}
-				List<String> deviatingModes = link.getAllowedModes().stream().filter(m -> !globalMode.equals(m))
-						.toList();
-				if (deviatingModes != null) {
-					gen.writeFieldName("mode");
-					gen.writeStartArray();
-					for (String mode : deviatingModes) {
-						gen.writeString(mode);
-					}
-					gen.writeEndArray();
-				}
-
+				gen.writeStringField("mode", link.getAllowedModes().iterator().next().toString());
 				gen.writeEndObject();
 			}
 		}
@@ -113,6 +104,9 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		link1.setAllowedModes(new LinkedHashSet<>(Arrays.asList(SamgodsConstants.TransportMode.Road.toString())));
 		link2.setAllowedModes(new LinkedHashSet<>(Arrays.asList(SamgodsConstants.TransportMode.Ferry.toString())));
 
+		link1.setFreespeed(Units.M_S_PER_KM_H * 60.0);
+		link2.setFreespeed(Units.M_S_PER_KM_H * 100.0);
+
 		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()), SamgodsConstants.TransportMode.Road,
 				'?');
 		leg.setRoute(Arrays.asList(link1, link2));
@@ -131,6 +125,8 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+		
 		mapper.writeValue(new File("episode.json"), episodes);
 
 		System.out.println("... DONE");
