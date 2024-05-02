@@ -66,7 +66,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 
 		gen.writeStartObject();
 
-		gen.writeNullField("episodeId");
+//		gen.writeNullField("episodeId");
 		gen.writeStringField("vehicleId", vehicleEpisode.getVehicle().getId().toString());
 		gen.writeStringField("vehicleType", vehicleEpisode.getVehicle().getType().getId().toString());
 		gen.writeNumberField("load_ton", vehicleEpisode.getLoad_ton());
@@ -84,7 +84,13 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 					throw new RuntimeException(
 							"Link " + link.getId() + " has not exactly one mode: " + link.getAllowedModes());
 				}
-				gen.writeStringField("mode", link.getAllowedModes().iterator().next().toString());
+				final String localMode = link.getAllowedModes().iterator().next();
+				if (!localMode.equals(globalMode)) {
+					gen.writeStringField("mode", localMode);
+				}
+				if (SamgodsConstants.TransportMode.Ferry.toString().equals(localMode)) {
+					gen.writeNumberField("vesselDWT", 5678.9);
+				}
 				gen.writeEndObject();
 			}
 		}
@@ -125,8 +131,8 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+		mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
 
-		
 		mapper.writeValue(new File("episode.json"), episodes);
 
 		System.out.println("... DONE");

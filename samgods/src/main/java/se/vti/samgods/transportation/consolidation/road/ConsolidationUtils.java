@@ -27,7 +27,7 @@ import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.logistics.RecurrentShipment;
-import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
 
 /**
  * 
@@ -101,12 +101,12 @@ public class ConsolidationUtils {
 
 	// Vehicle (type) specific.
 
-	public static FreightVehicleFleet.TypeAttributes getFreightAttributes(VehicleType vehicleType) {
-		return (FreightVehicleFleet.TypeAttributes) vehicleType.getAttributes()
-				.getAttribute(FreightVehicleFleet.TypeAttributes.ATTRIBUTE_NAME);
+	public static FreightVehicleTypeAttributes getFreightAttributes(VehicleType vehicleType) {
+		return (FreightVehicleTypeAttributes) vehicleType.getAttributes()
+				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME);
 	}
 
-	public static FreightVehicleFleet.TypeAttributes getFreightAttributes(Vehicle vehicle) {
+	public static FreightVehicleTypeAttributes getFreightAttributes(Vehicle vehicle) {
 		return getFreightAttributes(vehicle.getType());
 	}
 

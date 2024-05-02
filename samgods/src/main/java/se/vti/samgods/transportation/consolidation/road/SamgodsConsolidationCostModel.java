@@ -27,7 +27,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
 
 /**
  * 
@@ -60,7 +60,7 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 
 		if (feasible) {
 
-			final FreightVehicleFleet.TypeAttributes vehicleAttributess = ConsolidationUtils
+			final FreightVehicleTypeAttributes vehicleAttributess = ConsolidationUtils
 					.getFreightAttributes(vehicle);
 
 			// Total transport duration.

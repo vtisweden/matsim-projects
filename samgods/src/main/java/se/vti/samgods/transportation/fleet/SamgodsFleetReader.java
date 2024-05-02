@@ -32,34 +32,73 @@ import se.vti.samgods.SamgodsConstants;
 /**
  * 
  * @author GunnarF
- * 
- *         TODO continue here. not yet tested. file format? transfer times need
- *         to be added.
  *
  */
 public class SamgodsFleetReader {
 
-	private SamgodsFleetReader() {
+	public static final String VEH_NR = "VEH_NR";
+
+	public static final String VEH_LABEL = "LABEL";
+
+	public static final String VEH_DESCRIPTION = "DESCRIPTIO";
+
+	public static final String COST_1_KM = "KM_COST";
+
+	public static final String COST_1_H = "HOURS_COST";
+
+	public static final String CAPACITY_TON = "CAPACITY";
+
+	public static final String ON_FERRY_COST_1_KM = "ONFER_KM_C";
+
+	public static final String ON_FERRY_COST_1_H = "ONFER_H_C";
+
+	public static final String MAX_SPEED_KM_H = "MAX_SPEED";
+
+	public static final String COMMODITY_ID = "ID_COM";
+	
+	public static final String NO_CONTAINER_LOAD_COST_1_TON = "NC_LCO";
+
+	public static final String NO_CONTAINER_LOAD_TIME_H = "NC_LTI";
+	
+	public static final String NO_CONTAINER_TRANSFER_COST_1_TON = "NC_LCOT";
+
+	public static final String NO_CONTAINER_TRANSFER_TIME_H = "NC_LTIT";
+	
+	public static final String CONTAINER_LOAD_COST_1_TON = "CONT_LCO";
+
+	public static final String CONTAINER_LOAD_TIME_H = "CONT_LTI";
+	
+	public static final String CONTAINER_TRANSFER_COST_1_TON = "CONT_LCO_T";
+
+	public static final String CONTAINER_TRANSFER_TIME_H = "CONT_LTI_T";
+
+	public static final double MAGIC_NUMBER_INDICATING_NULL = 99988;
+
+	public static final String SUFFIX_INDICATING_CONTAINER = "_CONTAINER";
+
+	private final FreightVehicleFleet fleet;
+
+	public SamgodsFleetReader(FreightVehicleFleet fleet) {
+		this.fleet = fleet;
 	}
 
-	public static FreightVehicleFleet loadSamgodsFleet_v12(String vehicleTypeFile, String costFile) throws IOException {
+	public void load_v12(String vehicleTypeFile, String costFile, SamgodsConstants.TransportMode transportMode)
+			throws IOException {
 
-		final FreightVehicleFleet fleet = new FreightVehicleFleet();
-		final Map<String, FreightVehicleFleet.TypeBuilder> vehicleNr2builder = new LinkedHashMap<>();
+		final Map<String, FreightVehicleTypeAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
 
 		final AbstractTabularFileHandlerWithHeaderLine vehicleTypeHandler = new AbstractTabularFileHandlerWithHeaderLine() {
 			private void createBuilder(boolean container) {
-				final FreightVehicleFleet.TypeBuilder builder = fleet.createTypeBuilder();
-				vehicleNr2builder.put(this.getIntValue("VEH_NR") + (container ? "_CONTAINER" : ""), builder);
-				builder.setName(this.getStringValue("LABEL") + (container ? "_CONTAINER" : ""))
-						.setDescription(this.getStringValue("DESCRIPTIO"))
-						.setTransportMode(SamgodsConstants.TransportMode.Road)
-						.setCost_1_km(this.getDoubleValue("KM_COST"))
-						.setCost_1_h(this.getDoubleValue("HOURS_COST"))
-						.setCapacity_ton(this.getDoubleValue("CAPACITY"))
-						.setOnFerryCost_1_km(this.getDoubleValue("ONFER_KM_C"))
-						.setOnFerryCost_1_h(this.getDoubleValue("ONFER_H_C"))
-						.setMaxSpeed_km_h(this.getDoubleValue("MAX_SPEED"));
+				final FreightVehicleTypeAttributes.Builder builder = new FreightVehicleTypeAttributes.Builder();
+				vehicleNr2builder.put(this.getIntValue(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""),
+						builder);
+				builder.setName(this.getStringValue(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""))
+						.setDescription(this.getStringValue(VEH_DESCRIPTION)).setTransportMode(transportMode)
+						.setCost_1_km(this.getDoubleValue(COST_1_KM)).setCost_1_h(this.getDoubleValue(COST_1_H))
+						.setCapacity_ton(this.getDoubleValue(CAPACITY_TON))
+						.setOnFerryCost_1_km(this.getDoubleValue(ON_FERRY_COST_1_KM))
+						.setOnFerryCost_1_h(this.getDoubleValue(ON_FERRY_COST_1_H))
+						.setMaxSpeed_km_h(this.getDoubleValue(MAX_SPEED_KM_H));
 			}
 
 			@Override
@@ -73,9 +112,10 @@ public class SamgodsFleetReader {
 		vehicleTypeParser.parse(vehicleTypeFile, vehicleTypeHandler);
 
 		final AbstractTabularFileHandlerWithHeaderLine vehicleCostHandler = new AbstractTabularFileHandlerWithHeaderLine() {
+
 			private Double parseSamgodsDouble(String str) {
 				final double val = this.getDoubleValue(str);
-				if (val == 99988) {
+				if (val == MAGIC_NUMBER_INDICATING_NULL) {
 					return null;
 				} else {
 					return val;
@@ -85,28 +125,28 @@ public class SamgodsFleetReader {
 			@Override
 			public void startCurrentDataRow() {
 
-				// container
-				{
-					final FreightVehicleFleet.TypeBuilder builder = vehicleNr2builder
-							.get(this.getIntValue("VEH_NR") + "_CONTAINER");
-					final SamgodsConstants.Commodity commodity = SamgodsConstants.Commodity
-							.values()[this.getIntValue("ID_COM") - 1];
-					builder.setLoadCost_1_ton(commodity, parseSamgodsDouble("CONT_LCO"))
-							.setLoadTime_h(commodity, parseSamgodsDouble("CONT_LTI"))
-							.setTransferCost_1_ton(commodity, parseSamgodsDouble("CONT_LCO_T"))
-							.setTransferTime_h(commodity, parseSamgodsDouble("CONT_LTI_T"));
-				}
-
 				// no container
 				{
-					final FreightVehicleFleet.TypeBuilder builder = vehicleNr2builder
-							.get(this.getIntValue("VEH_NR") + "");
+					final FreightVehicleTypeAttributes.Builder builder = vehicleNr2builder
+							.get(this.getIntValue(VEH_NR) + "");
 					final SamgodsConstants.Commodity commodity = SamgodsConstants.Commodity
-							.values()[this.getIntValue("ID_COM") - 1];
-					builder.setLoadCost_1_ton(commodity, parseSamgodsDouble("NC_LCO"))
-							.setLoadTime_h(commodity, parseSamgodsDouble("NC_LTI"))
-							.setTransferCost_1_ton(commodity, parseSamgodsDouble("NC_LCOT"))
-							.setTransferTime_h(commodity, parseSamgodsDouble("NC_LTIT"));
+							.values()[this.getIntValue(COMMODITY_ID) - 1];
+					builder.setContainer(false).setLoadCost_1_ton(commodity, parseSamgodsDouble(NO_CONTAINER_LOAD_COST_1_TON))
+							.setLoadTime_h(commodity, parseSamgodsDouble(NO_CONTAINER_LOAD_TIME_H))
+							.setTransferCost_1_ton(commodity, parseSamgodsDouble(NO_CONTAINER_TRANSFER_COST_1_TON))
+							.setTransferTime_h(commodity, parseSamgodsDouble(NO_CONTAINER_TRANSFER_TIME_H));
+				}
+
+				// container
+				{
+					final FreightVehicleTypeAttributes.Builder builder = vehicleNr2builder
+							.get(this.getIntValue(VEH_NR) + SUFFIX_INDICATING_CONTAINER);
+					final SamgodsConstants.Commodity commodity = SamgodsConstants.Commodity
+							.values()[this.getIntValue(COMMODITY_ID) - 1];
+					builder.setContainer(true).setLoadCost_1_ton(commodity, parseSamgodsDouble(CONTAINER_LOAD_COST_1_TON))
+							.setLoadTime_h(commodity, parseSamgodsDouble(CONTAINER_LOAD_TIME_H))
+							.setTransferCost_1_ton(commodity, parseSamgodsDouble(CONTAINER_TRANSFER_COST_1_TON))
+							.setTransferTime_h(commodity, parseSamgodsDouble(CONTAINER_TRANSFER_TIME_H));
 				}
 			}
 		};
@@ -115,30 +155,32 @@ public class SamgodsFleetReader {
 		vehicleCostParser.setDelimiterTags(new String[] { ";" });
 		vehicleCostParser.parse(costFile, vehicleCostHandler);
 
-		for (FreightVehicleFleet.TypeBuilder builder : vehicleNr2builder.values()) {
-			builder.buildAndAddToFleet();
+		for (FreightVehicleTypeAttributes.Builder builder : vehicleNr2builder.values()) {
+			if (builder.isFeasible()) {
+				final VehicleType type = builder.build();
+				this.fleet.getVehicles().addVehicleType(type);
+			}
 		}
-
-		return fleet;
 	}
 
 	public static void main(String[] args) throws Exception {
-		FreightVehicleFleet fleet = SamgodsFleetReader.loadSamgodsFleet_v12("./2023-06-01_basecase/VehicleTypes.csv",
-				"./2023-06-01_basecase/VehicleCosts.csv");
+		FreightVehicleFleet fleet = new FreightVehicleFleet();
+		SamgodsFleetReader reader = new SamgodsFleetReader(fleet);
+		reader.load_v12("./2023-06-01_basecase/VehicleTypes.csv", "./2023-06-01_basecase/VehicleCosts.csv",
+				SamgodsConstants.TransportMode.Road);
 
 		final boolean includeLoading = false;
 
-		for (VehicleType type : fleet.getVehicleTypes().values()) {
+		for (VehicleType type : fleet.getVehicles().getVehicleTypes().values()) {
 			for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 				System.out.println(type.getId() + " transporting " + commodity
 						+ (includeLoading ? ", including (un)loading" : ", move costs only"));
 				System.out.println("load factor\tno container price per ton\tcontainer price per ton");
 				for (double loadFactor : new double[] { 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 }) {
-					FreightVehicleFleet.TypeAttributes attrs = (FreightVehicleFleet.TypeAttributes) type.getAttributes()
-							.getAttribute(FreightVehicleFleet.TypeAttributes.ATTRIBUTE_NAME);
+					FreightVehicleTypeAttributes attrs = (FreightVehicleTypeAttributes) type.getAttributes()
+							.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME);
 					final double load_ton = loadFactor * attrs.capacity_ton;
-					final double fixedCost = 1.0 * attrs.cost_1_km
-							+ attrs.cost_1_h * 1.0 / attrs.maxSpeed_km_h;
+					final double fixedCost = 1.0 * attrs.cost_1_km + attrs.cost_1_h * 1.0 / attrs.maxSpeed_km_h;
 
 					final Double pricePerTonNoContainer;
 					final Double pricePerTonContainer;
