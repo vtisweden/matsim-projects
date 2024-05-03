@@ -43,10 +43,16 @@ public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, 
 
 	private long iteration;
 
+	private boolean overwrite = false;
+
 	public TargetLogger(int interval, Target target, String fileName) {
 		this.interval = interval;
 		this.target = target;
 		this.fileName = fileName;
+	}
+
+	public void setOverwrite(boolean overwrite) {
+		this.overwrite = overwrite;
 	}
 
 	@Override
@@ -60,11 +66,9 @@ public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, 
 
 		multiRoundTrip = this.target.filter(multiRoundTrip);
 
-		if (this.iteration++ % this.interval == 0) {
-
-			new File(this.fileName).delete();
+		if (this.iteration % this.interval == 0) {
 			try {
-				PrintWriter writer = new PrintWriter(this.fileName);
+				PrintWriter writer = new PrintWriter((this.overwrite ? "" : this.iteration + ".") + this.fileName);
 				double[] targets = this.target.computeTarget();
 				double[] samples = this.target.computeSample(multiRoundTrip);
 				String[] labels = this.target.createLabels();
@@ -78,6 +82,8 @@ public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, 
 				throw new RuntimeException(e);
 			}
 		}
+		
+		this.iteration++;
 	}
 
 	@Override
