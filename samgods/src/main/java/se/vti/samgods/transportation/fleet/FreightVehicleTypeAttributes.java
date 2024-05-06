@@ -50,9 +50,9 @@ public class FreightVehicleTypeAttributes {
 
 	public final double capacity_ton;
 
-	public final double onFerryCost_1_km;
+	public final Double onFerryCost_1_km;
 
-	public final double onFerryCost_1_h;
+	public final Double onFerryCost_1_h;
 
 	public final double maxSpeed_km_h;
 
@@ -68,7 +68,7 @@ public class FreightVehicleTypeAttributes {
 
 	private /* use builder */ FreightVehicleTypeAttributes(Id<VehicleType> id, String description,
 			SamgodsConstants.TransportMode mode, double cost_1_km, double cost_1_h, double capacity_ton,
-			double onFerryCost_1_km, double onFerryCost_1_h, double maxSpeed_km_h, boolean container,
+			Double onFerryCost_1_km, Double onFerryCost_1_h, double maxSpeed_km_h, boolean container,
 			Map<SamgodsConstants.Commodity, Double> loadCost_1_ton, Map<SamgodsConstants.Commodity, Double> loadTime_h,
 			Map<SamgodsConstants.Commodity, Double> transferCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> transferTime_h) {
@@ -86,6 +86,11 @@ public class FreightVehicleTypeAttributes {
 		this.loadTime_h = loadTime_h;
 		this.transferCost_1_ton = transferCost_1_ton;
 		this.transferTime_h = transferTime_h;
+	}
+
+	public boolean containsData(SamgodsConstants.Commodity commodity) {
+		return this.loadCost_1_ton.get(commodity) != null || this.loadTime_h.get(commodity) != null
+				|| this.transferCost_1_ton.get(commodity) != null || this.transferTime_h.get(commodity) != null;
 	}
 
 	public static class Builder {
@@ -119,16 +124,6 @@ public class FreightVehicleTypeAttributes {
 		private Map<SamgodsConstants.Commodity, Double> transferTime_h = new LinkedHashMap<>(16);
 
 		public Builder() {
-		}
-
-		public boolean isFeasible() {
-			for (SamgodsConstants.Commodity c : SamgodsConstants.Commodity.values()) {
-				if ((this.loadCost_1_ton.get(c) != null) && (this.loadTime_h.get(c) != null)
-						&& (this.transferCost_1_ton.get(c) != null) && this.transferTime_h.get(c) != null) {
-					return true;
-				}
-			}
-			return false;
 		}
 
 		public VehicleType build() {
@@ -172,12 +167,12 @@ public class FreightVehicleTypeAttributes {
 			return this;
 		}
 
-		public Builder setOnFerryCost_1_km(double onFerryCost_1_km) {
+		public Builder setOnFerryCost_1_km(Double onFerryCost_1_km) {
 			this.onFerryCost_1_km = onFerryCost_1_km;
 			return this;
 		}
 
-		public Builder setOnFerryCost_1_h(double onFerryCost_1_h) {
+		public Builder setOnFerryCost_1_h(Double onFerryCost_1_h) {
 			this.onFerryCost_1_h = onFerryCost_1_h;
 			return this;
 		}
