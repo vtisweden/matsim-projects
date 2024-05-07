@@ -54,7 +54,7 @@ public class FreightVehicleTypeAttributes {
 
 	public final Double onFerryCost_1_h;
 
-	public final double maxSpeed_km_h;
+	public final Double speed_km_h;
 
 	public final boolean container;
 
@@ -68,8 +68,9 @@ public class FreightVehicleTypeAttributes {
 
 	private /* use builder */ FreightVehicleTypeAttributes(Id<VehicleType> id, String description,
 			SamgodsConstants.TransportMode mode, double cost_1_km, double cost_1_h, double capacity_ton,
-			Double onFerryCost_1_km, Double onFerryCost_1_h, double maxSpeed_km_h, boolean container,
-			Map<SamgodsConstants.Commodity, Double> loadCost_1_ton, Map<SamgodsConstants.Commodity, Double> loadTime_h,
+			Double onFerryCost_1_km, Double onFerryCost_1_h, Double speed_km_h, 
+			boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
+			Map<SamgodsConstants.Commodity, Double> loadTime_h,
 			Map<SamgodsConstants.Commodity, Double> transferCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> transferTime_h) {
 		this.id = id;
@@ -80,7 +81,7 @@ public class FreightVehicleTypeAttributes {
 		this.capacity_ton = capacity_ton;
 		this.onFerryCost_1_km = onFerryCost_1_km;
 		this.onFerryCost_1_h = onFerryCost_1_h;
-		this.maxSpeed_km_h = maxSpeed_km_h;
+		this.speed_km_h = speed_km_h;
 		this.container = container;
 		this.loadCost_1_ton = loadCost_1_ton;
 		this.loadTime_h = loadTime_h;
@@ -111,7 +112,7 @@ public class FreightVehicleTypeAttributes {
 
 		private Double onFerryCost_1_h = null;
 
-		private Double maxSpeed_km_h = null;
+		private Double speed_km_h = null;
 
 		private Boolean container = null;
 
@@ -127,12 +128,13 @@ public class FreightVehicleTypeAttributes {
 		}
 
 		public VehicleType build() {
-			final VehicleType type = VehicleUtils.createVehicleType(this.id);
-			type.setMaximumVelocity(Units.M_S_PER_KM_H * this.maxSpeed_km_h);
+
+			final VehicleType type = VehicleUtils.createVehicleType(this.id);			
+//			type.setMaximumVelocity(Units.M_S_PER_KM_H * this.speed_km_h); // TODO speed may be zero
 			FreightVehicleTypeAttributes attributes = new FreightVehicleTypeAttributes(this.id, this.description,
 					this.mode, this.cost_1_km, this.cost_1_h, this.capacity_ton, this.onFerryCost_1_km,
-					this.onFerryCost_1_h, this.maxSpeed_km_h, this.container, this.loadCost_1_ton, this.loadTime_h,
-					this.transferCost_1_ton, this.transferTime_h);
+					this.onFerryCost_1_h, this.speed_km_h, this.container, this.loadCost_1_ton,
+					this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 			type.getAttributes().putAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME, attributes);
 			return type;
 		}
@@ -177,8 +179,8 @@ public class FreightVehicleTypeAttributes {
 			return this;
 		}
 
-		public Builder setMaxSpeed_km_h(double maxSpeed_km_h) {
-			this.maxSpeed_km_h = maxSpeed_km_h;
+		public Builder setSpeed_km_h(Double speed_km_h) {
+			this.speed_km_h = speed_km_h;
 			return this;
 		}
 

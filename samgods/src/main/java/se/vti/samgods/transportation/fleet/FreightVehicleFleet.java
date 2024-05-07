@@ -61,14 +61,6 @@ public class FreightVehicleFleet {
 		return this.vehicles;
 	}
 
-//	public void addVehicleType(VehicleType type) {
-//		this.vehicles.addVehicleType(type);
-//	}
-
-//	public Map<Id<VehicleType>, VehicleType> getVehicleTypesView() {
-//		return this.vehicles.getVehicleTypes();
-//	}
-
 	public Vehicle createAndAddVehicle(VehicleType type) {
 		assert (this.vehicles.getVehicleTypes().values().contains(type));
 		final Vehicle vehicle = this.vehicles.getFactory().createVehicle(Id.create(this.vehCnt++, Vehicle.class), type);
@@ -88,6 +80,14 @@ public class FreightVehicleFleet {
 
 	// -------------------- SUMMARY TABLES --------------------
 
+	private String null2notAvail(Object c) {
+		if (c == null) {
+			return "N/A";
+		} else {
+			return c.toString();
+		}
+	}
+
 	public String createVehicleTypeTable(SamgodsConstants.TransportMode... modes) {
 		final Set<SamgodsConstants.TransportMode> modeSet = Arrays.stream(modes).collect(Collectors.toSet());
 		final AsciiTable table = new AsciiTable();
@@ -100,19 +100,11 @@ public class FreightVehicleFleet {
 				table.addRule();
 				table.addRow(attrs.id, attrs.description, attrs.mode, attrs.cost_1_km, attrs.cost_1_h,
 						attrs.capacity_ton, this.null2notAvail(attrs.onFerryCost_1_km),
-						this.null2notAvail(attrs.onFerryCost_1_h), attrs.maxSpeed_km_h);
+						this.null2notAvail(attrs.onFerryCost_1_h), this.null2notAvail(attrs.speed_km_h));
 			}
 		}
 		table.addRule();
 		return table.render();
-	}
-
-	private String null2notAvail(Object c) {
-		if (c == null) {
-			return "N/A";
-		} else {
-			return c.toString();
-		}
 	}
 
 	public String createVehicleTransferCostTable(SamgodsConstants.TransportMode... modes) {
