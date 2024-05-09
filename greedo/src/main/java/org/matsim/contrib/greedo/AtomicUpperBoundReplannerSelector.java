@@ -37,7 +37,7 @@ import org.matsim.contrib.greedo.shouldbeelsewhere.Hacks;
  * @author Gunnar Flötteröd
  *
  */
-class UpperBoundReplannerSelector extends AbstractReplannerSelector {
+class AtomicUpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -49,56 +49,89 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	private final Function<Double, Double> quadraticDistanceTransformation;
 
-	// private final boolean gapRelativeMSA;
 	final GreedoConfigGroup.UpperboundStepSize stepSizeLogic;
 
 	// -------------------- MEMBERS --------------------
 
 	private AbstractPopulationDistance populationDistance = null;
 
-	private Double initialGap = null;
-
-	private Double sbaytiCounterpartGapThreshold = null;
-
 	// -------------------- CONSTRUCTION --------------------
 
-	UpperBoundReplannerSelector(final Function<Integer, Double> iterationToEta,
+	AtomicUpperBoundReplannerSelector(final Function<Integer, Double> iterationToEta,
 			final Function<Double, Double> quadraticDistanceTransformation,
-			final GreedoConfigGroup.UpperboundStepSize stepSizeLogic
-	// final boolean gapRelativeMSA
-	) {
+			final GreedoConfigGroup.UpperboundStepSize stepSizeLogic) {
 		super(iterationToEta);
 		this.quadraticDistanceTransformation = quadraticDistanceTransformation;
-		// this.gapRelativeMSA = gapRelativeMSA;
 		this.stepSizeLogic = stepSizeLogic;
 	}
 
 	// -------------------- INTERNALS --------------------
 
-	private double effectiveEta(final double currentGap) {
-//		if (this.gapRelativeMSA) {
-//			return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap / currentGap);
-//		} else {
-//			return this.getTargetReplanningRate();
-//		}
-		if (GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
-			return this.getTargetReplanningRate();
-		} else if (GreedoConfigGroup.UpperboundStepSize.RelativeToInitialGap.equals(this.stepSizeLogic)) {
-			return Math.min(1.0, this.getTargetReplanningRate() * this.initialGap / currentGap);
-		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpart.equals(this.stepSizeLogic)) {
-			return (this.sbaytiCounterpartGapThreshold / currentGap);
-		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpartExact.equals(this.stepSizeLogic)) {
-
-			return (this.sbaytiGsum - this.sbaytiGcrit * this.sbaytiCnt) / currentGap;
-
-		} else {
-			throw new RuntimeException("Unknown step size logic: " + this.stepSizeLogic);
-		}
+	private double _Q(final double _G, final double _Dsum, final double gamma) {
+		final double transformedD = this.quadraticDistanceTransformation.apply(_Dsum * _Dsum);
+		return (_G - gamma) / Math.max(this.eps, transformedD);
 	}
 
-	private double _Q(final double _G, final double _D2, final double epsilon) {
-		final double transformedD = this.quadraticDistanceTransformation.apply(Math.max(_D2, 0.0));
-		return (_G - epsilon) / Math.max(this.eps, transformedD);
+	private Map<Id<Person>, Double> createdPersonId2D2WithoutSelf(Map<Id<Person>, Double> personId2bParam,
+			Set<Id<Person>> replannerIds) {
+		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
+		Map<Id<Person>, Double> personId2D2withoutSelf = new LinkedHashMap<>(personId2bParam.size());
+		for (Map.Entry<Id<Person>, Double> p2bEntry : personId2bParam.entrySet()) {
+			Id<Person> personId = p2bEntry.getKey();
+			if (replannerIds.contains(personId)) {
+				personId2D2withoutSelf.put(personId,
+						_D2 + this.populationDistance.getACoefficient(personId, personId) - p2bEntry.getValue());
+			} else {
+				personId2D2withoutSelf.put(personId, _D2);
+			}
+		}
+		return personId2D2withoutSelf;
+	}
+
+	private double _Dsum(Map<Id<Person>, Double> personId2D2withoutSelf) {
+		return personId2D2withoutSelf.values().stream().mapToDouble(d2 -> Math.sqrt(Math.max(this.eps, d2))).sum();
+	}
+
+	private double computeDSumChangeWhenAddingToReplanners(Id<Person> switcherId,
+			Map<Id<Person>, Double> personId2D2withoutSelf, Map<Id<Person>, Double> personId2bCoeff,
+			Set<Id<Person>> replannerIds) {
+		assert (!replannerIds.contains(switcherId));
+		double result = 0.0;
+		for (Id<Person> personId : personId2D2withoutSelf.keySet()) {
+			if (!personId.equals(switcherId)) {
+				final double d2WithoutSelf = personId2D2withoutSelf.get(personId);
+				result += Math.sqrt(Math.max(this.eps,
+						d2WithoutSelf + personId2bCoeff.get(switcherId)
+								+ this.populationDistance.getACoefficient(switcherId, switcherId)
+								- (replannerIds.contains(personId)
+										? this.populationDistance.getACoefficient(switcherId, personId)
+												+ this.populationDistance.getACoefficient(personId, switcherId)
+										: 0.0)));
+				result -= Math.sqrt(Math.max(this.eps, d2WithoutSelf));
+			}
+		}
+		return result;
+	}
+
+	private double computeDSumChangeWhenRemovingFromReplanners(Id<Person> switcherId,
+			Map<Id<Person>, Double> personId2D2withoutSelf, Map<Id<Person>, Double> personId2bCoeff,
+			Set<Id<Person>> replannerIds) {
+		assert (replannerIds.contains(switcherId));
+		double result = 0.0;
+		for (Id<Person> personId : personId2D2withoutSelf.keySet()) {
+			if (!personId.equals(switcherId)) {
+				final double d2WithoutSelf = personId2D2withoutSelf.get(personId);
+				result += Math.sqrt(Math.max(this.eps,
+						d2WithoutSelf - personId2bCoeff.get(switcherId)
+								+ this.populationDistance.getACoefficient(switcherId, switcherId)
+								+ (replannerIds.contains(personId)
+										? this.populationDistance.getACoefficient(switcherId, personId)
+												+ this.populationDistance.getACoefficient(personId, switcherId)
+										: 0.0)));
+				result -= Math.sqrt(Math.max(this.eps, d2WithoutSelf));
+			}
+		}
+		return result;
 	}
 
 	// --------------- OVERRIDING OF AbstractReplannerSelector ---------------
@@ -108,34 +141,16 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		this.populationDistance = populationDistance;
 	}
 
-	private Double sbaytiGsum = null;
-	private Integer sbaytiCnt = null;
-	private Double sbaytiGcrit = null;
-
 	@Override
 	Set<Id<Person>> selectReplannersHook(Map<Id<Person>, Double> personId2gap) {
-
-//		// only consider strictly positive gaps
-//		final Map<Id<Person>, Double> personId2gap = personId2gap_POSSIBLY_NEGATIVE_GAPS.entrySet().stream().filter(e -> e.getValue() > 0.0)
-//				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
 		/*
 		 * (1) Initialize.
 		 */
 
-		if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpart.equals(this.stepSizeLogic)) {
-			final BasicReplannerSelector sbaytiSelector = new BasicReplannerSelector(true, this.iterationToStepSize);
-			this.sbaytiCounterpartGapThreshold = sbaytiSelector
-					.selectReplanners(personId2gap, this.getReplanIteration()).stream()
-					.mapToDouble(id -> personId2gap.get(id)).sum();
-
-		} else if (GreedoConfigGroup.UpperboundStepSize.SbaytiCounterpartExact.equals(this.stepSizeLogic)) {
-			final BasicReplannerSelector sbaytiSelector = new BasicReplannerSelector(true, this.iterationToStepSize);
-			final Set<Id<Person>> sbaytiReplanners = sbaytiSelector.selectReplanners(personId2gap,
-					this.getReplanIteration());
-			this.sbaytiGsum = sbaytiReplanners.stream().mapToDouble(id -> personId2gap.get(id)).sum();
-			this.sbaytiGcrit = sbaytiReplanners.stream().mapToDouble(id -> personId2gap.get(id)).min().getAsDouble();
-			this.sbaytiCnt = sbaytiReplanners.size();
+		if (!GreedoConfigGroup.UpperboundStepSize.Vanilla.equals(this.stepSizeLogic)) {
+			throw new RuntimeException(
+					"Accepting only " + GreedoConfigGroup.UpperboundStepSize.Vanilla + " step size logic.");
 		}
 
 		// Start with a maximum amount of replanning gap.
@@ -155,26 +170,21 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			personId2bParam.put(personId, b);
 		}
 
+		Map<Id<Person>, Double> personId2D2withoutSelf = this.createdPersonId2D2WithoutSelf(personId2bParam,
+				replannerIds);
+
 		final String logFile = "exact-replanning.log";
 		if (this.logReplanningProcess) {
 			Hacks.append2file(logFile, "strictly positive gaps: "
 					+ ((double) personId2gap.size()) / ((double) personId2gap.size()) + "\n");
-			Hacks.append2file(logFile, "G(lambda)\tD(lambda)\tQ(lambda)\n");
+			Hacks.append2file(logFile, "G(lambda)\tDSum(lambda)\tQ(lambda)\n");
 		}
 
 		final double _Gall = personId2gap.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
-		final double _D2all = 0.5 * personId2bParam.entrySet().stream().mapToDouble(e -> e.getValue()).sum();
 
-		if (this.initialGap == null) {
-			this.initialGap = _Gall;
-		}
-
-//		double _G = personId2gap.entrySet().stream().filter(e -> replannerIds.contains(e.getKey()))
-//				.mapToDouble(e -> e.getValue()).sum();
-//		double _D2 = 0.5 * personId2bParam.entrySet().stream().filter(e -> replannerIds.contains(e.getKey()))
-//				.mapToDouble(e -> e.getValue()).sum();
 		double _G = replannerIds.stream().mapToDouble(r -> personId2gap.get(r)).sum();
-		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
+		double _Dsum = personId2D2withoutSelf.values().stream().mapToDouble(d2 -> Math.sqrt(Math.max(this.eps, d2)))
+				.sum();
 
 		/*
 		 * (2) Repeatedly switch (non)replanners.
@@ -186,8 +196,8 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		while (switched) {
 
 			if (this.logReplanningProcess) {
-				Hacks.append2file(logFile,
-						_G + "\t" + Math.sqrt(_D2) + "\t" + this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall) + "\n");
+				Hacks.append2file(logFile, _G + "\t" + Math.sqrt(_Dsum) + "\t"
+						+ this._Q(_G, _Dsum, this.getTargetReplanningRate() * _Gall) + "\n");
 			}
 
 			switched = false;
@@ -200,23 +210,25 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 				final double b = personId2bParam.get(candidateId);
 
 				final double deltaG;
-				final double deltaD2;
+				final double deltaDsum;
 				if (replannerIds.contains(candidateId)) {
 					deltaG = -candidateGap;
-					deltaD2 = -b + a;
+					deltaDsum = this.computeDSumChangeWhenRemovingFromReplanners(candidateId, personId2D2withoutSelf,
+							personId2bParam, replannerIds);
 				} else /* candidate is NOT a replanner */ {
 					deltaG = +candidateGap;
-					deltaD2 = +b + a;
+					deltaDsum = this.computeDSumChangeWhenAddingToReplanners(candidateId, personId2D2withoutSelf,
+							personId2bParam, replannerIds);
 				}
 
 				// attention, now we maximize
 
-				final double oldQ = this._Q(_G, _D2, this.effectiveEta(_Gall) * _Gall);
-				final double newQ = this._Q(_G + deltaG, _D2 + deltaD2, this.effectiveEta(_Gall) * _Gall);
+				final double oldQ = this._Q(_G, _Dsum, this.getTargetReplanningRate() * _Gall);
+				final double newQ = this._Q(_G + deltaG, _Dsum + deltaDsum, this.getTargetReplanningRate() * _Gall);
 
 				if (newQ > oldQ) {
 					_G = Math.max(0.0, _G + deltaG);
-					_D2 = Math.max(0.0, _D2 + deltaD2);
+					_Dsum = Math.max(0.0, _Dsum + deltaDsum);
 
 					final double deltaSign;
 					if (replannerIds.contains(candidateId)) {
@@ -232,33 +244,28 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 										+ this.populationDistance.getACoefficient(personId, candidateId));
 						personId2bParam.compute(personId, (id, b2) -> b2 + deltaB);
 					}
+					personId2D2withoutSelf = this.createdPersonId2D2WithoutSelf(personId2bParam, replannerIds);
 					switched = true;
 
 					if (this.checkDistance) {
 						final double _Gchecked = personId2gap.entrySet().stream()
 								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
-						final double _D2checkedB = 0.5 * personId2bParam.entrySet().stream()
-								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
+						final double _DsumChecked = this._Dsum(personId2D2withoutSelf);
 						final boolean gErr = Math.abs(_Gchecked - _G) > 1e-4;
-						final boolean d2ErrB = Math.abs(_D2checkedB - _D2) > 1e-4;
-						if (gErr || d2ErrB) {
+						final boolean d2Err = Math.abs(_DsumChecked - _Dsum) > 1e-4;
+						if (gErr || d2Err) {
 							String msg = "";
 							if (gErr) {
 								msg += "\nrecursive _G = " + _G + ", but checked _G = " + _Gchecked;
 							}
-							if (d2ErrB) {
-								msg += "\nrecursive _D2 = " + _D2 + ", but checked _D2(B) = " + _D2checkedB;
+							if (d2Err) {
+								msg += "\nrecursive _Daum = " + _Dsum + ", but checked _Dsum = " + _DsumChecked;
 							}
 							throw new RuntimeException(msg);
 						}
 					}
 				}
 			}
-		}
-
-		if (this.logReplanningProcess) {
-			Hacks.append2file(logFile, "homogeneity = " + (_Gall / Math.sqrt(_D2all)) / (_G / Math.sqrt(_D2)) + "\n");
-			Hacks.append2file(logFile, "\n");
 		}
 
 		return replannerIds;

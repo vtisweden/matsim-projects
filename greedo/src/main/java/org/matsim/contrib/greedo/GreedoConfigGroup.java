@@ -272,7 +272,7 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 	//
 
 	public static enum ReplannerIdentifierType {
-		IID, SBAYTI2007, UPPERBOUND, DONOTHING
+		IID, SBAYTI2007, UPPERBOUND, UPPERBOUND_ATOMIC, DONOTHING
 	}
 
 	private ReplannerIdentifierType replannerIdentifier = ReplannerIdentifierType.SBAYTI2007;
