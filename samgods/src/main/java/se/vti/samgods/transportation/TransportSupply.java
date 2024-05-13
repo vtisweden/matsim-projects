@@ -42,11 +42,12 @@ public class TransportSupply {
 	static {
 		samgodsMode2matsimMode = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Road, org.matsim.api.core.v01.TransportMode.car);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Ferry,
+				org.matsim.api.core.v01.TransportMode.car /* Assume only car ferries */);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Rail, org.matsim.api.core.v01.TransportMode.train);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Sea, org.matsim.api.core.v01.TransportMode.ship);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Air, org.matsim.api.core.v01.TransportMode.airplane);
-		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Ferry, "ferry" /* non-default matsim mode! */);
-		assert(samgodsMode2matsimMode.size() == SamgodsConstants.TransportMode.values().length);
+		assert (samgodsMode2matsimMode.size() == SamgodsConstants.TransportMode.values().length);
 	}
 
 	// -------------------- MEMBERS --------------------

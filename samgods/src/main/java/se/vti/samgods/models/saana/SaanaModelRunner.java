@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.models.saana;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class SaanaModelRunner {
 
 	static Logger log = Logger.getLogger(SaanaModelRunner.class);
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 
 		log.info("STARTED ...");
 
