@@ -67,33 +67,37 @@ public class ReaderUtils {
 		StringBuffer result = new StringBuffer();
 
 		Map<String, Integer> mode2cnt = new LinkedHashMap<>();
+		Map<String, Integer> mode2speed1cnt = new LinkedHashMap<>();
+		Map<String, Integer> mode2speed2cnt = new LinkedHashMap<>();
+
 		Map<String, Double> mode2speed1Sum = new LinkedHashMap<>();
 		Map<String, Double> mode2speed2Sum = new LinkedHashMap<>();
 		Map<String, Double> mode2lengthSum = new LinkedHashMap<>();
-		Map<String, Double> mode2capSum = new LinkedHashMap<>();
 		for (Link link : network.getLinks().values()) {
 			mode2cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
 			SamgodsLinkAttributes attr = (SamgodsLinkAttributes) link.getAttributes()
 					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
-			mode2speed1Sum.compute(link.getAllowedModes().iterator().next(),
-					(m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
-			mode2speed2Sum.compute(link.getAllowedModes().iterator().next(),
-					(m, s) -> s == null ? attr.speed2_km_h : s + attr.speed2_km_h);
+			if (attr.speed1_km_h != null && attr.speed1_km_h != 0) {
+				mode2speed1Sum.compute(link.getAllowedModes().iterator().next(),
+						(m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
+				mode2speed1cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
+			}
+			if (attr.speed2_km_h != null && attr.speed2_km_h != 0) {
+				mode2speed2Sum.compute(link.getAllowedModes().iterator().next(),
+						(m, s) -> s == null ? attr.speed2_km_h : s + attr.speed2_km_h);
+				mode2speed2cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
+			}
 			mode2lengthSum.compute(link.getAllowedModes().iterator().next(),
 					(m, l) -> l == null ? link.getLength() : l + link.getLength());
-			mode2capSum.compute(link.getAllowedModes().iterator().next(),
-					(m, c) -> c == null ? link.getCapacity() : Math.min(c, link.getCapacity()));
 		}
 		final AsciiTable table = new AsciiTable();
 		table.addRule();
-		table.addRow("Mode", "Links", "Avg. speed 1 [km/h]", "Avg. speed 2 [km/h]", "Avg. length [km]",
-				"min.cap [veh/h]");
+		table.addRow("Mode", "Links", "Avg. speed 1 [km/h] if >0", "Avg. speed 2 [km/h] if >0", "Avg. length [km]");
 		table.addRule();
 		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
-			table.addRow(e.getKey(), e.getValue(), mode2speed1Sum.get(e.getKey()) / e.getValue(),
-					mode2speed2Sum.get(e.getKey()) / e.getValue(),
-					Units.KM_PER_M * mode2lengthSum.get(e.getKey()) / e.getValue(),
-					mode2capSum.getOrDefault(e.getKey(), Double.POSITIVE_INFINITY) / e.getValue());
+			table.addRow(e.getKey(), e.getValue(), mode2speed1Sum.get(e.getKey()) / mode2speed1cnt.get(e.getKey()),
+					mode2speed2Sum.getOrDefault(e.getKey(), 0.0) / mode2speed2cnt.getOrDefault(e.getKey(), 1),
+					Units.KM_PER_M * mode2lengthSum.get(e.getKey()) / e.getValue());
 			table.addRule();
 		}
 		result.append(table.render());

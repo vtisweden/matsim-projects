@@ -23,11 +23,11 @@ public class SamgodsLinkAttributes {
 
 	public static final String ATTRIBUTE_NAME = "samgods";
 
-	public final double speed1_km_h;
+	public final Double speed1_km_h;
 	
-	public final double speed2_km_h;
+	public final Double speed2_km_h;
 	
-	public SamgodsLinkAttributes(double speed1_km_h, double speed2_km_h) {
+	public SamgodsLinkAttributes(Double speed1_km_h, Double speed2_km_h) {
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
 	}

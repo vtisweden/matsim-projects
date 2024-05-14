@@ -90,12 +90,24 @@ public class SamgodsNetworkReader {
 			final double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
 
-			final double speed1_km_h = Double.parseDouble(record.get(LINK_SPEED_1));
-			final double speed2_km_h = Double.parseDouble(record.get(LINK_SPEED_2));
+			final Double speed1_km_h = ReaderUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
+			final Double speed2_km_h = ReaderUtils.parseDoubleOrNull(record.get(LINK_SPEED_2));
 
-			// take max here, reduce by vehicle class
-			final double maxSpeed_m_s = Units.M_S_PER_KM_H * Math.max(speed1_km_h, speed2_km_h); 
-
+			final double maxSpeed_m_s; // Take max here, reduce by vehicle class.			
+			if (speed1_km_h != null) {
+				if (speed2_km_h != null) {
+					maxSpeed_m_s = Units.M_S_PER_KM_H * Math.max(speed1_km_h, speed2_km_h); 
+				} else {
+					maxSpeed_m_s = Units.M_S_PER_KM_H * speed1_km_h; 
+				}
+			} else {
+				if (speed2_km_h != null) {
+					maxSpeed_m_s = Units.M_S_PER_KM_H * speed2_km_h; 
+				} else {
+					maxSpeed_m_s = Double.NaN; // would prefer null
+				}				
+			}
+			
 			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
 					.valueOf(record.get(LINK_MODE));
 			final String matsimMode = TransportSupply.samgodsMode2matsimMode.get(samgodsMode);
