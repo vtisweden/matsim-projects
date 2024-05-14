@@ -152,7 +152,8 @@ public class SamgodsFleetReader {
 		reader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 				SamgodsConstants.TransportMode.Sea);
 
-		System.out.println("DONE");
+		System.out.println(
+				fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Sea));
 		
 //		System.out.println(
 //				fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail, SamgodsConstants.TransportMode.Road,

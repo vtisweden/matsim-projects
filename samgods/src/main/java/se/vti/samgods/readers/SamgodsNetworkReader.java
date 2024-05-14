@@ -25,7 +25,6 @@ import java.util.Collections;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -46,15 +45,16 @@ public class SamgodsNetworkReader {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(SamgodsNetworkReader.class);
+//	private static final Logger log = Logger.getLogger(SamgodsNetworkReader.class);
 
 	private static final String NODE_ID = "N";
 	private static final String NODE_X = "X";
 	private static final String NODE_Y = "Y";
 
+	private static final String LINK_ID = "OBJECTID";
 	private static final String LINK_FROM_NODE = "A";
 	private static final String LINK_TO_NODE = "B";
-	private static final String LINK_LENGTH_KM = "SHAPE_Length";
+	private static final String LINK_LENGTH_M = "SHAPE_Length";
 	private static final String LINK_SPEED_1 = "SPEED_1";
 	private static final String LINK_SPEED_2 = "SPEED_2";
 	private static final String LINK_LANES = "NLANES";
@@ -80,36 +80,33 @@ public class SamgodsNetworkReader {
 		}
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(linksFile))) {
-			final Node fromNode = network.getNodes().get(Id.createNodeId(record.get(LINK_FROM_NODE)));
-			final Node toNode = network.getNodes().get(Id.createNodeId(record.get(LINK_TO_NODE)));
-			final Id<Link> id = Id.createLinkId(fromNode.getId() + "_" + toNode.getId());
-			final double length_m = Units.M_PER_KM * ReaderUtils.parseDoubleOrNull(record.get(LINK_LENGTH_KM));
-			final Double lanes = ReaderUtils.parseDoubleOrNull(record.get(LINK_LANES));
 
-			final Double maxSpeed1_km_h = ReaderUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
-			final Double maxSpeed2_km_h = ReaderUtils.parseDoubleOrNull(record.get(LINK_SPEED_2));
-			double maxSpeed_m_s = Double.POSITIVE_INFINITY; // no speed constraint -> infinite speed
-			if (maxSpeed1_km_h != null) {
-				maxSpeed_m_s = Math.min(maxSpeed_m_s, Units.M_S_PER_KM_H * maxSpeed1_km_h);
-			}
-			if (maxSpeed2_km_h != null) {
-				maxSpeed_m_s = Math.min(maxSpeed_m_s, Units.M_S_PER_KM_H * maxSpeed2_km_h);
-			}
+			final Node fromNode = this.network.getNodes().get(Id.createNodeId(record.get(LINK_FROM_NODE)));
+			final Node toNode = this.network.getNodes().get(Id.createNodeId(record.get(LINK_TO_NODE)));
 
-			final String mode = record.get(LINK_MODE);
-			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode.valueOf(mode);
+//			final Id<Link> id = Id.createLinkId(fromNode.getId() + "_" + toNode.getId());
+			final Id<Link> id = Id.createLinkId(record.get(LINK_ID));
+
+			final double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
+			final double lanes = Double.parseDouble(record.get(LINK_LANES));
+
+			final double speed1_km_h = Double.parseDouble(record.get(LINK_SPEED_1));
+			final double speed2_km_h = Double.parseDouble(record.get(LINK_SPEED_2));
+
+			// take max here, reduce by vehicle class
+			final double maxSpeed_m_s = Units.M_S_PER_KM_H * Math.max(speed1_km_h, speed2_km_h); 
+
+			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
+					.valueOf(record.get(LINK_MODE));
 			final String matsimMode = TransportSupply.samgodsMode2matsimMode.get(samgodsMode);
-
-			Double capacity_veh_h = ReaderUtils.parseDoubleOrNull(record.get(LINK_CAPACITY_TRAINS_DAY));
-			if (capacity_veh_h != null) {
-				capacity_veh_h /= 24.0;
-			} else {
-				capacity_veh_h = Double.POSITIVE_INFINITY;
-			}
+			final double capacity_veh_h = ReaderUtils.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY),
+					Double.POSITIVE_INFINITY) / 24.0;
 
 			final Link link = NetworkUtils.createAndAddLink(this.network, id, fromNode, toNode, length_m, maxSpeed_m_s,
 					capacity_veh_h, lanes, null, null);
 			link.setAllowedModes(Collections.singleton(matsimMode));
+			link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
+					new SamgodsLinkAttributes(speed1_km_h, speed2_km_h));
 		}
 
 		System.out.println("nodes: " + this.network.getNodes().size());
@@ -127,6 +124,9 @@ public class SamgodsNetworkReader {
 		SamgodsNetworkReader loader = new SamgodsNetworkReader("./input_2024/node_parameters.csv",
 				"./input_2024/link_parameters.csv");
 		NetworkUtils.writeNetwork(loader.getNetwork(), "./input_2024/matsim-network.xml");
+
+		System.out.println();
+		System.out.println(ReaderUtils.createNetworkStatsTable(loader.getNetwork()));
 
 	}
 }

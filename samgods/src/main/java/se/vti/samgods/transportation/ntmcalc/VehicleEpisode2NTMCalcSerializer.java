@@ -70,7 +70,6 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		gen.writeStringField("vehicleId", vehicleEpisode.getVehicle().getId().toString());
 		gen.writeStringField("vehicleType", vehicleEpisode.getVehicle().getType().getId().toString());
 		gen.writeNumberField("load_ton", vehicleEpisode.getLoad_ton());
-		gen.writeStringField("mode", globalMode);
 
 		gen.writeFieldName("links");
 		gen.writeStartArray();
@@ -85,9 +84,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 							"Link " + link.getId() + " has not exactly one mode: " + link.getAllowedModes());
 				}
 				final String localMode = link.getAllowedModes().iterator().next();
-				if (!localMode.equals(globalMode)) {
 					gen.writeStringField("mode", localMode);
-				}
 				if (SamgodsConstants.TransportMode.Ferry.toString().equals(localMode)) {
 					gen.writeNumberField("vesselDWT", 5678.9);
 				}
