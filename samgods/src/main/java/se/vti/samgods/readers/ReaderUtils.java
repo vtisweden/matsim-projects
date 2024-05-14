@@ -73,8 +73,14 @@ public class ReaderUtils {
 		Map<String, Double> mode2speed1Sum = new LinkedHashMap<>();
 		Map<String, Double> mode2speed2Sum = new LinkedHashMap<>();
 		Map<String, Double> mode2lengthSum = new LinkedHashMap<>();
+		Map<String, Double> mode2lanesSum = new LinkedHashMap<>();
+
 		for (Link link : network.getLinks().values()) {
 			mode2cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
+			mode2lengthSum.compute(link.getAllowedModes().iterator().next(),
+					(m, l) -> l == null ? link.getLength() : l + link.getLength());
+			mode2lanesSum.compute(link.getAllowedModes().iterator().next(),
+					(m, l) -> l == null ? link.getNumberOfLanes() : l + link.getNumberOfLanes());
 			SamgodsLinkAttributes attr = (SamgodsLinkAttributes) link.getAttributes()
 					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
 			if (attr.speed1_km_h != null && attr.speed1_km_h != 0) {
@@ -87,17 +93,18 @@ public class ReaderUtils {
 						(m, s) -> s == null ? attr.speed2_km_h : s + attr.speed2_km_h);
 				mode2speed2cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
 			}
-			mode2lengthSum.compute(link.getAllowedModes().iterator().next(),
-					(m, l) -> l == null ? link.getLength() : l + link.getLength());
 		}
 		final AsciiTable table = new AsciiTable();
 		table.addRule();
-		table.addRow("Mode", "Links", "Avg. speed 1 [km/h] if >0", "Avg. speed 2 [km/h] if >0", "Avg. length [km]");
+		table.addRow("Mode", "Links", "Avg. length [km]", "Avg. no. of lanes", "Avg. speed 1 [km/h] if >0",
+				"Avg. speed 2 [km/h] if >0");
 		table.addRule();
 		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
-			table.addRow(e.getKey(), e.getValue(), mode2speed1Sum.get(e.getKey()) / mode2speed1cnt.get(e.getKey()),
-					mode2speed2Sum.getOrDefault(e.getKey(), 0.0) / mode2speed2cnt.getOrDefault(e.getKey(), 1),
-					Units.KM_PER_M * mode2lengthSum.get(e.getKey()) / e.getValue());
+			final String mode = e.getKey();
+			final int cnt = e.getValue();
+			table.addRow(mode, cnt, Units.KM_PER_M * mode2lengthSum.get(e.getKey()) / cnt,
+					mode2lanesSum.get(mode) / cnt, mode2speed1Sum.get(mode) / mode2speed1cnt.get(mode),
+					mode2speed2cnt.containsKey(mode) ? mode2speed2Sum.get(mode) / mode2speed2cnt.get(mode) : "");
 			table.addRule();
 		}
 		result.append(table.render());

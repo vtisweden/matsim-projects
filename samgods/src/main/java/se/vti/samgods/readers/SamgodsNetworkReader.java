@@ -84,7 +84,6 @@ public class SamgodsNetworkReader {
 			final Node fromNode = this.network.getNodes().get(Id.createNodeId(record.get(LINK_FROM_NODE)));
 			final Node toNode = this.network.getNodes().get(Id.createNodeId(record.get(LINK_TO_NODE)));
 
-//			final Id<Link> id = Id.createLinkId(fromNode.getId() + "_" + toNode.getId());
 			final Id<Link> id = Id.createLinkId(record.get(LINK_ID));
 
 			final double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
@@ -93,21 +92,21 @@ public class SamgodsNetworkReader {
 			final Double speed1_km_h = ReaderUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
 			final Double speed2_km_h = ReaderUtils.parseDoubleOrNull(record.get(LINK_SPEED_2));
 
-			final double maxSpeed_m_s; // Take max here, reduce by vehicle class.			
+			final double maxSpeed_m_s; // TODO Revisit this logic, unclear what speed an "undefined" link should have.
 			if (speed1_km_h != null) {
 				if (speed2_km_h != null) {
-					maxSpeed_m_s = Units.M_S_PER_KM_H * Math.max(speed1_km_h, speed2_km_h); 
+					maxSpeed_m_s = Units.M_S_PER_KM_H * Math.max(speed1_km_h, speed2_km_h);
 				} else {
-					maxSpeed_m_s = Units.M_S_PER_KM_H * speed1_km_h; 
+					maxSpeed_m_s = Units.M_S_PER_KM_H * speed1_km_h;
 				}
 			} else {
 				if (speed2_km_h != null) {
-					maxSpeed_m_s = Units.M_S_PER_KM_H * speed2_km_h; 
+					maxSpeed_m_s = Units.M_S_PER_KM_H * speed2_km_h;
 				} else {
-					maxSpeed_m_s = Double.NaN; // would prefer null
-				}				
+					maxSpeed_m_s = Double.NaN; // TODO Trying to cause a clean failure instead of inventing numbers.
+				}
 			}
-			
+
 			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
 					.valueOf(record.get(LINK_MODE));
 			final String matsimMode = TransportSupply.samgodsMode2matsimMode.get(samgodsMode);

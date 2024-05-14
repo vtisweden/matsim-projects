@@ -19,6 +19,11 @@
  */
 package se.vti.samgods.readers;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class SamgodsLinkAttributes {
 
 	public static final String ATTRIBUTE_NAME = "samgods";
