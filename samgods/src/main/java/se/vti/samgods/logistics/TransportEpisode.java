@@ -46,11 +46,11 @@ public class TransportEpisode {
 	}
 
 	public void addLeg(final TransportLeg leg) {
-		if (this.legs.size() > 0) {
-			if (!this.legs.getLast().getDestination().equals(leg.getOrigin())) {
-				throw new IllegalArgumentException();
-			}
-		}
+//		if (this.legs.size() > 0) {
+//			if (!this.legs.getLast().getDestination().equals(leg.getOrigin())) {
+//				throw new IllegalArgumentException();
+//			}
+//		}
 		this.legs.add(leg);
 	}
 

@@ -19,6 +19,10 @@
  */
 package se.vti.samgods.readers;
 
+import org.matsim.api.core.v01.network.Link;
+
+import se.vti.samgods.SamgodsConstants;
+
 /**
  * 
  * @author GunnarF
@@ -28,13 +32,32 @@ public class SamgodsLinkAttributes {
 
 	public static final String ATTRIBUTE_NAME = "samgods";
 
+	public SamgodsConstants.TransportMode samgodsMode;
+
 	public final Double speed1_km_h;
-	
+
 	public final Double speed2_km_h;
-	
-	public SamgodsLinkAttributes(Double speed1_km_h, Double speed2_km_h) {
+
+	public SamgodsLinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
+		this.samgodsMode = samgodsMode;
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
 	}
-	
+
+	public static SamgodsLinkAttributes getAttrs(Link link) {
+		return (SamgodsLinkAttributes)link.getAttributes().getAttribute(ATTRIBUTE_NAME);
+	}
+
+	public static SamgodsConstants.TransportMode getSamgodsMode(Link link) {
+		return getAttrs(link).samgodsMode;
+	}
+
+	public static Double getSpeed1_km_h(Link link) {
+		return getAttrs(link).speed1_km_h;
+	}
+
+	public static Double getSpeed2_km_h(Link link) {
+		return getAttrs(link).speed2_km_h;
+	}
+
 }

@@ -62,6 +62,14 @@ public class ReaderUtils {
 		return parseIntOrDefault(str, null);
 	}
 
+	static String divideOrNothing(Double num, Integer den) {
+		if (num == null || den == null || den == 0) {
+			return "";
+		} else {
+			return "" + (num / den);
+		}
+	}
+
 	public static String createNetworkStatsTable(Network network) {
 
 		StringBuffer result = new StringBuffer();
@@ -76,22 +84,18 @@ public class ReaderUtils {
 		Map<String, Double> mode2lanesSum = new LinkedHashMap<>();
 
 		for (Link link : network.getLinks().values()) {
-			mode2cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
-			mode2lengthSum.compute(link.getAllowedModes().iterator().next(),
-					(m, l) -> l == null ? link.getLength() : l + link.getLength());
-			mode2lanesSum.compute(link.getAllowedModes().iterator().next(),
-					(m, l) -> l == null ? link.getNumberOfLanes() : l + link.getNumberOfLanes());
-			SamgodsLinkAttributes attr = (SamgodsLinkAttributes) link.getAttributes()
-					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
+			String mode = SamgodsLinkAttributes.getSamgodsMode(link).toString();
+			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
+			mode2lengthSum.compute(mode, (m, l) -> l == null ? link.getLength() : l + link.getLength());
+			mode2lanesSum.compute(mode, (m, l) -> l == null ? link.getNumberOfLanes() : l + link.getNumberOfLanes());
+			SamgodsLinkAttributes attr = SamgodsLinkAttributes.getAttrs(link);
 			if (attr.speed1_km_h != null && attr.speed1_km_h != 0) {
-				mode2speed1Sum.compute(link.getAllowedModes().iterator().next(),
-						(m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
-				mode2speed1cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
+				mode2speed1Sum.compute(mode, (m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
+				mode2speed1cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			}
 			if (attr.speed2_km_h != null && attr.speed2_km_h != 0) {
-				mode2speed2Sum.compute(link.getAllowedModes().iterator().next(),
-						(m, s) -> s == null ? attr.speed2_km_h : s + attr.speed2_km_h);
-				mode2speed2cnt.compute(link.getAllowedModes().iterator().next(), (m, c) -> c == null ? 1 : c + 1);
+				mode2speed2Sum.compute(mode, (m, s) -> s == null ? attr.speed2_km_h : s + attr.speed2_km_h);
+				mode2speed2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			}
 		}
 		final AsciiTable table = new AsciiTable();
@@ -102,9 +106,10 @@ public class ReaderUtils {
 		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
 			final String mode = e.getKey();
 			final int cnt = e.getValue();
-			table.addRow(mode, cnt, Units.KM_PER_M * mode2lengthSum.get(e.getKey()) / cnt,
-					mode2lanesSum.get(mode) / cnt, mode2speed1Sum.get(mode) / mode2speed1cnt.get(mode),
-					mode2speed2cnt.containsKey(mode) ? mode2speed2Sum.get(mode) / mode2speed2cnt.get(mode) : "");
+			table.addRow(mode, cnt, divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
+					divideOrNothing(mode2lanesSum.get(mode), cnt),
+					divideOrNothing(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
+					divideOrNothing(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));
 			table.addRule();
 		}
 		result.append(table.render());

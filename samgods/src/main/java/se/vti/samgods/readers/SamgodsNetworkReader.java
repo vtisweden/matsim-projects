@@ -94,17 +94,9 @@ public class SamgodsNetworkReader {
 
 			final double maxSpeed_m_s; // TODO Revisit this logic, unclear what speed an "undefined" link should have.
 			if (speed1_km_h != null) {
-				if (speed2_km_h != null) {
-					maxSpeed_m_s = Units.M_S_PER_KM_H * Math.max(speed1_km_h, speed2_km_h);
-				} else {
-					maxSpeed_m_s = Units.M_S_PER_KM_H * speed1_km_h;
-				}
+				maxSpeed_m_s = Units.M_S_PER_KM_H * speed1_km_h;
 			} else {
-				if (speed2_km_h != null) {
-					maxSpeed_m_s = Units.M_S_PER_KM_H * speed2_km_h;
-				} else {
-					maxSpeed_m_s = Double.NaN; // TODO Trying to cause a clean failure instead of inventing numbers.
-				}
+				maxSpeed_m_s = Double.NaN; // TODO Trying to cause a clean failure instead of inventing numbers.
 			}
 
 			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
@@ -117,7 +109,7 @@ public class SamgodsNetworkReader {
 					capacity_veh_h, lanes, null, null);
 			link.setAllowedModes(Collections.singleton(matsimMode));
 			link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
-					new SamgodsLinkAttributes(speed1_km_h, speed2_km_h));
+					new SamgodsLinkAttributes(samgodsMode, speed1_km_h, speed2_km_h));
 		}
 
 		System.out.println("nodes: " + this.network.getNodes().size());

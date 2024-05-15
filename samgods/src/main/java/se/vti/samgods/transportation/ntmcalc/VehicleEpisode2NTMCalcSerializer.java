@@ -49,6 +49,7 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.readers.SamgodsLinkAttributes;
 
 /**
  * 
@@ -78,15 +79,15 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 				gen.writeStartObject();
 				gen.writeStringField("linkId", link.getId().toString());
 				gen.writeNumberField("length_m", link.getLength());
-				gen.writeNumberField("maxSpeed_km_h", Math.round(Units.KM_H_PER_M_S * link.getFreespeed()));
+				gen.writeNumberField("maxSpeed_km_h", Math.round(SamgodsLinkAttributes.getSpeed1_km_h(link)));
 				if (link.getAllowedModes().size() != 1) {
 					throw new RuntimeException(
 							"Link " + link.getId() + " has not exactly one mode: " + link.getAllowedModes());
 				}
-				final String localMode = link.getAllowedModes().iterator().next();
-					gen.writeStringField("mode", localMode);
-				if (SamgodsConstants.TransportMode.Ferry.toString().equals(localMode)) {
-					gen.writeNumberField("vesselDWT", 5678.9);
+				final String samgodsMode = SamgodsLinkAttributes.getSamgodsMode(link).toString();
+				gen.writeStringField("mode", samgodsMode);
+				if (SamgodsConstants.TransportMode.Ferry.toString().equals(samgodsMode)) {
+					gen.writeNumberField("vesselDWT", 5678.9); // TODO!!!
 				}
 				gen.writeEndObject();
 			}
