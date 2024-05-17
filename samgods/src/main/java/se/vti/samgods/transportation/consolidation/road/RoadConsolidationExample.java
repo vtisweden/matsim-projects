@@ -79,7 +79,7 @@ public class RoadConsolidationExample {
 
 		TransportEpisode episode = new TransportEpisode(TransportMode.Road);
 		episode.addLeg(
-				new TransportLeg(new OD(Id.createNodeId("from"), Id.createNodeId("to")), TransportMode.Road, '?'));
+				new TransportLeg(new OD(Id.createNodeId("from"), Id.createNodeId("to")), TransportMode.Road));
 
 		Consolidator consolidator = new Consolidator(new Random(), episode, fleet, days, costModel, choiceModel);
 

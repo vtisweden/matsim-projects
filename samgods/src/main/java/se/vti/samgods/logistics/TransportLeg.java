@@ -41,22 +41,18 @@ public class TransportLeg {
 
 	private final TransportMode mode;
 
-	private final char samgodsMode;
-
-	
 	private List<Link> route = null;
 	
 	private Double length_m = null;
 	private Double duration_s = null;
 
-	public TransportLeg(OD od, TransportMode mode, char samgodsMode) {
+	public TransportLeg(OD od, TransportMode mode) {
 		this.od = od;
 		this.mode = mode;
-		this.samgodsMode = samgodsMode;
 	}
 
-	public TransportLeg(Id<Node> origin, Id<Node> destination, TransportMode mode, char samgodsMode) {
-		this(new OD(origin, destination), mode, samgodsMode);
+	public TransportLeg(Id<Node> origin, Id<Node> destination, TransportMode mode) {
+		this(new OD(origin, destination), mode);
 	}
 
 	public Id<Node> getOrigin() {
@@ -73,10 +69,6 @@ public class TransportLeg {
 
 	public SamgodsConstants.TransportMode getMode() {
 		return this.mode;
-	}
-
-	public char getSamgodsMode() {
-		return this.samgodsMode;
 	}
 
 	public void setRoute(final List<Link> route) {

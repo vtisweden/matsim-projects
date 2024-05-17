@@ -19,22 +19,13 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
@@ -44,6 +35,29 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 public class TransportChainUtils {
 
 	private TransportChainUtils() {
+	}
+
+	public static List<TransportEpisode> reduceToEpisodes(List<TransportLeg> legs) {
+		// TODO what if too short list?
+
+		final List<TransportEpisode> episodes = new LinkedList<TransportEpisode>();
+		TransportEpisode currentEpisode = null;
+		for (TransportLeg leg : legs) {
+			if (currentEpisode == null) {
+				currentEpisode = new TransportEpisode(leg.getMode());
+				episodes.add(currentEpisode);
+				currentEpisode.addLeg(leg);
+			} else if (SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
+					&& SamgodsConstants.TransportMode.Rail.equals(leg.getMode())) {
+				currentEpisode.addLeg(leg);
+			} else {
+				currentEpisode = new TransportEpisode(leg.getMode());
+				episodes.add(currentEpisode);
+				currentEpisode.addLeg(leg);				
+			}
+		}
+
+		return episodes;
 	}
 
 //	public static Set<TransportMode> extractUsedModes(final Collection<List<TransportChain>> collectionOfListOfChains) {

@@ -29,7 +29,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.readers.ReaderUtils;
+import se.vti.samgods.network.SamgodsNetworkUtils;
 
 /**
  * 
@@ -104,32 +104,32 @@ public class SamgodsFleetReader {
 				vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
 				builder.setName(record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""))
 						.setDescription(record.get(VEH_DESCRIPTION)).setTransportMode(transportMode)
-						.setCost_1_km(ReaderUtils.parseDoubleOrNull(record.get(COST_1_KM)))
-						.setCost_1_h(ReaderUtils.parseDoubleOrNull(record.get(COST_1_H)))
-						.setCapacity_ton(ReaderUtils.parseDoubleOrNull(record.get(CAPACITY_TON)))
-						.setOnFerryCost_1_km(ReaderUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_KM)))
-						.setOnFerryCost_1_h(ReaderUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_H)))
-						.setSpeed_km_h(ReaderUtils.parseDoubleOrNull(record.get(SPEED_KM_H)));
+						.setCost_1_km(SamgodsNetworkUtils.parseDoubleOrNull(record.get(COST_1_KM)))
+						.setCost_1_h(SamgodsNetworkUtils.parseDoubleOrNull(record.get(COST_1_H)))
+						.setCapacity_ton(SamgodsNetworkUtils.parseDoubleOrNull(record.get(CAPACITY_TON)))
+						.setOnFerryCost_1_km(SamgodsNetworkUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_KM)))
+						.setOnFerryCost_1_h(SamgodsNetworkUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_H)))
+						.setSpeed_km_h(SamgodsNetworkUtils.parseDoubleOrNull(record.get(SPEED_KM_H)));
 			}
 		}
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(costFile))) {
 			final SamgodsConstants.Commodity commodity = SamgodsConstants.Commodity
-					.values()[ReaderUtils.parseIntOrNull(record.get(COMMODITY_ID)) - 1];
+					.values()[SamgodsNetworkUtils.parseIntOrNull(record.get(COMMODITY_ID)) - 1];
 			vehicleNr2builder.get(record.get(VEH_NR)).setContainer(false)
 					.setLoadCost_1_ton(commodity,
-							ReaderUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_COST_1_TON)))
-					.setLoadTime_h(commodity, ReaderUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_TIME_H)))
+							SamgodsNetworkUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_COST_1_TON)))
+					.setLoadTime_h(commodity, SamgodsNetworkUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_TIME_H)))
 					.setTransferCost_1_ton(commodity,
-							ReaderUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_COST_1_TON)))
+							SamgodsNetworkUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_COST_1_TON)))
 					.setTransferTime_h(commodity,
-							ReaderUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_TIME_H)));
+							SamgodsNetworkUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_TIME_H)));
 			vehicleNr2builder.get(record.get(VEH_NR) + SUFFIX_INDICATING_CONTAINER).setContainer(true)
-					.setLoadCost_1_ton(commodity, ReaderUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_COST_1_TON)))
-					.setLoadTime_h(commodity, ReaderUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_TIME_H)))
+					.setLoadCost_1_ton(commodity, SamgodsNetworkUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_COST_1_TON)))
+					.setLoadTime_h(commodity, SamgodsNetworkUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_TIME_H)))
 					.setTransferCost_1_ton(commodity,
-							ReaderUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_COST_1_TON)))
-					.setTransferTime_h(commodity, ReaderUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_TIME_H)));
+							SamgodsNetworkUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_COST_1_TON)))
+					.setTransferTime_h(commodity, SamgodsNetworkUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_TIME_H)));
 		}
 
 		for (FreightVehicleTypeAttributes.Builder builder : vehicleNr2builder.values()) {

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.readers;
+package se.vti.samgods.network;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -33,9 +33,9 @@ import floetteroed.utilities.Units;
  * @author GunnarF
  *
  */
-public class ReaderUtils {
+public class SamgodsNetworkUtils {
 
-	private ReaderUtils() {
+	private SamgodsNetworkUtils() {
 	}
 
 	public static Double parseDoubleOrDefault(String str, Double defaultValue) {

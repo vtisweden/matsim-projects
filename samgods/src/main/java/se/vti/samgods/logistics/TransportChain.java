@@ -36,8 +36,8 @@ public class TransportChain {
 	public TransportChain() {
 	}
 
-	public void addEpisode(final TransportEpisode episode) {
-		if (this.episodes.size() > 0) {
+	public void addEpisode(final TransportEpisode episode, boolean checkConnectivity) {
+		if (checkConnectivity && this.episodes.size() > 0) {
 			if (!this.episodes.getLast().getUnloadingNode().equals(episode.getLoadingNode())) {
 				throw new IllegalArgumentException();
 			}

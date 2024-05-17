@@ -49,7 +49,7 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.readers.SamgodsLinkAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 
 /**
  * 
@@ -111,8 +111,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		link1.setFreespeed(Units.M_S_PER_KM_H * 60.0);
 		link2.setFreespeed(Units.M_S_PER_KM_H * 100.0);
 
-		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()), SamgodsConstants.TransportMode.Road,
-				'?');
+		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()), SamgodsConstants.TransportMode.Road);
 		leg.setRoute(Arrays.asList(link1, link2));
 
 		Vehicle veh = VehicleUtils.createVehicle(Id.createVehicleId("veh1"),

@@ -46,7 +46,7 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.readers.SamgodsLinkAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
@@ -132,7 +132,7 @@ public class NTMCalcSerializerTest {
 
 					TransportLeg leg = new TransportLeg(
 							new OD(routeNodes.getFirst().getId(), routeNodes.getLast().getId()),
-							SamgodsConstants.TransportMode.Road, '?');
+							SamgodsConstants.TransportMode.Road);
 					leg.setRoute(routeLinks);
 					episode.addLeg(leg);
 				}
