@@ -27,6 +27,7 @@ import org.matsim.api.core.v01.network.Network;
 
 import de.vandermeer.asciitable.AsciiTable;
 import floetteroed.utilities.Units;
+import se.vti.samgods.utils.ParseNumberUtils;
 
 /**
  * 
@@ -36,38 +37,6 @@ import floetteroed.utilities.Units;
 public class SamgodsNetworkUtils {
 
 	private SamgodsNetworkUtils() {
-	}
-
-	public static Double parseDoubleOrDefault(String str, Double defaultValue) {
-		if (str == null || "".equals(str)) {
-			return defaultValue;
-		} else {
-			return Double.parseDouble(str);
-		}
-	}
-
-	public static Double parseDoubleOrNull(String str) {
-		return parseDoubleOrDefault(str, null);
-	}
-
-	public static Integer parseIntOrDefault(String str, Integer defaultValue) {
-		if (str == null || "".equals(str)) {
-			return defaultValue;
-		} else {
-			return Integer.parseInt(str);
-		}
-	}
-
-	public static Integer parseIntOrNull(String str) {
-		return parseIntOrDefault(str, null);
-	}
-
-	static String divideOrNothing(Double num, Integer den) {
-		if (num == null || den == null || den == 0) {
-			return "";
-		} else {
-			return "" + (num / den);
-		}
 	}
 
 	public static String createNetworkStatsTable(Network network) {
@@ -106,10 +75,10 @@ public class SamgodsNetworkUtils {
 		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
 			final String mode = e.getKey();
 			final int cnt = e.getValue();
-			table.addRow(mode, cnt, divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
-					divideOrNothing(mode2lanesSum.get(mode), cnt),
-					divideOrNothing(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
-					divideOrNothing(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));
+			table.addRow(mode, cnt, ParseNumberUtils.divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
+					ParseNumberUtils.divideOrNothing(mode2lanesSum.get(mode), cnt),
+					ParseNumberUtils.divideOrNothing(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
+					ParseNumberUtils.divideOrNothing(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));
 			table.addRule();
 		}
 		result.append(table.render());

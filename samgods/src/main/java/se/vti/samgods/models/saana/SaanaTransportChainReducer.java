@@ -28,7 +28,6 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportChainUtils;
 
 /**
  * 

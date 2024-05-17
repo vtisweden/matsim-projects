@@ -35,6 +35,7 @@ import org.matsim.core.network.NetworkUtils;
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.transportation.TransportSupply;
+import se.vti.samgods.utils.ParseNumberUtils;
 
 /**
  *
@@ -89,8 +90,8 @@ public class SamgodsNetworkReader {
 			final double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
 
-			final Double speed1_km_h = SamgodsNetworkUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
-			final Double speed2_km_h = SamgodsNetworkUtils.parseDoubleOrNull(record.get(LINK_SPEED_2));
+			final Double speed1_km_h = ParseNumberUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
+			final Double speed2_km_h = ParseNumberUtils.parseDoubleOrNull(record.get(LINK_SPEED_2));
 
 			final double maxSpeed_m_s; // TODO Revisit this logic, unclear what speed an "undefined" link should have.
 			if (speed1_km_h != null) {
@@ -102,7 +103,7 @@ public class SamgodsNetworkReader {
 			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
 					.valueOf(record.get(LINK_MODE));
 			final String matsimMode = TransportSupply.samgodsMode2matsimMode.get(samgodsMode);
-			final double capacity_veh_h = SamgodsNetworkUtils.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY),
+			final double capacity_veh_h = ParseNumberUtils.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY),
 					Double.POSITIVE_INFINITY) / 24.0;
 
 			final Link link = NetworkUtils.createAndAddLink(this.network, id, fromNode, toNode, length_m, maxSpeed_m_s,

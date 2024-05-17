@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.readers;
+package se.vti.samgods.logistics;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,10 +37,6 @@ import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.logistics.PWCMatrix;
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
 
 /**
  * 
