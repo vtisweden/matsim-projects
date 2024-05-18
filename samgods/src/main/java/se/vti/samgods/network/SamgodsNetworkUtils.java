@@ -19,8 +19,13 @@
  */
 package se.vti.samgods.network;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -75,7 +80,8 @@ public class SamgodsNetworkUtils {
 		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
 			final String mode = e.getKey();
 			final int cnt = e.getValue();
-			table.addRow(mode, cnt, ParseNumberUtils.divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
+			table.addRow(mode, cnt,
+					ParseNumberUtils.divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
 					ParseNumberUtils.divideOrNothing(mode2lanesSum.get(mode), cnt),
 					ParseNumberUtils.divideOrNothing(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
 					ParseNumberUtils.divideOrNothing(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));

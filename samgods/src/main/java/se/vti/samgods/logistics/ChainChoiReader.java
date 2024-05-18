@@ -29,14 +29,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 
+import de.vandermeer.asciitable.AsciiTable;
+import floetteroed.utilities.math.MathHelpers;
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.utils.MiscUtils;
 
 /**
  * 
@@ -49,10 +53,10 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private boolean verbose = false;
 
-	private final static String Key = "Key";
+//	private final static String Key = "Key";
 	private final static String AnnualVolumeTonnes = "AnnualVolume_(Tonnes)";
 	private final static String Prob = "Prob";
-	private final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
+//	private final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
 	private final static String ChainType = "ChainType";
 
 	private final static String Orig = "Orig";
@@ -98,8 +102,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		code2mode.put('N', SamgodsConstants.TransportMode.Sea);
 		code2mode.put('O', SamgodsConstants.TransportMode.Sea);
 		code2mode.put('W', SamgodsConstants.TransportMode.Sea);
-		code2mode.put('P', SamgodsConstants.TransportMode.Sea);
-		code2mode.put('Q', SamgodsConstants.TransportMode.Sea);
+		code2mode.put('P', SamgodsConstants.TransportMode.Road); // road ferry
+		code2mode.put('Q', SamgodsConstants.TransportMode.Rail); // rail ferry
 		code2mode.put('R', SamgodsConstants.TransportMode.Air);
 	}
 
@@ -116,11 +120,14 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private final Set<String> chainTypes = new LinkedHashSet<>();
 
+	private final SamgodsConstants.Commodity commodity;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public ChainChoiReader(final String fileName, final SamgodsConstants.Commodity commodity) {
 		this.pwcMatrix = new PWCMatrix(commodity);
 		this.od2chains = new LinkedHashMap<>();
+		this.commodity = commodity;
 
 		final TabularFileParser parser = new TabularFileParser();
 		parser.setDelimiterRegex("\\s");
@@ -199,6 +206,38 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		}
 	}
 
+	public String createChainStatsTable(int maxRowCnt) {
+
+		final Map<List<SamgodsConstants.TransportMode>, Integer> modeSeq2cnt = new LinkedHashMap<>();
+		for (List<TransportChain> chains : this.od2chains.values()) {
+			for (TransportChain chain : chains) {
+				List<SamgodsConstants.TransportMode> modes = chain.getEpisodeModeSequence();
+				modeSeq2cnt.compute(modes, (m, c) -> c == null ? 1 : c + 1);
+			}
+		}
+
+		List<Map.Entry<List<SamgodsConstants.TransportMode>, Integer>> sortedEntries = MiscUtils
+				.getSortedInstance(modeSeq2cnt);
+
+		final int total = modeSeq2cnt.values().stream().mapToInt(c -> c).sum();
+		final StringBuffer result = new StringBuffer();
+		final AsciiTable table = new AsciiTable();
+		table.addRule();
+		table.addRow("Rank", "Mode sequence", "Count", "Share [%]");
+		table.addRule();
+		table.addRow("", "Total", total, 100);
+		table.addRule();
+		for (int i = 0; i < Math.min(maxRowCnt, sortedEntries.size()); i++) {
+			Map.Entry<List<SamgodsConstants.TransportMode>, Integer> entry = sortedEntries.get(i);
+			table.addRow(i + 1, entry.getKey().stream().map(e -> e.toString()).collect(Collectors.joining(",")),
+					entry.getValue(), MathHelpers.round(100.0 * entry.getValue().doubleValue() / total, 2));
+			table.addRule();
+		}
+		result.append("\nCOMMODITY: " + this.commodity + ", occurrence of logistic chains (NOT freight volumes)\n");
+		result.append(table.render());
+		return result.toString();
+	}
+
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) {
@@ -206,9 +245,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 			final ChainChoiReader reader = new ChainChoiReader(
 					"./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out", commodity);
-			System.out.println(reader.pwcMatrix.getCommodity().twoDigitCode() + " " + commodity + ": "
-					+ Math.round(1e-6 * reader.getPWCMatrix().computeTotal_ton_yr()) + " mio.tons, between "
-					+ reader.pwcMatrix.getLocationsView().size() + " locations, chain types: " + reader.chainTypes);
+			System.out.println(reader.createChainStatsTable(10));
+			System.out.println(reader.getPWCMatrix().createProductionConsumptionStatsTable(10));
 		}
 	}
 

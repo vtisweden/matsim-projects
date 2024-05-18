@@ -20,9 +20,13 @@
 package se.vti.samgods.logistics;
 
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
+
+import se.vti.samgods.SamgodsConstants;
 
 /**
  * 
@@ -43,6 +47,10 @@ public class TransportChain {
 			}
 		}
 		this.episodes.add(episode);
+	}
+
+	public List<SamgodsConstants.TransportMode> getEpisodeModeSequence() {
+		return this.episodes.stream().map(e -> e.getMode()).collect(Collectors.toList());
 	}
 
 //	public List<Id<Node>> createInternalNodeIds() {
