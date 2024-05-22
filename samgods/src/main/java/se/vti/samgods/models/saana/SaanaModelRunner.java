@@ -72,10 +72,10 @@ public class SaanaModelRunner {
 		TransportDemand demand = new TransportDemand();
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			log.info("Loading " + commodity.description);
-			ChainChoiReader commodityReader = new ChainChoiReader(
-					"./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out", commodity);
-			demand.setPWCMatrix(commodity, commodityReader.getPWCMatrix());
-			demand.setTransportChains(commodity, commodityReader.getOd2transportChains());
+//			ChainChoiReader commodityReader = new ChainChoiReader(
+//					"./2023-06-01_basecase/ChainChoi" + commodity.twoDigitCode() + "STD.out", commodity);
+//			demand.setPWCMatrix(commodity, commodityReader.getPWCMatrix());
+//			demand.setTransportChains(commodity, commodityReader.getOd2transportChains());
 		}
 
 		/*

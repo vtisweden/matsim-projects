@@ -55,7 +55,7 @@ public class Alternative<C extends ShipmentCost> {
 		StringBuffer result = new StringBuffer();
 		result.append("commodity " + shipment.getCommmodity() + " of total size "
 				+ MathHelpers.round(shipment.getFrequency_1_yr() * this.shipment.getSize_ton(), 2) + " ton in relation "
-				+ shipment.getTransportChain().getOrigin() + "/" + shipment.getTransportChain().getDestination()
+				+ shipment.getTransportChain().getOriginNodeId() + "/" + shipment.getTransportChain().getDestinationNodeId()
 				+ ": ");
 		result.append("shipmentSizeClass " + sizeClass + ", chain " + shipment.getModeSequence());
 		return result.toString();

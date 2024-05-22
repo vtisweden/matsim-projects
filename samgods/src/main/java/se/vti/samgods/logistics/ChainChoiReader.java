@@ -51,12 +51,14 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- CONSTANTS --------------------
 
+	private boolean createRailEpisodes = true;
+
 	private boolean verbose = false;
 
 //	private final static String Key = "Key";
 	private final static String AnnualVolumeTonnes = "AnnualVolume_(Tonnes)";
 	private final static String Prob = "Prob";
-//	private final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
+	private final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
 	private final static String ChainType = "ChainType";
 
 	private final static String Orig = "Orig";
@@ -122,13 +124,28 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private final SamgodsConstants.Commodity commodity;
 
+	private List<RecurrentShipment> samgodsShipments = null;
+
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChainChoiReader(final String fileName, final SamgodsConstants.Commodity commodity) {
+	public ChainChoiReader(final SamgodsConstants.Commodity commodity) {
 		this.pwcMatrix = new PWCMatrix(commodity);
 		this.od2chains = new LinkedHashMap<>();
 		this.commodity = commodity;
+	}
 
+	// -------------------- IMPLEMENTATION --------------------
+
+	public ChainChoiReader setStoreSamgodsShipments(boolean storeSamgodsShipments) {
+		if (storeSamgodsShipments && this.samgodsShipments == null) {
+			this.samgodsShipments = new LinkedList<>();
+		} else {
+			this.samgodsShipments = null;
+		}
+		return this;
+	}
+
+	public ChainChoiReader parse(String fileName) {
 		final TabularFileParser parser = new TabularFileParser();
 		parser.setDelimiterRegex("\\s");
 		parser.setOmitEmptyColumns(false);
@@ -137,9 +154,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		return this;
 	}
-
-	// -------------------- IMPLEMENTATION --------------------
 
 	public PWCMatrix getPWCMatrix() {
 		return this.pwcMatrix;
@@ -147,6 +163,10 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	public Map<OD, List<TransportChain>> getOd2transportChains() {
 		return this.od2chains;
+	}
+
+	public List<RecurrentShipment> getSamgodsShipments() {
+		return this.samgodsShipments;
 	}
 
 	// ----- IMPLEMENTATION OF AbstractTabularFileHandlerWithHeaderLine -----
@@ -186,7 +206,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		// Condense legs into episodes.
 
 		if (legs.size() > 0) {
-			final TransportChain transportChain = new TransportChain();
+			final TransportChain transportChain = new TransportChain(od);
 			TransportEpisode currentEpisode = null;
 			for (TransportLeg leg : legs) {
 				if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
@@ -197,6 +217,11 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 				currentEpisode.addLeg(leg);
 			}
 			this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
+
+			if (this.samgodsShipments != null) {
+				this.samgodsShipments.add(new RecurrentShipment(this.commodity, transportChain, volume_ton_yr,
+						getDoubleValue(ShipmentFreqPerYear)));
+			}
 		}
 
 		if (this.verbose) {
@@ -243,10 +268,12 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	public static void main(String[] args) {
 
 		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-			final ChainChoiReader reader = new ChainChoiReader(
-					"./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out", commodity);
+			final ChainChoiReader reader = new ChainChoiReader(commodity).setStoreSamgodsShipments(true)
+					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
 			System.out.println(reader.createChainStatsTable(10));
 			System.out.println(reader.getPWCMatrix().createProductionConsumptionStatsTable(10));
+			RecurrentShipmentJsonSerializer.writeToFile(reader.getSamgodsShipments(),
+					"./input_2024/" + commodity + "-chains.samgods-out.json");
 		}
 	}
 

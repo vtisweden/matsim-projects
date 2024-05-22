@@ -28,7 +28,7 @@ import org.matsim.api.core.v01.network.Node;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.transportation.ntmcalc.VehicleEpisode2NTMCalcSerializer;
+import se.vti.samgods.external.ntmcalc.VehicleEpisode2NTMCalcSerializer;
 
 /**
  * 
@@ -46,11 +46,6 @@ public class TransportEpisode {
 	}
 
 	public void addLeg(final TransportLeg leg) {
-//		if (this.legs.size() > 0) {
-//			if (!this.legs.getLast().getDestination().equals(leg.getOrigin())) {
-//				throw new IllegalArgumentException();
-//			}
-//		}
 		this.legs.add(leg);
 	}
 

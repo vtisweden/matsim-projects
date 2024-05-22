@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 
 /**
@@ -35,9 +36,12 @@ import se.vti.samgods.SamgodsConstants;
  */
 public class TransportChain {
 
+	private final OD od;
+
 	private final LinkedList<TransportEpisode> episodes = new LinkedList<>();
 
-	public TransportChain() {
+	public TransportChain(OD od) {
+		this.od = od;
 	}
 
 	public void addEpisode(final TransportEpisode episode, boolean checkConnectivity) {
@@ -49,31 +53,19 @@ public class TransportChain {
 		this.episodes.add(episode);
 	}
 
-	public List<SamgodsConstants.TransportMode> getEpisodeModeSequence() {
-		return this.episodes.stream().map(e -> e.getMode()).collect(Collectors.toList());
+	public Id<Node> getOriginNodeId() {
+		return this.episodes.get(0).getLoadingNode();
 	}
 
-//	public List<Id<Node>> createInternalNodeIds() {
-//		List<Id<Node>> result = new ArrayList<>(this.episodes.size() - 1);
-//		for (int i = 0; i < this.episodes.size() - 2; i++) {
-//			result.add(this.episodes.get(i).getDestination());
-//		}
-//		return result;
-//	}
-//
-//	public int getInternalNodeCnt() {
-//		return this.episodes.size() - 1;
-//	}
+	public Id<Node> getDestinationNodeId() {
+		return this.episodes.getLast().getUnloadingNode();
+	}
 
 	public LinkedList<TransportEpisode> getEpisodes() {
 		return this.episodes;
 	}
 
-	public Id<Node> getOrigin() {
-		return this.episodes.get(0).getLoadingNode();
-	}
-
-	public Id<Node> getDestination() {
-		return this.episodes.getLast().getUnloadingNode();
+	public List<SamgodsConstants.TransportMode> getEpisodeModeSequence() {
+		return this.episodes.stream().map(e -> e.getMode()).collect(Collectors.toList());
 	}
 }
