@@ -19,7 +19,7 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
-import se.vti.samgods.logistics.RecurrentShipment;
+import se.vti.samgods.logistics.AnnualShipment;
 
 /**
  * 
@@ -28,6 +28,6 @@ import se.vti.samgods.logistics.RecurrentShipment;
  */
 public interface ShipmentUtilityFunction<C extends ShipmentCost> {
 
-	double computeUtility(RecurrentShipment shipment, C shipmentCost);
+	double computeUtility(AnnualShipment shipment, C shipmentCost);
 
 }

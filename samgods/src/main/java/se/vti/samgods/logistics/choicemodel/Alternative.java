@@ -20,7 +20,7 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import floetteroed.utilities.math.MathHelpers;
-import se.vti.samgods.logistics.RecurrentShipment;
+import se.vti.samgods.logistics.AnnualShipment;
 
 /**
  * 
@@ -33,7 +33,7 @@ public class Alternative<C extends ShipmentCost> {
 
 	public final SizeClass sizeClass;
 
-	public final RecurrentShipment shipment;
+	public final AnnualShipment shipment;
 
 	public final C cost;
 
@@ -41,7 +41,8 @@ public class Alternative<C extends ShipmentCost> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Alternative(final SizeClass sizeClass, final RecurrentShipment shipment, final C cost, final double utility) {
+	public Alternative(final SizeClass sizeClass, final AnnualShipment shipment, final C cost,
+			final double utility) {
 		this.sizeClass = sizeClass;
 		this.shipment = shipment;
 		this.cost = cost;
@@ -54,9 +55,9 @@ public class Alternative<C extends ShipmentCost> {
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("commodity " + shipment.getCommmodity() + " of total size "
-				+ MathHelpers.round(shipment.getFrequency_1_yr() * this.shipment.getSize_ton(), 2) + " ton in relation "
-				+ shipment.getTransportChain().getOriginNodeId() + "/" + shipment.getTransportChain().getDestinationNodeId()
-				+ ": ");
+				+ MathHelpers.round(this.shipment.getTotalAmount_ton(), 2) + " ton in relation "
+				+ shipment.getTransportChain().getOriginNodeId() + "/"
+				+ shipment.getTransportChain().getDestinationNodeId() + ": ");
 		result.append("shipmentSizeClass " + sizeClass + ", chain " + shipment.getModeSequence());
 		return result.toString();
 	}

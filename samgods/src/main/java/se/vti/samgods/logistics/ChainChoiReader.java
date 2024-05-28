@@ -51,14 +51,13 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- CONSTANTS --------------------
 
-	private boolean createRailEpisodes = true;
-
 	private boolean verbose = false;
 
 //	private final static String Key = "Key";
+	private final static String NRelations = "NRelations";
 	private final static String AnnualVolumeTonnes = "AnnualVolume_(Tonnes)";
 	private final static String Prob = "Prob";
-	private final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
+//	private final static String ShipmentFreqPerYear = "ShipmentFreq_(per_year)";
 	private final static String ChainType = "ChainType";
 
 	private final static String Orig = "Orig";
@@ -124,7 +123,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private final SamgodsConstants.Commodity commodity;
 
-	private List<RecurrentShipment> samgodsShipments = null;
+	private List<AnnualShipment> samgodsShipments = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -165,7 +164,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		return this.od2chains;
 	}
 
-	public List<RecurrentShipment> getSamgodsShipments() {
+	public List<AnnualShipment> getSamgodsShipments() {
 		return this.samgodsShipments;
 	}
 
@@ -176,7 +175,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 		// Load OD demand.
 
-		final double volume_ton_yr = this.getDoubleValue(Prob) * this.getDoubleValue(AnnualVolumeTonnes);
+		final double volume_ton_yr = this.getDoubleValue(Prob) * this.getDoubleValue(AnnualVolumeTonnes)
+				* this.getIntValue(NRelations);
 		final long origin = Long.parseLong(this.getStringValue(Orig));
 		final long destination = Long.parseLong(this.getStringValue(Dest));
 		final OD od = new OD(Id.createNodeId(origin), Id.createNodeId(destination));
@@ -193,15 +193,42 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		final List<String> destinationColumns = destinationColumnsByChainLength.get(chainType.length());
 
 		final List<TransportLeg> legs = new ArrayList<>(chainType.length());
+		final List<Character> samgodsModes = new ArrayList<>(chainType.length());
 		for (int i = 0; i < chainType.length(); i++) {
 			final char samgodsMode = chainType.charAt(i);
-			if (!SAMGODS_FERRY_MODES.contains(samgodsMode)) { // Ferry is not a main mode.
-				final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
-				final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
-				legs.add(new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination),
-						code2mode.get(samgodsMode)));
+			samgodsModes.add(samgodsMode);
+			final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
+			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
+			legs.add(new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination),
+					code2mode.get(samgodsMode)));
+		}
+
+		// filter out ferry episodes
+
+		int i = 1;
+		while (i < legs.size() - 1) {
+			if (SAMGODS_FERRY_MODES.contains(chainType.charAt(i))) {
+				assert (!SAMGODS_FERRY_MODES.contains(chainType.charAt(i - 1)));
+				assert (!SAMGODS_FERRY_MODES.contains(chainType.charAt(i + 1)));
+				assert (legs.get(i - 1).getMode().equals(legs.get(i + 1).getMode()));
+
+				final TransportLeg condensedLeg = new TransportLeg(legs.get(i - 1).getOrigin(),
+						legs.get(i + 1).getDestination(), legs.get(i - 1).getMode());
+
+				legs.remove(i + 1);
+				legs.remove(i);
+				legs.set(i - 1, condensedLeg);
+
+				samgodsModes.remove(i + 1);
+				samgodsModes.remove(i);
+				samgodsModes.set(i - 1, '?');
+
+			} else {
+				i++;
 			}
 		}
+
+		// TODO possibly filter out rail transfers
 
 		// Condense legs into episodes.
 
@@ -219,8 +246,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
 
 			if (this.samgodsShipments != null) {
-				this.samgodsShipments.add(new RecurrentShipment(this.commodity, transportChain, volume_ton_yr,
-						getDoubleValue(ShipmentFreqPerYear)));
+				this.samgodsShipments.add(new AnnualShipment(this.commodity, transportChain, volume_ton_yr));
 			}
 		}
 
@@ -233,28 +259,31 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	public String createChainStatsTable(int maxRowCnt) {
 
-		final Map<List<SamgodsConstants.TransportMode>, Integer> modeSeq2cnt = new LinkedHashMap<>();
+		final Map<List<List<SamgodsConstants.TransportMode>>, Integer> modeSeq2cnt = new LinkedHashMap<>();
 		for (List<TransportChain> chains : this.od2chains.values()) {
 			for (TransportChain chain : chains) {
-				List<SamgodsConstants.TransportMode> modes = chain.getEpisodeModeSequence();
+				List<List<SamgodsConstants.TransportMode>> modes = chain.getTransportModeSequence();
 				modeSeq2cnt.compute(modes, (m, c) -> c == null ? 1 : c + 1);
 			}
 		}
 
-		List<Map.Entry<List<SamgodsConstants.TransportMode>, Integer>> sortedEntries = MiscUtils
+		List<Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer>> sortedEntries = MiscUtils
 				.getSortedInstance(modeSeq2cnt);
 
 		final int total = modeSeq2cnt.values().stream().mapToInt(c -> c).sum();
 		final StringBuffer result = new StringBuffer();
 		final AsciiTable table = new AsciiTable();
 		table.addRule();
-		table.addRow("Rank", "Mode sequence", "Count", "Share [%]");
+		table.addRow("Rank", "episodes", "Count", "Share [%]");
 		table.addRule();
 		table.addRow("", "Total", total, 100);
 		table.addRule();
 		for (int i = 0; i < Math.min(maxRowCnt, sortedEntries.size()); i++) {
-			Map.Entry<List<SamgodsConstants.TransportMode>, Integer> entry = sortedEntries.get(i);
-			table.addRow(i + 1, entry.getKey().stream().map(e -> e.toString()).collect(Collectors.joining(",")),
+			Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer> entry = sortedEntries.get(i);
+			table.addRow(i + 1,
+					entry.getKey().stream()
+							.map(e -> "[" + e.stream().map(m -> m.toString()).collect(Collectors.joining(",")) + "]")
+							.collect(Collectors.joining(",")),
 					entry.getValue(), MathHelpers.round(100.0 * entry.getValue().doubleValue() / total, 2));
 			table.addRule();
 		}
@@ -272,7 +301,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
 			System.out.println(reader.createChainStatsTable(10));
 			System.out.println(reader.getPWCMatrix().createProductionConsumptionStatsTable(10));
-			RecurrentShipmentJsonSerializer.writeToFile(reader.getSamgodsShipments(),
+			AnnualShipmentJsonSerializer.writeToFile(reader.getSamgodsShipments(),
 					"./input_2024/" + commodity + "-chains.samgods-out.json");
 		}
 	}

@@ -65,7 +65,13 @@ public class TransportChain {
 		return this.episodes;
 	}
 
-	public List<SamgodsConstants.TransportMode> getEpisodeModeSequence() {
-		return this.episodes.stream().map(e -> e.getMode()).collect(Collectors.toList());
+//	public List<SamgodsConstants.TransportMode> getEpisodeModeSequence() {
+//		return this.episodes.stream().map(e -> e.getMode()).collect(Collectors.toList());
+//	}
+
+	public List<List<SamgodsConstants.TransportMode>> getTransportModeSequence() {
+		return this.episodes.stream().map(e -> e.getLegs().stream().map(l -> l.getMode()).collect(Collectors.toList()))
+				.collect(Collectors.toList());
 	}
+
 }

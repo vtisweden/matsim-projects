@@ -20,20 +20,17 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 /**
  * Can be instantiated for parallel use.
  * 
- * TODO Not ideal to have the ShipmentCost type everywhere
- * 
  * @author GunnarF
  *
  */
-public class ChoiceModelUtils {
+public class ChoiceModelUtils<C extends ShipmentCost> {
 
 	private final Random rnd;
 
@@ -45,48 +42,37 @@ public class ChoiceModelUtils {
 		this.rnd = rnd;
 	}
 
-	public <C extends ShipmentCost> Map<Alternative<C>, Double> computeUtilities(List<Alternative<C>> alternatives,
-			ShipmentUtilityFunction<C> utilityFunction) {
-		final Map<Alternative<C>, Double> result = new LinkedHashMap<>(alternatives.size());
-		for (Alternative<C> alternative : alternatives) {
-			result.put(alternative, utilityFunction.computeUtility(alternative.shipment, alternative.cost));
-		}
-		return result;
-	}
-
-	public <C extends ShipmentCost> Map<Alternative<C>, Double> computeLogitProbabilities(
-			final Map<Alternative<C>, Double> alternative2utility) {
-		Map<Alternative<C>, Double> result = new LinkedHashMap<>(alternative2utility.size());
-		final double maxUtility = alternative2utility.values().stream().mapToDouble(v -> v).max().getAsDouble();
+	public List<Double> computeLogitProbabilities(final List<Alternative<C>> alternatives,
+			final double scale) {
+		final List<Double> result = new ArrayList<>(alternatives.size());
+		final double maxUtility = alternatives.stream().mapToDouble(a -> a.utility).max().getAsDouble();
 		double denom = 0.0;
-		for (Map.Entry<Alternative<C>, Double> e : alternative2utility.entrySet()) {
-			final double num = Math.exp(e.getValue() - maxUtility);
-			result.put(e.getKey(), num);
+		for (Alternative<?> alternative : alternatives) {
+			final double num = Math.exp(scale * (alternative.utility - maxUtility));
+			result.add(num);
 			denom += num;
 		}
-		final double finalDenom = denom;
-		result.entrySet().stream().forEach(e -> e.setValue(e.getValue() / finalDenom));
+		for (int i = 0; i < result.size(); i++) {
+			result.set(i, result.get(i) / denom);
+		}
 		return result;
 	}
 
-	public <C extends ShipmentCost> Alternative<C> chooseFromProbabilities(
-			final Map<Alternative<C>, Double> alternative2probability) {
+	public Alternative<C> chooseFromProbabilities(final List<Alternative<C>> alternatives,
+			final List<Double> probabilities) {
 		double probaSum = 0.0;
 		final double threshold = this.rnd.nextDouble();
-		for (Map.Entry<Alternative<C>, Double> e : alternative2probability.entrySet()) {
-			probaSum += e.getValue();
+		for (int i = 0; i < alternatives.size(); i++) {
+			probaSum += probabilities.get(i);
 			if (threshold < probaSum) {
-				return e.getKey();
+				return alternatives.get(i);
 			}
 		}
-		// May end up here for numerical reasons.
-		return new ArrayList<>(alternative2probability.keySet()).get(this.rnd.nextInt(alternative2probability.size()));
+		// May end up here very rarely for numerical reasons?
+		return alternatives.get(this.rnd.nextInt(alternatives.size()));
 	}
 
-	public <C extends ShipmentCost> Alternative<C> choose(final List<Alternative<C>> alternatives,
-			ShipmentUtilityFunction<C> utilityFunction) {
-		return this.chooseFromProbabilities(
-				this.computeLogitProbabilities(this.computeUtilities(alternatives, utilityFunction)));
+	public Alternative<C> choose(final List<Alternative<C>> alternatives, double scale) {
+		return this.chooseFromProbabilities(alternatives, this.computeLogitProbabilities(alternatives, scale));
 	}
-
 }

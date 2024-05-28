@@ -30,4 +30,8 @@ public interface SizeClass {
 
 	double getUpperValue_ton();
 	
+	default double getMeanValue_ton() {
+		return 0.5 * (getLowerValue_ton() + getUpperValue_ton());
+	}
+	
 }

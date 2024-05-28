@@ -19,7 +19,7 @@
  */
 package se.vti.samgods.models.saana;
 
-import se.vti.samgods.logistics.RecurrentShipment;
+import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.choicemodel.ShipmentUtilityFunction;
 import se.vti.samgods.transportation.pricing.BasicShipmentCost;
 
@@ -31,9 +31,10 @@ import se.vti.samgods.transportation.pricing.BasicShipmentCost;
 class SaanaUtilityFunction implements ShipmentUtilityFunction<BasicShipmentCost>{
 
 	@Override
-	public double computeUtility(RecurrentShipment shipment, BasicShipmentCost shipmentCost) {
+	public double computeUtility(AnnualShipment shipment, BasicShipmentCost shipmentCost) {
 		// TODO just for testing
-		return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr();
+		return 0.0;
+//		return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr();
 	}
 
 }

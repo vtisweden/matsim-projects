@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.logistics.RecurrentShipment;
+import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
 
 /**
@@ -60,10 +60,10 @@ public class ChoiceSetGenerator<C extends ShipmentCost> {
 			final SizeClass sizeClass, final double totalShipmentSize_ton, final Commodity commodity) {
 		final ArrayList<Alternative<C>> result = new ArrayList<>(transportChains.size());
 		for (TransportChain transportChain : transportChains) {
-			final double shipmentSize_ton = sizeClass.getUpperValue_ton();
-			final double frequency_1_yr = totalShipmentSize_ton / shipmentSize_ton;
-			final RecurrentShipment shipment = new RecurrentShipment(commodity, transportChain, shipmentSize_ton, frequency_1_yr);
-			final C shipmentCost = this.costCalculator.computeCost(shipment);
+//			final double shipmentSize_ton = sizeClass.getUpperValue_ton();
+//			final double frequency_1_yr = totalShipmentSize_ton / shipmentSize_ton;
+			final AnnualShipment shipment = new AnnualShipment(commodity, transportChain, totalShipmentSize_ton);
+			final C shipmentCost = this.costCalculator.computeCost(shipment, sizeClass);
 			result.add(new Alternative<>(sizeClass, shipment, shipmentCost,
 					this.utilityFunction.computeUtility(shipment, shipmentCost)));
 		}

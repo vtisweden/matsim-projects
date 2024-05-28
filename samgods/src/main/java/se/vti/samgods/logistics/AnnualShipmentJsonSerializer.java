@@ -34,27 +34,29 @@ import com.fasterxml.jackson.databind.SerializerProvider;
  * @author GunnarF
  *
  */
-public class RecurrentShipmentJsonSerializer extends JsonSerializer<RecurrentShipment> {
+public class AnnualShipmentJsonSerializer extends JsonSerializer<AnnualShipment> {
 
 	@Override
-	public void serialize(RecurrentShipment shipment, JsonGenerator gen, SerializerProvider serializers)
+	public void serialize(AnnualShipment shipment, JsonGenerator gen, SerializerProvider serializers)
 			throws IOException {
 
 		gen.writeStartObject();
 		gen.writeStringField("commodity", shipment.getCommmodity().toString());
-		gen.writeNumberField("amount_ton_yr", shipment.getSize_ton());
-		gen.writeNumberField("frequency_1_yr", shipment.getFrequency_1_yr());
+		gen.writeNumberField("amount_ton_yr", shipment.getTotalAmount_ton());
+// TODO The line below was contained in earlier produced files.
+//		gen.writeNumberField("frequency_1_yr", shipment.getFrequency_1_yr());
 		gen.writeStringField("originNode", shipment.getTransportChain().getOriginNodeId().toString());
 		gen.writeStringField("destinationNode", shipment.getTransportChain().getDestinationNodeId().toString());
 
 		gen.writeFieldName("episodes");
 		gen.writeStartArray();
 		for (TransportEpisode episode : shipment.getTransportChain().getEpisodes()) {
+			
 			gen.writeStartObject();
 			gen.writeStringField("loadingNode", episode.getLoadingNode().toString());
 			gen.writeStringField("unloadingNode", episode.getUnloadingNode().toString());
 			gen.writeStringField("mainTransportMode", episode.getMode().toString());
-
+			
 			gen.writeFieldName("legs");
 			gen.writeStartArray();
 			for (TransportLeg leg : episode.getLegs()) {
@@ -73,7 +75,7 @@ public class RecurrentShipmentJsonSerializer extends JsonSerializer<RecurrentShi
 		gen.writeEndObject();
 	}
 
-	public static void writeToFile(List<RecurrentShipment> shipments, String fileName) {
+	public static void writeToFile(List<AnnualShipment> shipments, String fileName) {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);

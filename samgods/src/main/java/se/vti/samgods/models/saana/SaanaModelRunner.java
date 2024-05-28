@@ -29,7 +29,7 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.ChainChoiReader;
-import se.vti.samgods.logistics.RecurrentShipment;
+import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.choicemodel.Alternative;
@@ -133,8 +133,9 @@ public class SaanaModelRunner {
 
 		// (Choice model) shipment utility, given its properties and (monetary) cost.
 		ShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new ShipmentUtilityFunction<>() {
-			public double computeUtility(RecurrentShipment shipment, BasicShipmentCost shipmentCost) {
-				return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr(); // for testing
+			public double computeUtility(AnnualShipment shipment, BasicShipmentCost shipmentCost) {
+				return 0.0;
+//				return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr(); // for testing
 			}
 		};
 		// Create choice sets by combining transport chains and shipment sizes.
@@ -152,8 +153,8 @@ public class SaanaModelRunner {
 				List<TransportChain> chains = demand.getTransportChains(commodity, od);
 				List<Alternative<BasicShipmentCost>> alternatives = choiceSetGenerator.createChoiceSet(chains,
 						amount_ton_yr, commodity);
-				Alternative<BasicShipmentCost> choice = choiceModel.choose(alternatives, utilityFunction);
-				System.out.println(choice);
+//				Alternative<BasicShipmentCost> choice = choiceModel.choose(alternatives, utilityFunction);
+//				System.out.println(choice);
 			}
 		}
 
