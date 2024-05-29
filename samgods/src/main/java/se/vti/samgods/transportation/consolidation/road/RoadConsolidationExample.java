@@ -53,23 +53,36 @@ public class RoadConsolidationExample {
 //				80.0);
 
 		ConsolidationCostModel costModel = new ConsolidationCostModel() {
+//			@Override
+//			public RealizedCost getShipmentCost(Vehicle vehicle, Commodity addedCommodity, double maxAddedAmount_ton,
+//					ShipmentVehicleAssignment assignment) {
+//				final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
+//				final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
+//				final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
+//				final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton);
+//				if (feasible) {
+//					final double usageFraction = assignedWeight_ton / (assignedWeight_ton + availableCapacity_ton);
+//					if (largeTruck.getId().equals(vehicle.getType().getId())) {
+//						return new ShipmentCost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
+//					} else {
+//						return new ShipmentCost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
+//					}
+//				} else {
+//					return new ShipmentCost(false, 0.0, 0.0, 0.0);
+//				}
+//			}
+
 			@Override
-			public Cost getCost(Vehicle vehicle, Commodity addedCommodity, double maxAddedAmount_ton,
+			public RealizedCost getVehicleCost(Vehicle vehicle, double payload_ton, TransportEpisode episode) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public RealizedCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
 					ShipmentVehicleAssignment assignment) {
-				final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
-				final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
-				final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
-				final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton);
-				if (feasible) {
-					final double usageFraction = assignedWeight_ton / (assignedWeight_ton + availableCapacity_ton);
-					if (largeTruck.getId().equals(vehicle.getType().getId())) {
-						return new Cost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
-					} else {
-						return new Cost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
-					}
-				} else {
-					return new Cost(false, 0.0, 0.0, 0.0);
-				}
+				// TODO Auto-generated method stub
+				return null;
 			}
 		};
 
@@ -77,7 +90,7 @@ public class RoadConsolidationExample {
 
 		final int days = 7;
 
-		TransportEpisode episode = new TransportEpisode(TransportMode.Road);
+		TransportEpisode episode = new TransportEpisode(TransportMode.Road, SamgodsConstants.Commodity.AGRICULTURE);
 		episode.addLeg(
 				new TransportLeg(new OD(Id.createNodeId("from"), Id.createNodeId("to")), TransportMode.Road));
 

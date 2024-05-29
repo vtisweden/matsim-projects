@@ -37,12 +37,12 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
  */
 public class TransportLeg {
 
+	// defining
 	private final OD od;
-
 	private final TransportMode mode;
-
 	private List<Link> route = null;
 	
+	// derived
 	private Double length_m = null;
 	private Double duration_s = null;
 
@@ -91,6 +91,26 @@ public class TransportLeg {
 
 	public double getDuration_s() {
 		return this.duration_s;
+	}
+
+	// -------------------- OVERRIDING OF Object --------------------
+
+	@Override
+	public int hashCode() {
+		int code = this.od.hashCode() + 31 * this.mode.hashCode();
+		if (this.route != null) {
+			code = this.route.hashCode() + 31 * code;
+		}
+		return code;
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (!(other instanceof TransportLeg)) {
+			return false;
+		}
+		final TransportLeg otherLeg = (TransportLeg) other;
+		return this.od.equals(otherLeg.od) && (this.mode.equals(otherLeg.mode) && this.route.equals(otherLeg.route));
 	}
 
 }

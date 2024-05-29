@@ -42,21 +42,22 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 	}
 
 	@Override
-	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, ConsolidationCostModel.Cost>> vehicle2costOverDays) {
+	public Slot drawSlot(Shipment shipment,
+			List<Map<Vehicle, ConsolidationCostModel.RealizedCost>> vehicle2costOverDays) {
 
 		double maxUtility = Double.NEGATIVE_INFINITY;
-		for (Map<Vehicle, ConsolidationCostModel.Cost> vehicle2cost : vehicle2costOverDays) {
-			for (ConsolidationCostModel.Cost cost : vehicle2cost.values()) {
-				if (cost.feasible) {
+		for (Map<Vehicle, ConsolidationCostModel.RealizedCost> vehicle2cost : vehicle2costOverDays) {
+			for (ConsolidationCostModel.RealizedCost cost : vehicle2cost.values()) {
+				if (cost != null) { // TODO do not store null values
 					maxUtility = Math.max(maxUtility, (-cost.cost));
 				}
 			}
 		}
 
 		double denom = 0.0;
-		for (Map<Vehicle, ConsolidationCostModel.Cost> vehicle2cost : vehicle2costOverDays) {
-			for (ConsolidationCostModel.Cost cost : vehicle2cost.values()) {
-				if (cost.feasible) {
+		for (Map<Vehicle, ConsolidationCostModel.RealizedCost> vehicle2cost : vehicle2costOverDays) {
+			for (ConsolidationCostModel.RealizedCost cost : vehicle2cost.values()) {
+				if (cost != null) { // TODO do not store null values
 					denom += Math.exp(this.scale * ((-cost.cost) - maxUtility));
 				}
 			}
@@ -65,8 +66,9 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 		final double threshold = this.rnd.nextDouble() * denom;
 		double sum = 0.0;
 		for (int day = 0; day < vehicle2costOverDays.size(); day++) {
-			for (Map.Entry<Vehicle, ConsolidationCostModel.Cost> veh2cost : vehicle2costOverDays.get(day).entrySet()) {
-				if (veh2cost.getValue().feasible) {
+			for (Map.Entry<Vehicle, ConsolidationCostModel.RealizedCost> veh2cost : vehicle2costOverDays.get(day)
+					.entrySet()) {
+				if (veh2cost.getValue() != null) {
 					sum += Math.exp(this.scale * ((-veh2cost.getValue().cost) - maxUtility));
 					if (sum >= threshold) {
 						return new Slot(veh2cost.getKey(), day);

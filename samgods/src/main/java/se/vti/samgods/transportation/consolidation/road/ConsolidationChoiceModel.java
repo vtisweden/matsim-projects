@@ -41,6 +41,6 @@ public interface ConsolidationChoiceModel {
 		}
 	}
 
-	Slot drawSlot(Shipment shipment, List<Map<Vehicle, ConsolidationCostModel.Cost>> vehicle2costOverDays);
+	Slot drawSlot(Shipment shipment, List<Map<Vehicle, ConsolidationCostModel.RealizedCost>> vehicle2costOverDays);
 
 }

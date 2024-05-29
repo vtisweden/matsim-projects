@@ -21,7 +21,7 @@ package se.vti.samgods.transportation.consolidation.road;
 
 import org.matsim.vehicles.Vehicle;
 
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 
@@ -30,21 +30,20 @@ import se.vti.samgods.SamgodsConstants;
  */
 public interface ConsolidationCostModel {
 
-	class Cost {
-		public final boolean feasible;
+	class RealizedCost {
 		public final double amount_ton;
 		public final double cost;
 		public final double duration_h;
 
-		public Cost(boolean feasible, double amount_ton, double cost, double duration_h) {
-			this.feasible = feasible;
+		public RealizedCost(double amount_ton, double cost, double duration_h) {
 			this.amount_ton = amount_ton;
 			this.cost = cost;
 			this.duration_h = duration_h;
 		}
 	}
 
-	Cost getCost(Vehicle vehicle, SamgodsConstants.Commodity addedCommodity, double maxAddedAmount_ton,
-			ShipmentVehicleAssignment assignment);
+	RealizedCost getVehicleCost(Vehicle vehicle, double payload_ton, TransportEpisode episode);
+
+	RealizedCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton, ShipmentVehicleAssignment assignment);
 
 }

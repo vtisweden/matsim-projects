@@ -25,10 +25,8 @@ import java.util.List;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.external.ntmcalc.VehicleEpisode2NTMCalcSerializer;
 
 /**
  * 
@@ -39,10 +37,13 @@ public class TransportEpisode {
 
 	private final TransportMode mode;
 
+	private final Commodity commodity;
+
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
 
-	public TransportEpisode(TransportMode mode) {
+	public TransportEpisode(TransportMode mode, Commodity commodity) {
 		this.mode = mode;
+		this.commodity = commodity;
 	}
 
 	public void addLeg(final TransportLeg leg) {
@@ -57,6 +58,10 @@ public class TransportEpisode {
 		return this.mode;
 	}
 
+	public Commodity getCommodity() {
+		return this.commodity;
+	}
+
 	public Id<Node> getLoadingNode() {
 		return this.legs.getFirst().getOrigin();
 	}
@@ -68,7 +73,7 @@ public class TransportEpisode {
 	public int getTransferNodeCnt() {
 		return this.legs.size() - 1;
 	}
-	
+
 	private List<Id<Node>> createNodeList(boolean onlyTransfers) {
 		LinkedList<Id<Node>> result = new LinkedList<>();
 		if (!onlyTransfers) {
@@ -89,5 +94,22 @@ public class TransportEpisode {
 
 	public List<Id<Node>> createAllNodesList() {
 		return this.createNodeList(false);
+	}
+
+	// -------------------- OVERRIDING OF Object --------------------
+
+	@Override
+	public int hashCode() {
+		return this.commodity.hashCode() + 31 * (this.mode.hashCode() + 31 * this.legs.hashCode());
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (!(other instanceof TransportEpisode)) {
+			return false;
+		}
+		final TransportEpisode otherEpisode = (TransportEpisode) other;
+		return this.commodity.equals(otherEpisode.commodity)
+				&& (this.mode.equals(otherEpisode.mode) && this.legs.equals(otherEpisode.legs));
 	}
 }

@@ -238,7 +238,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			for (TransportLeg leg : legs) {
 				if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
 						|| !SamgodsConstants.TransportMode.Rail.equals(leg.getMode())) {
-					currentEpisode = new TransportEpisode(leg.getMode());
+					currentEpisode = new TransportEpisode(leg.getMode(), this.commodity);
 					transportChain.addEpisode(currentEpisode, false);
 				}
 				currentEpisode.addLeg(leg);

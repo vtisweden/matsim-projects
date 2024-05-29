@@ -71,8 +71,8 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(Random rnd, TransportEpisode transportEpisode, FreightVehicleFleet fleet, int shipmentPeriod_day,
-			ConsolidationCostModel costModel, ConsolidationChoiceModel choiceModel) {
+	public Consolidator(Random rnd, TransportEpisode transportEpisode, FreightVehicleFleet fleet,
+			int shipmentPeriod_day, ConsolidationCostModel costModel, ConsolidationChoiceModel choiceModel) {
 		this.rnd = rnd;
 		this.transportEpisode = transportEpisode;
 		this.fleet = fleet;
@@ -108,24 +108,24 @@ public class Consolidator {
 		 * (1) Identify which vehicles are available and what they cost.
 		 */
 
-		final List<Map<Vehicle, ConsolidationCostModel.Cost>> vehicle2costOverDays = new ArrayList<>(
+		final List<Map<Vehicle, ConsolidationCostModel.RealizedCost>> vehicle2costOverDays = new ArrayList<>(
 				this.shipmentPeriod_day);
 		for (int day = 0; day < this.shipmentPeriod_day; day++) {
 			final Set<Vehicle> alreadyUsedVehicles = this.assignmentsOverDays.get(day).getVehicle2shipments().keySet();
 
-			final Map<Vehicle, ConsolidationCostModel.Cost> veh2cost = new LinkedHashMap<>(
+			final Map<Vehicle, ConsolidationCostModel.RealizedCost> veh2cost = new LinkedHashMap<>(
 					this.prototypeVehicles.size() + alreadyUsedVehicles.size());
 			for (Vehicle vehicle : this.prototypeVehicles.values()) {
-				ConsolidationCostModel.Cost vehCost = this.costModel.getCost(vehicle, shipment.getCommodity(),
+				ConsolidationCostModel.RealizedCost vehCost = this.costModel.getShipmentCost(vehicle,
 						shipment.getWeight_ton(), this.assignmentsOverDays.get(day));
-				if (vehCost.feasible) {
+				if (vehCost != null) {
 					veh2cost.put(vehicle, vehCost);
 				}
 			}
 			for (Vehicle vehicle : alreadyUsedVehicles) {
-				ConsolidationCostModel.Cost vehCost = this.costModel.getCost(vehicle, shipment.getCommodity(),
+				ConsolidationCostModel.RealizedCost vehCost = this.costModel.getShipmentCost(vehicle,
 						shipment.getWeight_ton(), this.assignmentsOverDays.get(day));
-				if (vehCost.feasible) {
+				if (vehCost != null) {
 					veh2cost.put(vehicle, vehCost);
 				}
 			}
