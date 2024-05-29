@@ -113,7 +113,7 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 			final RealizedCost vehicleCost = getVehicleCost(vehicle,
 					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
 			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
-			return new RealizedCost(assignedWeight_ton, share * vehicleCost.cost, vehicleCost.duration_h);
+			return new RealizedCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);
 		} else {
 			return null;
 		}

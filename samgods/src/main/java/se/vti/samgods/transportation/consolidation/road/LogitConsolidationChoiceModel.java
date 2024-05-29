@@ -49,7 +49,7 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 		for (Map<Vehicle, ConsolidationCostModel.RealizedCost> vehicle2cost : vehicle2costOverDays) {
 			for (ConsolidationCostModel.RealizedCost cost : vehicle2cost.values()) {
 				if (cost != null) { // TODO do not store null values
-					maxUtility = Math.max(maxUtility, (-cost.cost));
+					maxUtility = Math.max(maxUtility, (-cost.monetaryCost));
 				}
 			}
 		}
@@ -58,7 +58,7 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 		for (Map<Vehicle, ConsolidationCostModel.RealizedCost> vehicle2cost : vehicle2costOverDays) {
 			for (ConsolidationCostModel.RealizedCost cost : vehicle2cost.values()) {
 				if (cost != null) { // TODO do not store null values
-					denom += Math.exp(this.scale * ((-cost.cost) - maxUtility));
+					denom += Math.exp(this.scale * ((-cost.monetaryCost) - maxUtility));
 				}
 			}
 		}
@@ -69,7 +69,7 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 			for (Map.Entry<Vehicle, ConsolidationCostModel.RealizedCost> veh2cost : vehicle2costOverDays.get(day)
 					.entrySet()) {
 				if (veh2cost.getValue() != null) {
-					sum += Math.exp(this.scale * ((-veh2cost.getValue().cost) - maxUtility));
+					sum += Math.exp(this.scale * ((-veh2cost.getValue().monetaryCost) - maxUtility));
 					if (sum >= threshold) {
 						return new Slot(veh2cost.getKey(), day);
 					}

@@ -32,12 +32,12 @@ public interface ConsolidationCostModel {
 
 	class RealizedCost {
 		public final double amount_ton;
-		public final double cost;
+		public final double monetaryCost;
 		public final double duration_h;
 
 		public RealizedCost(double amount_ton, double cost, double duration_h) {
 			this.amount_ton = amount_ton;
-			this.cost = cost;
+			this.monetaryCost = cost;
 			this.duration_h = duration_h;
 		}
 	}

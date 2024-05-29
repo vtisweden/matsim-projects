@@ -26,9 +26,9 @@ package se.vti.samgods.utils;
  */
 public class ParseNumberUtils {
 
-	private ParseNumberUtils() {		
+	private ParseNumberUtils() {
 	}
-	
+
 	public static Double parseDoubleOrDefault(String str, Double defaultValue) {
 		if (str == null || "".equals(str)) {
 			return defaultValue;
@@ -59,5 +59,14 @@ public class ParseNumberUtils {
 		} else {
 			return "" + (num / den);
 		}
+	}
+
+	public static Double divideOrNull(Double num, Double den) {
+		if ((num != null) & (den != null) & (den > 1e-8)) {
+			return num / den;
+		} else {
+			return null;
+		}
+
 	}
 }
