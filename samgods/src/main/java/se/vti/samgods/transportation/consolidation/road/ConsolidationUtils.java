@@ -59,22 +59,21 @@ public class ConsolidationUtils {
 	public static List<Shipment> disaggregateIntoAnalysisPeriod(AnnualShipment shipment, int analysisPeriod_days,
 			SizeClass sizeClass) {
 
-		final double analysisPeriodAmount_ton = shipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
-		final double shipmentsPerPeriod = analysisPeriodAmount_ton / sizeClass.getMeanValue_ton();
-		final double individualShipmentSize_ton = analysisPeriodAmount_ton / Math.ceil(shipmentsPerPeriod);
+		final double amountPerPeriod_ton = shipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
+		final double shipmentsPerPeriod = amountPerPeriod_ton / sizeClass.getMeanValue_ton();
+		final double singleShipmentSize_ton = amountPerPeriod_ton / Math.ceil(shipmentsPerPeriod);
 
-		final int integerShipmentsPerPeriod = (int) shipmentsPerPeriod;
-		final double fractionalShipmentsPerPeriod = shipmentsPerPeriod - integerShipmentsPerPeriod;
+		final int completeShipmentsPerPeriod = (int) shipmentsPerPeriod;
+		final double fractionalShipmentsPerPeriod = shipmentsPerPeriod - completeShipmentsPerPeriod;
 
 		final List<Shipment> shipments = new ArrayList<>(
-				integerShipmentsPerPeriod + (fractionalShipmentsPerPeriod > 0 ? 1 : 0));
-		for (int i = 0; i < integerShipmentsPerPeriod; i++) {
-			shipments.add(new Shipment(shipment.getCommmodity(), individualShipmentSize_ton, 1.0));
+				completeShipmentsPerPeriod + (fractionalShipmentsPerPeriod > 0 ? 1 : 0));
+		for (int i = 0; i < completeShipmentsPerPeriod; i++) {
+			shipments.add(new Shipment(shipment.getCommmodity(), singleShipmentSize_ton, 1.0));
 		}
-
 		if (fractionalShipmentsPerPeriod > 0) {
 			shipments.add(
-					new Shipment(shipment.getCommmodity(), individualShipmentSize_ton, fractionalShipmentsPerPeriod));
+					new Shipment(shipment.getCommmodity(), singleShipmentSize_ton, fractionalShipmentsPerPeriod));
 		}
 
 		return shipments;

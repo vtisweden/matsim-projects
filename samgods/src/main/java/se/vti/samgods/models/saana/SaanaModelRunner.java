@@ -28,18 +28,15 @@ import org.apache.log4j.Logger;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.choicemodel.Alternative;
+import se.vti.samgods.logistics.choicemodel.AnnualShipmentUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
 import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
-import se.vti.samgods.logistics.choicemodel.ShipmentUtilityFunction;
 import se.vti.samgods.network.SamgodsNetworkReader;
 import se.vti.samgods.readers.SamgodsPriceReader;
-import se.vti.samgods.transportation.NetworkRouter;
-import se.vti.samgods.transportation.TransportSupply;
 import se.vti.samgods.transportation.pricing.BasicShipmentCost;
 import se.vti.samgods.transportation.pricing.ProportionalShipmentPrices;
 import se.vti.samgods.transportation.pricing.ProportionalTransshipmentPrices;
@@ -97,7 +94,7 @@ public class SaanaModelRunner {
 		 */
 		SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
 				"./2023-06-01_basecase/link_table.csv");
-		TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null);
+//		TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null);
 
 		/*
 		 * Load transport prices. These prices will later come out of downstream
@@ -116,8 +113,8 @@ public class SaanaModelRunner {
 		 */
 		for (Commodity commodity : consideredCommodities) {
 			demand.downsample(commodity, odSamplingRate); // for testing only
-			NetworkRouter router = new NetworkRouter(supply.getNetwork(), transportPrices);
-			router.route(commodity, demand.getTransportChains(commodity));
+//			NetworkRouter router = new NetworkRouter(supply.getNetwork(), transportPrices);
+//			router.route(commodity, demand.getTransportChains(commodity));
 		}
 
 		/*
@@ -132,7 +129,7 @@ public class SaanaModelRunner {
 		// SamgodsShipmentCostFunction(transportPrices);
 
 		// (Choice model) shipment utility, given its properties and (monetary) cost.
-		ShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new ShipmentUtilityFunction<>() {
+		AnnualShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new AnnualShipmentUtilityFunction<>() {
 			public double computeUtility(AnnualShipment shipment, BasicShipmentCost shipmentCost) {
 				return 0.0;
 //				return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr(); // for testing

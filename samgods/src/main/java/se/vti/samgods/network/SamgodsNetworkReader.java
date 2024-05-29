@@ -34,7 +34,6 @@ import org.matsim.core.network.NetworkUtils;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.TransportSupply;
 import se.vti.samgods.utils.ParseNumberUtils;
 
 /**
@@ -102,7 +101,7 @@ public class SamgodsNetworkReader {
 
 			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
 					.valueOf(record.get(LINK_MODE));
-			final String matsimMode = TransportSupply.samgodsMode2matsimMode.get(samgodsMode);
+			final String matsimMode = SamgodsConstants.samgodsMode2matsimMode.get(samgodsMode);
 			final double capacity_veh_h = ParseNumberUtils.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY),
 					Double.POSITIVE_INFINITY) / 24.0;
 

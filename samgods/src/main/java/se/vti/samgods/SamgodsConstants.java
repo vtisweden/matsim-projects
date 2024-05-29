@@ -19,6 +19,9 @@
  */
 package se.vti.samgods;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * 
  * @author GunnarF
@@ -29,6 +32,19 @@ public class SamgodsConstants {
 	public static enum TransportMode {
 		Road, Rail, Sea, Ferry, Air
 	};
+
+	public static final Map<SamgodsConstants.TransportMode, String> samgodsMode2matsimMode;
+
+	static {
+		samgodsMode2matsimMode = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Road, org.matsim.api.core.v01.TransportMode.car);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Ferry,
+				org.matsim.api.core.v01.TransportMode.car /* Assume only car ferries */);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Rail, org.matsim.api.core.v01.TransportMode.train);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Sea, org.matsim.api.core.v01.TransportMode.ship);
+		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Air, org.matsim.api.core.v01.TransportMode.airplane);
+		assert (samgodsMode2matsimMode.size() == SamgodsConstants.TransportMode.values().length);
+	}
 
 	public static enum Commodity {
 

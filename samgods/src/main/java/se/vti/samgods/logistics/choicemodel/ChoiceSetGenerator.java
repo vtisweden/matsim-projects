@@ -32,21 +32,21 @@ import se.vti.samgods.logistics.TransportChain;
  * @author GunnarF
  *
  */
-public class ChoiceSetGenerator<C extends ShipmentCost> {
+public class ChoiceSetGenerator<C extends AnnualShipmentCost> {
 
 	// -------------------- MEMBERS --------------------
 
-	private final ShipmentCostFunction<C> costCalculator;
+	private final AnnualShipmentCostFunction<C> costCalculator;
 
-	private final ShipmentUtilityFunction<C> utilityFunction;
+	private final AnnualShipmentUtilityFunction<C> utilityFunction;
 
 	private final SizeClass[] allSizeClasses;
 	private final SizeClass smallestSizeClass;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChoiceSetGenerator(final ShipmentCostFunction<C> costCalculator,
-			final ShipmentUtilityFunction<C> utilityFunction, final SizeClass[] allSizeClasses) {
+	public ChoiceSetGenerator(final AnnualShipmentCostFunction<C> costCalculator,
+			final AnnualShipmentUtilityFunction<C> utilityFunction, final SizeClass[] allSizeClasses) {
 		this.costCalculator = costCalculator;
 		this.utilityFunction = utilityFunction;
 		this.allSizeClasses = allSizeClasses;

@@ -1,7 +1,7 @@
 /**
- * se.vti.samgods.logistics
+ * se.vti.samgods
  * 
- * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,35 +17,17 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.logistics.choicemodel;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.AnnualShipment;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class LogisticDemand {
+public interface AnnualShipmentUtilityFunction<C extends AnnualShipmentCost> {
 
-	private final Map<SamgodsConstants.Commodity, List<TransportChain>> commodity2chains = new LinkedHashMap<>();
-
-	public LogisticDemand() {
-
-	}
-
-//	private final SamgodsConstants.Commodity commodity;
-//	
-//	public LogisticDemand(SamgodsConstants.Commodity commodity) {
-//		this.commodity = commodity;
-//	}
-//
-//	public SamgodsConstants.Commodity getCommodity() {
-//		return commodity;
-//	}
+	double computeUtility(AnnualShipment shipment, C shipmentCost);
 
 }

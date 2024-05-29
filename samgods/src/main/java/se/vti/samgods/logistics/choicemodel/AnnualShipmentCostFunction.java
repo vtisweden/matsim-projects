@@ -26,7 +26,7 @@ import se.vti.samgods.logistics.AnnualShipment;
  * @author GunnarF
  *
  */
-public interface ShipmentCostFunction<C extends ShipmentCost> {
+public interface AnnualShipmentCostFunction<C extends AnnualShipmentCost> {
 
 	public C computeCost(AnnualShipment shipment, SizeClass shipmentSize);
 

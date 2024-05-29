@@ -19,14 +19,14 @@
  */
 package se.vti.samgods.transportation.pricing;
 
-import se.vti.samgods.logistics.choicemodel.ShipmentCost;
+import se.vti.samgods.logistics.choicemodel.AnnualShipmentCost;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class BasicShipmentCost implements ShipmentCost {
+public class BasicShipmentCost implements AnnualShipmentCost {
 
 	private final double duration_h;
 	private final double monetaryCost;

@@ -20,7 +20,7 @@
 package se.vti.samgods.models.saana;
 
 import se.vti.samgods.logistics.AnnualShipment;
-import se.vti.samgods.logistics.choicemodel.ShipmentUtilityFunction;
+import se.vti.samgods.logistics.choicemodel.AnnualShipmentUtilityFunction;
 import se.vti.samgods.transportation.pricing.BasicShipmentCost;
 
 /**
@@ -28,7 +28,7 @@ import se.vti.samgods.transportation.pricing.BasicShipmentCost;
  * @author GunnarF
  *
  */
-class SaanaUtilityFunction implements ShipmentUtilityFunction<BasicShipmentCost>{
+class SaanaUtilityFunction implements AnnualShipmentUtilityFunction<BasicShipmentCost>{
 
 	@Override
 	public double computeUtility(AnnualShipment shipment, BasicShipmentCost shipmentCost) {

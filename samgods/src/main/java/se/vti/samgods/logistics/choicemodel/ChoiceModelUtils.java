@@ -30,7 +30,7 @@ import java.util.Random;
  * @author GunnarF
  *
  */
-public class ChoiceModelUtils<C extends ShipmentCost> {
+public class ChoiceModelUtils<C extends AnnualShipmentCost> {
 
 	private final Random rnd;
 

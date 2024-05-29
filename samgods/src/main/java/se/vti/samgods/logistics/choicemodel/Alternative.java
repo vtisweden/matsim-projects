@@ -27,7 +27,7 @@ import se.vti.samgods.logistics.AnnualShipment;
  * @author GunnarF
  *
  */
-public class Alternative<C extends ShipmentCost> {
+public class Alternative<C extends AnnualShipmentCost> {
 
 	// -------------------- PUBLIC CONSTANTS --------------------
 

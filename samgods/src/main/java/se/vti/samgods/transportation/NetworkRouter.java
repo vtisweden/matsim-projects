@@ -104,7 +104,7 @@ public class NetworkRouter {
 
 		private Network createUnimodalNetwork(final Network network, SamgodsConstants.TransportMode samgodsMode) {
 			final Set<String> matsimModes = Collections
-					.singleton(TransportSupply.samgodsMode2matsimMode.get(samgodsMode));
+					.singleton(SamgodsConstants.samgodsMode2matsimMode.get(samgodsMode));
 			final Network unimodalNetwork = NetworkUtils.createNetwork();
 			new TransportModeNetworkFilter(network).filter(unimodalNetwork, matsimModes);
 			return unimodalNetwork;
