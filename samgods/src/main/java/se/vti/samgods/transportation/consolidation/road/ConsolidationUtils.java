@@ -27,7 +27,7 @@ import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.choicemodel.SizeClass;
-import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**
  * 
@@ -39,12 +39,12 @@ public class ConsolidationUtils {
 	private ConsolidationUtils() {
 	}
 
-	public static FreightVehicleTypeAttributes getFreightAttributes(VehicleType vehicleType) {
-		return (FreightVehicleTypeAttributes) vehicleType.getAttributes()
-				.getAttribute(FreightVehicleTypeAttributes.ATTRIBUTE_NAME);
+	public static FreightVehicleAttributes getFreightAttributes(VehicleType vehicleType) {
+		return (FreightVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
 	}
 
-	public static FreightVehicleTypeAttributes getFreightAttributes(Vehicle vehicle) {
+	public static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
 		return getFreightAttributes(vehicle.getType());
 	}
 

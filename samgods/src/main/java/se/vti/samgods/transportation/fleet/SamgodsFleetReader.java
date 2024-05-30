@@ -96,11 +96,11 @@ public class SamgodsFleetReader {
 
 	public void load_v12(String vehicleTypeFile, String costFile, SamgodsConstants.TransportMode transportMode)
 			throws IOException {
-		final Map<String, FreightVehicleTypeAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
+		final Map<String, FreightVehicleAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(vehicleTypeFile))) {
 			for (boolean container : new boolean[] { false, true }) {
-				final FreightVehicleTypeAttributes.Builder builder = new FreightVehicleTypeAttributes.Builder();
+				final FreightVehicleAttributes.Builder builder = new FreightVehicleAttributes.Builder();
 				vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
 				builder.setName(record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""))
 						.setDescription(record.get(VEH_DESCRIPTION)).setTransportMode(transportMode)
@@ -134,8 +134,8 @@ public class SamgodsFleetReader {
 							ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_TIME_H)));
 		}
 
-		for (FreightVehicleTypeAttributes.Builder builder : vehicleNr2builder.values()) {
-			final VehicleType type = builder.build();
+		for (FreightVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
+			final VehicleType type = builder.buildVehicleType();
 			this.fleet.getVehicles().addVehicleType(type);
 		}
 	}

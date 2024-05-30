@@ -98,7 +98,7 @@ public class FreightVehicleFleet {
 		table.addRow("Vehicle", "Description", "Mode", "Cost[1/km]", "Cost[1/h]", "Capacity[ton]", "FerryCost[1/km]",
 				"FerryCost[1/h]", "MaxSpeed[km/h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
 			if (modeSet.contains(attrs.mode)) {
 				table.addRule();
 				table.addRow(attrs.id, attrs.description, attrs.mode, attrs.cost_1_km, attrs.cost_1_h,
@@ -117,7 +117,7 @@ public class FreightVehicleFleet {
 		table.addRow("Vehicle", "Commodity", "LoadCost[1/ton]", "LoadTime[h]", "TransferCost[1/ton]",
 				"TransferTime[h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
 			if (modeSet.contains(attrs.mode)) {
 				for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 					if (attrs.containsData(commodity)) {
@@ -134,101 +134,87 @@ public class FreightVehicleFleet {
 		return table.render();
 	}
 
-	// --------------- ESTIMATE REPRESENTATIVE VEHICLE SPEED ---------------
+	// -------------------- CONSTRUCT REPRESENTATIVE VEHICLES --------------------
 
-	// TODO CONTINUE HERE
-	
-	public FreightVehicleTypeAttributes createRepresentativeVehicleTypeAttributes(SamgodsConstants.TransportMode mode) {
-		return null; 
-	}
-	
+	/*
+	 * 
+	 * private Double fallbackSpeed_km_h(SamgodsConstants.TransportMode mode) { //
+	 * TODO Inventing numbers. One actually should expect all vehicle classes to //
+	 * have a speed. if (SamgodsConstants.TransportMode.Air.equals(mode)) { return
+	 * 800.0; } else if (SamgodsConstants.TransportMode.Rail.equals(mode)) { return
+	 * 80.0; } else if (SamgodsConstants.TransportMode.Road.equals(mode)) { return
+	 * 80.0; } else if (SamgodsConstants.TransportMode.Sea.equals(mode)) { return
+	 * 16.0; } else { throw new RuntimeException("Unknown transport mode: " + mode);
+	 * } }
+	 * 
+	 * private Double speedOrFallback_km_h(Double speed_km_h,
+	 * SamgodsConstants.TransportMode mode) { if (speed_km_h != null) { return
+	 * speed_km_h; } else { return this.fallbackSpeed_km_h(mode); } }
+	 * 
+	 */
 
-	private Double fallbackSpeed_km_h(SamgodsConstants.TransportMode mode) {
-		// TODO Inventing numbers. One actually should expect all vehicle classes to
-		// have a speed.
-		if (SamgodsConstants.TransportMode.Air.equals(mode)) {
-			return 800.0;
-		} else if (SamgodsConstants.TransportMode.Rail.equals(mode)) {
-			return 80.0;
-		} else if (SamgodsConstants.TransportMode.Road.equals(mode)) {
-			return 80.0;
-		} else if (SamgodsConstants.TransportMode.Sea.equals(mode)) {
-			return 16.0;
-		} else {
-			throw new RuntimeException("Unknown transport mode: " + mode);
-		}
-	}
-
-	public double computeClassMedianVehicleSpeed_km_h(SamgodsConstants.TransportMode mode) {
-		final List<Double> speeds_km_h = new ArrayList<>();
-		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
-			if (mode.equals(attrs.mode)) {
-				if (attrs.speed_km_h != null) {
-					speeds_km_h.add(attrs.speed_km_h);
-				}
-			}
-		}
-		if (speeds_km_h.size() > 0) {
-			return (new Median()).evaluate(speeds_km_h.stream().mapToDouble(s -> s).toArray());
-		} else {
-			return this.fallbackSpeed_km_h(mode);
-		}
-	}
-
-	// ---------- ESTIMATE REPRESENTATIVE VEHICLE COST PER TON-KM ----------
-
-	private Double speedOrFallback_km_h(Double speed_km_h, SamgodsConstants.TransportMode mode) {
-		if (speed_km_h != null) {
-			return speed_km_h;
-		} else {
-			return this.fallbackSpeed_km_h(mode);
-		}
-	}
-
-	public Double computeClassMedianCost_1_tonKm(SamgodsConstants.TransportMode mode) {
-		final double usage = 0.6; // TODO inventing numbers
-		final List<Double> costs_1_kmTon = new ArrayList<>();
-		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
-			if (mode.equals(attrs.mode)) {
-				double vehCost_1_km = attrs.cost_1_km
-						+ attrs.cost_1_h / this.speedOrFallback_km_h(attrs.speed_km_h, mode);
-				costs_1_kmTon.add(vehCost_1_km / (usage * attrs.capacity_ton));
-			}
-		}
-		if (costs_1_kmTon.size() > 0) {
-			return (new Median()).evaluate(costs_1_kmTon.stream().mapToDouble(s -> s).toArray());
+	private Double medianOrNull(List<Double> values) {
+		final double[] nonNullValues = values.stream().filter(v -> v != null).mapToDouble(v -> v).toArray();
+		if (nonNullValues.length > 0) {
+			return new Median().evaluate(nonNullValues);
 		} else {
 			return null;
 		}
 	}
 
-	// ---------- ESTIMATE REPRESENTATIVE TRANSSHIPMENT DURATION ----------
+	public FreightVehicleAttributes createRepresentativeVehicleTypeAttributes(SamgodsConstants.TransportMode mode,
+			boolean container) {
 
-	public Map<SamgodsConstants.Commodity, Double> computeClassMedianLoadCost_1_ton(
-			SamgodsConstants.TransportMode mode) {
-
-		final Map<SamgodsConstants.Commodity, List<Double>> commodity2costs_1_ton = new LinkedHashMap<>();
-		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-			commodity2costs_1_ton.put(commodity, new ArrayList<>());
-		}
+		final List<Double> capacities_ton = new ArrayList<>();
+		final List<Double> costs_1_h = new ArrayList<>();
+		final List<Double> costs_1_km = new ArrayList<>();
+		final List<Double> onFerryCosts_1_h = new ArrayList<>();
+		final List<Double> onFerryCosts_1_km = new ArrayList<>();
+		final List<Double> speeds_km_h = new ArrayList<>();
+		final Map<SamgodsConstants.Commodity, List<Double>> commodity2loadCosts_1_ton = new LinkedHashMap<>();
+		final Map<SamgodsConstants.Commodity, List<Double>> commodity2loadTimes_h = new LinkedHashMap<>();
+		final Map<SamgodsConstants.Commodity, List<Double>> commodity2transferCosts_1_ton = new LinkedHashMap<>();
+		final Map<SamgodsConstants.Commodity, List<Double>> commodity2transferTimes_h = new LinkedHashMap<>();
 
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
-			if (mode.equals(attrs.mode)) {
-				for (Map.Entry<SamgodsConstants.Commodity, List<Double>> entry : commodity2costs_1_ton.entrySet()) {
-					entry.getValue().add(attrs.loadCost_1_ton.get(entry.getKey()));
+			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			if (mode.equals(attrs.mode) && (container == attrs.container)) {
+				capacities_ton.add(attrs.capacity_ton);
+				costs_1_h.add(attrs.cost_1_h);
+				costs_1_km.add(attrs.cost_1_km);
+				onFerryCosts_1_h.add(attrs.onFerryCost_1_h);
+				onFerryCosts_1_km.add(attrs.onFerryCost_1_km);
+				speeds_km_h.add(attrs.speed_km_h);
+				for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
+					commodity2loadCosts_1_ton.computeIfAbsent(commodity, c -> new ArrayList<>())
+							.add(attrs.loadCost_1_ton.get(commodity));
+					commodity2loadTimes_h.computeIfAbsent(commodity, c -> new ArrayList<>())
+							.add(attrs.loadTime_h.get(commodity));
+					commodity2transferCosts_1_ton.computeIfAbsent(commodity, c -> new ArrayList<>())
+							.add(attrs.transferCost_1_ton.get(commodity));
+					commodity2transferTimes_h.computeIfAbsent(commodity, c -> new ArrayList<>())
+							.add(attrs.transferTime_h.get(commodity));
 				}
 			}
 		}
 
-		final Map<SamgodsConstants.Commodity, Double> commodity2classMedianCost_1_ton = new LinkedHashMap<>();
-		for (Map.Entry<SamgodsConstants.Commodity, List<Double>> entry : commodity2costs_1_ton.entrySet()) {
-			commodity2classMedianCost_1_ton.put(entry.getKey(),
-					(new Median()).evaluate(entry.getValue().stream().mapToDouble(c -> c).toArray()));
+		final FreightVehicleAttributes.Builder builder = new FreightVehicleAttributes.Builder();
+		builder.setContainer(container);
+		builder.setTransportMode(mode);
+
+		builder.setCapacity_ton(this.medianOrNull(capacities_ton));
+		builder.setCost_1_h(this.medianOrNull(costs_1_h));
+		builder.setCost_1_km(this.medianOrNull(costs_1_km));
+		builder.setOnFerryCost_1_h(this.medianOrNull(onFerryCosts_1_h));
+		builder.setOnFerryCost_1_km(this.medianOrNull(onFerryCosts_1_km));
+		builder.setSpeed_km_h(this.medianOrNull(speeds_km_h));
+		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
+			builder.setLoadCost_1_ton(commodity, this.medianOrNull(commodity2loadCosts_1_ton.get(commodity)));
+			builder.setLoadTime_h(commodity, this.medianOrNull(commodity2loadTimes_h.get(commodity)));
+			builder.setTransferCost_1_ton(commodity, this.medianOrNull(commodity2transferCosts_1_ton.get(commodity)));
+			builder.setTransferTime_h(commodity, this.medianOrNull(commodity2transferTimes_h.get(commodity)));
 		}
 
-		return commodity2classMedianCost_1_ton;
+		return builder.buildFreightVehicleAttributes();
 	}
 }

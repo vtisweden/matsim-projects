@@ -19,15 +19,6 @@
  */
 package se.vti.samgods.transportation.consolidation;
 
-import static se.vti.samgods.SamgodsConstants.TransportMode.Air;
-import static se.vti.samgods.SamgodsConstants.TransportMode.Rail;
-import static se.vti.samgods.SamgodsConstants.TransportMode.Road;
-import static se.vti.samgods.SamgodsConstants.TransportMode.Sea;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
@@ -38,38 +29,13 @@ import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
  */
 public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
-	private final Map<SamgodsConstants.TransportMode, Double> mode2teleportationSpeed_km_h = new LinkedHashMap<>();
-	private final Map<SamgodsConstants.TransportMode, Double> mode2transshipmentDuration_h = new LinkedHashMap<>();
-	private final Map<SamgodsConstants.TransportMode, Double> mode2transferDuration_h = new LinkedHashMap<>();
-
-	private final Map<SamgodsConstants.TransportMode, Double> mode2transshipmentCost_1_tonKm = new LinkedHashMap<>();
-	private final Map<SamgodsConstants.TransportMode, Double> mode2transferCost_1_ton = new LinkedHashMap<>();
-
+	/*
+	 * TODO put in here the representative vehicle classes
+	 * 
+	 * TODO put in here a teleportation proxy for network routes
+	 */
+	
 	public FallbackEpisodeCostModel(FreightVehicleFleet fleet) {
-		final double teleportationFactor = 1.5;
-
-		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			this.mode2transshipmentCost_1_tonKm.put(mode, teleportationFactor * fleet.computeClassMedianCost_1_tonKm(mode));
-			this.mode2teleportationSpeed_km_h.put(mode, fleet.computeClassMedianVehicleSpeed_km_h(mode));
-		}
-
-		
-		this.mode2transshipmentDuration_h.put(Air, teleportationFactor * 0.0);
-		this.mode2transferDuration_h.put(Air, teleportationFactor * 0.0);
-		this.mode2transferCost_1_ton.put(Air, teleportationFactor * 0.0);
-
-		this.mode2transshipmentDuration_h.put(Rail, teleportationFactor * 0.0);
-		this.mode2transferDuration_h.put(Rail, teleportationFactor * 0.0);
-		this.mode2transferCost_1_ton.put(Rail, teleportationFactor * 0.0);
-
-		this.mode2transshipmentDuration_h.put(Road, teleportationFactor * 0.0);
-		this.mode2transferDuration_h.put(Road, teleportationFactor * 0.0);
-		this.mode2transferCost_1_ton.put(Road, teleportationFactor * 0.0);
-
-		this.mode2transshipmentDuration_h.put(Sea, teleportationFactor * 0.0);
-		this.mode2transferDuration_h.put(Sea, teleportationFactor * 0.0);
-		this.mode2transferCost_1_ton.put(Sea, teleportationFactor * 0.0);
-
 	}
 
 	@Override

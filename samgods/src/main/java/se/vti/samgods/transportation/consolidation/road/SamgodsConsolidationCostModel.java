@@ -27,7 +27,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.fleet.FreightVehicleTypeAttributes;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**
  * 
@@ -47,7 +47,7 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 	@Override
 	public RealizedCost getVehicleCost(Vehicle vehicle, double payload_ton, TransportEpisode episode) {
 
-		final FreightVehicleTypeAttributes vehicleAttributess = ConsolidationUtils.getFreightAttributes(vehicle);
+		final FreightVehicleAttributes vehicleAttributess = ConsolidationUtils.getFreightAttributes(vehicle);
 
 		// Total transport duration.
 		double duration_h = 0.0;
