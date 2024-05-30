@@ -39,7 +39,7 @@ import se.vti.samgods.utils.ParseNumberUtils;
  * @author GunnarF
  *
  */
-public class EpisodeCostAggregator {
+public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 
 	private final ConsolidationCostModel consolidationCostModel;
 
@@ -47,7 +47,7 @@ public class EpisodeCostAggregator {
 	private final Map<TransportEpisode, Double> episode2durationTimesTons_hTon = new LinkedHashMap<>();
 	private final Map<TransportEpisode, Double> episode2tons = new LinkedHashMap<>();
 
-	public EpisodeCostAggregator(ConsolidationCostModel consolidationCostModel) {
+	public EmpiricalEpisodeCostModel(ConsolidationCostModel consolidationCostModel) {
 		this.consolidationCostModel = consolidationCostModel;
 	}
 
@@ -78,11 +78,13 @@ public class EpisodeCostAggregator {
 		return this.episode2tons.getOrDefault(episode, 0.0);
 	}
 
-	public Double getMonetaryCost_1_ton(TransportEpisode episode) {
+	@Override
+	public Double computeMonetaryCost_1_ton(TransportEpisode episode) {
 		return ParseNumberUtils.divideOrNull(this.episode2monetaryCost.get(episode), this.episode2tons.get(episode));
 	}
 
-	public Double getDuration_h(TransportEpisode episode) {
+	@Override
+	public Double computeDuration_h(TransportEpisode episode) {
 		return ParseNumberUtils.divideOrNull(this.episode2durationTimesTons_hTon.get(episode),
 				this.episode2tons.get(episode));
 	}
