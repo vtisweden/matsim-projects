@@ -19,12 +19,15 @@
  */
 package se.vti.samgods.transportation.fleet;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
@@ -129,5 +132,103 @@ public class FreightVehicleFleet {
 		}
 		table.addRule();
 		return table.render();
+	}
+
+	// --------------- ESTIMATE REPRESENTATIVE VEHICLE SPEED ---------------
+
+	// TODO CONTINUE HERE
+	
+	public FreightVehicleTypeAttributes createRepresentativeVehicleTypeAttributes(SamgodsConstants.TransportMode mode) {
+		return null; 
+	}
+	
+
+	private Double fallbackSpeed_km_h(SamgodsConstants.TransportMode mode) {
+		// TODO Inventing numbers. One actually should expect all vehicle classes to
+		// have a speed.
+		if (SamgodsConstants.TransportMode.Air.equals(mode)) {
+			return 800.0;
+		} else if (SamgodsConstants.TransportMode.Rail.equals(mode)) {
+			return 80.0;
+		} else if (SamgodsConstants.TransportMode.Road.equals(mode)) {
+			return 80.0;
+		} else if (SamgodsConstants.TransportMode.Sea.equals(mode)) {
+			return 16.0;
+		} else {
+			throw new RuntimeException("Unknown transport mode: " + mode);
+		}
+	}
+
+	public double computeClassMedianVehicleSpeed_km_h(SamgodsConstants.TransportMode mode) {
+		final List<Double> speeds_km_h = new ArrayList<>();
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			if (mode.equals(attrs.mode)) {
+				if (attrs.speed_km_h != null) {
+					speeds_km_h.add(attrs.speed_km_h);
+				}
+			}
+		}
+		if (speeds_km_h.size() > 0) {
+			return (new Median()).evaluate(speeds_km_h.stream().mapToDouble(s -> s).toArray());
+		} else {
+			return this.fallbackSpeed_km_h(mode);
+		}
+	}
+
+	// ---------- ESTIMATE REPRESENTATIVE VEHICLE COST PER TON-KM ----------
+
+	private Double speedOrFallback_km_h(Double speed_km_h, SamgodsConstants.TransportMode mode) {
+		if (speed_km_h != null) {
+			return speed_km_h;
+		} else {
+			return this.fallbackSpeed_km_h(mode);
+		}
+	}
+
+	public Double computeClassMedianCost_1_tonKm(SamgodsConstants.TransportMode mode) {
+		final double usage = 0.6; // TODO inventing numbers
+		final List<Double> costs_1_kmTon = new ArrayList<>();
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			if (mode.equals(attrs.mode)) {
+				double vehCost_1_km = attrs.cost_1_km
+						+ attrs.cost_1_h / this.speedOrFallback_km_h(attrs.speed_km_h, mode);
+				costs_1_kmTon.add(vehCost_1_km / (usage * attrs.capacity_ton));
+			}
+		}
+		if (costs_1_kmTon.size() > 0) {
+			return (new Median()).evaluate(costs_1_kmTon.stream().mapToDouble(s -> s).toArray());
+		} else {
+			return null;
+		}
+	}
+
+	// ---------- ESTIMATE REPRESENTATIVE TRANSSHIPMENT DURATION ----------
+
+	public Map<SamgodsConstants.Commodity, Double> computeClassMedianLoadCost_1_ton(
+			SamgodsConstants.TransportMode mode) {
+
+		final Map<SamgodsConstants.Commodity, List<Double>> commodity2costs_1_ton = new LinkedHashMap<>();
+		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
+			commodity2costs_1_ton.put(commodity, new ArrayList<>());
+		}
+
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+			final FreightVehicleTypeAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			if (mode.equals(attrs.mode)) {
+				for (Map.Entry<SamgodsConstants.Commodity, List<Double>> entry : commodity2costs_1_ton.entrySet()) {
+					entry.getValue().add(attrs.loadCost_1_ton.get(entry.getKey()));
+				}
+			}
+		}
+
+		final Map<SamgodsConstants.Commodity, Double> commodity2classMedianCost_1_ton = new LinkedHashMap<>();
+		for (Map.Entry<SamgodsConstants.Commodity, List<Double>> entry : commodity2costs_1_ton.entrySet()) {
+			commodity2classMedianCost_1_ton.put(entry.getKey(),
+					(new Median()).evaluate(entry.getValue().stream().mapToDouble(c -> c).toArray()));
+		}
+
+		return commodity2classMedianCost_1_ton;
 	}
 }
