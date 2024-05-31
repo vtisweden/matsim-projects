@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.transportation.consolidation;
 
+import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 
 /**
@@ -28,8 +29,6 @@ import se.vti.samgods.logistics.TransportEpisode;
  */
 public interface EpisodeCostModel {
 
-	Double computeMonetaryCost_1_ton(TransportEpisode episode);
-
-	Double computeDuration_h(TransportEpisode episode);
+	TransportCost computeCost_1_ton(TransportEpisode episode);
 
 }

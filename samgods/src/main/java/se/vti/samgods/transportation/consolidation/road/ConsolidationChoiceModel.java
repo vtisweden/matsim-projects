@@ -24,6 +24,8 @@ import java.util.Map;
 
 import org.matsim.vehicles.Vehicle;
 
+import se.vti.samgods.TransportCost;
+
 /**
  * 
  * @author GunnarF
@@ -41,6 +43,6 @@ public interface ConsolidationChoiceModel {
 		}
 	}
 
-	Slot drawSlot(Shipment shipment, List<Map<Vehicle, ConsolidationCostModel.RealizedCost>> vehicle2costOverDays);
+	Slot drawSlot(Shipment shipment, List<Map<Vehicle, TransportCost>> vehicle2costOverDays);
 
 }

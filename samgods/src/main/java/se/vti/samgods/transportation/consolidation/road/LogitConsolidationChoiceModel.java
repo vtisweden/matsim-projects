@@ -25,6 +25,8 @@ import java.util.Random;
 
 import org.matsim.vehicles.Vehicle;
 
+import se.vti.samgods.TransportCost;
+
 /**
  * 
  * @author GunnarF
@@ -42,12 +44,11 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 	}
 
 	@Override
-	public Slot drawSlot(Shipment shipment,
-			List<Map<Vehicle, ConsolidationCostModel.RealizedCost>> vehicle2costOverDays) {
+	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, TransportCost>> vehicle2costOverDays) {
 
 		double maxUtility = Double.NEGATIVE_INFINITY;
-		for (Map<Vehicle, ConsolidationCostModel.RealizedCost> vehicle2cost : vehicle2costOverDays) {
-			for (ConsolidationCostModel.RealizedCost cost : vehicle2cost.values()) {
+		for (Map<Vehicle, TransportCost> vehicle2cost : vehicle2costOverDays) {
+			for (TransportCost cost : vehicle2cost.values()) {
 				if (cost != null) { // TODO do not store null values
 					maxUtility = Math.max(maxUtility, (-cost.monetaryCost));
 				}
@@ -55,8 +56,8 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 		}
 
 		double denom = 0.0;
-		for (Map<Vehicle, ConsolidationCostModel.RealizedCost> vehicle2cost : vehicle2costOverDays) {
-			for (ConsolidationCostModel.RealizedCost cost : vehicle2cost.values()) {
+		for (Map<Vehicle, TransportCost> vehicle2cost : vehicle2costOverDays) {
+			for (TransportCost cost : vehicle2cost.values()) {
 				if (cost != null) { // TODO do not store null values
 					denom += Math.exp(this.scale * ((-cost.monetaryCost) - maxUtility));
 				}
@@ -66,8 +67,7 @@ public class LogitConsolidationChoiceModel implements ConsolidationChoiceModel {
 		final double threshold = this.rnd.nextDouble() * denom;
 		double sum = 0.0;
 		for (int day = 0; day < vehicle2costOverDays.size(); day++) {
-			for (Map.Entry<Vehicle, ConsolidationCostModel.RealizedCost> veh2cost : vehicle2costOverDays.get(day)
-					.entrySet()) {
+			for (Map.Entry<Vehicle, TransportCost> veh2cost : vehicle2costOverDays.get(day).entrySet()) {
 				if (veh2cost.getValue() != null) {
 					sum += Math.exp(this.scale * ((-veh2cost.getValue().monetaryCost) - maxUtility));
 					if (sum >= threshold) {

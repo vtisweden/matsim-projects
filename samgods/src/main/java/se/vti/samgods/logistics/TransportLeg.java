@@ -85,11 +85,11 @@ public class TransportLeg {
 		return this.route;
 	}
 
-	public double getLength_m() {
+	public Double getLength_m() {
 		return this.length_m;
 	}
 
-	public double getDuration_s() {
+	public Double getDuration_s() {
 		return this.duration_s;
 	}
 

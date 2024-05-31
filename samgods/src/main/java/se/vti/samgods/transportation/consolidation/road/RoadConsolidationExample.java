@@ -29,8 +29,10 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
@@ -53,6 +55,20 @@ public class RoadConsolidationExample {
 //				80.0);
 
 		ConsolidationCostModel costModel = new ConsolidationCostModel() {
+
+			@Override
+			public TransportCost getVehicleCost(FreightVehicleAttributes vehicleAttributes, double payload_ton,
+					TransportEpisode episode) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public TransportCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
+					ShipmentVehicleAssignment assignment) {
+				// TODO Auto-generated method stub
+				return null;
+			}
 //			@Override
 //			public RealizedCost getShipmentCost(Vehicle vehicle, Commodity addedCommodity, double maxAddedAmount_ton,
 //					ShipmentVehicleAssignment assignment) {
@@ -72,18 +88,6 @@ public class RoadConsolidationExample {
 //				}
 //			}
 
-			@Override
-			public RealizedCost getVehicleCost(Vehicle vehicle, double payload_ton, TransportEpisode episode) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public RealizedCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
-					ShipmentVehicleAssignment assignment) {
-				// TODO Auto-generated method stub
-				return null;
-			}
 		};
 
 		ConsolidationChoiceModel choiceModel = new LogitConsolidationChoiceModel(1.0, new Random());

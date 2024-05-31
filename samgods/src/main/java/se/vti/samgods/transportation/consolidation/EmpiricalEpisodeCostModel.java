@@ -24,8 +24,10 @@ import java.util.Map;
 
 import org.matsim.vehicles.Vehicle;
 
+import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
+import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.ShipmentVehicleAssignment;
 import se.vti.samgods.utils.ParseNumberUtils;
 
@@ -61,8 +63,8 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		for (Map.Entry<Vehicle, Double> entry : assignment.getVehicle2payload_ton().entrySet()) {
 			final Vehicle vehicle = entry.getKey();
 			final double payload_ton = entry.getValue();
-			final ConsolidationCostModel.RealizedCost vehicleCost = this.consolidationCostModel.getVehicleCost(vehicle,
-					payload_ton, episode);
+			final TransportCost vehicleCost = this.consolidationCostModel
+					.getVehicleCost(ConsolidationUtils.getFreightAttributes(vehicle), payload_ton, episode);
 			monetaryCost += vehicleCost.monetaryCost;
 			durationTimesTons_hTon += vehicleCost.duration_h * vehicleCost.amount_ton;
 			tons += vehicleCost.amount_ton;
@@ -74,19 +76,12 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		this.episode2tons.put(episode, tons + this.episode2tons.getOrDefault(episode, 0.0));
 	}
 
-	public double getTotalAmount_ton(TransportEpisode episode) {
-		return this.episode2tons.getOrDefault(episode, 0.0);
-	}
-
 	@Override
-	public Double computeMonetaryCost_1_ton(TransportEpisode episode) {
-		return ParseNumberUtils.divideOrNull(this.episode2monetaryCost.get(episode), this.episode2tons.get(episode));
-	}
-
-	@Override
-	public Double computeDuration_h(TransportEpisode episode) {
-		return ParseNumberUtils.divideOrNull(this.episode2durationTimesTons_hTon.get(episode),
+	public TransportCost computeCost_1_ton(TransportEpisode episode) {
+		final double monetaryCost_1_ton = ParseNumberUtils.divideOrNull(this.episode2monetaryCost.get(episode),
 				this.episode2tons.get(episode));
+		final double duration_h = ParseNumberUtils.divideOrNull(this.episode2durationTimesTons_hTon.get(episode),
+				this.episode2tons.get(episode));
+		return new TransportCost(1.0, monetaryCost_1_ton, duration_h);
 	}
-
 }

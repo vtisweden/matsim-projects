@@ -25,6 +25,7 @@ import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
@@ -45,9 +46,8 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 	}
 
 	@Override
-	public RealizedCost getVehicleCost(Vehicle vehicle, double payload_ton, TransportEpisode episode) {
-
-		final FreightVehicleAttributes vehicleAttributess = ConsolidationUtils.getFreightAttributes(vehicle);
+	public TransportCost getVehicleCost(FreightVehicleAttributes vehicleAttributes, double payload_ton,
+			TransportEpisode episode) {
 
 		// Total transport duration.
 		double duration_h = 0.0;
@@ -62,7 +62,7 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 
 		duration_h += this.performanceMeasures.getTotalDepartureDelay_h(episode.getLoadingNode())
 				+ this.performanceMeasures.getTotalArrivalDelay_h(episode.getUnloadingNode());
-		vehicleCost += 2.0 * vehicleAttributess.loadCost_1_ton.get(episode.getCommodity())
+		vehicleCost += 2.0 * vehicleAttributes.loadCost_1_ton.get(episode.getCommodity())
 				* Math.max(minTransferredAmount_ton, payload_ton);
 
 		/*
@@ -72,7 +72,7 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 		 */
 
 		// The transfer cost arises once at each transfer point.
-		vehicleCost += episode.getTransferNodeCnt() * vehicleAttributess.transferCost_1_ton.get(episode.getCommodity())
+		vehicleCost += episode.getTransferNodeCnt() * vehicleAttributes.transferCost_1_ton.get(episode.getCommodity())
 				* Math.max(minTransferredAmount_ton, payload_ton);
 
 		for (Id<Node> internalNodeId : episode.createTransferNodesList()) {
@@ -89,19 +89,19 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 			final double legLen_km = Units.KM_PER_M * leg.getLength_m();
 			duration_h += legDur_h;
 			if (SamgodsConstants.TransportMode.Ferry.equals(leg.getMode())) {
-				vehicleCost += legDur_h * vehicleAttributess.onFerryCost_1_h;
-				vehicleCost += legLen_km * vehicleAttributess.onFerryCost_1_km;
+				vehicleCost += legDur_h * vehicleAttributes.onFerryCost_1_h;
+				vehicleCost += legLen_km * vehicleAttributes.onFerryCost_1_km;
 			} else {
-				vehicleCost += legDur_h * vehicleAttributess.cost_1_h;
-				vehicleCost += legLen_km * vehicleAttributess.cost_1_km;
+				vehicleCost += legDur_h * vehicleAttributes.cost_1_h;
+				vehicleCost += legLen_km * vehicleAttributes.cost_1_km;
 			}
 		}
 
-		return new RealizedCost(payload_ton, vehicleCost, duration_h);
+		return new TransportCost(payload_ton, vehicleCost, duration_h);
 	}
 
 	@Override
-	public RealizedCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
+	public TransportCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
 			ShipmentVehicleAssignment assignment) {
 
 		final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
@@ -110,10 +110,10 @@ public class SamgodsConsolidationCostModel implements ConsolidationCostModel {
 		final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton); // TODO
 
 		if (feasible) {
-			final RealizedCost vehicleCost = getVehicleCost(vehicle,
+			final TransportCost vehicleCost = getVehicleCost(ConsolidationUtils.getFreightAttributes(vehicle),
 					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
 			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
-			return new RealizedCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);
+			return new TransportCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);
 		} else {
 			return null;
 		}

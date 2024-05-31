@@ -19,7 +19,18 @@
  */
 package se.vti.samgods.transportation.consolidation;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.matsim.api.core.v01.network.Network;
+import org.matsim.core.network.NetworkUtils;
+
+import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**
@@ -29,23 +40,34 @@ import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
  */
 public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
-	/*
-	 * TODO put in here the representative vehicle classes
-	 * 
-	 * TODO put in here a teleportation proxy for network routes
-	 */
-	
-	public FallbackEpisodeCostModel(FreightVehicleFleet fleet) {
+	private final ConsolidationCostModel consolidationCostModel;
+
+	private double capacityUsageFactor = 0.6;
+
+	private final Map<TransportMode, FreightVehicleAttributes> mode2representativeContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<TransportMode, FreightVehicleAttributes> mode2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
+
+	public FallbackEpisodeCostModel(FreightVehicleFleet fleet, ConsolidationCostModel consolidationCostModel) {
+		this.consolidationCostModel = consolidationCostModel;
+		for (TransportMode mode : TransportMode.values()) {
+			this.mode2representativeContainerVehicleAttributes.put(mode,
+					fleet.getRepresentativeVehicleAttributes(mode, true, a -> a.capacity_ton));
+			this.mode2representativeNoContainerVehicleAttributes.put(mode,
+					fleet.getRepresentativeVehicleAttributes(mode, false, a -> a.capacity_ton));
+		}
 	}
 
 	@Override
-	public Double computeMonetaryCost_1_ton(TransportEpisode episode) {
-		throw new UnsupportedOperationException("TODO");
+	public TransportCost computeCost_1_ton(TransportEpisode episode) {
+		final FreightVehicleAttributes vehicleAttributes;
+		if (episode.isContainer()) {
+			vehicleAttributes = this.mode2representativeContainerVehicleAttributes.get(episode.getMode());
+		} else {
+			vehicleAttributes = this.mode2representativeNoContainerVehicleAttributes.get(episode.getMode());
+		}
+		final TransportCost representativeVehicleCost = this.consolidationCostModel.getVehicleCost(vehicleAttributes,
+				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
+		return new TransportCost(1.0, representativeVehicleCost.monetaryCost / representativeVehicleCost.amount_ton,
+				representativeVehicleCost.duration_h);
 	}
-
-	@Override
-	public Double computeDuration_h(TransportEpisode episode) {
-		throw new UnsupportedOperationException("TODO");
-	}
-
 }

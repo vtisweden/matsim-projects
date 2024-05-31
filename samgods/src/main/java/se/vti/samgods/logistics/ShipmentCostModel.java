@@ -19,15 +19,30 @@
  */
 package se.vti.samgods.logistics;
 
+import se.vti.samgods.TransportCost;
+import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
+
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ShipmentCostModel {
+public class ShipmentCostModel {
 
-	double computeDuration_h(TransportChain chain);
+	private final EpisodeCostModel episodeCostModel;
 
-	double computeCost_1_ton(TransportChain chain);
+	public ShipmentCostModel(EpisodeCostModel episodeCostModel) {
+		this.episodeCostModel = episodeCostModel;
+	}
 
+	public TransportCost computeCost_1_ton(TransportChain chain) {
+		double cost_1_ton = 0.0;
+		double duration_h = 0.0;
+		for (TransportEpisode episode : chain.getEpisodes()) {
+			TransportCost cost = this.episodeCostModel.computeCost_1_ton(episode);
+			cost_1_ton += cost.monetaryCost;
+			duration_h += cost.duration_h;
+		}
+		return new TransportCost(1.0, cost_1_ton, duration_h);
+	}
 }

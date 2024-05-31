@@ -38,7 +38,7 @@ public class TransportEpisode {
 	private final TransportMode mode;
 
 	private final Commodity commodity;
-
+	
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
 
 	public TransportEpisode(TransportMode mode, Commodity commodity) {
@@ -62,6 +62,10 @@ public class TransportEpisode {
 		return this.commodity;
 	}
 
+	public boolean isContainer() {
+		throw new UnsupportedOperationException("TODO");
+	}
+	
 	public Id<Node> getLoadingNode() {
 		return this.legs.getFirst().getOrigin();
 	}

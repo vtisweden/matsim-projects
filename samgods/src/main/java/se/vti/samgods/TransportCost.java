@@ -1,7 +1,7 @@
 /**
  * se.vti.samgods
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,24 +17,22 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation.road;
-
-import org.matsim.vehicles.Vehicle;
-
-import se.vti.samgods.TransportCost;
-import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+package se.vti.samgods;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ConsolidationCostModel {
+public class TransportCost {
 
-	TransportCost getVehicleCost(FreightVehicleAttributes vehicleAttributes, double payload_ton,
-			TransportEpisode episode);
+	public final double amount_ton;
+	public final double monetaryCost;
+	public final double duration_h;
 
-	TransportCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton, ShipmentVehicleAssignment assignment);
-
+	public TransportCost(double amount_ton, double cost, double duration_h) {
+		this.amount_ton = amount_ton;
+		this.monetaryCost = cost;
+		this.duration_h = duration_h;
+	}
 }
