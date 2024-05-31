@@ -21,6 +21,7 @@ package se.vti.samgods.transportation.consolidation.road;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.matsim.vehicles.Vehicle;
 
@@ -31,9 +32,9 @@ import se.vti.samgods.TransportCost;
  * @author GunnarF
  *
  */
-public interface ConsolidationChoiceModel {
+public class ConsolidationChoiceModel {
 
-	class Slot {
+	public static class Slot {
 		public final Vehicle vehicle;
 		public final int day;
 
@@ -43,6 +44,50 @@ public interface ConsolidationChoiceModel {
 		}
 	}
 
-	Slot drawSlot(Shipment shipment, List<Map<Vehicle, TransportCost>> vehicle2costOverDays);
+	private final double scale;
 
+	private final Random rnd;
+
+	public ConsolidationChoiceModel(final double scale, final Random rnd) {
+		this.scale = scale;
+		this.rnd = rnd;
+	}
+
+	public Slot drawSlot(Shipment shipment, List<Map<Vehicle, TransportCost>> vehicle2costOverDays) {
+
+		double maxUtility = Double.NEGATIVE_INFINITY;
+		for (Map<Vehicle, TransportCost> vehicle2cost : vehicle2costOverDays) {
+			for (TransportCost cost : vehicle2cost.values()) {
+				if (cost != null) { // TODO do not store null values
+					maxUtility = Math.max(maxUtility, (-cost.monetaryCost));
+				}
+			}
+		}
+
+		double denom = 0.0;
+		for (Map<Vehicle, TransportCost> vehicle2cost : vehicle2costOverDays) {
+			for (TransportCost cost : vehicle2cost.values()) {
+				if (cost != null) { // TODO do not store null values
+					denom += Math.exp(this.scale * ((-cost.monetaryCost) - maxUtility));
+				}
+			}
+		}
+
+		final double threshold = this.rnd.nextDouble() * denom;
+		double sum = 0.0;
+		for (int day = 0; day < vehicle2costOverDays.size(); day++) {
+			for (Map.Entry<Vehicle, TransportCost> veh2cost : vehicle2costOverDays.get(day).entrySet()) {
+				if (veh2cost.getValue() != null) {
+					sum += Math.exp(this.scale * ((-veh2cost.getValue().monetaryCost) - maxUtility));
+					if (sum >= threshold) {
+						return new Slot(veh2cost.getKey(), day);
+					}
+				}
+			}
+		}
+
+		// Happens at most very rarely and for numerical reasons.
+		// Hedge against that in calling function.
+		return null;
+	}
 }

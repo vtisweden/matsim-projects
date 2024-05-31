@@ -54,43 +54,9 @@ public class RoadConsolidationExample {
 //		fleet.createAndAddVehicleType("small truck", SamgodsConstants.TransportMode.Road, 10.0,
 //				80.0);
 
-		ConsolidationCostModel costModel = new ConsolidationCostModel() {
+		ConsolidationCostModel costModel = null; // FIXME
 
-			@Override
-			public TransportCost getVehicleCost(FreightVehicleAttributes vehicleAttributes, double payload_ton,
-					TransportEpisode episode) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public TransportCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
-					ShipmentVehicleAssignment assignment) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-//			@Override
-//			public RealizedCost getShipmentCost(Vehicle vehicle, Commodity addedCommodity, double maxAddedAmount_ton,
-//					ShipmentVehicleAssignment assignment) {
-//				final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
-//				final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
-//				final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
-//				final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton);
-//				if (feasible) {
-//					final double usageFraction = assignedWeight_ton / (assignedWeight_ton + availableCapacity_ton);
-//					if (largeTruck.getId().equals(vehicle.getType().getId())) {
-//						return new ShipmentCost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
-//					} else {
-//						return new ShipmentCost(true, assignedWeight_ton, usageFraction * 4.0, 0.0);
-//					}
-//				} else {
-//					return new ShipmentCost(false, 0.0, 0.0, 0.0);
-//				}
-//			}
-
-		};
-
-		ConsolidationChoiceModel choiceModel = new LogitConsolidationChoiceModel(1.0, new Random());
+		ConsolidationChoiceModel choiceModel = new ConsolidationChoiceModel(1.0, new Random());
 
 		final int days = 7;
 

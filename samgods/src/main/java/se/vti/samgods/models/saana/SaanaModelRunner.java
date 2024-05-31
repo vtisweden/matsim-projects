@@ -36,11 +36,7 @@ import se.vti.samgods.logistics.choicemodel.AnnualShipmentUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
 import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
 import se.vti.samgods.network.SamgodsNetworkReader;
-import se.vti.samgods.readers.SamgodsPriceReader;
-import se.vti.samgods.transportation.pricing.BasicShipmentCost;
-import se.vti.samgods.transportation.pricing.ProportionalShipmentPrices;
-import se.vti.samgods.transportation.pricing.ProportionalTransshipmentPrices;
-import se.vti.samgods.transportation.pricing.TransportPrices;
+import se.vti.samgods.network.NetworkRouter.TransportPrices;
 
 /**
  * 
@@ -101,11 +97,11 @@ public class SaanaModelRunner {
 		 * consolidation and vehicle flow models. For standalone testing, we read fixed
 		 * prices from a file.
 		 */
-		SamgodsPriceReader priceReader = new SamgodsPriceReader(networkReader.getNetwork(),
-				"./2023-06-01_basecase/LinkPrices.csv", "./2023-06-01_basecase/NodePrices.csv",
-				"./2023-06-01_basecase/NodeTimes.csv");
-		TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = priceReader
-				.getTransportPrices();
+//		SamgodsPriceReader priceReader = new SamgodsPriceReader(networkReader.getNetwork(),
+//				"./2023-06-01_basecase/LinkPrices.csv", "./2023-06-01_basecase/NodePrices.csv",
+//				"./2023-06-01_basecase/NodeTimes.csv");
+//		TransportPrices<ProportionalShipmentPrices, ProportionalTransshipmentPrices> transportPrices = priceReader
+//				.getTransportPrices();
 
 		/*
 		 * Compute routes for all network transport episodes and attach them to the
@@ -129,31 +125,31 @@ public class SaanaModelRunner {
 		// SamgodsShipmentCostFunction(transportPrices);
 
 		// (Choice model) shipment utility, given its properties and (monetary) cost.
-		AnnualShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new AnnualShipmentUtilityFunction<>() {
-			public double computeUtility(AnnualShipment shipment, BasicShipmentCost shipmentCost) {
-				return 0.0;
-//				return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr(); // for testing
-			}
-		};
+//		AnnualShipmentUtilityFunction<BasicShipmentCost> utilityFunction = new AnnualShipmentUtilityFunction<>() {
+//			public double computeUtility(AnnualShipment shipment, BasicShipmentCost shipmentCost) {
+//				return 0.0;
+////				return -shipmentCost.getMonetaryCost() * shipment.getFrequency_1_yr(); // for testing
+//			}
+//		};
 		// Create choice sets by combining transport chains and shipment sizes.
-		ChoiceSetGenerator<BasicShipmentCost> choiceSetGenerator = new ChoiceSetGenerator<>(null, utilityFunction,
-				SaanaShipmentSizeClass.values());
+//		ChoiceSetGenerator<BasicShipmentCost> choiceSetGenerator = new ChoiceSetGenerator<>(null, utilityFunction,
+//				SaanaShipmentSizeClass.values());
 		// Basic choice model functionality
 		ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 		/*
 		 * Using the functionality specified above, simulate concrete logistic choices.
 		 */
-		for (Commodity commodity : consideredCommodities) {
-			for (OD od : demand.getTransportChains(commodity).keySet()) {
-				double amount_ton_yr = demand.getPWCMatrix(commodity).getOd2Amount_ton_yr().get(od);
-				List<TransportChain> chains = demand.getTransportChains(commodity, od);
-				List<Alternative<BasicShipmentCost>> alternatives = choiceSetGenerator.createChoiceSet(chains,
-						amount_ton_yr, commodity);
+//		for (Commodity commodity : consideredCommodities) {
+//			for (OD od : demand.getTransportChains(commodity).keySet()) {
+//				double amount_ton_yr = demand.getPWCMatrix(commodity).getOd2Amount_ton_yr().get(od);
+//				List<TransportChain> chains = demand.getTransportChains(commodity, od);
+//				List<Alternative<BasicShipmentCost>> alternatives = choiceSetGenerator.createChoiceSet(chains,
+//						amount_ton_yr, commodity);
 //				Alternative<BasicShipmentCost> choice = choiceModel.choose(alternatives, utilityFunction);
 //				System.out.println(choice);
-			}
-		}
+//			}
+//		}
 
 		log.info("... DONE");
 	}

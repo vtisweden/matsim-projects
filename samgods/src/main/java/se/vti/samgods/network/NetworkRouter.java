@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation;
+package se.vti.samgods.network;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -53,8 +53,6 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.pricing.TransportPrices;
-import se.vti.samgods.transportation.pricing.TransportPrices.ShipmentPrices;
 
 /**
  * 
@@ -162,6 +160,11 @@ public class NetworkRouter {
 
 	private final TransportPrices<?, ?> prices;
 
+	// TODO temporarily
+	public static class TransportPrices<A, B> {
+		
+	}
+	
 	public NetworkRouter(Network network, TransportPrices<?, ?> prices) {
 		this.network = network;
 		this.prices = prices;
@@ -185,23 +188,27 @@ public class NetworkRouter {
 
 			final Map<TransportMode, TravelDisutility> mode2disutility = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				final ShipmentPrices shipmentPrices = this.prices.getShipmentPrices(commodity, mode);
-				if (shipmentPrices != null) {
-					final TravelDisutility disutility = new TravelDisutility() {
-						private final TransportPrices.ShipmentPrices lp = shipmentPrices.deepCopy();
-
-						@Override
-						public double getLinkMinimumTravelDisutility(Link link) {
-							return this.lp.getMovePrice_1_ton(link.getId());
-						}
-
-						@Override
-						public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-							return this.getLinkMinimumTravelDisutility(link);
-						}
-					};
-					mode2disutility.put(mode, disutility);
-				}
+				
+				throw new UnsupportedOperationException("TODO");
+//				final ShipmentPrices shipmentPrices = this.prices.getShipmentPrices(commodity, mode);
+//				if (shipmentPrices != null) {
+//					final TravelDisutility disutility = new TravelDisutility() {
+//						private final TransportPrices.ShipmentPrices lp = shipmentPrices.deepCopy();
+//
+//						@Override
+//						public double getLinkMinimumTravelDisutility(Link link) {
+//							return this.lp.getMovePrice_1_ton(link.getId());
+//						}
+//
+//						@Override
+//						public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
+//							return this.getLinkMinimumTravelDisutility(link);
+//						}
+//					};
+//					mode2disutility.put(mode, disutility);
+//				}
+				
+				
 			}
 
 			final RoutingThread routingThread = new RoutingThread(jobs, this.network, mode2disutility, threadCnt);
