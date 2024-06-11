@@ -1,1 +1,1 @@
-The se.vti.roundtrips package samples spatio-temporal vehicle round trips from un-normalized distributions using a Metropolis Hastings algorithm. The package also provides support functionality for extendability and analysis. 
+The se.vti.roundtrips package samples spatio-temporal vehicle round trips from un-normalized distributions using a Metropolis Hastings algorithm. The package also provides support functionality for extensibility and result analysis.
