@@ -24,11 +24,11 @@ import org.matsim.api.core.v01.network.Node;
 
 public class PerformanceMeasures {
 
-	public int getTotalArrivalDelay_h(Id<Node> nodeId) {
+	public double getTotalArrivalDelay_h(Id<Node> nodeId) {
 		throw new UnsupportedOperationException();
 	}
 
-	public int getTotalDepartureDelay_h(Id<Node> nodeId) {
+	public double getTotalDepartureDelay_h(Id<Node> nodeId) {
 		throw new UnsupportedOperationException();
 	}
 

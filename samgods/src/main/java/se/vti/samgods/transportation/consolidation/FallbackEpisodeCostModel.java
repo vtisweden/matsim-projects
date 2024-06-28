@@ -27,6 +27,7 @@ import org.matsim.core.network.NetworkUtils;
 
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportCost;
+import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
@@ -67,7 +68,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		}
 		final TransportCost representativeVehicleCost = this.consolidationCostModel.getVehicleCost(vehicleAttributes,
 				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
-		return new TransportCost(1.0, representativeVehicleCost.monetaryCost / representativeVehicleCost.amount_ton,
-				representativeVehicleCost.duration_h);
+		return new BasicTransportCost(1.0, representativeVehicleCost.getMonetaryCost() / representativeVehicleCost.getAmount_ton(),
+				representativeVehicleCost.getDuration_h());
 	}
 }

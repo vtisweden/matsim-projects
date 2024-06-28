@@ -24,15 +24,12 @@ package se.vti.samgods;
  * @author GunnarF
  *
  */
-public class TransportCost {
+public interface TransportCost {
 
-	public final double amount_ton;
-	public final double monetaryCost;
-	public final double duration_h;
+	double getAmount_ton();
 
-	public TransportCost(double amount_ton, double cost, double duration_h) {
-		this.amount_ton = amount_ton;
-		this.monetaryCost = cost;
-		this.duration_h = duration_h;
-	}
+	double getMonetaryCost();
+
+	double getDuration_h();
+
 }

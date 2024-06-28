@@ -25,6 +25,7 @@ import java.util.Random;
 
 import org.matsim.vehicles.Vehicle;
 
+import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.TransportCost;
 
 /**
@@ -59,7 +60,7 @@ public class ConsolidationChoiceModel {
 		for (Map<Vehicle, TransportCost> vehicle2cost : vehicle2costOverDays) {
 			for (TransportCost cost : vehicle2cost.values()) {
 				if (cost != null) { // TODO do not store null values
-					maxUtility = Math.max(maxUtility, (-cost.monetaryCost));
+					maxUtility = Math.max(maxUtility, (-cost.getMonetaryCost()));
 				}
 			}
 		}
@@ -68,7 +69,7 @@ public class ConsolidationChoiceModel {
 		for (Map<Vehicle, TransportCost> vehicle2cost : vehicle2costOverDays) {
 			for (TransportCost cost : vehicle2cost.values()) {
 				if (cost != null) { // TODO do not store null values
-					denom += Math.exp(this.scale * ((-cost.monetaryCost) - maxUtility));
+					denom += Math.exp(this.scale * ((-cost.getMonetaryCost()) - maxUtility));
 				}
 			}
 		}
@@ -78,7 +79,7 @@ public class ConsolidationChoiceModel {
 		for (int day = 0; day < vehicle2costOverDays.size(); day++) {
 			for (Map.Entry<Vehicle, TransportCost> veh2cost : vehicle2costOverDays.get(day).entrySet()) {
 				if (veh2cost.getValue() != null) {
-					sum += Math.exp(this.scale * ((-veh2cost.getValue().monetaryCost) - maxUtility));
+					sum += Math.exp(this.scale * ((-veh2cost.getValue().getMonetaryCost()) - maxUtility));
 					if (sum >= threshold) {
 						return new Slot(veh2cost.getKey(), day);
 					}

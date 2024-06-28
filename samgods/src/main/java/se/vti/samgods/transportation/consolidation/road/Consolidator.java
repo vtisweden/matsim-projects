@@ -31,6 +31,7 @@ import java.util.Set;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
@@ -123,7 +124,7 @@ public class Consolidator {
 				}
 			}
 			for (Vehicle vehicle : alreadyUsedVehicles) {
-				TransportCost vehCost = this.costModel.getShipmentCost(vehicle, shipment.getWeight_ton(),
+				BasicTransportCost vehCost = this.costModel.getShipmentCost(vehicle, shipment.getWeight_ton(),
 						this.assignmentsOverDays.get(day));
 				if (vehCost != null) {
 					veh2cost.put(vehicle, vehCost);

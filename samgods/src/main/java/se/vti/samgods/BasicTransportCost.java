@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.logistics
+ * se.vti.samgods
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,33 +17,37 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
-
-import se.vti.samgods.BasicTransportCost;
-import se.vti.samgods.TransportCost;
-import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
+package se.vti.samgods;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ShipmentCostModel {
+public class BasicTransportCost implements TransportCost {
 
-	private final EpisodeCostModel episodeCostModel;
+	private final double amount_ton;
+	private final double monetaryCost;
+	private final double duration_h;
 
-	public ShipmentCostModel(EpisodeCostModel episodeCostModel) {
-		this.episodeCostModel = episodeCostModel;
+	public BasicTransportCost(double amount_ton, double cost, double duration_h) {
+		this.amount_ton = amount_ton;
+		this.monetaryCost = cost;
+		this.duration_h = duration_h;
 	}
 
-	public TransportCost computeCost_1_ton(TransportChain chain) {
-		double cost_1_ton = 0.0;
-		double duration_h = 0.0;
-		for (TransportEpisode episode : chain.getEpisodes()) {
-			TransportCost cost = this.episodeCostModel.computeCost_1_ton(episode);
-			cost_1_ton += cost.getMonetaryCost();
-			duration_h += cost.getDuration_h();
-		}
-		return new BasicTransportCost(1.0, cost_1_ton, duration_h);
+	@Override
+	public double getAmount_ton() {
+		return amount_ton;
 	}
+
+	@Override
+	public double getMonetaryCost() {
+		return monetaryCost;
+	}
+
+	@Override
+	public double getDuration_h() {
+		return duration_h;
+	}	
 }
