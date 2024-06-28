@@ -19,7 +19,6 @@
  */
 package se.vti.samgods.transportation.consolidation;
 
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -29,13 +28,12 @@ import org.matsim.vehicles.Vehicle;
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.ShipmentVehicleAssignment;
-import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.utils.TupleGrouping;
 
 /**
  * TODO This is now about all commodities, which are defining members of
@@ -168,7 +166,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	@Override
-	public TransportCost computeCost_1_ton(TransportEpisode episode) {
+	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) {
 		CumulativeDetailedData data = this.episode2data.get(episode);
 		if (data == null) {
 			return null;
@@ -177,14 +175,15 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		}
 	}
 
-	public Map<Link, BasicTransportCost> createEmpiricalLinkTransportCosts(FreightVehicleFleet fleet,
-			SamgodsConstants.TransportMode mode, Collection<SamgodsConstants.Commodity> commodities) {
+	public Map<Link, BasicTransportCost> createLinkTransportCosts(
+			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGroup) {
 
 		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>();
 
 		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
 			TransportEpisode episode = e2d.getKey();
-			if (mode.equals(episode.getMode()) && commodities.contains(episode.getCommodity())) {
+
+			if (commodityAndModeGroup.contains(episode.getCommodity(), episode.getMode())) {
 				for (TransportLeg leg : episode.getLegs()) {
 					if (leg.getRouteView() != null) {
 						CumulativeDetailedData episodeData = e2d.getValue();

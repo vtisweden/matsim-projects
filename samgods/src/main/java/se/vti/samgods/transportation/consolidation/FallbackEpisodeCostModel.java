@@ -22,17 +22,18 @@ package se.vti.samgods.transportation.consolidation;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.matsim.api.core.v01.network.Network;
-import org.matsim.core.network.NetworkUtils;
+import org.matsim.api.core.v01.network.Link;
 
+import se.vti.samgods.BasicTransportCost;
+import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.TransportCost;
-import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.utils.TupleGrouping;
 
 /**
  * 
@@ -59,7 +60,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	@Override
-	public TransportCost computeCost_1_ton(TransportEpisode episode) {
+	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) {
 		final FreightVehicleAttributes vehicleAttributes;
 		if (episode.isContainer()) {
 			vehicleAttributes = this.mode2representativeContainerVehicleAttributes.get(episode.getMode());
@@ -68,7 +69,13 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		}
 		final TransportCost representativeVehicleCost = this.consolidationCostModel.getVehicleCost(vehicleAttributes,
 				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
-		return new BasicTransportCost(1.0, representativeVehicleCost.getMonetaryCost() / representativeVehicleCost.getAmount_ton(),
-				representativeVehicleCost.getDuration_h());
+		throw new UnsupportedOperationException("TODO");
 	}
+
+	@Override
+	public Map<Link, BasicTransportCost> createLinkTransportCosts(
+			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGrouping) {
+		throw new UnsupportedOperationException("TODO");
+	}
+
 }

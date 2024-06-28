@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.transportation.consolidation
+ * se.vti.samgods.utils
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,27 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation;
+package se.vti.samgods.utils;
 
-import java.util.Map;
-
-import org.matsim.api.core.v01.network.Link;
-
-import se.vti.samgods.BasicTransportCost;
-import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.utils.TupleGrouping;
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface EpisodeCostModel {
+public class CommodityModeGrouping extends TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode> {
 
-	DetailedTransportCost computeCost_1_ton(TransportEpisode episode);
+	public CommodityModeGrouping(Iterable<Commodity> firstDomain, Iterable<TransportMode> secondDomain) {
+		super(firstDomain, secondDomain);
+	}
 
-	Map<Link, BasicTransportCost> createLinkTransportCosts(
-			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGrouping);
 }

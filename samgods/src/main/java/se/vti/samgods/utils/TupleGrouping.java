@@ -20,12 +20,14 @@
 package se.vti.samgods.utils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import floetteroed.utilities.Tuple;
 
@@ -39,16 +41,28 @@ import floetteroed.utilities.Tuple;
 public class TupleGrouping<F, S> {
 
 	// -------------------- INNER CLASS --------------------
-	
+
 	public class Group {
 		private final Set<Tuple<F, S>> tuples;
 
 		private Group(Set<Tuple<F, S>> tuples) {
 			this.tuples = new LinkedHashSet<>(tuples);
 		}
-		
-		public Set<Tuple<F,S>> getTuplesView() {
+
+		public Set<Tuple<F, S>> getTuplesView() {
 			return Collections.unmodifiableSet(this.tuples);
+		}
+
+		public Set<F> getAllFirstView() {
+			return this.tuples.stream().map(t -> t.getA()).collect(Collectors.toSet());
+		}
+
+		public Set<S> getAllSecondView() {
+			return this.tuples.stream().map(t -> t.getB()).collect(Collectors.toSet());
+		}
+
+		public boolean contains(F first, S second) {
+			return this.tuples.contains(new Tuple<>(first, second));
 		}
 	}
 
@@ -57,8 +71,8 @@ public class TupleGrouping<F, S> {
 	private final Set<F> firstDomain = new LinkedHashSet<>();
 
 	private final Set<S> secondDomain = new LinkedHashSet<>();
-	
-	private final Map<Tuple<F,S>, Group> tuple2group = new LinkedHashMap<>();
+
+	private final Map<Tuple<F, S>, Group> tuple2group = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -80,8 +94,24 @@ public class TupleGrouping<F, S> {
 			return list;
 		}
 	}
-	
+
 	// -------------------- IMPLEMENTATION --------------------
+
+	public int groupCnt() {
+		return this.tuple2group.size();
+	}
+
+	public Set<F> getAllFirst() {
+		return this.tuple2group.keySet().stream().map(t -> t.getA()).collect(Collectors.toSet());
+	}
+
+	public Set<S> getAllSecond() {
+		return this.tuple2group.keySet().stream().map(t -> t.getB()).collect(Collectors.toSet());
+	}
+
+	public Collection<Group> groupsView() {
+		return Collections.unmodifiableCollection(this.tuple2group.values());
+	}
 
 	public void addCartesian(List<F> firstList, List<S> secondList) {
 		firstList = this.replaceNullByAll(firstList, this.firstDomain);
@@ -93,14 +123,14 @@ public class TupleGrouping<F, S> {
 				tuples.add(new Tuple<>(first, second));
 			}
 		}
-		
+
 		final Group newGroup = new Group(tuples);
-		for (Tuple<F,S> tuple : newGroup.tuples) {
+		for (Tuple<F, S> tuple : newGroup.tuples) {
 			Group oldGroup = this.tuple2group.get(tuple);
 			if (oldGroup != null) {
 				oldGroup.tuples.remove(tuple);
-			}			
-			this.tuple2group.put(tuple, newGroup);			
+			}
+			this.tuple2group.put(tuple, newGroup);
 		}
 	}
 
