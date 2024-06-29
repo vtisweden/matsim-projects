@@ -117,14 +117,14 @@ public class Consolidator {
 			final Map<Vehicle, TransportCost> veh2cost = new LinkedHashMap<>(
 					this.prototypeVehicles.size() + alreadyUsedVehicles.size());
 			for (Vehicle vehicle : this.prototypeVehicles.values()) {
-				TransportCost vehCost = this.costModel.getShipmentCost(vehicle, shipment.getWeight_ton(),
+				TransportCost vehCost = this.costModel.computeShipmentCost(vehicle, shipment.getWeight_ton(),
 						this.assignmentsOverDays.get(day));
 				if (vehCost != null) {
 					veh2cost.put(vehicle, vehCost);
 				}
 			}
 			for (Vehicle vehicle : alreadyUsedVehicles) {
-				BasicTransportCost vehCost = this.costModel.getShipmentCost(vehicle, shipment.getWeight_ton(),
+				BasicTransportCost vehCost = this.costModel.computeShipmentCost(vehicle, shipment.getWeight_ton(),
 						this.assignmentsOverDays.get(day));
 				if (vehCost != null) {
 					veh2cost.put(vehicle, vehCost);

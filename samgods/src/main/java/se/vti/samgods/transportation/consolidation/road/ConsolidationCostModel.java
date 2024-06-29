@@ -47,7 +47,7 @@ public class ConsolidationCostModel {
 		this.performanceMeasures = performanceMeasures;
 	}
 
-	public DetailedTransportCost getVehicleCost(FreightVehicleAttributes vehicleAttributes, double payload_ton,
+	public DetailedTransportCost computeVehicleCost(FreightVehicleAttributes vehicleAttributes, double payload_ton,
 			TransportEpisode episode) {
 
 		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton);
@@ -101,7 +101,7 @@ public class ConsolidationCostModel {
 		return builder.build();
 	}
 
-	public BasicTransportCost getShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
+	public BasicTransportCost computeShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
 			ShipmentVehicleAssignment assignment) {
 
 		final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
@@ -110,7 +110,7 @@ public class ConsolidationCostModel {
 		final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton); // TODO
 
 		if (feasible) {
-			final TransportCost vehicleCost = getVehicleCost(ConsolidationUtils.getFreightAttributes(vehicle),
+			final TransportCost vehicleCost = computeVehicleCost(ConsolidationUtils.getFreightAttributes(vehicle),
 					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
 			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
 			return new BasicTransportCost(assignedWeight_ton, share * vehicleCost.getMonetaryCost(),

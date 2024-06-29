@@ -79,7 +79,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		} else {
 			vehicleAttributes = this.mode2representativeNoContainerVehicleAttributes.get(episode.getMode());
 		}
-		return this.consolidationCostModel.getVehicleCost(vehicleAttributes,
+		return this.consolidationCostModel.computeVehicleCost(vehicleAttributes,
 				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
 	}
 
