@@ -20,10 +20,11 @@
 package se.vti.samgods.network;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
@@ -50,84 +51,69 @@ public class NetworkRoutingData {
 
 	private final CommodityModeGrouping commodityModeGrouping;
 
-	private final Map<SamgodsConstants.TransportMode, Network> mode2unimodalNetwork;
+	private final EpisodeCostModel empiricalEpisodeCostModel;
 
-	private final Map<CommodityModeGrouping.Group, TravelDisutility> group2travelDisutility;
-
-	private final Map<CommodityModeGrouping.Group, TravelTime> group2travelTime;
+	private final EpisodeCostModel fallbackEpisodeCostModel;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public NetworkRoutingData(Network multimodalNetwork, CommodityModeGrouping commodityModeGrouping,
 			EpisodeCostModel empiricalEpisodeCostModel, EpisodeCostModel fallbackEpisodeCostModel) {
-		
+
 		this.commodityModeGrouping = commodityModeGrouping;
-
-		/*
-		 * (1) Create unimodal networks. TODO One instance per mode, not synchronized!
-		 */
-
-		final Set<SamgodsConstants.TransportMode> consideredModes = commodityModeGrouping.getAllSecond();
-		this.mode2unimodalNetwork = new LinkedHashMap<>(consideredModes.size());
-		for (SamgodsConstants.TransportMode samgodsMode : consideredModes) {
-			final Set<String> matsimModes = Collections
-					.singleton(SamgodsConstants.samgodsMode2matsimMode.get(samgodsMode));
-			final Network unimodalNetwork = NetworkUtils.createNetwork();
-			new TransportModeNetworkFilter(unimodalNetwork).filter(unimodalNetwork, matsimModes);
-			this.mode2unimodalNetwork.put(samgodsMode, unimodalNetwork);
-		}
-
-		/*
-		 * (2) Create travel disutilities and times. TODO One instance per group, not
-		 * synchronized.
-		 */
-
-		this.group2travelDisutility = new LinkedHashMap<>(this.commodityModeGrouping.groupCnt());
-		this.group2travelTime = new LinkedHashMap<>(this.commodityModeGrouping.groupCnt());
-
-		for (CommodityModeGrouping.Group group : commodityModeGrouping.groupsView()) {
-
-			final Map<Link, BasicTransportCost> link2empiricalCost = empiricalEpisodeCostModel
-					.createLinkTransportCosts(group);
-			final Map<Link, BasicTransportCost> link2fallbackCost = fallbackEpisodeCostModel
-					.createLinkTransportCosts(group);
-
-			this.group2travelDisutility.put(group, new TravelDisutility() {
-				@Override
-				public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-					return this.getLinkMinimumTravelDisutility(link); // TODO Refine?
-				}
-
-				@Override
-				public double getLinkMinimumTravelDisutility(Link link) {
-					return link2empiricalCost.getOrDefault(link, link2fallbackCost.get(link)).getMonetaryCost();
-				}
-			});
-			this.group2travelTime.put(group, new TravelTime() {
-				@Override
-				public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
-					return Units.S_PER_H
-							* link2empiricalCost.getOrDefault(link, link2fallbackCost.get(link)).getDuration_h();
-				}
-			});
-		}
+		this.empiricalEpisodeCostModel = empiricalEpisodeCostModel;
+		this.fallbackEpisodeCostModel = fallbackEpisodeCostModel;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
 	// TODO not synchronized
-	public Network getNetwork(SamgodsConstants.TransportMode mode) {
-		return this.mode2unimodalNetwork.get(mode);
+	public Network createNetwork(SamgodsConstants.TransportMode mode) {
+		final Set<String> matsimModes = Collections.singleton(SamgodsConstants.samgodsMode2matsimMode.get(mode));
+		final Network unimodalNetwork = NetworkUtils.createNetwork();
+		new TransportModeNetworkFilter(unimodalNetwork).filter(unimodalNetwork, matsimModes);
+		return unimodalNetwork;
 	}
 
-	// TODO not synchronized
-	public TravelDisutility createDisutility(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode) {
-		return this.group2travelDisutility.get(this.commodityModeGrouping.getGroup(commodity, mode));
+	public TravelDisutility createDisutility(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+			Network network) {
+		final CommodityModeGrouping.Group group = this.commodityModeGrouping.getGroup(commodity, mode);
+		final Map<Link, Double> link2disutility = this.empiricalEpisodeCostModel
+				.createLinkTransportCosts(group, network).entrySet().stream().collect(
+						Collectors.toMap(e -> network.getLinks().get(e.getKey()), e -> e.getValue().getMonetaryCost()));
+		if (link2disutility.size() < network.getLinks().size()) {
+			final Map<Id<Link>, BasicTransportCost> link2fallbackDisutility = this.fallbackEpisodeCostModel
+					.createLinkTransportCosts(group, network);
+			for (Link link : network.getLinks().values()) {
+				if (!link2disutility.containsKey(link)) {
+					link2disutility.put(link, link2fallbackDisutility.get(link).getMonetaryCost());
+				}
+			}
+		}
+		return new TravelDisutility() {
+			@Override
+			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
+				return this.getLinkMinimumTravelDisutility(link); // TODO Refine?
+			}
+
+			@Override
+			public double getLinkMinimumTravelDisutility(Link link) {
+				return link2disutility.get(link);
+			}
+		};
 	}
 
-	// TODO not synchronized
-	public TravelTime createTravelTime(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode) {
-		return this.group2travelTime.get(this.commodityModeGrouping.getGroup(commodity, mode));
+	public TravelTime createTravelTime(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+			Network network) {
+		final CommodityModeGrouping.Group group = this.commodityModeGrouping.getGroup(commodity, mode);
+		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel.createLinkTransportCosts(group, network)
+				.entrySet().stream().collect(Collectors.toMap(e -> network.getLinks().get(e.getKey()),
+						e -> Units.S_PER_H * e.getValue().getDuration_h()));
+		return new TravelTime() {
+			@Override
+			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
+				return link2tt.get(link);
+			}
+		};
 	}
 }

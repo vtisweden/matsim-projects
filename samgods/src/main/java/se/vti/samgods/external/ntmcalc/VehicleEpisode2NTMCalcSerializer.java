@@ -59,6 +59,12 @@ import se.vti.samgods.network.SamgodsLinkAttributes;
 
 public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpisode> {
 
+	private final Network network;
+
+	VehicleEpisode2NTMCalcSerializer(Network network) {
+		this.network = network;
+	}
+
 	@Override
 	public void serialize(VehicleEpisode vehicleEpisode, JsonGenerator gen, SerializerProvider serializers)
 			throws IOException {
@@ -75,14 +81,15 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		gen.writeFieldName("links");
 		gen.writeStartArray();
 		for (TransportLeg leg : vehicleEpisode.getTransportEpisode().getLegs()) {
-			for (Link link : leg.getRouteView()) {
+			for (Id<Link> linkId : leg.getRouteView()) {
+				final Link link = this.network.getLinks().get(linkId);
 				gen.writeStartObject();
-				gen.writeStringField("linkId", link.getId().toString());
+				gen.writeStringField("linkId", linkId.toString());
 				gen.writeNumberField("length_m", link.getLength());
 				gen.writeNumberField("maxSpeed_km_h", Math.round(SamgodsLinkAttributes.getSpeed1_km_h(link)));
 				if (link.getAllowedModes().size() != 1) {
 					throw new RuntimeException(
-							"Link " + link.getId() + " has not exactly one mode: " + link.getAllowedModes());
+							"Link " + linkId + " has not exactly one mode: " + link.getAllowedModes());
 				}
 				final String samgodsMode = SamgodsLinkAttributes.getSamgodsMode(link).toString();
 				gen.writeStringField("mode", samgodsMode);

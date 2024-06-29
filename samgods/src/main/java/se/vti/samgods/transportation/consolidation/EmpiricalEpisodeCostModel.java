@@ -22,7 +22,9 @@ package se.vti.samgods.transportation.consolidation;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.Vehicle;
 
 import se.vti.samgods.BasicTransportCost;
@@ -149,10 +151,6 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	public void add(ShipmentVehicleAssignment assignment) {
 		final TransportEpisode episode = assignment.getTransportEpisode();
 
-//		double monetaryCost = 0.0;
-//		double durationTimesTons_hTon = 0.0;
-//		double tons = 0.0;
-
 		CumulativeDetailedData cumulativeCost = this.episode2data.computeIfAbsent(episode,
 				e -> new CumulativeDetailedData());
 
@@ -175,8 +173,9 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		}
 	}
 
-	public Map<Link, BasicTransportCost> createLinkTransportCosts(
-			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGroup) {
+	public Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
+			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGroup,
+			Network network) {
 
 		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>();
 
@@ -188,22 +187,25 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 					if (leg.getRouteView() != null) {
 						CumulativeDetailedData episodeData = e2d.getValue();
 						double routeLength_m = leg.getLength_m();
-						for (Link link : leg.getRouteView()) {
-							double weight = link.getLength() / routeLength_m;
-							link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
-									weight * episodeData.getMonetaryCostTimesTons_ton(),
-									weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
+						for (Id<Link> linkId : leg.getRouteView()) {
+							Link link = network.getLinks().get(linkId);
+							if (link != null) {
+								double weight = link.getLength() / routeLength_m;
+								link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
+										weight * episodeData.getMonetaryCostTimesTons_ton(),
+										weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
+							}
 						}
 					}
 				}
 			}
 		}
 
-		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>();
+		final Map<Id<Link>, BasicTransportCost> link2cost = new LinkedHashMap<>();
 		for (Map.Entry<Link, CumulativeBasicData> l2d : link2data.entrySet()) {
-			Link link = l2d.getKey();
+			Id<Link> linkId = l2d.getKey().getId();
 			CumulativeBasicData data = l2d.getValue();
-			link2cost.put(link, data.createUnitData());
+			link2cost.put(linkId, data.createUnitData());
 		}
 		return link2cost;
 	}

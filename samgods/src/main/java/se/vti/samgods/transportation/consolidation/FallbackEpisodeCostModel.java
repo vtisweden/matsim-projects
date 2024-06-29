@@ -22,7 +22,9 @@ package se.vti.samgods.transportation.consolidation;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
@@ -73,8 +75,9 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	@Override
-	public Map<Link, BasicTransportCost> createLinkTransportCosts(
-			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGrouping) {
+	public Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
+			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGrouping,
+			Network network) {
 		throw new UnsupportedOperationException("TODO");
 	}
 
