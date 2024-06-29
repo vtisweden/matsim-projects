@@ -25,18 +25,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.logistics.AnnualShipment;
-import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
-import se.vti.samgods.logistics.choicemodel.Alternative;
-import se.vti.samgods.logistics.choicemodel.AnnualShipmentUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
-import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
 import se.vti.samgods.network.SamgodsNetworkReader;
-import se.vti.samgods.network.NetworkRouter.TransportPrices;
 
 /**
  * 

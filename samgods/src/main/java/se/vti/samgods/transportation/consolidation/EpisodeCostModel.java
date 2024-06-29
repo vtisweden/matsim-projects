@@ -42,5 +42,5 @@ public interface EpisodeCostModel {
 
 	Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
 			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGrouping,
-			Network network);
+			Network network, boolean container);
 }

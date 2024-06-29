@@ -175,14 +175,15 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 
 	public Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
 			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGroup,
-			Network network) {
+			Network network, boolean container) {
 
 		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>();
 
 		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
 			TransportEpisode episode = e2d.getKey();
 
-			if (commodityAndModeGroup.contains(episode.getCommodity(), episode.getMode())) {
+			if ((container == episode.isContainer())
+					&& commodityAndModeGroup.contains(episode.getCommodity(), episode.getMode())) {
 				for (TransportLeg leg : episode.getLegs()) {
 					if (leg.getRouteView() != null) {
 						CumulativeDetailedData episodeData = e2d.getValue();

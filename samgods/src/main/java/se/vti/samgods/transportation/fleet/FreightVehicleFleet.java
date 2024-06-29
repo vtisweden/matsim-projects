@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
@@ -167,11 +166,16 @@ public class FreightVehicleFleet {
 
 	public FreightVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.TransportMode mode,
 			boolean container, Function<FreightVehicleAttributes, Double> attributes2property) {
+		return this.getRepresentativeVehicleAttributes(Collections.singleton(mode), container, attributes2property);
+	}
+
+	public FreightVehicleAttributes getRepresentativeVehicleAttributes(Set<SamgodsConstants.TransportMode> modes,
+			boolean container, Function<FreightVehicleAttributes, Double> attributes2property) {
 
 		final List<FreightVehicleAttributes> attributesList = new ArrayList<>();
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
 			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
-			if (mode.equals(attrs.mode) && (container == attrs.container)
+			if (modes.contains(attrs.mode) && (container == attrs.container)
 					&& (attributes2property.apply(attrs) != null)) {
 				attributesList.add(attrs);
 			}
@@ -203,60 +207,4 @@ public class FreightVehicleFleet {
 			}
 		}
 	}
-
-//	public FreightVehicleAttributes createRepresentativeVehicleTypeAttributes(SamgodsConstants.TransportMode mode,
-//			boolean container) {
-//
-//		final List<Double> capacities_ton = new ArrayList<>();
-//		final List<Double> costs_1_h = new ArrayList<>();
-//		final List<Double> costs_1_km = new ArrayList<>();
-//		final List<Double> onFerryCosts_1_h = new ArrayList<>();
-//		final List<Double> onFerryCosts_1_km = new ArrayList<>();
-//		final List<Double> speeds_km_h = new ArrayList<>();
-//		final Map<SamgodsConstants.Commodity, List<Double>> commodity2loadCosts_1_ton = new LinkedHashMap<>();
-//		final Map<SamgodsConstants.Commodity, List<Double>> commodity2loadTimes_h = new LinkedHashMap<>();
-//		final Map<SamgodsConstants.Commodity, List<Double>> commodity2transferCosts_1_ton = new LinkedHashMap<>();
-//		final Map<SamgodsConstants.Commodity, List<Double>> commodity2transferTimes_h = new LinkedHashMap<>();
-//
-//		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-//			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
-//			if (mode.equals(attrs.mode) && (container == attrs.container)) {
-//				capacities_ton.add(attrs.capacity_ton);
-//				costs_1_h.add(attrs.cost_1_h);
-//				costs_1_km.add(attrs.cost_1_km);
-//				onFerryCosts_1_h.add(attrs.onFerryCost_1_h);
-//				onFerryCosts_1_km.add(attrs.onFerryCost_1_km);
-//				speeds_km_h.add(attrs.speed_km_h);
-//				for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-//					commodity2loadCosts_1_ton.computeIfAbsent(commodity, c -> new ArrayList<>())
-//							.add(attrs.loadCost_1_ton.get(commodity));
-//					commodity2loadTimes_h.computeIfAbsent(commodity, c -> new ArrayList<>())
-//							.add(attrs.loadTime_h.get(commodity));
-//					commodity2transferCosts_1_ton.computeIfAbsent(commodity, c -> new ArrayList<>())
-//							.add(attrs.transferCost_1_ton.get(commodity));
-//					commodity2transferTimes_h.computeIfAbsent(commodity, c -> new ArrayList<>())
-//							.add(attrs.transferTime_h.get(commodity));
-//				}
-//			}
-//		}
-//
-//		final FreightVehicleAttributes.Builder builder = new FreightVehicleAttributes.Builder();
-//		builder.setContainer(container);
-//		builder.setTransportMode(mode);
-//
-//		builder.setCapacity_ton(this.medianOrNull(capacities_ton));
-//		builder.setCost_1_h(this.medianOrNull(costs_1_h));
-//		builder.setCost_1_km(this.medianOrNull(costs_1_km));
-//		builder.setOnFerryCost_1_h(this.medianOrNull(onFerryCosts_1_h));
-//		builder.setOnFerryCost_1_km(this.medianOrNull(onFerryCosts_1_km));
-//		builder.setSpeed_km_h(this.medianOrNull(speeds_km_h));
-//		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-//			builder.setLoadCost_1_ton(commodity, this.medianOrNull(commodity2loadCosts_1_ton.get(commodity)));
-//			builder.setLoadTime_h(commodity, this.medianOrNull(commodity2loadTimes_h.get(commodity)));
-//			builder.setTransferCost_1_ton(commodity, this.medianOrNull(commodity2transferCosts_1_ton.get(commodity)));
-//			builder.setTransferTime_h(commodity, this.medianOrNull(commodity2transferTimes_h.get(commodity)));
-//		}
-//
-//		return builder.buildFreightVehicleAttributes();
-//	}
 }

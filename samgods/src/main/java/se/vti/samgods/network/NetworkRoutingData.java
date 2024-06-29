@@ -49,6 +49,8 @@ public class NetworkRoutingData {
 
 	// -------------------- MEMBERS --------------------
 
+	private final Network multimodalNetwork;
+
 	private final CommodityModeGrouping commodityModeGrouping;
 
 	private final EpisodeCostModel empiricalEpisodeCostModel;
@@ -59,7 +61,7 @@ public class NetworkRoutingData {
 
 	public NetworkRoutingData(Network multimodalNetwork, CommodityModeGrouping commodityModeGrouping,
 			EpisodeCostModel empiricalEpisodeCostModel, EpisodeCostModel fallbackEpisodeCostModel) {
-
+		this.multimodalNetwork = multimodalNetwork;
 		this.commodityModeGrouping = commodityModeGrouping;
 		this.empiricalEpisodeCostModel = empiricalEpisodeCostModel;
 		this.fallbackEpisodeCostModel = fallbackEpisodeCostModel;
@@ -67,23 +69,22 @@ public class NetworkRoutingData {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	// TODO not synchronized
 	public Network createNetwork(SamgodsConstants.TransportMode mode) {
 		final Set<String> matsimModes = Collections.singleton(SamgodsConstants.samgodsMode2matsimMode.get(mode));
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
-		new TransportModeNetworkFilter(unimodalNetwork).filter(unimodalNetwork, matsimModes);
+		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, matsimModes);
 		return unimodalNetwork;
 	}
 
 	public TravelDisutility createDisutility(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
-			Network network) {
+			Network network, boolean container) {
 		final CommodityModeGrouping.Group group = this.commodityModeGrouping.getGroup(commodity, mode);
 		final Map<Link, Double> link2disutility = this.empiricalEpisodeCostModel
-				.createLinkTransportCosts(group, network).entrySet().stream().collect(
+				.createLinkTransportCosts(group, network, container).entrySet().stream().collect(
 						Collectors.toMap(e -> network.getLinks().get(e.getKey()), e -> e.getValue().getMonetaryCost()));
 		if (link2disutility.size() < network.getLinks().size()) {
 			final Map<Id<Link>, BasicTransportCost> link2fallbackDisutility = this.fallbackEpisodeCostModel
-					.createLinkTransportCosts(group, network);
+					.createLinkTransportCosts(group, network, container);
 			for (Link link : network.getLinks().values()) {
 				if (!link2disutility.containsKey(link)) {
 					link2disutility.put(link, link2fallbackDisutility.get(link).getMonetaryCost());
@@ -104,9 +105,9 @@ public class NetworkRoutingData {
 	}
 
 	public TravelTime createTravelTime(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
-			Network network) {
+			Network network, boolean container) {
 		final CommodityModeGrouping.Group group = this.commodityModeGrouping.getGroup(commodity, mode);
-		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel.createLinkTransportCosts(group, network)
+		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel.createLinkTransportCosts(group, network, container)
 				.entrySet().stream().collect(Collectors.toMap(e -> network.getLinks().get(e.getKey()),
 						e -> Units.S_PER_H * e.getValue().getDuration_h()));
 		return new TravelTime() {

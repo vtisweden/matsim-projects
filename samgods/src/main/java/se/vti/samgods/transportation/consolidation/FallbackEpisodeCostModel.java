@@ -26,15 +26,15 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.utils.CommodityModeGrouping;
 import se.vti.samgods.utils.TupleGrouping;
 
 /**
@@ -48,16 +48,26 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	private double capacityUsageFactor = 0.6;
 
-	private final Map<TransportMode, FreightVehicleAttributes> mode2representativeContainerVehicleAttributes = new LinkedHashMap<>();
-	private final Map<TransportMode, FreightVehicleAttributes> mode2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<SamgodsConstants.TransportMode, FreightVehicleAttributes> mode2representativeContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<SamgodsConstants.TransportMode, FreightVehicleAttributes> mode2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
 
-	public FallbackEpisodeCostModel(FreightVehicleFleet fleet, ConsolidationCostModel consolidationCostModel) {
+	private final Map<CommodityModeGrouping.Group, FreightVehicleAttributes> group2representativeContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<CommodityModeGrouping.Group, FreightVehicleAttributes> group2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
+
+	public FallbackEpisodeCostModel(FreightVehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
+			CommodityModeGrouping commodityModeGrouping) {
 		this.consolidationCostModel = consolidationCostModel;
-		for (TransportMode mode : TransportMode.values()) {
+		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 			this.mode2representativeContainerVehicleAttributes.put(mode,
 					fleet.getRepresentativeVehicleAttributes(mode, true, a -> a.capacity_ton));
 			this.mode2representativeNoContainerVehicleAttributes.put(mode,
 					fleet.getRepresentativeVehicleAttributes(mode, false, a -> a.capacity_ton));
+		}
+		for (CommodityModeGrouping.Group group : commodityModeGrouping.groupsView()) {
+			this.group2representativeContainerVehicleAttributes.put(group,
+					fleet.getRepresentativeVehicleAttributes(group.getAllSecondView(), true, a -> a.capacity_ton));
+			this.group2representativeNoContainerVehicleAttributes.put(group,
+					fleet.getRepresentativeVehicleAttributes(group.getAllSecondView(), false, a -> a.capacity_ton));
 		}
 	}
 
@@ -69,16 +79,29 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		} else {
 			vehicleAttributes = this.mode2representativeNoContainerVehicleAttributes.get(episode.getMode());
 		}
-		final TransportCost representativeVehicleCost = this.consolidationCostModel.getVehicleCost(vehicleAttributes,
+		return this.consolidationCostModel.getVehicleCost(vehicleAttributes,
 				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
-		throw new UnsupportedOperationException("TODO");
 	}
 
 	@Override
 	public Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
-			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGrouping,
-			Network network) {
-		throw new UnsupportedOperationException("TODO");
-	}
+			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group group, Network network,
+			boolean container) {
+		final FreightVehicleAttributes vehicleAttributes;
+		if (container) {
+			vehicleAttributes = this.group2representativeContainerVehicleAttributes.get(group);
+		} else {
+			vehicleAttributes = this.group2representativeNoContainerVehicleAttributes.get(group);
+		}
 
+		Map<Id<Link>, BasicTransportCost> link2costs = new LinkedHashMap<>();
+		for (Link link : network.getLinks().values()) {
+			// TODO identify ferry links!
+			final double length_km = Units.KM_PER_M * link.getLength();
+			final double duration_h = Units.H_PER_S * link.getFreespeed() / link.getLength();
+			link2costs.put(link.getId(), new BasicTransportCost(1.0,
+					duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km, duration_h));
+		}
+		return link2costs;
+	}
 }
