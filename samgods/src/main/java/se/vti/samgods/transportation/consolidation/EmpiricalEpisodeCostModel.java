@@ -20,11 +20,13 @@
 package se.vti.samgods.transportation.consolidation;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.vehicles.Vehicle;
 
 import se.vti.samgods.BasicTransportCost;
@@ -158,7 +160,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 			final Vehicle vehicle = entry.getKey();
 			final double payload_ton = entry.getValue();
 			final DetailedTransportCost vehicleCost = this.consolidationCostModel
-					.computeVehicleCost(ConsolidationUtils.getFreightAttributes(vehicle), payload_ton, episode);
+					.computeEpisodeCost(ConsolidationUtils.getFreightAttributes(vehicle), payload_ton, episode);
 			cumulativeCost.add(vehicleCost);
 		}
 	}
@@ -185,18 +187,14 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 			if ((container == episode.isContainer())
 					&& commodityAndModeGroup.contains(episode.getCommodity(), episode.getMode())) {
 				for (TransportLeg leg : episode.getLegs()) {
-					if (leg.getRouteView() != null) {
-						CumulativeDetailedData episodeData = e2d.getValue();
-						double routeLength_m = leg.getLength_m();
-						for (Id<Link> linkId : leg.getRouteView()) {
-							Link link = network.getLinks().get(linkId);
-							if (link != null) {
-								double weight = link.getLength() / routeLength_m;
-								link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
-										weight * episodeData.getMonetaryCostTimesTons_ton(),
-										weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
-							}
-						}
+					final CumulativeDetailedData episodeData = e2d.getValue();
+					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteView());
+					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
+					for (Link link : links) {
+						final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
+						link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
+								weight * episodeData.getMonetaryCostTimesTons_ton(),
+								weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
 					}
 				}
 			}

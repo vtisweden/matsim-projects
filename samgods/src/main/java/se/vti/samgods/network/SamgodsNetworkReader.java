@@ -131,8 +131,8 @@ public class SamgodsNetworkReader {
 			final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
 					Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
 			link.setAllowedModes(Collections.singleton(matsimMode));
-			link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
-					new SamgodsLinkAttributes(samgodsMode, speed1_km_h, speed2_km_h));
+			link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME, new SamgodsLinkAttributes(
+					samgodsMode, speed1_km_h, speed2_km_h, SamgodsConstants.TransportMode.Ferry.equals(samgodsMode)));
 		}
 
 		log.info("Loaded " + network.getNodes().size() + " nodes.");
@@ -140,7 +140,7 @@ public class SamgodsNetworkReader {
 
 		return network;
 	}
-	
+
 	public static String createNetworkStatsTable(Network network) {
 
 		StringBuffer result = new StringBuffer();
@@ -193,7 +193,6 @@ public class SamgodsNetworkReader {
 
 		return result.toString();
 	}
-
 
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
 

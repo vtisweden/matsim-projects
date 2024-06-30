@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SamgodsConstants {
 
 	public static enum TransportMode {
-		Road, Rail, Sea, Ferry, Air
+		Road, Rail, Sea, Air, Ferry
 	};
 
 	public static final Map<SamgodsConstants.TransportMode, String> samgodsMode2matsimMode;

@@ -79,22 +79,33 @@ public class NetworkRoutingData {
 	public TravelDisutility createDisutility(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
 			Network network, boolean container) {
 		final CommodityModeGrouping.Group group = this.commodityModeGrouping.getGroup(commodity, mode);
-		final Map<Link, Double> link2disutility = this.empiricalEpisodeCostModel
-				.createLinkTransportCosts(group, network, container).entrySet().stream().collect(
-						Collectors.toMap(e -> network.getLinks().get(e.getKey()), e -> e.getValue().getMonetaryCost()));
-		if (link2disutility.size() < network.getLinks().size()) {
-			final Map<Id<Link>, BasicTransportCost> link2fallbackDisutility = this.fallbackEpisodeCostModel
-					.createLinkTransportCosts(group, network, container);
-			for (Link link : network.getLinks().values()) {
-				if (!link2disutility.containsKey(link)) {
-					link2disutility.put(link, link2fallbackDisutility.get(link).getMonetaryCost());
+
+		final Map<Link, Double> link2disutility;
+		if (this.empiricalEpisodeCostModel != null) {
+			link2disutility = this.empiricalEpisodeCostModel.createLinkTransportCosts(group, network, container)
+					.entrySet().stream().collect(Collectors.toMap(e -> network.getLinks().get(e.getKey()),
+							e -> e.getValue().getMonetaryCost()));
+			if (link2disutility.size() < network.getLinks().size()) {
+				final Map<Id<Link>, BasicTransportCost> link2fallbackDisutility = this.fallbackEpisodeCostModel
+						.createLinkTransportCosts(group, network, container);
+				for (Link link : network.getLinks().values()) {
+					if (!link2disutility.containsKey(link)) {
+						link2disutility.put(link, link2fallbackDisutility.get(link.getId()).getMonetaryCost());
+					}
 				}
 			}
+		} else {
+			link2disutility = this.fallbackEpisodeCostModel.createLinkTransportCosts(group, network, container)
+					.entrySet().stream().collect(Collectors.toMap(e -> network.getLinks().get(e.getKey()),
+							e -> e.getValue().getMonetaryCost()));
 		}
+
 		return new TravelDisutility() {
 			@Override
 			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-				return this.getLinkMinimumTravelDisutility(link); // TODO Refine?
+				assert (person == null);
+				assert (vehicle == null);
+				return this.getLinkMinimumTravelDisutility(link);
 			}
 
 			@Override
@@ -107,12 +118,14 @@ public class NetworkRoutingData {
 	public TravelTime createTravelTime(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
 			Network network, boolean container) {
 		final CommodityModeGrouping.Group group = this.commodityModeGrouping.getGroup(commodity, mode);
-		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel.createLinkTransportCosts(group, network, container)
-				.entrySet().stream().collect(Collectors.toMap(e -> network.getLinks().get(e.getKey()),
-						e -> Units.S_PER_H * e.getValue().getDuration_h()));
+		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel
+				.createLinkTransportCosts(group, network, container).entrySet().stream().collect(Collectors.toMap(
+						e -> network.getLinks().get(e.getKey()), e -> Units.S_PER_H * e.getValue().getDuration_h()));
 		return new TravelTime() {
 			@Override
 			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
+				assert (person == null);
+				assert (vehicle == null);
 				return link2tt.get(link);
 			}
 		};

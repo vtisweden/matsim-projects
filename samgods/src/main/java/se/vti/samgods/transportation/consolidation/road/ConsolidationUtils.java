@@ -22,10 +22,15 @@ package se.vti.samgods.transportation.consolidation.road;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.logistics.AnnualShipment;
+import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.SizeClass;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
@@ -72,8 +77,7 @@ public class ConsolidationUtils {
 			shipments.add(new Shipment(shipment.getCommmodity(), singleShipmentSize_ton, 1.0));
 		}
 		if (fractionalShipmentsPerPeriod > 0) {
-			shipments.add(
-					new Shipment(shipment.getCommmodity(), singleShipmentSize_ton, fractionalShipmentsPerPeriod));
+			shipments.add(new Shipment(shipment.getCommmodity(), singleShipmentSize_ton, fractionalShipmentsPerPeriod));
 		}
 
 		return shipments;

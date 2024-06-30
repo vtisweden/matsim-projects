@@ -31,6 +31,7 @@ import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
@@ -44,15 +45,19 @@ import se.vti.samgods.utils.TupleGrouping;
  */
 public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
+	// -------------------- MEMBERS --------------------
+
 	private final ConsolidationCostModel consolidationCostModel;
 
-	private double capacityUsageFactor = 0.6;
+	private double capacityUsageFactor = 0.7;
 
 	private final Map<SamgodsConstants.TransportMode, FreightVehicleAttributes> mode2representativeContainerVehicleAttributes = new LinkedHashMap<>();
 	private final Map<SamgodsConstants.TransportMode, FreightVehicleAttributes> mode2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
 
 	private final Map<CommodityModeGrouping.Group, FreightVehicleAttributes> group2representativeContainerVehicleAttributes = new LinkedHashMap<>();
 	private final Map<CommodityModeGrouping.Group, FreightVehicleAttributes> group2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public FallbackEpisodeCostModel(FreightVehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
 			CommodityModeGrouping commodityModeGrouping) {
@@ -71,6 +76,13 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		}
 	}
 
+	public FallbackEpisodeCostModel setCapacityUsageFactor(double factor) {
+		this.capacityUsageFactor = factor;
+		return this;
+	}
+
+	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
+
 	@Override
 	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) {
 		final FreightVehicleAttributes vehicleAttributes;
@@ -79,7 +91,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		} else {
 			vehicleAttributes = this.mode2representativeNoContainerVehicleAttributes.get(episode.getMode());
 		}
-		return this.consolidationCostModel.computeVehicleCost(vehicleAttributes,
+		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
 				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
 	}
 
@@ -96,11 +108,17 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 		Map<Id<Link>, BasicTransportCost> link2costs = new LinkedHashMap<>();
 		for (Link link : network.getLinks().values()) {
-			// TODO identify ferry links!
 			final double length_km = Units.KM_PER_M * link.getLength();
-			final double duration_h = Units.H_PER_S * link.getFreespeed() / link.getLength();
-			link2costs.put(link.getId(), new BasicTransportCost(1.0,
-					duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km, duration_h));
+			final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
+
+			if (SamgodsLinkAttributes.isFerry(link)) {
+				link2costs.put(link.getId(), new BasicTransportCost(1.0,
+						duration_h * vehicleAttributes.onFerryCost_1_h + length_km * vehicleAttributes.onFerryCost_1_km,
+						duration_h));
+			} else {
+				link2costs.put(link.getId(), new BasicTransportCost(1.0,
+						duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km, duration_h));
+			}
 		}
 		return link2costs;
 	}

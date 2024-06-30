@@ -93,7 +93,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 				}
 				final String samgodsMode = SamgodsLinkAttributes.getSamgodsMode(link).toString();
 				gen.writeStringField("mode", samgodsMode);
-				if (SamgodsConstants.TransportMode.Ferry.toString().equals(samgodsMode)) {
+				if (SamgodsLinkAttributes.isFerry(link)) {
 					gen.writeNumberField("vesselDWT", 5678.9); // TODO!!!
 				}
 				gen.writeEndObject();

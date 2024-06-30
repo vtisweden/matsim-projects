@@ -22,14 +22,15 @@ package se.vti.samgods.transportation.consolidation.road;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-public class PerformanceMeasures {
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public interface PerformanceMeasures {
 
-	public double getTotalArrivalDelay_h(Id<Node> nodeId) {
-		throw new UnsupportedOperationException();
-	}
+	double getTotalArrivalDelay_h(Id<Node> nodeId);
 
-	public double getTotalDepartureDelay_h(Id<Node> nodeId) {
-		throw new UnsupportedOperationException();
-	}
+	double getTotalDepartureDelay_h(Id<Node> nodeId);
 
 }

@@ -44,8 +44,8 @@ public class TransportLeg {
 	private List<Id<Link>> route = null;
 
 	// derived
-	private Double length_m = null;
-	private Double duration_s = null;
+//	private Double length_m = null;
+//	private Double duration_s = null;
 
 	public TransportLeg(OD od, TransportMode mode) {
 		this.od = od;
@@ -74,25 +74,25 @@ public class TransportLeg {
 
 	public void setRoute(final List<Link> route) {
 		this.route = Collections.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
-		this.length_m = 0.0;
-		this.duration_s = 0.0;
-		for (Link link : route) {
-			this.length_m += link.getLength();
-			this.duration_s += link.getLength() / link.getFreespeed();
-		}
+//		this.length_m = 0.0;
+//		this.duration_s = 0.0;
+//		for (Link link : route) {
+//			this.length_m += link.getLength();
+//			this.duration_s += link.getLength() / link.getFreespeed();
+//		}
 	}
 
 	public List<Id<Link>> getRouteView() {
 		return this.route;
 	}
 
-	public Double getLength_m() {
-		return this.length_m;
-	}
-
-	public Double getDuration_s() {
-		return this.duration_s;
-	}
+//	public Double getLength_m() {
+//		return this.length_m;
+//	}
+//
+//	public Double getDuration_s() {
+//		return this.duration_s;
+//	}
 
 	// -------------------- OVERRIDING OF Object --------------------
 

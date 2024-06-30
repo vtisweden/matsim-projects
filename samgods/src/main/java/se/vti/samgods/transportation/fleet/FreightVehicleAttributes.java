@@ -23,9 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 
 /**
@@ -54,6 +56,19 @@ public class FreightVehicleAttributes {
 	public final Double onFerryCost_1_h;
 
 	public final Double speed_km_h;
+
+	public double speedOnLink_m_s(Link link) {
+		if (this.speed_km_h != null) {
+			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
+		} else {
+			assert (Double.isFinite(link.getFreespeed()));
+			return link.getFreespeed();
+		}
+	}
+
+	public double travelTimeOnLink_s(Link link) {
+		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
+	}
 
 	public final boolean container;
 
