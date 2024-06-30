@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.utils.ParseNumberUtils;
@@ -40,47 +39,47 @@ public class SamgodsFleetReader {
 
 	// -------------------- CONSTANTS --------------------
 
-	public static final String VEH_NR = "VEH_NR";
+	private static final String VEH_NR = "VEH_NR";
 
-	public static final String VEH_LABEL = "LABEL";
+	private static final String VEH_LABEL = "LABEL";
 
-	public static final String VEH_DESCRIPTION = "DESCRIPTIO";
+	private static final String VEH_DESCRIPTION = "DESCRIPTIO";
 
-	public static final String COST_1_KM = "KM_COST";
+	private static final String COST_1_KM = "KM_COST";
 
-	public static final String COST_1_H = "HOURS_COST";
+	private static final String COST_1_H = "HOURS_COST";
 
-	public static final String CAPACITY_TON = "CAPACITY";
+	private static final String CAPACITY_TON = "CAPACITY";
 
-	public static final String ON_FERRY_COST_1_KM = "ONFER_KM_C";
+	private static final String ON_FERRY_COST_1_KM = "ONFER_KM_C";
 
-	public static final String ON_FERRY_COST_1_H = "ONFER_H_C";
+	private static final String ON_FERRY_COST_1_H = "ONFER_H_C";
 
-	public static final String SPEED_KM_H = "SPEED";
+	private static final String SPEED_KM_H = "SPEED";
 
-	public static final String COMMODITY_ID = "ID_COM";
+	private static final String COMMODITY_ID = "ID_COM";
 
-	public static final String NO_CONTAINER_LOAD_COST_1_TON = "NC_LCO";
+	private static final String NO_CONTAINER_LOAD_COST_1_TON = "NC_LCO";
 
-	public static final String NO_CONTAINER_LOAD_TIME_H = "NC_LTI";
+	private static final String NO_CONTAINER_LOAD_TIME_H = "NC_LTI";
 
-	public static final String NO_CONTAINER_TRANSFER_COST_1_TON = "NC_LCOT";
+	private static final String NO_CONTAINER_TRANSFER_COST_1_TON = "NC_LCOT";
 
-	public static final String NO_CONTAINER_TRANSFER_TIME_H = "NC_LTIT";
+	private static final String NO_CONTAINER_TRANSFER_TIME_H = "NC_LTIT";
 
-	public static final String CONTAINER_LOAD_COST_1_TON = "CONT_LCO";
+	private static final String CONTAINER_LOAD_COST_1_TON = "CONT_LCO";
 
-	public static final String CONTAINER_LOAD_TIME_H = "CONT_LTI";
+	private static final String CONTAINER_LOAD_TIME_H = "CONT_LTI";
 
-	public static final String CONTAINER_TRANSFER_COST_1_TON = "CONT_LCO_T";
+	private static final String CONTAINER_TRANSFER_COST_1_TON = "CONT_LCO_T";
 
-	public static final String CONTAINER_TRANSFER_TIME_H = "CONT_LTI_T";
+	private static final String CONTAINER_TRANSFER_TIME_H = "CONT_LTI_T";
 
-	public static final double MAGIC_NUMBER_INDICATING_IMPOSSIBLE_TRANSFER = 99999;
+	private static final String SUFFIX_INDICATING_CONTAINER = "_CONTAINER";
 
-	public static final double MAGIC_NUMBER_INDICATING_IMPOSSIBLE_FERRY = 0;
-
-	public static final String SUFFIX_INDICATING_CONTAINER = "_CONTAINER";
+	// TODO Where?
+	private static final double MAGIC_NUMBER_INDICATING_IMPOSSIBLE_TRANSFER = 99999;
+	private static final double MAGIC_NUMBER_INDICATING_IMPOSSIBLE_FERRY = 0;
 
 	// -------------------- MEMBERS --------------------
 
@@ -135,8 +134,7 @@ public class SamgodsFleetReader {
 		}
 
 		for (FreightVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
-			final VehicleType type = builder.buildVehicleType();
-			this.fleet.getVehicles().addVehicleType(type);
+			this.fleet.getVehicles().addVehicleType(builder.buildVehicleType());
 		}
 	}
 
@@ -154,18 +152,19 @@ public class SamgodsFleetReader {
 		reader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 				SamgodsConstants.TransportMode.Sea);
 
-		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail));
-
-//		System.out.println(
-//				fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail, SamgodsConstants.TransportMode.Road,
-//						SamgodsConstants.TransportMode.Sea, SamgodsConstants.TransportMode.Air));
-//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail,
-//		SamgodsConstants.TransportMode.Road, SamgodsConstants.TransportMode.Sea,
-//		SamgodsConstants.TransportMode.Air));
-//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail));
-//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Road));
-//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Sea));
+//		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Air));
 //		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Air));
+//
+//		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail));
+//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail));
+//
+//		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Road));
+//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Road));
+//		
+		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Sea));
+		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Sea));
+
+
 	}
 
 }
