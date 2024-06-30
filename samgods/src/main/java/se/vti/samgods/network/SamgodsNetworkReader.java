@@ -22,6 +22,8 @@ package se.vti.samgods.network;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -33,6 +35,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 
+import de.vandermeer.asciitable.AsciiTable;
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.utils.ParseNumberUtils;
@@ -114,10 +117,10 @@ public class SamgodsNetworkReader {
 //					log.warn("Link " + id + " has infinite speed.");
 				}
 			}
-			if (SamgodsConstants.TransportMode.Air.equals(samgodsMode)) {
-				log.info("speed_km_h = " + speed_km_h + "\t speed1_km_h = " + speed1_km_h + "\t speed2_km_h = "
-						+ speed2_km_h);
-			}
+//			if (SamgodsConstants.TransportMode.Air.equals(samgodsMode)) {
+//				log.info("speed_km_h = " + speed_km_h + "\t speed1_km_h = " + speed1_km_h + "\t speed2_km_h = "
+//						+ speed2_km_h);
+//			}
 
 			final double capacity_veh_h = ParseNumberUtils.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY),
 					Double.POSITIVE_INFINITY) / 24.0;
@@ -137,6 +140,60 @@ public class SamgodsNetworkReader {
 
 		return network;
 	}
+	
+	public static String createNetworkStatsTable(Network network) {
+
+		StringBuffer result = new StringBuffer();
+
+		Map<String, Integer> mode2cnt = new LinkedHashMap<>();
+		Map<String, Integer> mode2speed1cnt = new LinkedHashMap<>();
+		Map<String, Integer> mode2speed2cnt = new LinkedHashMap<>();
+
+		Map<String, Double> mode2speedSum = new LinkedHashMap<>();
+		Map<String, Double> mode2speed1Sum = new LinkedHashMap<>();
+		Map<String, Double> mode2speed2Sum = new LinkedHashMap<>();
+		Map<String, Double> mode2lengthSum = new LinkedHashMap<>();
+		Map<String, Double> mode2lanesSum = new LinkedHashMap<>();
+
+		for (Link link : network.getLinks().values()) {
+			String mode = SamgodsLinkAttributes.getSamgodsMode(link).toString();
+			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
+			mode2lengthSum.compute(mode, (m, l) -> l == null ? link.getLength() : l + link.getLength());
+			mode2lanesSum.compute(mode, (m, l) -> l == null ? link.getNumberOfLanes() : l + link.getNumberOfLanes());
+			mode2speedSum.compute(mode, (m, s) -> s == null ? link.getFreespeed() : s + link.getFreespeed());
+
+			SamgodsLinkAttributes attr = SamgodsLinkAttributes.getAttrs(link);
+			if (attr.speed1_km_h != null && attr.speed1_km_h != 0) {
+				mode2speed1Sum.compute(mode, (m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
+				mode2speed1cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
+			}
+			if (attr.speed2_km_h != null && attr.speed2_km_h != 0) {
+				mode2speed2Sum.compute(mode, (m, s) -> s == null ? attr.speed2_km_h : s + attr.speed2_km_h);
+				mode2speed2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
+			}
+		}
+
+		final AsciiTable table = new AsciiTable();
+		table.addRule();
+		table.addRow("Mode", "Links", "Avg. length [km]", "Avg. no. of lanes", "Avg. speed [km/h]",
+				"Avg. speed 1 [km/h] if >0", "Avg. speed 2 [km/h] if >0");
+		table.addRule();
+		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
+			final String mode = e.getKey();
+			final int cnt = e.getValue();
+			table.addRow(mode, cnt,
+					ParseNumberUtils.divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
+					ParseNumberUtils.divideOrNothing(mode2lanesSum.get(mode), cnt),
+					ParseNumberUtils.divideOrNothing(Units.KM_H_PER_M_S * mode2speedSum.get(mode), cnt),
+					ParseNumberUtils.divideOrNothing(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
+					ParseNumberUtils.divideOrNothing(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));
+			table.addRule();
+		}
+		result.append(table.render());
+
+		return result.toString();
+	}
+
 
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
 
@@ -147,7 +204,7 @@ public class SamgodsNetworkReader {
 		NetworkUtils.writeNetwork(network, "./input_2024/matsim-network.xml");
 
 		System.out.println();
-		System.out.println(SamgodsNetworkUtils.createNetworkStatsTable(network));
+		System.out.println(SamgodsNetworkReader.createNetworkStatsTable(network));
 
 	}
 }
