@@ -19,13 +19,8 @@
  */
 package se.vti.samgods.network;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -52,6 +47,7 @@ public class SamgodsNetworkUtils {
 		Map<String, Integer> mode2speed1cnt = new LinkedHashMap<>();
 		Map<String, Integer> mode2speed2cnt = new LinkedHashMap<>();
 
+		Map<String, Double> mode2speedSum = new LinkedHashMap<>();
 		Map<String, Double> mode2speed1Sum = new LinkedHashMap<>();
 		Map<String, Double> mode2speed2Sum = new LinkedHashMap<>();
 		Map<String, Double> mode2lengthSum = new LinkedHashMap<>();
@@ -62,6 +58,8 @@ public class SamgodsNetworkUtils {
 			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			mode2lengthSum.compute(mode, (m, l) -> l == null ? link.getLength() : l + link.getLength());
 			mode2lanesSum.compute(mode, (m, l) -> l == null ? link.getNumberOfLanes() : l + link.getNumberOfLanes());
+			mode2speedSum.compute(mode, (m, s) -> s == null ? link.getFreespeed() : s + link.getFreespeed());
+
 			SamgodsLinkAttributes attr = SamgodsLinkAttributes.getAttrs(link);
 			if (attr.speed1_km_h != null && attr.speed1_km_h != 0) {
 				mode2speed1Sum.compute(mode, (m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
@@ -72,10 +70,11 @@ public class SamgodsNetworkUtils {
 				mode2speed2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			}
 		}
+
 		final AsciiTable table = new AsciiTable();
 		table.addRule();
-		table.addRow("Mode", "Links", "Avg. length [km]", "Avg. no. of lanes", "Avg. speed 1 [km/h] if >0",
-				"Avg. speed 2 [km/h] if >0");
+		table.addRow("Mode", "Links", "Avg. length [km]", "Avg. no. of lanes", "Avg. speed [km/h]",
+				"Avg. speed 1 [km/h] if >0", "Avg. speed 2 [km/h] if >0");
 		table.addRule();
 		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
 			final String mode = e.getKey();
@@ -83,6 +82,7 @@ public class SamgodsNetworkUtils {
 			table.addRow(mode, cnt,
 					ParseNumberUtils.divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
 					ParseNumberUtils.divideOrNothing(mode2lanesSum.get(mode), cnt),
+					ParseNumberUtils.divideOrNothing(Units.KM_H_PER_M_S * mode2speedSum.get(mode), cnt),
 					ParseNumberUtils.divideOrNothing(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
 					ParseNumberUtils.divideOrNothing(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));
 			table.addRule();

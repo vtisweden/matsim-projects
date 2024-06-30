@@ -35,6 +35,8 @@ public class SamgodsConstants {
 
 	public static final Map<SamgodsConstants.TransportMode, String> samgodsMode2matsimMode;
 
+//	public static final Map<SamgodsConstants.TransportMode, Double> samgodsMode2fallbackSpeed_km_h;
+
 	static {
 		samgodsMode2matsimMode = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Road, org.matsim.api.core.v01.TransportMode.car);
@@ -44,6 +46,15 @@ public class SamgodsConstants {
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Sea, org.matsim.api.core.v01.TransportMode.ship);
 		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Air, org.matsim.api.core.v01.TransportMode.airplane);
 		assert (samgodsMode2matsimMode.size() == SamgodsConstants.TransportMode.values().length);
+
+//		samgodsMode2fallbackSpeed_km_h = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
+//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Road, 60.0);
+//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Ferry, 10.0);
+//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Rail, 80.0);
+//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Sea, 15.0);
+//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Air, 800.0);
+//		assert (samgodsMode2fallbackSpeed_km_h.size() == SamgodsConstants.TransportMode.values().length);
+
 	}
 
 	public static enum Commodity {

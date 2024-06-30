@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -81,7 +82,7 @@ public class SaanaModelRunner {
 		 * Load transport supply: network and (yet to be specified, not needed for
 		 * logistic choices) vehicle fleet. Put everything into a supply container.
 		 */
-		SamgodsNetworkReader networkReader = new SamgodsNetworkReader("./2023-06-01_basecase/node_table.csv",
+		Network network = SamgodsNetworkReader.load("./2023-06-01_basecase/node_table.csv",
 				"./2023-06-01_basecase/link_table.csv");
 //		TransportSupply supply = new TransportSupply(networkReader.getNetwork(), null);
 
