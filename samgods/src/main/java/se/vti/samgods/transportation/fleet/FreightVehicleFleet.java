@@ -100,7 +100,7 @@ public class FreightVehicleFleet {
 		table.addRow("Vehicle", "Description", "Mode", "Cost[1/km]", "Cost[1/h]", "Capacity[ton]", "FerryCost[1/km]",
 				"FerryCost[1/h]", "MaxSpeed[km/h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			final SamgodsVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
 			if (modeSet.contains(attrs.mode)) {
 				table.addRule();
 				table.addRow(attrs.id, attrs.description, attrs.mode, attrs.cost_1_km, attrs.cost_1_h,
@@ -119,7 +119,7 @@ public class FreightVehicleFleet {
 		table.addRow("Vehicle", "Commodity", "LoadCost[1/ton]", "LoadTime[h]", "TransferCost[1/ton]",
 				"TransferTime[h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			final SamgodsVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
 			if (modeSet.contains(attrs.mode)) {
 				for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 					if (attrs.containsData(commodity)) {
@@ -164,17 +164,17 @@ public class FreightVehicleFleet {
 //		}
 //	}
 
-	public FreightVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.TransportMode mode,
-			boolean container, Function<FreightVehicleAttributes, Double> attributes2property) {
+	public SamgodsVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.TransportMode mode,
+			boolean container, Function<SamgodsVehicleAttributes, Double> attributes2property) {
 		return this.getRepresentativeVehicleAttributes(Collections.singleton(mode), container, attributes2property);
 	}
 
-	public FreightVehicleAttributes getRepresentativeVehicleAttributes(Set<SamgodsConstants.TransportMode> modes,
-			boolean container, Function<FreightVehicleAttributes, Double> attributes2property) {
+	public SamgodsVehicleAttributes getRepresentativeVehicleAttributes(Set<SamgodsConstants.TransportMode> modes,
+			boolean container, Function<SamgodsVehicleAttributes, Double> attributes2property) {
 
-		final List<FreightVehicleAttributes> attributesList = new ArrayList<>();
+		final List<SamgodsVehicleAttributes> attributesList = new ArrayList<>();
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+			final SamgodsVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
 			if (modes.contains(attrs.mode) && (container == attrs.container)
 					&& (attributes2property.apply(attrs) != null)) {
 				attributesList.add(attrs);
@@ -185,9 +185,9 @@ public class FreightVehicleFleet {
 			return null;
 		}
 
-		Collections.sort(attributesList, new Comparator<FreightVehicleAttributes>() {
+		Collections.sort(attributesList, new Comparator<SamgodsVehicleAttributes>() {
 			@Override
-			public int compare(FreightVehicleAttributes attrs1, FreightVehicleAttributes attrs2) {
+			public int compare(SamgodsVehicleAttributes attrs1, SamgodsVehicleAttributes attrs2) {
 				return Double.compare(attributes2property.apply(attrs1), attributes2property.apply(attrs2));
 			}
 		});

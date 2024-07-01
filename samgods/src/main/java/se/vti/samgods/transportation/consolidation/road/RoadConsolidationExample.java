@@ -32,7 +32,7 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 
 /**

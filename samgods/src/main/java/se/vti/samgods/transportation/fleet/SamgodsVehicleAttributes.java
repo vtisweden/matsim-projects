@@ -35,7 +35,7 @@ import se.vti.samgods.SamgodsConstants;
  * @author GunnarF
  *
  */
-public class FreightVehicleAttributes {
+public class SamgodsVehicleAttributes {
 
 	public static final String ATTRIBUTE_NAME = "freight";
 
@@ -80,7 +80,7 @@ public class FreightVehicleAttributes {
 
 	public final Map<SamgodsConstants.Commodity, Double> transferTime_h;
 
-	private FreightVehicleAttributes(Id<VehicleType> id, String description, SamgodsConstants.TransportMode mode,
+	private SamgodsVehicleAttributes(Id<VehicleType> id, String description, SamgodsConstants.TransportMode mode,
 			double cost_1_km, double cost_1_h, double capacity_ton, Double onFerryCost_1_km, Double onFerryCost_1_h,
 			Double speed_km_h, boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> loadTime_h,
@@ -140,8 +140,8 @@ public class FreightVehicleAttributes {
 		public Builder() {
 		}
 
-		public FreightVehicleAttributes buildFreightVehicleAttributes() {
-			return new FreightVehicleAttributes(this.id, this.description, this.mode, this.cost_1_km, this.cost_1_h,
+		public SamgodsVehicleAttributes buildFreightVehicleAttributes() {
+			return new SamgodsVehicleAttributes(this.id, this.description, this.mode, this.cost_1_km, this.cost_1_h,
 					this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
 					this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 		}
@@ -149,7 +149,7 @@ public class FreightVehicleAttributes {
 		public VehicleType buildVehicleType() {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
 //			type.setMaximumVelocity(Units.M_S_PER_KM_H * this.speed_km_h); // TODO speed may be zero
-			type.getAttributes().putAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME,
+			type.getAttributes().putAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME,
 					this.buildFreightVehicleAttributes());
 			return type;
 		}

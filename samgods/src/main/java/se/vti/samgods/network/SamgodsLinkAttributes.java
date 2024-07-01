@@ -38,13 +38,10 @@ public class SamgodsLinkAttributes {
 
 	public final Double speed2_km_h;
 	
-	public final boolean isFerry;
-
-	public SamgodsLinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h, boolean isFerry) {
+	public SamgodsLinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
 		this.samgodsMode = samgodsMode;
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
-		this.isFerry = isFerry;
 	}
 
 	public static SamgodsLinkAttributes getAttrs(Link link) {
@@ -64,7 +61,7 @@ public class SamgodsLinkAttributes {
 	}
 	
 	public static boolean isFerry(Link link) {
-		return getAttrs(link).isFerry;
+		return SamgodsConstants.TransportMode.Ferry.equals(getAttrs(link).samgodsMode);
 	}
 
 }

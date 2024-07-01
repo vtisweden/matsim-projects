@@ -33,7 +33,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
 import se.vti.samgods.utils.CommodityModeGrouping;
 import se.vti.samgods.utils.TupleGrouping;
@@ -51,11 +51,11 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	private double capacityUsageFactor = 0.7;
 
-	private final Map<SamgodsConstants.TransportMode, FreightVehicleAttributes> mode2representativeContainerVehicleAttributes = new LinkedHashMap<>();
-	private final Map<SamgodsConstants.TransportMode, FreightVehicleAttributes> mode2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<SamgodsConstants.TransportMode, SamgodsVehicleAttributes> mode2representativeContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<SamgodsConstants.TransportMode, SamgodsVehicleAttributes> mode2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
 
-	private final Map<CommodityModeGrouping.Group, FreightVehicleAttributes> group2representativeContainerVehicleAttributes = new LinkedHashMap<>();
-	private final Map<CommodityModeGrouping.Group, FreightVehicleAttributes> group2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<CommodityModeGrouping.Group, SamgodsVehicleAttributes> group2representativeContainerVehicleAttributes = new LinkedHashMap<>();
+	private final Map<CommodityModeGrouping.Group, SamgodsVehicleAttributes> group2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -85,7 +85,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	@Override
 	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) {
-		final FreightVehicleAttributes vehicleAttributes;
+		final SamgodsVehicleAttributes vehicleAttributes;
 		if (episode.isContainer()) {
 			vehicleAttributes = this.mode2representativeContainerVehicleAttributes.get(episode.getMode());
 		} else {
@@ -99,7 +99,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	public Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
 			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group group, Network network,
 			boolean container) {
-		final FreightVehicleAttributes vehicleAttributes;
+		final SamgodsVehicleAttributes vehicleAttributes;
 		if (container) {
 			vehicleAttributes = this.group2representativeContainerVehicleAttributes.get(group);
 		} else {

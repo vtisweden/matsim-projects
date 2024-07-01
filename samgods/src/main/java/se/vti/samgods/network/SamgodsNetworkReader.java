@@ -21,9 +21,9 @@ package se.vti.samgods.network;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -100,7 +100,7 @@ public class SamgodsNetworkReader {
 
 			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
 					.valueOf(record.get(LINK_MODE));
-			final String matsimMode = SamgodsConstants.samgodsMode2matsimMode.get(samgodsMode);
+			final Set<String> matsimModes = SamgodsConstants.samgodsMode2matsimModes.get(samgodsMode);
 
 			final double speed_km_h;
 			if (speed1_km_h != null) {
@@ -130,9 +130,9 @@ public class SamgodsNetworkReader {
 
 			final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
 					Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
-			link.setAllowedModes(Collections.singleton(matsimMode));
-			link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME, new SamgodsLinkAttributes(
-					samgodsMode, speed1_km_h, speed2_km_h, SamgodsConstants.TransportMode.Ferry.equals(samgodsMode)));
+			link.setAllowedModes(matsimModes);
+			link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
+					new SamgodsLinkAttributes(samgodsMode, speed1_km_h, speed2_km_h));
 		}
 
 		log.info("Loaded " + network.getNodes().size() + " nodes.");

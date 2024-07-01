@@ -70,9 +70,11 @@ public class NetworkRoutingData {
 	// -------------------- IMPLEMENTATION --------------------
 
 	public Network createNetwork(SamgodsConstants.TransportMode mode) {
-		final Set<String> matsimModes = Collections.singleton(SamgodsConstants.samgodsMode2matsimMode.get(mode));
+		assert(!SamgodsConstants.TransportMode.Ferry.equals(mode));
+		final Set<String> matsimModes = SamgodsConstants.samgodsMode2matsimModes.get(mode);
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, matsimModes);
+		// TODO Consider cleaning the network. Should not have an effect?
 		return unimodalNetwork;
 	}
 

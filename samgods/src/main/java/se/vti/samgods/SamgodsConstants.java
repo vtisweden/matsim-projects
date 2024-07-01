@@ -19,7 +19,11 @@
  */
 package se.vti.samgods;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,28 +37,22 @@ public class SamgodsConstants {
 		Road, Rail, Sea, Air, Ferry
 	};
 
-	public static final Map<SamgodsConstants.TransportMode, String> samgodsMode2matsimMode;
-
-//	public static final Map<SamgodsConstants.TransportMode, Double> samgodsMode2fallbackSpeed_km_h;
-
+	// TODO Does this have to be synchronized?
+	public static final Map<SamgodsConstants.TransportMode, Set<String>> samgodsMode2matsimModes;
 	static {
-		samgodsMode2matsimMode = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
-		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Road, org.matsim.api.core.v01.TransportMode.car);
-		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Ferry,
-				org.matsim.api.core.v01.TransportMode.car /* Assume only car ferries */);
-		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Rail, org.matsim.api.core.v01.TransportMode.train);
-		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Sea, org.matsim.api.core.v01.TransportMode.ship);
-		samgodsMode2matsimMode.put(SamgodsConstants.TransportMode.Air, org.matsim.api.core.v01.TransportMode.airplane);
-		assert (samgodsMode2matsimMode.size() == SamgodsConstants.TransportMode.values().length);
-
-//		samgodsMode2fallbackSpeed_km_h = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
-//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Road, 60.0);
-//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Ferry, 10.0);
-//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Rail, 80.0);
-//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Sea, 15.0);
-//		samgodsMode2fallbackSpeed_km_h.put(SamgodsConstants.TransportMode.Air, 800.0);
-//		assert (samgodsMode2fallbackSpeed_km_h.size() == SamgodsConstants.TransportMode.values().length);
-
+		samgodsMode2matsimModes = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
+		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Road,
+				Collections.singleton(org.matsim.api.core.v01.TransportMode.car));
+		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Ferry,
+				Collections.synchronizedSet(new HashSet<>(Arrays.asList(org.matsim.api.core.v01.TransportMode.car,
+						org.matsim.api.core.v01.TransportMode.train))));
+		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Rail,
+				Collections.singleton(org.matsim.api.core.v01.TransportMode.train));
+		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Sea,
+				Collections.singleton(org.matsim.api.core.v01.TransportMode.ship));
+		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Air,
+				Collections.singleton(org.matsim.api.core.v01.TransportMode.airplane));
+		assert (samgodsMode2matsimModes.size() == SamgodsConstants.TransportMode.values().length);
 	}
 
 	public static enum Commodity {

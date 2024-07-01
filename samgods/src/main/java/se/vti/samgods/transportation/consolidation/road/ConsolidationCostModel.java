@@ -29,11 +29,11 @@ import org.matsim.vehicles.Vehicle;
 import floetteroed.utilities.Units;
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -61,7 +61,7 @@ public class ConsolidationCostModel {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public DetailedTransportCost computeEpisodeCost(FreightVehicleAttributes vehicleAttrs, double payload_ton,
+	public DetailedTransportCost computeEpisodeCost(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
 			TransportEpisode episode) {
 
 		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton);
@@ -98,20 +98,17 @@ public class ConsolidationCostModel {
 
 		for (TransportLeg leg : episode.getLegs()) {
 
-			double length_m = 0.0;
-			double tt_s = 0.0;
 			for (Link link : NetworkUtils.getLinks(this.network, leg.getRouteView())) {
-				length_m += link.getLength();
-				tt_s += vehicleAttrs.travelTimeOnLink_s(link);
-			}
-
-			builder.addMoveDuration_h(Units.H_PER_S * tt_s);
-			if (SamgodsConstants.TransportMode.Ferry.equals(leg.getMode())) {
-				builder.addMoveCost(Units.H_PER_S * tt_s * vehicleAttrs.onFerryCost_1_h);
-				builder.addMoveCost(Units.KM_PER_M * length_m * vehicleAttrs.onFerryCost_1_km);
-			} else {
-				builder.addMoveCost(Units.H_PER_S * tt_s * vehicleAttrs.cost_1_h);
-				builder.addMoveCost(Units.KM_PER_M * length_m * vehicleAttrs.cost_1_km);
+				double length_km = Units.KM_H_PER_M_S * link.getLength();
+				double tt_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
+				builder.addMoveDuration_h(tt_h);
+				if (SamgodsLinkAttributes.isFerry(link)) {
+					builder.addMoveCost(tt_h * vehicleAttrs.onFerryCost_1_h);
+					builder.addMoveCost(length_km * vehicleAttrs.onFerryCost_1_km);
+				} else {
+					builder.addMoveCost(tt_h * vehicleAttrs.cost_1_h);
+					builder.addMoveCost(length_km * vehicleAttrs.cost_1_km);
+				}
 			}
 		}
 

@@ -32,7 +32,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.SizeClass;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -44,12 +44,12 @@ public class ConsolidationUtils {
 	private ConsolidationUtils() {
 	}
 
-	public static FreightVehicleAttributes getFreightAttributes(VehicleType vehicleType) {
-		return (FreightVehicleAttributes) vehicleType.getAttributes()
-				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
+	public static SamgodsVehicleAttributes getFreightAttributes(VehicleType vehicleType) {
+		return (SamgodsVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 	}
 
-	public static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
+	public static SamgodsVehicleAttributes getFreightAttributes(Vehicle vehicle) {
 		return getFreightAttributes(vehicle.getType());
 	}
 
