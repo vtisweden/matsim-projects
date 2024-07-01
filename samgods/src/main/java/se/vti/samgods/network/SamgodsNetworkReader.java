@@ -51,13 +51,14 @@ public class SamgodsNetworkReader {
 
 	private static final Logger log = Logger.getLogger(SamgodsNetworkReader.class);
 
-	private static final String NODE_ID = "N";
+	private static final String NODE_COUNTER = "N";
 	private static final String NODE_X = "X";
 	private static final String NODE_Y = "Y";
+	private static final String NODE_ID = "NORIG";
 
 	private static final String LINK_ID = "OBJECTID";
-	private static final String LINK_FROM_NODE = "A";
-	private static final String LINK_TO_NODE = "B";
+	private static final String LINK_FROM_NODE_COUNTER = "A";
+	private static final String LINK_TO_NODE_COUNTER = "B";
 	private static final String LINK_LENGTH_M = "SHAPE_Length";
 	private static final String LINK_SPEED_1 = "SPEED_1";
 	private static final String LINK_SPEED_2 = "SPEED_2";
@@ -78,19 +79,24 @@ public class SamgodsNetworkReader {
 		final Network network = NetworkUtils.createNetwork();
 		network.setCapacityPeriod(3600.0);
 
+		final Map<Long, Node> nodeCounter2node = new LinkedHashMap<>();
+
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(nodesFile))) {
-			final Id<Node> id = Id.createNodeId(record.get(NODE_ID));
+			final Id<Node> id = Id.createNodeId(Long.parseLong(record.get(NODE_ID)));
 			final double x = Double.parseDouble(record.get(NODE_X));
 			final double y = Double.parseDouble(record.get(NODE_Y));
-			NetworkUtils.createAndAddNode(network, id, new Coord(x, y));
+			Node node = NetworkUtils.createAndAddNode(network, id, new Coord(x, y));
+			nodeCounter2node.put(Long.parseLong(record.get(NODE_COUNTER)), node);
 		}
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(linksFile))) {
 
-			final Id<Link> id = Id.createLinkId(record.get(LINK_ID));
+			final Id<Link> id = Id.createLinkId(Long.parseLong(record.get(LINK_ID)));
 
-			final Node fromNode = network.getNodes().get(Id.createNodeId(record.get(LINK_FROM_NODE)));
-			final Node toNode = network.getNodes().get(Id.createNodeId(record.get(LINK_TO_NODE)));
+			final Node fromNode = nodeCounter2node.get(Long.parseLong(record.get(LINK_FROM_NODE_COUNTER)));
+			final Node toNode = nodeCounter2node.get(Long.parseLong(record.get(LINK_TO_NODE_COUNTER)));
+			assert(fromNode != null);
+			assert(toNode != null);
 
 			final double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
@@ -204,6 +210,5 @@ public class SamgodsNetworkReader {
 
 		System.out.println();
 		System.out.println(SamgodsNetworkReader.createNetworkStatsTable(network));
-
 	}
 }

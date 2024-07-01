@@ -60,7 +60,7 @@ public class RoadConsolidationExample {
 
 		final int days = 7;
 
-		TransportEpisode episode = new TransportEpisode(TransportMode.Road, SamgodsConstants.Commodity.AGRICULTURE);
+		TransportEpisode episode = new TransportEpisode(TransportMode.Road, SamgodsConstants.Commodity.AGRICULTURE, false);
 		episode.addLeg(
 				new TransportLeg(new OD(Id.createNodeId("from"), Id.createNodeId("to")), TransportMode.Road));
 

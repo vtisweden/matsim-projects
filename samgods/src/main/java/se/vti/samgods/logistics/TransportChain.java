@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
@@ -42,6 +43,10 @@ public class TransportChain {
 
 	public TransportChain(OD od) {
 		this.od = od;
+	}
+
+	public List<List<List<Id<Link>>>> getRoutesView() {
+		return this.episodes.stream().map(e -> e.getRoutesView()).collect(Collectors.toList());
 	}
 
 	public void addEpisode(final TransportEpisode episode, boolean checkConnectivity) {

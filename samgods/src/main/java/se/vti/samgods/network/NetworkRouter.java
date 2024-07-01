@@ -19,11 +19,15 @@
  */
 package se.vti.samgods.network;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,9 +49,17 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
+import se.vti.samgods.transportation.consolidation.FallbackEpisodeCostModel;
+import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
+import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
+import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
+import se.vti.samgods.utils.CommodityModeGrouping;
 
 /**
  * 
@@ -107,6 +119,7 @@ public class NetworkRouter {
 							System.exit(0);
 							nodes = null;
 						}
+						// Collection<? extends Node> nodeRefs = nodes.values();
 						final Node from = nodes.get(leg.getOrigin());
 						final Node to = nodes.get(leg.getDestination());
 						if ((from != null) && (to != null)) {
@@ -125,12 +138,12 @@ public class NetworkRouter {
 							if (from == null) {
 								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
 										.add(leg.getOrigin());
-//							System.out.println("NO ORIGIN");
+							System.out.println("NO ORIGIN");
 							}
 							if (to == null) {
 								mode2LegRoutingFailures.computeIfAbsent(leg.getMode(), m -> new TreeSet<>())
 										.add(leg.getDestination());
-//							System.out.println("NO DESTINATION");
+							System.out.println("NO DESTINATION");
 							}
 						}
 					}
@@ -140,6 +153,7 @@ public class NetworkRouter {
 	}
 
 	// TODO only for testing
+	private final int maxThreads = Integer.MAX_VALUE;
 	public AtomicLong routedLegCnt = new AtomicLong(0);
 	public AtomicLong routedLinkCnt = new AtomicLong(0);
 	public Map<TransportMode, Set<Id<Node>>> mode2LegRoutingFailures = new ConcurrentHashMap<>();
@@ -152,7 +166,7 @@ public class NetworkRouter {
 
 	public void route(Commodity commodity, Map<OD, List<TransportChain>> od2chains) {
 
-		final int threadCnt = Runtime.getRuntime().availableProcessors();
+		final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
 		final long chainCnt = od2chains.values().stream().flatMap(l -> l.stream()).count();
 		final long chainsPerThread = chainCnt / threadCnt;
 
@@ -172,14 +186,18 @@ public class NetworkRouter {
 			final Map<TransportMode, TravelTime> mode2containerTravelTime = new LinkedHashMap<>();
 			final Map<TransportMode, TravelTime> mode2noContainerTravelTime = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				final Network network = this.routingData.createNetwork(mode);
-				mode2network.put(mode, network);
-				mode2containerDisutility.put(mode, this.routingData.createDisutility(commodity, mode, network, true));
-				mode2noContainerDisutility.put(mode,
-						this.routingData.createDisutility(commodity, mode, network, false));
-				mode2containerTravelTime.put(mode, this.routingData.createTravelTime(commodity, mode, network, true));
-				mode2noContainerTravelTime.put(mode,
-						this.routingData.createTravelTime(commodity, mode, network, false));
+				if (!SamgodsConstants.TransportMode.Ferry.equals(mode)) {
+					final Network network = this.routingData.createNetwork(mode);
+					mode2network.put(mode, network);
+					mode2containerDisutility.put(mode,
+							this.routingData.createDisutility(commodity, mode, network, true));
+					mode2noContainerDisutility.put(mode,
+							this.routingData.createDisutility(commodity, mode, network, false));
+					mode2containerTravelTime.put(mode,
+							this.routingData.createTravelTime(commodity, mode, network, true));
+					mode2noContainerTravelTime.put(mode,
+							this.routingData.createTravelTime(commodity, mode, network, false));
+				}
 			}
 
 			final RoutingThread routingThread = new RoutingThread(jobs, mode2network, mode2containerDisutility,
@@ -194,5 +212,79 @@ public class NetworkRouter {
 			Thread.currentThread().interrupt();
 			return;
 		}
+	}
+
+	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
+
+	public static void main(String[] args) throws IOException {
+
+		System.out.println("STARTED ...");
+
+		FreightVehicleFleet fleet = new FreightVehicleFleet();
+		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
+		fleetReader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
+				SamgodsConstants.TransportMode.Air);
+		fleetReader.load_v12("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
+				SamgodsConstants.TransportMode.Rail);
+		fleetReader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
+				SamgodsConstants.TransportMode.Road);
+		fleetReader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
+				SamgodsConstants.TransportMode.Sea);
+
+		Network network = SamgodsNetworkReader.load("./input_2024/node_parameters.csv",
+				"./input_2024/link_parameters.csv");
+
+		PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
+			@Override
+			public double getTotalArrivalDelay_h(Id<Node> nodeId) {
+				return 0;
+			}
+
+			@Override
+			public double getTotalDepartureDelay_h(Id<Node> nodeId) {
+				return 0;
+			}
+		};
+
+		ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
+
+		CommodityModeGrouping grouping = new CommodityModeGrouping();
+		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+			grouping.addCartesian(null, Arrays.asList(mode));
+		}
+
+		EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel,
+				grouping);
+		EpisodeCostModel empiricalEpisodeCostModel = null;
+
+		NetworkRoutingData routingData = new NetworkRoutingData(network, grouping, empiricalEpisodeCostModel,
+				fallbackEpisodeCostModel);
+		NetworkRouter router = new NetworkRouter(routingData);
+
+		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
+			ChainChoiReader commodityReader = new ChainChoiReader(commodity).setStoreSamgodsShipments(true)
+					.setSamplingRate(1e-3, new Random(4711))
+					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
+			
+			for (List<TransportChain> chains : commodityReader.getOD2transportChains().values()) {
+				for (TransportChain chain : chains) {
+					for (TransportEpisode episode : chain.getEpisodes()) {
+						for (TransportLeg leg : episode.getLegs()) {
+							assert(network.getNodes().containsKey(leg.getOrigin()));
+							assert(network.getNodes().containsKey(leg.getDestination()));
+						}
+					}
+				}
+			}
+			
+			router.route(commodity, commodityReader.getOD2transportChains());
+			for (List<TransportChain> chains : commodityReader.getOD2transportChains().values()) {
+				for (TransportChain chain : chains) {
+					System.out.println("  " + chain.getRoutesView());
+				}
+			}
+		}
+
+		System.out.println("... DONE");
 	}
 }

@@ -27,8 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 
 import de.vandermeer.asciitable.AsciiTable;
@@ -114,6 +116,9 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private final SamgodsConstants.Commodity commodity;
 
+	private double samplingRate = 1.0;
+	private Random rnd = null;
+
 	private List<AnnualShipment> samgodsShipments = null;
 
 	// -------------------- CONSTRUCTION --------------------
@@ -135,7 +140,15 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		return this;
 	}
 
+	public ChainChoiReader setSamplingRate(double rate, Random rnd) {
+		this.samplingRate = rate;
+		this.rnd = rnd;
+		return this;
+	}
+
 	public ChainChoiReader parse(String fileName) {
+		Logger.getLogger(this.getClass()).info(
+				"Parsing file:" + fileName + (this.samplingRate < 1 ? " at sampling rate " + this.samplingRate : ""));
 		final TabularFileParser parser = new TabularFileParser();
 		parser.setDelimiterRegex("\\s");
 		parser.setOmitEmptyColumns(false);
@@ -163,6 +176,10 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	@Override
 	public void startCurrentDataRow() {
+
+		if ((this.samplingRate < 1.0) && (this.rnd.nextDouble() >= this.samplingRate)) {
+			return;
+		}
 
 		// Load OD demand.
 
@@ -220,7 +237,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			for (TransportLeg leg : legs) {
 				if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
 						|| !SamgodsConstants.TransportMode.Rail.equals(leg.getMode())) {
-					currentEpisode = new TransportEpisode(leg.getMode(), this.commodity);
+					currentEpisode = new TransportEpisode(leg.getMode(), this.commodity,
+							false /* TODO initially, no containers */);
 					transportChain.addEpisode(currentEpisode, false);
 				}
 				currentEpisode.addLeg(leg);

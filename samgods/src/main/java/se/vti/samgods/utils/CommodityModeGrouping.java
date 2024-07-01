@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.utils;
 
+import java.util.Arrays;
+
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
@@ -32,6 +34,11 @@ public class CommodityModeGrouping extends TupleGrouping<SamgodsConstants.Commod
 
 	public CommodityModeGrouping(Iterable<Commodity> firstDomain, Iterable<TransportMode> secondDomain) {
 		super(firstDomain, secondDomain);
+	}
+
+	public CommodityModeGrouping() {
+		this(Arrays.asList(SamgodsConstants.Commodity.values()),
+				Arrays.asList(SamgodsConstants.TransportMode.values()));
 	}
 
 }

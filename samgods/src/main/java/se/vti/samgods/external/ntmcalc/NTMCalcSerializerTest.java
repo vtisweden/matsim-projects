@@ -90,7 +90,7 @@ public class NTMCalcSerializerTest {
 			for (int episodeNr = 0; episodeNr < episodeCnt; episodeNr++) {
 
 				TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road,
-						SamgodsConstants.Commodity.AGRICULTURE);
+						SamgodsConstants.Commodity.AGRICULTURE, false);
 
 				int legCnt = rnd.nextInt(maxLegCnt + 1);
 				for (int legNr = 0; legNr < legCnt; legNr++) {

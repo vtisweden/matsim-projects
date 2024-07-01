@@ -21,8 +21,10 @@ package se.vti.samgods.logistics;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -38,12 +40,19 @@ public class TransportEpisode {
 	private final TransportMode mode;
 
 	private final Commodity commodity;
+
+	private final boolean isContainer;
 	
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
 
-	public TransportEpisode(TransportMode mode, Commodity commodity) {
+	public TransportEpisode(TransportMode mode, Commodity commodity, boolean isContainer) {
 		this.mode = mode;
 		this.commodity = commodity;
+		this.isContainer = isContainer;
+	}
+
+	public List<List<Id<Link>>> getRoutesView() {
+		return this.legs.stream().map(l -> l.getRouteView()).collect(Collectors.toList());
 	}
 
 	public void addLeg(final TransportLeg leg) {
@@ -63,9 +72,9 @@ public class TransportEpisode {
 	}
 
 	public boolean isContainer() {
-		throw new UnsupportedOperationException("TODO");
+		return this.isContainer;
 	}
-	
+
 	public Id<Node> getLoadingNode() {
 		return this.legs.getFirst().getOrigin();
 	}

@@ -125,7 +125,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 				VehicleUtils.createVehicleType(Id.create("vehType", VehicleType.class)));
 
 		TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road,
-				SamgodsConstants.Commodity.AGRICULTURE);
+				SamgodsConstants.Commodity.AGRICULTURE, false);
 		episode.addLeg(leg);
 
 		VehicleEpisode vehicleEpisode = new VehicleEpisode(veh, 123.45, episode);
