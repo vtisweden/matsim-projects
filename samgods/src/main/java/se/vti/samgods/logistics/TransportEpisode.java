@@ -42,7 +42,7 @@ public class TransportEpisode {
 	private final Commodity commodity;
 
 	private final boolean isContainer;
-	
+
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
 
 	public TransportEpisode(TransportMode mode, Commodity commodity, boolean isContainer) {
@@ -113,7 +113,8 @@ public class TransportEpisode {
 
 	@Override
 	public int hashCode() {
-		return this.commodity.hashCode() + 31 * (this.mode.hashCode() + 31 * this.legs.hashCode());
+		return this.commodity.hashCode()
+				+ 31 * (this.mode.hashCode() + 31 * (this.legs.hashCode() + 31 * Boolean.hashCode(this.isContainer)));
 	}
 
 	@Override
@@ -122,7 +123,7 @@ public class TransportEpisode {
 			return false;
 		}
 		final TransportEpisode otherEpisode = (TransportEpisode) other;
-		return this.commodity.equals(otherEpisode.commodity)
-				&& (this.mode.equals(otherEpisode.mode) && this.legs.equals(otherEpisode.legs));
+		return this.commodity.equals(otherEpisode.commodity) && this.mode.equals(otherEpisode.mode)
+				&& this.legs.equals(otherEpisode.legs) && (this.isContainer == otherEpisode.isContainer);
 	}
 }

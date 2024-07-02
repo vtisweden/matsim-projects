@@ -33,7 +33,7 @@ import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
-import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * 
@@ -46,7 +46,7 @@ public class RoadConsolidationExample {
 
 		System.out.println("STARTED ...");
 
-		FreightVehicleFleet fleet = new FreightVehicleFleet();
+		VehicleFleet fleet = new VehicleFleet();
 		VehicleType largeTruck = null;
 //				fleet.createAndAddVehicleType("large truck", SamgodsConstants.TransportMode.Road, 35.0,
 //				80.0);

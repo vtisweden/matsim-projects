@@ -46,7 +46,7 @@ import se.vti.samgods.transportation.consolidation.road.PrototypeVehicle;
  * @author GunnarF
  *
  */
-public class FreightVehicleFleet {
+public class VehicleFleet {
 
 	// -------------------- MEMBERS --------------------
 
@@ -56,7 +56,7 @@ public class FreightVehicleFleet {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FreightVehicleFleet() {
+	public VehicleFleet() {
 		this.vehicles = VehicleUtils.createVehiclesContainer();
 	}
 
@@ -138,38 +138,12 @@ public class FreightVehicleFleet {
 
 	// -------------------- CONSTRUCT REPRESENTATIVE VEHICLES --------------------
 
-	/*
-	 * 
-	 * private Double fallbackSpeed_km_h(SamgodsConstants.TransportMode mode) { //
-	 * TODO Inventing numbers. One actually should expect all vehicle classes to //
-	 * have a speed. if (SamgodsConstants.TransportMode.Air.equals(mode)) { return
-	 * 800.0; } else if (SamgodsConstants.TransportMode.Rail.equals(mode)) { return
-	 * 80.0; } else if (SamgodsConstants.TransportMode.Road.equals(mode)) { return
-	 * 80.0; } else if (SamgodsConstants.TransportMode.Sea.equals(mode)) { return
-	 * 16.0; } else { throw new RuntimeException("Unknown transport mode: " + mode);
-	 * } }
-	 * 
-	 * private Double speedOrFallback_km_h(Double speed_km_h,
-	 * SamgodsConstants.TransportMode mode) { if (speed_km_h != null) { return
-	 * speed_km_h; } else { return this.fallbackSpeed_km_h(mode); } }
-	 * 
-	 */
-//
-//	private Double medianOrNull(List<Double> values) {
-//		final double[] nonNullValues = values.stream().filter(v -> v != null).mapToDouble(v -> v).toArray();
-//		if (nonNullValues.length > 0) {
-//			return new Median().evaluate(nonNullValues);
-//		} else {
-//			return null;
-//		}
-//	}
-
-	public SamgodsVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.TransportMode mode,
+	public SamgodsVehicleAttributes createRepresentativeVehicleAttributes(SamgodsConstants.TransportMode mode,
 			boolean container, Function<SamgodsVehicleAttributes, Double> attributes2property) {
-		return this.getRepresentativeVehicleAttributes(Collections.singleton(mode), container, attributes2property);
+		return this.createRepresentativeVehicleAttributes(Collections.singleton(mode), container, attributes2property);
 	}
 
-	public SamgodsVehicleAttributes getRepresentativeVehicleAttributes(Set<SamgodsConstants.TransportMode> modes,
+	public SamgodsVehicleAttributes createRepresentativeVehicleAttributes(Set<SamgodsConstants.TransportMode> modes,
 			boolean container, Function<SamgodsVehicleAttributes, Double> attributes2property) {
 
 		final List<SamgodsVehicleAttributes> attributesList = new ArrayList<>();

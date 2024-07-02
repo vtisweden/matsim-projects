@@ -48,7 +48,7 @@ import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
-import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
 
 /**
@@ -62,7 +62,7 @@ public class NTMCalcSerializerTest {
 
 		System.out.println("STARTED ...");
 
-		FreightVehicleFleet fleet = new FreightVehicleFleet();
+		VehicleFleet fleet = new VehicleFleet();
 		SamgodsFleetReader reader = new SamgodsFleetReader(fleet);
 		reader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
 				SamgodsConstants.TransportMode.Road);

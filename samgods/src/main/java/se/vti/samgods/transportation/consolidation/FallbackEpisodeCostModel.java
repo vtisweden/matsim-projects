@@ -34,7 +34,7 @@ import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
-import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 import se.vti.samgods.utils.CommodityModeGrouping;
 import se.vti.samgods.utils.TupleGrouping;
 
@@ -59,20 +59,20 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FallbackEpisodeCostModel(FreightVehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
+	public FallbackEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
 			CommodityModeGrouping commodityModeGrouping) {
 		this.consolidationCostModel = consolidationCostModel;
 		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 			this.mode2representativeContainerVehicleAttributes.put(mode,
-					fleet.getRepresentativeVehicleAttributes(mode, true, a -> a.capacity_ton));
+					fleet.createRepresentativeVehicleAttributes(mode, true, a -> a.capacity_ton));
 			this.mode2representativeNoContainerVehicleAttributes.put(mode,
-					fleet.getRepresentativeVehicleAttributes(mode, false, a -> a.capacity_ton));
+					fleet.createRepresentativeVehicleAttributes(mode, false, a -> a.capacity_ton));
 		}
 		for (CommodityModeGrouping.Group group : commodityModeGrouping.groupsView()) {
 			this.group2representativeContainerVehicleAttributes.put(group,
-					fleet.getRepresentativeVehicleAttributes(group.getAllSecondView(), true, a -> a.capacity_ton));
+					fleet.createRepresentativeVehicleAttributes(group.getAllSecondView(), true, a -> a.capacity_ton));
 			this.group2representativeNoContainerVehicleAttributes.put(group,
-					fleet.getRepresentativeVehicleAttributes(group.getAllSecondView(), false, a -> a.capacity_ton));
+					fleet.createRepresentativeVehicleAttributes(group.getAllSecondView(), false, a -> a.capacity_ton));
 		}
 	}
 
@@ -110,6 +110,8 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		for (Link link : network.getLinks().values()) {
 			final double length_km = Units.KM_PER_M * link.getLength();
 			final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
+			assert(Double.isFinite(length_km));
+			assert(Double.isFinite(duration_h));
 
 			if (SamgodsLinkAttributes.isFerry(link)) {
 				link2costs.put(link.getId(), new BasicTransportCost(1.0,

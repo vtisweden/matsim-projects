@@ -83,11 +83,11 @@ public class SamgodsFleetReader {
 
 	// -------------------- MEMBERS --------------------
 
-	private final FreightVehicleFleet fleet;
+	private final VehicleFleet fleet;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public SamgodsFleetReader(FreightVehicleFleet fleet) {
+	public SamgodsFleetReader(VehicleFleet fleet) {
 		this.fleet = fleet;
 	}
 
@@ -141,7 +141,7 @@ public class SamgodsFleetReader {
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) throws Exception {
-		FreightVehicleFleet fleet = new FreightVehicleFleet();
+		VehicleFleet fleet = new VehicleFleet();
 		SamgodsFleetReader reader = new SamgodsFleetReader(fleet);
 		reader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
 				SamgodsConstants.TransportMode.Air);

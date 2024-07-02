@@ -95,8 +95,8 @@ public class SamgodsNetworkReader {
 
 			final Node fromNode = nodeCounter2node.get(Long.parseLong(record.get(LINK_FROM_NODE_COUNTER)));
 			final Node toNode = nodeCounter2node.get(Long.parseLong(record.get(LINK_TO_NODE_COUNTER)));
-			assert(fromNode != null);
-			assert(toNode != null);
+			assert (fromNode != null);
+			assert (toNode != null);
 
 			final double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
@@ -128,17 +128,22 @@ public class SamgodsNetworkReader {
 //						+ speed2_km_h);
 //			}
 
-			final double capacity_veh_h = ParseNumberUtils.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY),
-					Double.POSITIVE_INFINITY) / 24.0;
-//			if (Double.isInfinite(capacity_veh_h)) {
-//				log.warn("Link " + id + " has infinte capacity.");
-//			}
+			if (speed_km_h < 1e-3) {
+				Logger.getLogger(SamgodsNetworkReader.class)
+						.warn("Skipping link " + id + " because of too low speed: " + speed_km_h + " km/h.");
+			} else {
+				final double capacity_veh_h = ParseNumberUtils
+						.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY), Double.POSITIVE_INFINITY) / 24.0;
+//				if (Double.isInfinite(capacity_veh_h)) {
+//					log.warn("Link " + id + " has infinte capacity.");
+//				}
 
-			final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
-					Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
-			link.setAllowedModes(matsimModes);
-			link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
-					new SamgodsLinkAttributes(samgodsMode, speed1_km_h, speed2_km_h));
+				final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
+						Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
+				link.setAllowedModes(matsimModes);
+				link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
+						new SamgodsLinkAttributes(samgodsMode, speed1_km_h, speed2_km_h));
+			}
 		}
 
 		log.info("Loaded " + network.getNodes().size() + " nodes.");

@@ -34,7 +34,7 @@ import org.matsim.vehicles.VehicleType;
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.transportation.fleet.FreightVehicleFleet;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * 
@@ -49,7 +49,7 @@ public class Consolidator {
 
 	private final TransportEpisode transportEpisode;
 
-	private final FreightVehicleFleet fleet;
+	private final VehicleFleet fleet;
 
 	private final int shipmentPeriod_day;
 
@@ -73,7 +73,7 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(Random rnd, TransportEpisode transportEpisode, FreightVehicleFleet fleet,
+	public Consolidator(Random rnd, TransportEpisode transportEpisode, VehicleFleet fleet,
 			int shipmentPeriod_day, ConsolidationCostModel costModel, ConsolidationChoiceModel choiceModel) {
 		this.rnd = rnd;
 		this.transportEpisode = transportEpisode;

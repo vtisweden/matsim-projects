@@ -232,21 +232,25 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		// Compose episodes from legs.
 
 		if (legs.size() > 0) {
-			final TransportChain transportChain = new TransportChain(od);
-			TransportEpisode currentEpisode = null;
-			for (TransportLeg leg : legs) {
-				if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
-						|| !SamgodsConstants.TransportMode.Rail.equals(leg.getMode())) {
-					currentEpisode = new TransportEpisode(leg.getMode(), this.commodity,
-							false /* TODO initially, no containers */);
-					transportChain.addEpisode(currentEpisode, false);
-				}
-				currentEpisode.addLeg(leg);
-			}
-			this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
 
-			if (this.samgodsShipments != null) {
-				this.samgodsShipments.add(new AnnualShipment(this.commodity, transportChain, volume_ton_yr));
+			for (boolean isContainer : new boolean[] { true, false }) {
+				
+				final TransportChain transportChain = new TransportChain(od);
+				TransportEpisode currentEpisode = null;
+				for (TransportLeg leg : legs) {
+					if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
+							|| !SamgodsConstants.TransportMode.Rail.equals(leg.getMode())) {
+						currentEpisode = new TransportEpisode(leg.getMode(), this.commodity, isContainer);
+						transportChain.addEpisode(currentEpisode, false);
+					}
+					currentEpisode.addLeg(leg);
+				}
+				this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
+				
+				// TODO Only for testing.
+				if (!isContainer && (this.samgodsShipments != null)) {
+					this.samgodsShipments.add(new AnnualShipment(this.commodity, transportChain, volume_ton_yr));
+				}
 			}
 		}
 	}
