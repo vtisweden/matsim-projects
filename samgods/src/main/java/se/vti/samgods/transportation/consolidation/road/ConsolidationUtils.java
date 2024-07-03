@@ -22,16 +22,11 @@ package se.vti.samgods.transportation.consolidation.road;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
-import floetteroed.utilities.Units;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.AnnualShipment;
-import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.logistics.choicemodel.SizeClass;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
@@ -62,7 +57,7 @@ public class ConsolidationUtils {
 	}
 
 	public static List<Shipment> disaggregateIntoAnalysisPeriod(AnnualShipment shipment, int analysisPeriod_days,
-			SizeClass sizeClass) {
+			SamgodsConstants.ShipmentSizeClass sizeClass) {
 
 		final double amountPerPeriod_ton = shipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
 		final double shipmentsPerPeriod = amountPerPeriod_ton / sizeClass.getMeanValue_ton();

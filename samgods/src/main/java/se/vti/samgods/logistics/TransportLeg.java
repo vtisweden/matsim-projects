@@ -30,6 +30,7 @@ import org.matsim.api.core.v01.network.Node;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 
 /**
  * 
@@ -41,7 +42,9 @@ public class TransportLeg {
 	// defining
 	private final OD od;
 	private final TransportMode mode;
+
 	private List<Id<Link>> route = null;
+	private Boolean containsFerry = null;
 
 	// derived
 //	private Double length_m = null;
@@ -71,15 +74,20 @@ public class TransportLeg {
 	public SamgodsConstants.TransportMode getMode() {
 		return this.mode;
 	}
+	
+	public Boolean containsFerry() {
+		return this.containsFerry;
+	}
 
 	public void setRoute(final List<Link> route) {
-		this.route = Collections.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
-//		this.length_m = 0.0;
-//		this.duration_s = 0.0;
-//		for (Link link : route) {
-//			this.length_m += link.getLength();
-//			this.duration_s += link.getLength() / link.getFreespeed();
-//		}
+		if (route == null) {
+			this.route = null;
+			this.containsFerry = null;
+		} else {
+			this.route = Collections.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
+			this.containsFerry = route.stream().anyMatch(
+					l -> SamgodsConstants.TransportMode.Ferry.equals(SamgodsLinkAttributes.getSamgodsMode(l)));
+		}
 	}
 
 	public List<Id<Link>> getRouteView() {

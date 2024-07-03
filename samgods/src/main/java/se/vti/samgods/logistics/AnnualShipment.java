@@ -19,13 +19,9 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
@@ -61,21 +57,7 @@ public class AnnualShipment {
 		return this.transportChain;
 	}
 
-	public List<TransportMode> getModeSequence() {
-		final List<TransportMode> result = new LinkedList<>();
-		for (TransportEpisode episode : this.transportChain.getEpisodes()) {
-			for (TransportLeg leg : episode.getLegs()) {
-				result.add(leg.getMode());
-			}
-		}
-		return result;
-	}
-
 	public double getTotalAmount_ton() {
 		return this.totalAmount_ton;
 	}
-
-//	public double getFrequency_1_yr() {
-//		return this.frequency_1_yr;
-//	}
 }

@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.network.NetworkUtils;
@@ -37,7 +36,6 @@ import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.ShipmentVehicleAssignment;
-import se.vti.samgods.utils.TupleGrouping;
 
 /**
  * TODO This is now about all commodities, which are defining members of
@@ -140,12 +138,15 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 
 	private final ConsolidationCostModel consolidationCostModel;
 
+	private final Network network;
+
 	private final Map<TransportEpisode, CumulativeDetailedData> episode2data = new LinkedHashMap<>();
 
 	// -------------------- --------------------
 
-	public EmpiricalEpisodeCostModel(ConsolidationCostModel consolidationCostModel) {
+	public EmpiricalEpisodeCostModel(ConsolidationCostModel consolidationCostModel, Network network) {
 		this.consolidationCostModel = consolidationCostModel;
+		this.network = network;
 	}
 
 	// -------------------- --------------------
@@ -175,20 +176,19 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		}
 	}
 
-	public Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
-			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGroup,
-			Network network, boolean container) {
+	@Override
+	public Map<Link, BasicTransportCost> createLinkTransportCosts(SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network) {
 
 		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>();
-
 		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
 			TransportEpisode episode = e2d.getKey();
-
-			if ((container == episode.isContainer())
-					&& commodityAndModeGroup.contains(episode.getCommodity(), episode.getMode())) {
+			if ((commodity == null || commodity.equals(episode.getCommodity()))
+					&& (mode == null || mode.equals(episode.getMode()))
+					&& (isContainer == null || isContainer.equals(episode.isContainer()))) {
 				for (TransportLeg leg : episode.getLegs()) {
 					final CumulativeDetailedData episodeData = e2d.getValue();
-					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteView());
+					final List<Link> links = NetworkUtils.getLinks(this.network, leg.getRouteView());
 					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
 					for (Link link : links) {
 						final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
@@ -200,11 +200,9 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 			}
 		}
 
-		final Map<Id<Link>, BasicTransportCost> link2cost = new LinkedHashMap<>();
+		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>();
 		for (Map.Entry<Link, CumulativeBasicData> l2d : link2data.entrySet()) {
-			Id<Link> linkId = l2d.getKey().getId();
-			CumulativeBasicData data = l2d.getValue();
-			link2cost.put(linkId, data.createUnitData());
+			link2cost.put(l2d.getKey(), l2d.getValue().createUnitData());
 		}
 		return link2cost;
 	}

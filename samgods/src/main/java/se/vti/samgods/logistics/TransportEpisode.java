@@ -51,6 +51,26 @@ public class TransportEpisode {
 		this.isContainer = isContainer;
 	}
 
+	public Boolean containsFerry() {
+		boolean episodeContainsFerry = false;
+		boolean episodeContainsNull = false;
+		for (TransportLeg leg : this.legs) {
+			final Boolean legContainsFerry = leg.containsFerry();
+			if (legContainsFerry == null) {
+				episodeContainsNull = true;
+			} else {
+				episodeContainsFerry |= legContainsFerry;
+			}
+		}
+		if (episodeContainsFerry) {
+			return true;
+		} else if (episodeContainsNull) {
+			return null;
+		} else {
+			return false;
+		}
+	}
+
 	public List<List<Id<Link>>> getRoutesView() {
 		return this.legs.stream().map(l -> l.getRouteView()).collect(Collectors.toList());
 	}

@@ -21,7 +21,6 @@ package se.vti.samgods.transportation.consolidation;
 
 import java.util.Map;
 
-import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 
@@ -29,7 +28,6 @@ import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.utils.TupleGrouping;
 
 /**
  * 
@@ -40,7 +38,6 @@ public interface EpisodeCostModel {
 
 	DetailedTransportCost computeCost_1_ton(TransportEpisode episode);
 
-	Map<Id<Link>, BasicTransportCost> createLinkTransportCosts(
-			TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode>.Group commodityAndModeGrouping,
-			Network network, boolean container);
+	Map<Link, BasicTransportCost> createLinkTransportCosts(SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network);
 }

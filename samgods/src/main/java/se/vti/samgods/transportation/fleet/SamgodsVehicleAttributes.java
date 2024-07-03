@@ -56,7 +56,7 @@ public class SamgodsVehicleAttributes {
 
 	public final Double speed_km_h;
 
-	public final boolean container;
+	public final boolean isContainer;
 
 	public final ConcurrentHashMap<SamgodsConstants.Commodity, Double> loadCost_1_ton;
 
@@ -81,11 +81,20 @@ public class SamgodsVehicleAttributes {
 		this.onFerryCost_1_km = onFerryCost_1_km;
 		this.onFerryCost_1_h = onFerryCost_1_h;
 		this.speed_km_h = speed_km_h;
-		this.container = container;
+		this.isContainer = container;
 		this.loadCost_1_ton = loadCost_1_ton;
 		this.loadTime_h = loadTime_h;
 		this.transferCost_1_ton = transferCost_1_ton;
 		this.transferTime_h = transferTime_h;
+	}
+
+	public boolean ferryCompatible() {
+		return (this.onFerryCost_1_h != null) && (this.onFerryCost_1_h != null);
+	}
+
+	public boolean commodityCompatible(SamgodsConstants.Commodity commodity) {
+		return this.loadCost_1_ton.containsKey(commodity) && this.loadTime_h.containsKey(commodity)
+				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
 
 	public synchronized double speedOnLink_m_s(Link link) {

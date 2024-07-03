@@ -100,7 +100,7 @@ public class DetailedTransportCost implements TransportCost {
 		public Builder addMoveDuration_h(Double moveDuration_h) {
 			this.moveDuration_h = this.sum(this.moveDuration_h, moveDuration_h);
 			return this;
-		}
+		}		
 	}
 
 	public final double amount_ton;

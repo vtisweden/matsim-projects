@@ -92,7 +92,10 @@ public class SamgodsNetworkReader {
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(linksFile))) {
 
 			final Id<Link> id = Id.createLinkId(Long.parseLong(record.get(LINK_ID)));
-
+			if (network.getLinks().containsKey(id)) {
+				log.warn("Link with ID " + id + " does already exist.");
+			}
+			
 			final Node fromNode = nodeCounter2node.get(Long.parseLong(record.get(LINK_FROM_NODE_COUNTER)));
 			final Node toNode = nodeCounter2node.get(Long.parseLong(record.get(LINK_TO_NODE_COUNTER)));
 			assert (fromNode != null);

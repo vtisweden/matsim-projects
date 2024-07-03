@@ -87,6 +87,7 @@ public class ConsolidationCostModel {
 				episode.getTransferNodeCnt() * vehicleAttrs.transferCost_1_ton.get(episode.getCommodity())
 						* Math.max(minTransferredAmount_ton, payload_ton));
 
+		builder.addTransferDuration_h(0.0); // otherwise null
 		for (Id<Node> transferNodeId : episode.createTransferNodesList()) {
 			builder.addTransferDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(transferNodeId)
 					+ this.performanceMeasures.getTotalDepartureDelay_h(transferNodeId));
@@ -96,8 +97,9 @@ public class ConsolidationCostModel {
 		 * Movement along network links.
 		 */
 
+		builder.addMoveCost(0.0);// otherwise null
+		builder.addMoveDuration_h(0.0);// otherwise null
 		for (TransportLeg leg : episode.getLegs()) {
-
 			for (Link link : NetworkUtils.getLinks(this.network, leg.getRouteView())) {
 				double length_km = Units.KM_H_PER_M_S * link.getLength();
 				double tt_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);

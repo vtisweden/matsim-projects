@@ -20,67 +20,89 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.ShipmentSizeClass;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ChoiceSetGenerator<C extends AnnualShipmentCost> {
+public class ChoiceSetGenerator {
 
 	// -------------------- MEMBERS --------------------
 
-	private final AnnualShipmentCostFunction<C> costCalculator;
+	private final EpisodeCostModel empiricalEpisodeCostModel;
+	private final EpisodeCostModel fallbackCostModel;
 
-	private final AnnualShipmentUtilityFunction<C> utilityFunction;
-
-	private final SizeClass[] allSizeClasses;
-	private final SizeClass smallestSizeClass;
+	private final AnnualShipmentUtilityFunction utilityFunction;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChoiceSetGenerator(final AnnualShipmentCostFunction<C> costCalculator,
-			final AnnualShipmentUtilityFunction<C> utilityFunction, final SizeClass[] allSizeClasses) {
-		this.costCalculator = costCalculator;
+	public ChoiceSetGenerator(EpisodeCostModel empiricalEpisodeCostModel, EpisodeCostModel fallbackCostModel,
+			final AnnualShipmentUtilityFunction utilityFunction) {
+		this.empiricalEpisodeCostModel = empiricalEpisodeCostModel;
+		this.fallbackCostModel = fallbackCostModel;
 		this.utilityFunction = utilityFunction;
-		this.allSizeClasses = allSizeClasses;
-		this.smallestSizeClass = Arrays.stream(allSizeClasses)
-				.reduce((a, b) -> a.getUpperValue_ton() < b.getUpperValue_ton() ? a : b).get();
 	}
 
-	// -------------------- PARTIAL IMPLEMENTATION --------------------
+	// -------------------- INTERNALS --------------------
 
-	public List<Alternative<C>> combineWithSizeClass(final List<TransportChain> transportChains,
-			final SizeClass sizeClass, final double totalShipmentSize_ton, final Commodity commodity) {
-		final ArrayList<Alternative<C>> result = new ArrayList<>(transportChains.size());
+	private DetailedTransportCost computeCost_1_ton(TransportChain transportChain) {
+		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
+		for (TransportEpisode episode : transportChain.getEpisodes()) {
+			DetailedTransportCost episodeCost = null;
+			if (this.empiricalEpisodeCostModel != null) {
+				episodeCost = this.empiricalEpisodeCostModel.computeCost_1_ton(episode);
+			}
+			if (episodeCost == null) {
+				episodeCost = this.fallbackCostModel.computeCost_1_ton(episode);
+			}
+			builder.addLoadingCost(episodeCost.loadingCost).addLoadingDuration_h(episodeCost.loadingDuration_h)
+					.addMoveCost(episodeCost.moveCost).addMoveDuration_h(episodeCost.moveDuration_h)
+					.addTransferCost(episodeCost.transferCost).addTransferDuration_h(episodeCost.transferDuration_h)
+					.addUnloadingCost(episodeCost.unloadingCost)
+					.addUnloadingDuration_h(episodeCost.unloadingDuration_h);
+		}
+		return builder.build();
+	}
+
+	private List<Alternative> combineWithSizeClass(final List<TransportChain> transportChains,
+			final SamgodsConstants.ShipmentSizeClass sizeClass, final double totalShipmentSize_ton,
+			final Commodity commodity) {
+		final ArrayList<Alternative> result = new ArrayList<>(transportChains.size());
 		for (TransportChain transportChain : transportChains) {
-//			final double shipmentSize_ton = sizeClass.getUpperValue_ton();
-//			final double frequency_1_yr = totalShipmentSize_ton / shipmentSize_ton;
 			final AnnualShipment shipment = new AnnualShipment(commodity, transportChain, totalShipmentSize_ton);
-			final C shipmentCost = this.costCalculator.computeCost(shipment, sizeClass);
-			result.add(new Alternative<>(sizeClass, shipment, shipmentCost,
-					this.utilityFunction.computeUtility(shipment, shipmentCost)));
+			final DetailedTransportCost transportUnitCost_1_ton = this.computeCost_1_ton(shipment.getTransportChain());
+			// TODO Add storage cost!
+			result.add(new Alternative(sizeClass, shipment,
+					this.utilityFunction.computeUtility(sizeClass, shipment, transportUnitCost_1_ton)));
 		}
 		return result;
 	}
 
-	public List<Alternative<C>> createChoiceSet(final List<TransportChain> transportChains,
+	// -------------------- IMPLEMENTATION --------------------
+
+	public List<Alternative> createChoiceSet(final List<TransportChain> transportChains,
 			final double totalShipmentSize_ton, final Commodity commodity) {
-		final ArrayList<Alternative<C>> result = new ArrayList<>(transportChains.size() * this.allSizeClasses.length);
-		for (SizeClass sizeClass : this.allSizeClasses) {
+		final ArrayList<Alternative> result = new ArrayList<>(
+				transportChains.size() * SamgodsConstants.ShipmentSizeClass.values().length);
+		for (ShipmentSizeClass sizeClass : SamgodsConstants.ShipmentSizeClass.values()) {
 			if (totalShipmentSize_ton >= sizeClass.getUpperValue_ton()) {
 				result.addAll(this.combineWithSizeClass(transportChains, sizeClass, totalShipmentSize_ton, commodity));
 			}
 		}
 		if (result.size() == 0) {
-			result.addAll(
-					this.combineWithSizeClass(transportChains, this.smallestSizeClass, totalShipmentSize_ton, commodity));
+			result.addAll(this.combineWithSizeClass(transportChains, SamgodsConstants.ShipmentSizeClass.getSmallestClass_ton(),
+					totalShipmentSize_ton, commodity));
 		}
 		return result;
 	}

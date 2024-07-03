@@ -20,7 +20,7 @@
 package se.vti.samgods.network;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +59,6 @@ import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
-import se.vti.samgods.utils.CommodityModeGrouping;
 
 /**
  * 
@@ -66,6 +66,8 @@ import se.vti.samgods.utils.CommodityModeGrouping;
  *
  */
 public class NetworkRouter {
+
+	private final Map<OD, List<TransportChain>> od2failedChains = new ConcurrentHashMap<>();
 
 	private long lastUpdate_ms = System.currentTimeMillis();
 
@@ -131,10 +133,14 @@ public class NetworkRouter {
 			for (Map.Entry<SamgodsConstants.TransportMode, Network> e : mode2network.entrySet()) {
 				final TransportMode mode = e.getKey();
 				final Network unimodalNetwork = e.getValue();
-				this.mode2containerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
-						mode2containerDisutility.get(mode), mode2containerTravelTime.get(mode)));
-				this.mode2noContainerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
-						mode2noContainerDisutility.get(mode), mode2noContainerTravelTime.get(mode)));
+				if (mode2containerDisutility.containsKey(mode) && mode2containerTravelTime.containsKey(mode)) {
+					this.mode2containerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
+							mode2containerDisutility.get(mode), mode2containerTravelTime.get(mode)));
+				}
+				if (mode2noContainerDisutility.containsKey(mode) && mode2noContainerTravelTime.containsKey(mode)) {
+					this.mode2noContainerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
+							mode2noContainerDisutility.get(mode), mode2noContainerTravelTime.get(mode)));
+				}
 			}
 		}
 
@@ -144,6 +150,7 @@ public class NetworkRouter {
 			Logger.getLogger(this.getClass()).info("THREAD STARTED: " + this.name);
 
 			for (TransportChain chain : this.chains) {
+				boolean failed = false;
 				for (TransportEpisode episode : chain.getEpisodes()) {
 					for (TransportLeg leg : episode.getLegs()) {
 						Map<Id<Node>, ? extends Node> nodes;
@@ -156,26 +163,31 @@ public class NetworkRouter {
 						}
 						final Node from = nodes.get(leg.getOrigin());
 						final Node to = nodes.get(leg.getDestination());
-						if ((from != null) && (to != null)) {
-							final LeastCostPathCalculator router = episode.isContainer()
-									? this.mode2containerRouter.get(leg.getMode())
-									: this.mode2noContainerRouter.get(leg.getMode());
+						final LeastCostPathCalculator router = episode.isContainer()
+								? this.mode2containerRouter.get(leg.getMode())
+								: this.mode2noContainerRouter.get(leg.getMode());
+						if ((router != null) && (from != null) && (to != null)) {
 							final List<Link> links = router.calcLeastCostPath(from, to, 0, null, null).links;
 							leg.setRoute(links);
-							if (logProgress) {
-								if ((links == null) && !(from == to)) {
+							if ((links == null) && (from != to)) {
+								failed = true;
+								if (logProgress) {
 									registerFailedRoute(this);
-								} else {
-									registerFoundRoute(this);
-
 								}
+							} else if (logProgress) {
+								registerFoundRoute(this);
+
 							}
 						} else {
+							failed = true;
 							if (logProgress) {
 								registerFailedRoute(this);
 							}
 						}
 					}
+				}
+				if (failed) {
+					od2failedChains.computeIfAbsent(chain.getOD(), od -> new ArrayList<>()).add(chain);
 				}
 			}
 			Logger.getLogger(this.getClass()).info("THREAD ENDED: " + this.name);
@@ -228,17 +240,29 @@ public class NetworkRouter {
 			final Map<TransportMode, TravelTime> mode2containerTravelTime = new LinkedHashMap<>();
 			final Map<TransportMode, TravelTime> mode2noContainerTravelTime = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				if (!SamgodsConstants.TransportMode.Ferry.equals(mode)) {
-					final Network network = this.routingData.createNetwork(mode);
-					mode2network.put(mode, network);
-					mode2containerDisutility.put(mode,
-							this.routingData.createDisutility(commodity, mode, network, true));
-					mode2noContainerDisutility.put(mode,
-							this.routingData.createDisutility(commodity, mode, network, false));
-					mode2containerTravelTime.put(mode,
-							this.routingData.createTravelTime(commodity, mode, network, true));
-					mode2noContainerTravelTime.put(mode,
-							this.routingData.createTravelTime(commodity, mode, network, false));
+				
+				final Network network = this.routingData.createNetwork(mode);
+				if (network != null) {
+				
+					final TravelDisutility containerDisutility = this.routingData.createDisutility(commodity, mode,
+							network, true);
+					if (containerDisutility != null) {
+						mode2containerDisutility.put(mode, containerDisutility);
+						mode2containerTravelTime.put(mode,
+								this.routingData.createTravelTime(commodity, mode, network, true));
+					}
+
+					final TravelDisutility noContainerDisutility = this.routingData.createDisutility(commodity, mode,
+							network, false);
+					if (noContainerDisutility != null) {
+						mode2noContainerDisutility.put(mode, noContainerDisutility);
+						mode2noContainerTravelTime.put(mode,
+								this.routingData.createTravelTime(commodity, mode, network, false));
+					}
+
+					if (containerDisutility != null || noContainerDisutility != null) {
+						mode2network.put(mode, network);
+					}
 				}
 			}
 
@@ -256,6 +280,10 @@ public class NetworkRouter {
 			Thread.currentThread().interrupt();
 			return;
 		}
+	}
+
+	public Map<OD, List<TransportChain>> getOD2failedChains() {
+		return this.od2failedChains;
 	}
 
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
@@ -292,17 +320,16 @@ public class NetworkRouter {
 
 		ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
 
-		CommodityModeGrouping grouping = new CommodityModeGrouping();
-		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			grouping.addCartesian(null, Arrays.asList(mode));
-		}
+//		CommodityModeGrouping grouping = new CommodityModeGrouping();
+//		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+//			grouping.addCartesian(null, Arrays.asList(mode));
+//		}
 
-		EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel,
-				grouping);
+		EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel);
 		EpisodeCostModel empiricalEpisodeCostModel = null;
 
-		NetworkRoutingData routingData = new NetworkRoutingData(network, grouping, empiricalEpisodeCostModel,
-				fallbackEpisodeCostModel);
+		NetworkRoutingData routingData = new NetworkRoutingData(network, empiricalEpisodeCostModel,
+				fallbackEpisodeCostModel, fleet);
 		NetworkRouter router = new NetworkRouter(routingData).setLogProgress(false);
 
 		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {

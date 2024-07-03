@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
+import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.AnnualShipment;
 
 /**
@@ -26,8 +28,9 @@ import se.vti.samgods.logistics.AnnualShipment;
  * @author GunnarF
  *
  */
-public interface AnnualShipmentUtilityFunction<C extends AnnualShipmentCost> {
+public interface AnnualShipmentUtilityFunction {
 
-	double computeUtility(AnnualShipment shipment, C shipmentCost);
+	double computeUtility(SamgodsConstants.ShipmentSizeClass realizedShipmentSizeClass, AnnualShipment annualShipment,
+			DetailedTransportCost transportCost_1_ton);
 
 }

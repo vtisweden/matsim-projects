@@ -20,6 +20,7 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import floetteroed.utilities.math.MathHelpers;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.AnnualShipment;
 
 /**
@@ -27,25 +28,22 @@ import se.vti.samgods.logistics.AnnualShipment;
  * @author GunnarF
  *
  */
-public class Alternative<C extends AnnualShipmentCost> {
+public class Alternative {
 
 	// -------------------- PUBLIC CONSTANTS --------------------
 
-	public final SizeClass sizeClass;
+	public final SamgodsConstants.ShipmentSizeClass sizeClass;
 
 	public final AnnualShipment shipment;
-
-	public final C cost;
 
 	public final double utility;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Alternative(final SizeClass sizeClass, final AnnualShipment shipment, final C cost,
+	public Alternative(final SamgodsConstants.ShipmentSizeClass sizeClass, final AnnualShipment shipment,
 			final double utility) {
 		this.sizeClass = sizeClass;
 		this.shipment = shipment;
-		this.cost = cost;
 		this.utility = utility;
 	}
 
@@ -58,7 +56,8 @@ public class Alternative<C extends AnnualShipmentCost> {
 				+ MathHelpers.round(this.shipment.getTotalAmount_ton(), 2) + " ton in relation "
 				+ shipment.getTransportChain().getOriginNodeId() + "/"
 				+ shipment.getTransportChain().getDestinationNodeId() + ": ");
-		result.append("shipmentSizeClass " + sizeClass + ", chain " + shipment.getModeSequence());
+		result.append("shipmentSizeClass " + sizeClass + ", chain "
+				+ shipment.getTransportChain().getTransportModeSequence());
 		return result.toString();
 	}
 }

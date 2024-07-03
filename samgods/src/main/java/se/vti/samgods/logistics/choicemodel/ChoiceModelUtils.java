@@ -30,7 +30,7 @@ import java.util.Random;
  * @author GunnarF
  *
  */
-public class ChoiceModelUtils<C extends AnnualShipmentCost> {
+public class ChoiceModelUtils {
 
 	private final Random rnd;
 
@@ -42,12 +42,12 @@ public class ChoiceModelUtils<C extends AnnualShipmentCost> {
 		this.rnd = rnd;
 	}
 
-	public List<Double> computeLogitProbabilities(final List<Alternative<C>> alternatives,
+	public List<Double> computeLogitProbabilities(final List<Alternative> alternatives,
 			final double scale) {
 		final List<Double> result = new ArrayList<>(alternatives.size());
 		final double maxUtility = alternatives.stream().mapToDouble(a -> a.utility).max().getAsDouble();
 		double denom = 0.0;
-		for (Alternative<?> alternative : alternatives) {
+		for (Alternative alternative : alternatives) {
 			final double num = Math.exp(scale * (alternative.utility - maxUtility));
 			result.add(num);
 			denom += num;
@@ -58,7 +58,7 @@ public class ChoiceModelUtils<C extends AnnualShipmentCost> {
 		return result;
 	}
 
-	public Alternative<C> chooseFromProbabilities(final List<Alternative<C>> alternatives,
+	public Alternative chooseFromProbabilities(final List<Alternative> alternatives,
 			final List<Double> probabilities) {
 		double probaSum = 0.0;
 		final double threshold = this.rnd.nextDouble();
@@ -72,7 +72,7 @@ public class ChoiceModelUtils<C extends AnnualShipmentCost> {
 		return alternatives.get(this.rnd.nextInt(alternatives.size()));
 	}
 
-	public Alternative<C> choose(final List<Alternative<C>> alternatives, double scale) {
+	public Alternative choose(final List<Alternative> alternatives, double scale) {
 		return this.chooseFromProbabilities(alternatives, this.computeLogitProbabilities(alternatives, scale));
 	}
 }

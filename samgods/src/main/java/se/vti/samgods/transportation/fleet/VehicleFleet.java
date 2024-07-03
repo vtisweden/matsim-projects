@@ -21,13 +21,10 @@ package se.vti.samgods.transportation.fleet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -38,6 +35,7 @@ import org.matsim.vehicles.Vehicles;
 
 import de.vandermeer.asciitable.AsciiTable;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.PrototypeVehicle;
 
@@ -136,49 +134,104 @@ public class VehicleFleet {
 		return table.render();
 	}
 
-	// -------------------- CONSTRUCT REPRESENTATIVE VEHICLES --------------------
+	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
-	public SamgodsVehicleAttributes createRepresentativeVehicleAttributes(SamgodsConstants.TransportMode mode,
-			boolean container, Function<SamgodsVehicleAttributes, Double> attributes2property) {
-		return this.createRepresentativeVehicleAttributes(Collections.singleton(mode), container, attributes2property);
+	private class VehicleClassification {
+		final SamgodsConstants.Commodity commodity;
+		final SamgodsConstants.TransportMode mode;
+		final Boolean isContainer;
+		final Boolean containsFerry;
+
+		VehicleClassification(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+				Boolean isContainer, Boolean containsFerry) {
+			this.commodity = commodity;
+			this.mode = mode;
+			this.isContainer = isContainer;
+			this.containsFerry = containsFerry;
+		}
+
+		@Override
+		public boolean equals(Object otherObj) {
+			if (this == otherObj) {
+				return true;
+			} else if (!(otherObj instanceof VehicleClassification)) {
+				return false;
+			} else {
+				final VehicleClassification other = (VehicleClassification) otherObj;
+				return Arrays.asList(this.commodity, this.mode, this.isContainer, this.containsFerry)
+						.equals(Arrays.asList(other.commodity, other.mode, other.isContainer, other.containsFerry));
+			}
+		}
+
+		@Override
+		public int hashCode() {
+			return Arrays.asList(this.commodity, this.mode, this.isContainer, this.containsFerry).hashCode();
+		}
 	}
 
-	public SamgodsVehicleAttributes createRepresentativeVehicleAttributes(Set<SamgodsConstants.TransportMode> modes,
-			boolean container, Function<SamgodsVehicleAttributes, Double> attributes2property) {
+	private final Map<VehicleClassification, List<VehicleType>> classification2type = new LinkedHashMap<>();
 
-		final List<SamgodsVehicleAttributes> attributesList = new ArrayList<>();
-		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final SamgodsVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
-			if (modes.contains(attrs.mode) && (container == attrs.container)
-					&& (attributes2property.apply(attrs) != null)) {
-				attributesList.add(attrs);
+	private final Map<VehicleClassification, VehicleType> classification2representativeType = new LinkedHashMap<>();
+
+	public List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+		final VehicleClassification classification = new VehicleClassification(commodity, mode, isContainer,
+				containsFerry);
+		List<VehicleType> result = this.classification2type.get(classification);
+
+		if (result == null) {
+			result = new ArrayList<>();
+			for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+				SamgodsVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+				if ((commodity == null || attrs.commodityCompatible(commodity))
+						&& (mode == null || mode.equals(attrs.mode))
+						&& (isContainer == null || isContainer.equals(attrs.isContainer))
+						&& (containsFerry == null || !containsFerry || attrs.ferryCompatible())) {
+					result.add(type);
+				}
 			}
+			this.classification2type.put(classification, result);
 		}
 
-		if (attributesList.size() == 0) {
-			return null;
+		return result;
+	}
+
+	public List<VehicleType> getCompatibleVehicleTypes(TransportEpisode episode) {
+		return this.getCompatibleVehicleTypes(episode.getCommodity(), episode.getMode(), episode.isContainer(),
+				episode.containsFerry());
+	}
+
+	public VehicleType getRepresentativeVehicleType(SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+
+		final VehicleClassification classification = new VehicleClassification(commodity, mode, isContainer,
+				containsFerry);
+		VehicleType result = this.classification2representativeType.get(classification);
+
+		if (result == null) {
+			final List<VehicleType> matchingTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
+					containsFerry);
+			if (matchingTypes != null && matchingTypes.size() > 0) {
+				final double meanCapacity_ton = matchingTypes.stream()
+						.mapToDouble(t -> ConsolidationUtils.getCapacity_ton(t)).average().getAsDouble();
+				double resultDeviation_ton = Double.POSITIVE_INFINITY;
+				for (VehicleType candidate : matchingTypes) {
+					final double candidateDeviation_ton = Math
+							.abs(meanCapacity_ton - ConsolidationUtils.getCapacity_ton(candidate));
+					if (candidateDeviation_ton < resultDeviation_ton) {
+						result = candidate;
+						resultDeviation_ton = candidateDeviation_ton;
+					}
+				}
+			}
+			this.classification2representativeType.put(classification, result);
 		}
 
-		Collections.sort(attributesList, new Comparator<SamgodsVehicleAttributes>() {
-			@Override
-			public int compare(SamgodsVehicleAttributes attrs1, SamgodsVehicleAttributes attrs2) {
-				return Double.compare(attributes2property.apply(attrs1), attributes2property.apply(attrs2));
-			}
-		});
+		return result;
+	}
 
-		final int upperMedianIndex = attributesList.size() / 2;
-		if (attributesList.size() % 2 != 0) {
-			return attributesList.get(upperMedianIndex);
-		} else {
-			final double mean = attributesList.stream().mapToDouble(a -> attributes2property.apply(a)).average()
-					.getAsDouble();
-			final double lower = attributes2property.apply(attributesList.get(upperMedianIndex - 1));
-			final double upper = attributes2property.apply(attributesList.get(upperMedianIndex));
-			if (Math.abs(lower - mean) <= Math.abs(upper - mean)) {
-				return attributesList.get(upperMedianIndex - 1);
-			} else {
-				return attributesList.get(upperMedianIndex);
-			}
-		}
+	public VehicleType getRepresentativeVehicleType(TransportEpisode episode) {
+		return this.getRepresentativeVehicleType(episode.getCommodity(), episode.getMode(), episode.isContainer(),
+				episode.containsFerry());
 	}
 }

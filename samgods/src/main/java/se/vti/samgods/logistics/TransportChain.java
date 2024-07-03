@@ -44,6 +44,10 @@ public class TransportChain {
 	public TransportChain(OD od) {
 		this.od = od;
 	}
+	
+	public OD getOD() {
+		return this.od;
+	}
 
 	public List<List<List<Id<Link>>>> getRoutesView() {
 		return this.episodes.stream().map(e -> e.getRoutesView()).collect(Collectors.toList());
