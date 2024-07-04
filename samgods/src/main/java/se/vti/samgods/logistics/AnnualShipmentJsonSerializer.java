@@ -29,48 +29,53 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+
 /**
  * 
  * @author GunnarF
  *
  */
-public class AnnualShipmentJsonSerializer extends JsonSerializer<AnnualShipment> {
+public class AnnualShipmentJsonSerializer extends JsonSerializer<TransportDemand.AnnualShipment> {
 
 	@Override
-	public void serialize(AnnualShipment shipment, JsonGenerator gen, SerializerProvider serializers)
+	public void serialize(TransportDemand.AnnualShipment shipment, JsonGenerator gen, SerializerProvider serializers)
 			throws IOException {
 
 		gen.writeStartObject();
-		gen.writeStringField("commodity", shipment.getCommmodity().toString());
+		gen.writeStringField("commodity", shipment.getCommodity().toString());
 		gen.writeNumberField("amount_ton_yr", shipment.getTotalAmount_ton());
 // TODO The line below was contained in earlier produced files.
 //		gen.writeNumberField("frequency_1_yr", shipment.getFrequency_1_yr());
-		gen.writeStringField("originNode", shipment.getTransportChain().getOriginNodeId().toString());
-		gen.writeStringField("destinationNode", shipment.getTransportChain().getDestinationNodeId().toString());
+		gen.writeStringField("originNode", shipment.getOD().origin.toString());
+		gen.writeStringField("destinationNode", shipment.getOD().toString());
 
-		gen.writeFieldName("episodes");
-		gen.writeStartArray();
-		for (TransportEpisode episode : shipment.getTransportChain().getEpisodes()) {
-			
-			gen.writeStartObject();
-			gen.writeStringField("loadingNode", episode.getLoadingNode().toString());
-			gen.writeStringField("unloadingNode", episode.getUnloadingNode().toString());
-			gen.writeStringField("mainTransportMode", episode.getMode().toString());
-			
-			gen.writeFieldName("legs");
-			gen.writeStartArray();
-			for (TransportLeg leg : episode.getLegs()) {
-				gen.writeStartObject();
-				gen.writeStringField("startNode", leg.getOD().origin.toString());
-				gen.writeStringField("endNode", leg.getOD().destination.toString());
-				gen.writeStringField("transportMode", leg.getMode().toString());
-				gen.writeEndObject();
-			}
-			gen.writeEndArray();
-
-			gen.writeEndObject();
-		}
-		gen.writeEndArray();
+		System.out.println("DATA STRUCTURES HAVE CHANGED, " + this.getClass().getSimpleName() + " NEEDS UPDATE.");
+		System.exit(0);
+		
+//		gen.writeFieldName("episodes");
+//		gen.writeStartArray();
+//		for (TransportEpisode episode : shipment.getTransportChain().getEpisodes()) {
+//			
+//			gen.writeStartObject();
+//			gen.writeStringField("loadingNode", episode.getLoadingNode().toString());
+//			gen.writeStringField("unloadingNode", episode.getUnloadingNode().toString());
+//			gen.writeStringField("mainTransportMode", episode.getMode().toString());
+//			
+//			gen.writeFieldName("legs");
+//			gen.writeStartArray();
+//			for (TransportLeg leg : episode.getLegs()) {
+//				gen.writeStartObject();
+//				gen.writeStringField("startNode", leg.getOD().origin.toString());
+//				gen.writeStringField("endNode", leg.getOD().destination.toString());
+//				gen.writeStringField("transportMode", leg.getMode().toString());
+//				gen.writeEndObject();
+//			}
+//			gen.writeEndArray();
+//
+//			gen.writeEndObject();
+//		}
+//		gen.writeEndArray();
 
 		gen.writeEndObject();
 	}

@@ -47,6 +47,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import floetteroed.utilities.Units;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.SamgodsLinkAttributes;
@@ -118,15 +119,17 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		link1.setFreespeed(Units.M_S_PER_KM_H * 60.0);
 		link2.setFreespeed(Units.M_S_PER_KM_H * 100.0);
 
-		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()), SamgodsConstants.TransportMode.Road);
+		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()));
 		leg.setRoute(Arrays.asList(link1, link2));
 
 		Vehicle veh = VehicleUtils.createVehicle(Id.createVehicleId("veh1"),
 				VehicleUtils.createVehicleType(Id.create("vehType", VehicleType.class)));
 
-		TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road,
-				SamgodsConstants.Commodity.AGRICULTURE, false);
+		TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road);
 		episode.addLeg(leg);
+		
+		TransportChain chain = new TransportChain(SamgodsConstants.Commodity.AGRICULTURE, false);
+		chain.addEpisode(episode, false);
 
 		VehicleEpisode vehicleEpisode = new VehicleEpisode(veh, 123.45, episode);
 

@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,18 +40,24 @@ public class TransportEpisode {
 
 	private final TransportMode mode;
 
-	private final Commodity commodity;
+//	private final Commodity commodity;
 
-	private final boolean isContainer;
+//	private final boolean isContainer;
 
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
+	
+	private TransportChain parent;
 
-	public TransportEpisode(TransportMode mode, Commodity commodity, boolean isContainer) {
+	public TransportEpisode(TransportMode mode) {
 		this.mode = mode;
-		this.commodity = commodity;
-		this.isContainer = isContainer;
+//		this.commodity = commodity;
+//		this.isContainer = isContainer;
 	}
 
+	public void setParent(TransportChain parent) {
+		this.parent = parent;
+	}
+	
 	public Boolean containsFerry() {
 		boolean episodeContainsFerry = false;
 		boolean episodeContainsNull = false;
@@ -76,6 +83,7 @@ public class TransportEpisode {
 	}
 
 	public void addLeg(final TransportLeg leg) {
+		leg.setParent(this);
 		this.legs.add(leg);
 	}
 
@@ -88,11 +96,19 @@ public class TransportEpisode {
 	}
 
 	public Commodity getCommodity() {
-		return this.commodity;
+		if (this.parent == null) {
+			return null;
+		} else {
+			return parent.getCommodity();
+		}
 	}
 
-	public boolean isContainer() {
-		return this.isContainer;
+	public Boolean isContainer() {
+		if (this.parent == null) {
+			return null;
+		} else {
+			return this.parent.isContainer();
+		}
 	}
 
 	public Id<Node> getLoadingNode() {
@@ -128,22 +144,35 @@ public class TransportEpisode {
 	public List<Id<Node>> createAllNodesList() {
 		return this.createNodeList(false);
 	}
+	
+	public boolean isRouted() {
+		for (TransportLeg leg : this.legs) {
+			if (!leg.isRouted()) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	// -------------------- OVERRIDING OF Object --------------------
 
+	private List<Object> asList() {
+		return Arrays.asList(this.getCommodity(), this.isContainer(), this.mode, this.legs);
+	}
+
 	@Override
 	public int hashCode() {
-		return this.commodity.hashCode()
-				+ 31 * (this.mode.hashCode() + 31 * (this.legs.hashCode() + 31 * Boolean.hashCode(this.isContainer)));
+		return this.asList().hashCode();
 	}
 
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof TransportEpisode)) {
+		if (this == other) {
+			return true;
+		} else if (!(other instanceof TransportEpisode)) {
 			return false;
+		} else {
+			return this.asList().equals(((TransportEpisode) other).asList());
 		}
-		final TransportEpisode otherEpisode = (TransportEpisode) other;
-		return this.commodity.equals(otherEpisode.commodity) && this.mode.equals(otherEpisode.mode)
-				&& this.legs.equals(otherEpisode.legs) && (this.isContainer == otherEpisode.isContainer);
 	}
 }

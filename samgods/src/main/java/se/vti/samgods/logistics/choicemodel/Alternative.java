@@ -19,9 +19,8 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
-import floetteroed.utilities.math.MathHelpers;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.AnnualShipment;
+import se.vti.samgods.logistics.TransportChain;
 
 /**
  * 
@@ -34,30 +33,17 @@ public class Alternative {
 
 	public final SamgodsConstants.ShipmentSizeClass sizeClass;
 
-	public final AnnualShipment shipment;
+	public final TransportChain transportChain;
 
 	public final double utility;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Alternative(final SamgodsConstants.ShipmentSizeClass sizeClass, final AnnualShipment shipment,
+	public Alternative(final SamgodsConstants.ShipmentSizeClass sizeClass, final TransportChain transportChain,
 			final double utility) {
 		this.sizeClass = sizeClass;
-		this.shipment = shipment;
+		this.transportChain = transportChain;
 		this.utility = utility;
 	}
 
-	// -------------------- IMPLEMENTATION --------------------
-
-	@Override
-	public String toString() {
-		StringBuffer result = new StringBuffer();
-		result.append("commodity " + shipment.getCommmodity() + " of total size "
-				+ MathHelpers.round(this.shipment.getTotalAmount_ton(), 2) + " ton in relation "
-				+ shipment.getTransportChain().getOriginNodeId() + "/"
-				+ shipment.getTransportChain().getDestinationNodeId() + ": ");
-		result.append("shipmentSizeClass " + sizeClass + ", chain "
-				+ shipment.getTransportChain().getTransportModeSequence());
-		return result.toString();
-	}
 }

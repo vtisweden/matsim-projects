@@ -19,8 +19,11 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -29,6 +32,7 @@ import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 
 /**
  * 
@@ -37,16 +41,27 @@ import se.vti.samgods.SamgodsConstants;
  */
 public class TransportChain {
 
-	private final OD od;
+	private final Commodity commodity;
+
+	private final boolean isContainer;
 
 	private final LinkedList<TransportEpisode> episodes = new LinkedList<>();
 
-	public TransportChain(OD od) {
-		this.od = od;
+	public TransportChain(Commodity commodity, boolean isContainer) {
+		this.commodity = commodity;
+		this.isContainer = isContainer;
 	}
-	
+
+	public boolean isContainer() {
+		return this.isContainer;
+	}
+
+	public Commodity getCommodity() {
+		return this.commodity;
+	}
+
 	public OD getOD() {
-		return this.od;
+		return new OD(this.episodes.getFirst().getLoadingNode(), this.episodes.getLast().getUnloadingNode());
 	}
 
 	public List<List<List<Id<Link>>>> getRoutesView() {
@@ -59,6 +74,7 @@ public class TransportChain {
 				throw new IllegalArgumentException();
 			}
 		}
+		episode.setParent(this);
 		this.episodes.add(episode);
 	}
 
@@ -77,10 +93,50 @@ public class TransportChain {
 	public int getLegCnt() {
 		return this.getEpisodes().stream().mapToInt(e -> e.getLegs().size()).sum();
 	}
-	
+
 	public List<List<SamgodsConstants.TransportMode>> getTransportModeSequence() {
 		return this.episodes.stream().map(e -> e.getLegs().stream().map(l -> l.getMode()).collect(Collectors.toList()))
 				.collect(Collectors.toList());
+	}
+
+	public boolean isRouted() {
+		for (TransportEpisode episode : this.episodes) {
+			if (!episode.isRouted()) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public Set<Id<Node>> getLoadingTransferUnloadingNodes() {
+		final Set<Id<Node>> result = new LinkedHashSet<>();
+		this.episodes.stream().flatMap(e -> e.getLegs().stream()).forEach( l -> {
+			result.add(l.getOrigin());
+			result.add(l.getDestination());
+		});
+		return result;
+	}
+
+	// -------------------- OVERRIDING OF Object --------------------
+
+	private List<Object> asList() {
+		return Arrays.asList(this.commodity, this.isContainer, this.episodes);
+	}
+
+	@Override
+	public int hashCode() {
+		return this.asList().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (this == other) {
+			return true;
+		} else if (!(other instanceof TransportChain)) {
+			return false;
+		} else {
+			return this.asList().equals(((TransportChain) other).asList());
+		}
 	}
 
 }

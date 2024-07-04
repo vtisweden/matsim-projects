@@ -22,6 +22,7 @@ package se.vti.samgods;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,25 +35,41 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SamgodsConstants {
 
 	public static enum TransportMode {
-		Road, Rail, Sea, Air, Ferry
+		Road(org.matsim.api.core.v01.TransportMode.car), Rail(org.matsim.api.core.v01.TransportMode.train),
+		Sea(org.matsim.api.core.v01.TransportMode.ship), Air(org.matsim.api.core.v01.TransportMode.airplane),
+		Ferry(org.matsim.api.core.v01.TransportMode.car, org.matsim.api.core.v01.TransportMode.train);
+
+		public final Set<String> matsimModes;
+		
+		public boolean isFerry() {
+			return Ferry.equals(this);
+		}
+
+		private TransportMode(String... matsimModes) {
+			this.matsimModes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(matsimModes)));
+		}
 	};
 
-	// TODO Does this have to be synchronized?
-	public static final Map<SamgodsConstants.TransportMode, Set<String>> samgodsMode2matsimModes;
-	static {
-		samgodsMode2matsimModes = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
-		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Road,
-				Collections.singleton(org.matsim.api.core.v01.TransportMode.car));
-		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Ferry,
-				Collections.synchronizedSet(new HashSet<>(Arrays.asList(org.matsim.api.core.v01.TransportMode.car,
-						org.matsim.api.core.v01.TransportMode.train))));
-		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Rail,
-				Collections.singleton(org.matsim.api.core.v01.TransportMode.train));
-		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Sea,
-				Collections.singleton(org.matsim.api.core.v01.TransportMode.ship));
-		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Air,
-				Collections.singleton(org.matsim.api.core.v01.TransportMode.airplane));
-		assert (samgodsMode2matsimModes.size() == SamgodsConstants.TransportMode.values().length);
+//	// TODO Does this have to be synchronized?
+//	public static final Map<SamgodsConstants.TransportMode, Set<String>> samgodsMode2matsimModes;
+//	static {
+//		samgodsMode2matsimModes = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
+//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Road,
+//				Collections.singleton(org.matsim.api.core.v01.TransportMode.car));
+//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Ferry,
+//				Collections.synchronizedSet(new HashSet<>(Arrays.asList(org.matsim.api.core.v01.TransportMode.car,
+//						org.matsim.api.core.v01.TransportMode.train))));
+//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Rail,
+//				Collections.singleton(org.matsim.api.core.v01.TransportMode.train));
+//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Sea,
+//				Collections.singleton(org.matsim.api.core.v01.TransportMode.ship));
+//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Air,
+//				Collections.singleton(org.matsim.api.core.v01.TransportMode.airplane));
+//		assert (samgodsMode2matsimModes.size() == SamgodsConstants.TransportMode.values().length);
+//	}
+
+	public static int modeCnt() {
+		return TransportMode.values().length;
 	}
 
 	public static enum Commodity {
@@ -83,6 +100,10 @@ public class SamgodsConstants {
 			this.description = name;
 		}
 	};
+
+	public static int commodityCnt() {
+		return Commodity.values().length;
+	}
 
 	public static enum ShipmentSizeClass {
 
@@ -118,15 +139,14 @@ public class SamgodsConstants {
 		public double getUpperValue_ton() {
 			return this.upperValue_ton;
 		}
-		
+
 		public double getMeanValue_ton() {
 			return 0.5 * (this.lowerValue_ton + this.upperValue_ton);
 		}
-		
+
 		public static ShipmentSizeClass getSmallestClass_ton() {
 			return ShipmentSizeClass.values()[0];
 		}
 	}
 
-	
 }

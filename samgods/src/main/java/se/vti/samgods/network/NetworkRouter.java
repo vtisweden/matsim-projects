@@ -21,7 +21,6 @@ package se.vti.samgods.network;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -29,7 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -49,16 +47,8 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
-import se.vti.samgods.transportation.consolidation.FallbackEpisodeCostModel;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
-import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
-import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * 
@@ -67,19 +57,21 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  */
 public class NetworkRouter {
 
-	private final Map<OD, List<TransportChain>> od2failedChains = new ConcurrentHashMap<>();
-
 	private long lastUpdate_ms = System.currentTimeMillis();
 
 	private Set<Runnable> recentlyActiveThreads = new LinkedHashSet<>();
 
 	private long foundRoutes = 0;
-	private long failedRoutes = 0;
+	private long failedRoutesNoOD = 0;
+	private long failedRoutesNoConnection = 0;
+	private long failedRoutesNoRouter = 0;
 
 	private void msgOrNot() {
-		if (System.currentTimeMillis() - this.lastUpdate_ms > 5000) {
-			Logger.getLogger(this.getClass()).info("found " + this.foundRoutes + ", failed " + this.failedRoutes
-					+ ", active threads: " + this.recentlyActiveThreads.size());
+		if (System.currentTimeMillis() - this.lastUpdate_ms > 500) {
+			Logger.getLogger(this.getClass())
+					.info("found " + this.foundRoutes + ", failed: " + this.failedRoutesNoOD + " (no OD), "
+							+ this.failedRoutesNoConnection + " (no connection), " + this.failedRoutesNoRouter
+							+ " (no router)" + ", active threads: " + this.recentlyActiveThreads.size());
 			this.lastUpdate_ms = System.currentTimeMillis();
 			this.recentlyActiveThreads.clear();
 		}
@@ -91,10 +83,43 @@ public class NetworkRouter {
 		this.recentlyActiveThreads.add(thread);
 	}
 
-	private synchronized void registerFailedRoute(Runnable thread) {
+	private synchronized void registerFailedRouteNoOD(Runnable thread) {
 		this.msgOrNot();
-		this.failedRoutes++;
+		this.failedRoutesNoOD++;
 		this.recentlyActiveThreads.add(thread);
+	}
+
+	private synchronized void registerFailedRouteNoConnection(Runnable thread) {
+		this.msgOrNot();
+		this.failedRoutesNoConnection++;
+		this.recentlyActiveThreads.add(thread);
+	}
+
+	private synchronized void registerFailedRouteNoRouter(Runnable thread) {
+		this.msgOrNot();
+		this.failedRoutesNoRouter++;
+		this.recentlyActiveThreads.add(thread);
+	}
+
+	/**
+	 * Helper class to avoid that parallel routing does not get problems with
+	 * non-synchronized leg/episode/chain references.
+	 * 
+	 * @author GunnarF
+	 *
+	 */
+	private class RoutingJob {
+		final OD od;
+		final boolean isContainer;
+		final SamgodsConstants.TransportMode mode;
+		final TransportLeg leg;
+
+		RoutingJob(TransportLeg leg) {
+			this.od = leg.getOD();
+			this.isContainer = leg.isContainer();
+			this.mode = leg.getMode();
+			this.leg = leg;
+		}
 	}
 
 	/**
@@ -103,18 +128,17 @@ public class NetworkRouter {
 	 * @author GunnarF
 	 *
 	 */
-	class RoutingThread implements Runnable {
+	private class RoutingThread implements Runnable {
 
 		private final String name;
 
-		private final Iterable<TransportChain> chains;
+		private final Iterable<RoutingJob> jobs;
 
 		private final Map<TransportMode, Network> mode2network;
 		private final Map<TransportMode, LeastCostPathCalculator> mode2containerRouter;
 		private final Map<TransportMode, LeastCostPathCalculator> mode2noContainerRouter;
 
-		RoutingThread(String name, final Iterable<TransportChain> chains,
-				final Map<TransportMode, Network> mode2network,
+		RoutingThread(String name, final Iterable<RoutingJob> jobs, final Map<TransportMode, Network> mode2network,
 				final Map<TransportMode, TravelDisutility> mode2containerDisutility,
 				final Map<TransportMode, TravelDisutility> mode2noContainerDisutility,
 				final Map<TransportMode, TravelTime> mode2containerTravelTime,
@@ -123,7 +147,7 @@ public class NetworkRouter {
 			this.name = name;
 
 			// Contents of this datastructure are iterated over and modified (routes added).
-			this.chains = chains;
+			this.jobs = jobs;
 
 			// Local copies of datastructures used in parallel routing.
 			this.mode2network = mode2network;
@@ -146,56 +170,61 @@ public class NetworkRouter {
 
 		@Override
 		public void run() {
-
 			Logger.getLogger(this.getClass()).info("THREAD STARTED: " + this.name);
-
-			for (TransportChain chain : this.chains) {
-				boolean failed = false;
-				for (TransportEpisode episode : chain.getEpisodes()) {
-					for (TransportLeg leg : episode.getLegs()) {
+			try {
+				for (RoutingJob job : this.jobs) {
+					if (job.od.origin.equals(job.od.destination)) {
+						job.leg.setRoute(new ArrayList<>(0));
+						if (logProgress) {
+							registerFoundRoute(this);
+						}
+					} else {
 						Map<Id<Node>, ? extends Node> nodes;
 						try {
-							nodes = this.mode2network.get(leg.getMode()).getNodes();
+							nodes = this.mode2network.get(job.mode).getNodes();
+							assert (nodes != null);
 						} catch (Exception e) {
 							e.printStackTrace();
 							System.exit(0);
 							nodes = null;
 						}
-						final Node from = nodes.get(leg.getOrigin());
-						final Node to = nodes.get(leg.getDestination());
-						final LeastCostPathCalculator router = episode.isContainer()
-								? this.mode2containerRouter.get(leg.getMode())
-								: this.mode2noContainerRouter.get(leg.getMode());
-						if ((router != null) && (from != null) && (to != null)) {
+						final Node from = nodes.get(job.od.origin);
+						final Node to = nodes.get(job.od.destination);
+						final LeastCostPathCalculator router = job.isContainer ? this.mode2containerRouter.get(job.mode)
+								: this.mode2noContainerRouter.get(job.mode);
+						if ((from != null) && (to != null) && (router != null)) {
 							final List<Link> links = router.calcLeastCostPath(from, to, 0, null, null).links;
-							leg.setRoute(links);
-							if ((links == null) && (from != to)) {
-								failed = true;
+							job.leg.setRoute(links);
+							if (links == null) {
 								if (logProgress) {
-									registerFailedRoute(this);
+									registerFailedRouteNoConnection(this);
 								}
 							} else if (logProgress) {
 								registerFoundRoute(this);
-
 							}
 						} else {
-							failed = true;
 							if (logProgress) {
-								registerFailedRoute(this);
+								if (from == null || to == null) {
+									registerFailedRouteNoOD(this);
+								} else if (router == null) {
+									registerFailedRouteNoRouter(this);
+								} else {
+									throw new RuntimeException("impossible");
+								}
 							}
 						}
 					}
 				}
-				if (failed) {
-					od2failedChains.computeIfAbsent(chain.getOD(), od -> new ArrayList<>()).add(chain);
-				}
+
+			} catch (AssertionError e) {
+				e.printStackTrace();
+				throw e;
 			}
 			Logger.getLogger(this.getClass()).info("THREAD ENDED: " + this.name);
 		}
 	}
 
-	// TODO only for testing
-	private final int maxThreads = Integer.MAX_VALUE;
+	private int maxThreads = Integer.MAX_VALUE;
 
 	private final NetworkRoutingData routingData;
 
@@ -210,28 +239,32 @@ public class NetworkRouter {
 		return this;
 	}
 
-	public void route(Commodity commodity, Map<OD, List<TransportChain>> od2chains) {
+	public NetworkRouter setMaxThreads(int maxThreads) {
+		this.maxThreads = maxThreads;
+		return this;
+	}
+
+	public void route(Commodity commodity, Map<OD, Set<TransportChain>> od2chains) {
 
 		final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
 
-		final List<TransportChain> allJobs = od2chains.values().stream().flatMap(l -> l.stream())
-				.collect(Collectors.toList());
-		Collections.shuffle(allJobs);
-		final long totalLegCnt = allJobs.stream().mapToLong(c -> c.getLegCnt()).sum();
-		final long legsPerThread = totalLegCnt / threadCnt;
+		final Set<TransportLeg> allJobs = od2chains.values().stream().flatMap(cl -> cl.stream())
+				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).collect(Collectors.toSet());
+
+		final long legsPerThread = allJobs.size() / threadCnt;
 
 		final ExecutorService threadPool = Executors.newFixedThreadPool(threadCnt);
 
-		final Iterator<TransportChain> jobIterator = allJobs.iterator();
+		final Iterator<TransportLeg> jobIterator = allJobs.iterator();
 
 		for (int thread = 0; thread < threadCnt; thread++) {
 
 			long jobLegCnt = 0;
-			final List<TransportChain> jobs = new LinkedList<>();
+			final List<RoutingJob> jobs = new LinkedList<>();
 			while (jobIterator.hasNext() && ((jobLegCnt < legsPerThread) || (thread == threadCnt - 1))) {
-				final TransportChain job = jobIterator.next();
-				jobLegCnt += job.getLegCnt();
-				jobs.add(job);
+				final TransportLeg leg = jobIterator.next();
+				jobLegCnt++;
+				jobs.add(new RoutingJob(leg));
 			}
 
 			final Map<TransportMode, Network> mode2network = new LinkedHashMap<>();
@@ -240,10 +273,10 @@ public class NetworkRouter {
 			final Map<TransportMode, TravelTime> mode2containerTravelTime = new LinkedHashMap<>();
 			final Map<TransportMode, TravelTime> mode2noContainerTravelTime = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				
+
 				final Network network = this.routingData.createNetwork(mode);
 				if (network != null) {
-				
+
 					final TravelDisutility containerDisutility = this.routingData.createDisutility(commodity, mode,
 							network, true);
 					if (containerDisutility != null) {
@@ -266,9 +299,8 @@ public class NetworkRouter {
 				}
 			}
 
-			final RoutingThread routingThread = new RoutingThread(
-					commodity + "_" + thread + "_" + jobs.stream().mapToLong(c -> c.getLegCnt()).sum() + "jobs", jobs,
-					mode2network, mode2containerDisutility, mode2noContainerDisutility, mode2containerTravelTime,
+			final RoutingThread routingThread = new RoutingThread(commodity + "_" + thread + "_" + jobs.size() + "jobs",
+					jobs, mode2network, mode2containerDisutility, mode2noContainerDisutility, mode2containerTravelTime,
 					mode2noContainerTravelTime, threadCnt);
 			threadPool.execute(routingThread);
 		}
@@ -282,80 +314,76 @@ public class NetworkRouter {
 		}
 	}
 
-	public Map<OD, List<TransportChain>> getOD2failedChains() {
-		return this.od2failedChains;
-	}
-
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) throws IOException {
 
-		System.out.println("STARTED ...");
-
-		VehicleFleet fleet = new VehicleFleet();
-		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
-		fleetReader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
-				SamgodsConstants.TransportMode.Air);
-		fleetReader.load_v12("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
-				SamgodsConstants.TransportMode.Rail);
-		fleetReader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
-				SamgodsConstants.TransportMode.Road);
-		fleetReader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
-				SamgodsConstants.TransportMode.Sea);
-
-		Network network = SamgodsNetworkReader.load("./input_2024/node_parameters.csv",
-				"./input_2024/link_parameters.csv");
-
-		PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
-			@Override
-			public double getTotalArrivalDelay_h(Id<Node> nodeId) {
-				return 0;
-			}
-
-			@Override
-			public double getTotalDepartureDelay_h(Id<Node> nodeId) {
-				return 0;
-			}
-		};
-
-		ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
-
-//		CommodityModeGrouping grouping = new CommodityModeGrouping();
-//		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-//			grouping.addCartesian(null, Arrays.asList(mode));
-//		}
-
-		EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel);
-		EpisodeCostModel empiricalEpisodeCostModel = null;
-
-		NetworkRoutingData routingData = new NetworkRoutingData(network, empiricalEpisodeCostModel,
-				fallbackEpisodeCostModel, fleet);
-		NetworkRouter router = new NetworkRouter(routingData).setLogProgress(false);
-
-		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-			ChainChoiReader commodityReader = new ChainChoiReader(commodity).setStoreSamgodsShipments(false)
-//					.setSamplingRate(1e-1, new Random(4711))
-					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
-
-			for (List<TransportChain> chains : commodityReader.getOD2transportChains().values()) {
-				for (TransportChain chain : chains) {
-					for (TransportEpisode episode : chain.getEpisodes()) {
-						for (TransportLeg leg : episode.getLegs()) {
-							assert (network.getNodes().containsKey(leg.getOrigin()));
-							assert (network.getNodes().containsKey(leg.getDestination()));
-						}
-					}
-				}
-			}
-
-			router.route(commodity, commodityReader.getOD2transportChains());
+//		System.out.println("STARTED ...");
+//
+//		VehicleFleet fleet = new VehicleFleet();
+//		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
+//		fleetReader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
+//				SamgodsConstants.TransportMode.Air);
+//		fleetReader.load_v12("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
+//				SamgodsConstants.TransportMode.Rail);
+//		fleetReader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
+//				SamgodsConstants.TransportMode.Road);
+//		fleetReader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
+//				SamgodsConstants.TransportMode.Sea);
+//
+//		Network network = SamgodsNetworkReader.load("./input_2024/node_parameters.csv",
+//				"./input_2024/link_parameters.csv");
+//
+//		PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
+//			@Override
+//			public double getTotalArrivalDelay_h(Id<Node> nodeId) {
+//				return 0;
+//			}
+//
+//			@Override
+//			public double getTotalDepartureDelay_h(Id<Node> nodeId) {
+//				return 0;
+//			}
+//		};
+//
+//		ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
+//
+////		CommodityModeGrouping grouping = new CommodityModeGrouping();
+////		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+////			grouping.addCartesian(null, Arrays.asList(mode));
+////		}
+//
+//		EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel);
+//		EpisodeCostModel empiricalEpisodeCostModel = null;
+//
+//		NetworkRoutingData routingData = new NetworkRoutingData(network, empiricalEpisodeCostModel,
+//				fallbackEpisodeCostModel, fleet);
+//		NetworkRouter router = new NetworkRouter(routingData).setLogProgress(false);
+//
+//		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
+//			ChainChoiReader commodityReader = new ChainChoiReader(commodity).setStoreSamgodsShipments(false)
+////					.setSamplingRate(1e-1, new Random(4711))
+//					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
+//
 //			for (List<TransportChain> chains : commodityReader.getOD2transportChains().values()) {
 //				for (TransportChain chain : chains) {
-//					System.out.println("  " + chain.getRoutesView());
+//					for (TransportEpisode episode : chain.getEpisodes()) {
+//						for (TransportLeg leg : episode.getLegs()) {
+//							assert (network.getNodes().containsKey(leg.getOrigin()));
+//							assert (network.getNodes().containsKey(leg.getDestination()));
+//						}
+//					}
 //				}
 //			}
-		}
-
-		System.out.println("... DONE");
+//
+//			router.route(commodity, commodityReader.getOD2transportChains());
+////			for (List<TransportChain> chains : commodityReader.getOD2transportChains().values()) {
+////				for (TransportChain chain : chains) {
+////					System.out.println("  " + chain.getRoutesView());
+////				}
+////			}
+//		}
+//
+//		System.out.println("... DONE");
 	}
 }

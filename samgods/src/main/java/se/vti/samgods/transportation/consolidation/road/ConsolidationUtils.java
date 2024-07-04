@@ -26,7 +26,7 @@ import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.AnnualShipment;
+import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
@@ -56,10 +56,10 @@ public class ConsolidationUtils {
 		return getFreightAttributes(vehicle).capacity_ton;
 	}
 
-	public static List<Shipment> disaggregateIntoAnalysisPeriod(AnnualShipment shipment, int analysisPeriod_days,
+	public static List<Shipment> disaggregateIntoAnalysisPeriod(TransportDemand.AnnualShipment annualShipment, int analysisPeriod_days,
 			SamgodsConstants.ShipmentSizeClass sizeClass) {
 
-		final double amountPerPeriod_ton = shipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
+		final double amountPerPeriod_ton = annualShipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
 		final double shipmentsPerPeriod = amountPerPeriod_ton / sizeClass.getMeanValue_ton();
 		final double singleShipmentSize_ton = amountPerPeriod_ton / Math.ceil(shipmentsPerPeriod);
 
@@ -69,10 +69,10 @@ public class ConsolidationUtils {
 		final List<Shipment> shipments = new ArrayList<>(
 				completeShipmentsPerPeriod + (fractionalShipmentsPerPeriod > 0 ? 1 : 0));
 		for (int i = 0; i < completeShipmentsPerPeriod; i++) {
-			shipments.add(new Shipment(shipment.getCommmodity(), singleShipmentSize_ton, 1.0));
+			shipments.add(new Shipment(annualShipment.getCommodity(), singleShipmentSize_ton, 1.0));
 		}
 		if (fractionalShipmentsPerPeriod > 0) {
-			shipments.add(new Shipment(shipment.getCommmodity(), singleShipmentSize_ton, fractionalShipmentsPerPeriod));
+			shipments.add(new Shipment(annualShipment.getCommodity(), singleShipmentSize_ton, fractionalShipmentsPerPeriod));
 		}
 
 		return shipments;

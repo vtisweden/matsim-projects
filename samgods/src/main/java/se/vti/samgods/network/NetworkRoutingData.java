@@ -20,10 +20,8 @@
 package se.vti.samgods.network;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
@@ -46,6 +44,8 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  */
 public class NetworkRoutingData {
 
+//	private static final Logger log = Logger.getLogger(NetworkRoutingData.class);
+
 	// -------------------- MEMBERS --------------------
 
 	private final Network multimodalNetwork;
@@ -55,7 +55,7 @@ public class NetworkRoutingData {
 	private final EpisodeCostModel fallbackEpisodeCostModel;
 
 	private final VehicleFleet fleet;
-	
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public NetworkRoutingData(Network multimodalNetwork, EpisodeCostModel empiricalEpisodeCostModel,
@@ -73,36 +73,32 @@ public class NetworkRoutingData {
 	}
 
 	public Network createNetwork(SamgodsConstants.TransportMode mode) {
-		if (SamgodsConstants.TransportMode.Ferry.equals(mode)) {
+		if (mode.isFerry()) {
 			return null;
 		}
-		final Set<String> matsimModes = SamgodsConstants.samgodsMode2matsimModes.get(mode);
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
-		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, matsimModes);
+		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, mode.matsimModes);
 		return unimodalNetwork;
 	}
 
-	private static final Logger log = Logger.getLogger(NetworkRoutingData.class);
-
 	public TravelDisutility createDisutility(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
 			Network network, boolean isContainer) {
-		
+
 		if (this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null) == null) {
 			return null;
 		}
-		
+
 		final Map<Link, Double> link2disutility;
 		if (this.empiricalEpisodeCostModel != null) {
 			link2disutility = this.empiricalEpisodeCostModel
 					.createLinkTransportCosts(commodity, mode, isContainer, network).entrySet().stream()
-					.collect(Collectors.toMap(e -> network.getLinks().get(e.getKey()),
-							e -> e.getValue().getMonetaryCost()));
+					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getMonetaryCost()));
 			if (link2disutility.size() < network.getLinks().size()) {
 				final Map<Link, BasicTransportCost> link2fallbackDisutility = this.fallbackEpisodeCostModel
 						.createLinkTransportCosts(commodity, mode, isContainer, network);
 				for (Link link : network.getLinks().values()) {
 					if (!link2disutility.containsKey(link)) {
-						link2disutility.put(link, link2fallbackDisutility.get(link.getId()).getMonetaryCost());
+						link2disutility.put(link, link2fallbackDisutility.get(link).getMonetaryCost());
 					}
 				}
 			}
@@ -125,7 +121,7 @@ public class NetworkRoutingData {
 		}
 
 		return new TravelDisutility() {
-			
+
 			@Override
 			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
 				assert (person == null);
@@ -142,11 +138,11 @@ public class NetworkRoutingData {
 
 	public TravelTime createTravelTime(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
 			Network network, boolean isContainer) {
-		
+
 		if (this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null) == null) {
 			return null;
 		}
-		
+
 		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel
 				.createLinkTransportCosts(commodity, mode, isContainer, network).entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> Units.S_PER_H * e.getValue().getDuration_h()));

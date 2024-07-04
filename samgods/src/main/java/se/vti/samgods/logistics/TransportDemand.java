@@ -1,7 +1,7 @@
 /**
- * se.vti.samgods
+ * se.vti.samgods.logistics
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -20,17 +20,21 @@
 package se.vti.samgods.logistics;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import de.vandermeer.asciitable.AsciiTable;
+import floetteroed.utilities.math.MathHelpers;
 import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.utils.MiscUtils;
 
 /**
  * 
@@ -39,50 +43,112 @@ import se.vti.samgods.SamgodsConstants.Commodity;
  */
 public class TransportDemand {
 
-	// -------------------- MEMBERS --------------------
+	@JsonSerialize(using = AnnualShipmentJsonSerializer.class)
+	public class AnnualShipment {
 
-	private Map<Commodity, PWCMatrix> commodity2pwcMatrix = new LinkedHashMap<>(Commodity.values().length);
+		// -------------------- CONSTANTS --------------------
 
-	private Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2chains = new LinkedHashMap<>(
-			Commodity.values().length);
+		private final SamgodsConstants.Commodity commodity;
 
-	// -------------------- CONSTRUCTION --------------------
+		private final OD od;
+
+		private final double singleInstanceAmount_ton;
+
+		private final int numberOfInstances;
+
+		// -------------------- CONSTRUCTION --------------------
+
+		private AnnualShipment(SamgodsConstants.Commodity commodity, OD od, double singleInstanceAmount_ton,
+				int numberOfInstances) {
+			this.commodity = commodity;
+			this.od = od;
+			this.singleInstanceAmount_ton = singleInstanceAmount_ton;
+			this.numberOfInstances = numberOfInstances;
+		}
+
+		// -------------------- GETTERS --------------------
+
+		public SamgodsConstants.Commodity getCommodity() {
+			return this.commodity;
+		}
+
+		public OD getOD() {
+			return this.od;
+		}
+
+		public double getSingleInstanceAmount() {
+			return this.singleInstanceAmount_ton;
+		}
+
+		public int getNumberOfInstances() {
+			return this.numberOfInstances;
+		}
+
+		public double getTotalAmount_ton() {
+			return this.singleInstanceAmount_ton * this.numberOfInstances;
+		}
+
+	}
+
+	public final Map<Commodity, Map<OD, Set<TransportChain>>> commodity2od2transportChains = new LinkedHashMap<>();
+
+	public final Map<Commodity, Map<OD, List<AnnualShipment>>> commodity2od2annualShipments = new LinkedHashMap<>();
 
 	public TransportDemand() {
 	}
 
-	// -------------------- SETTERS AND GETTERS --------------------
-
-	public void setPWCMatrix(Commodity commodity, PWCMatrix matrix) {
-		this.commodity2pwcMatrix.put(commodity, matrix);
+	public Set<OD> collectAllODsWithChains() {
+		return this.commodity2od2transportChains.values().stream().flatMap(od2ch -> od2ch.keySet().stream())
+				.collect(Collectors.toSet());
 	}
 
-	public void setTransportChains(Commodity commodity, Map<OD, List<TransportChain>> chains) {
-		this.commodity2od2chains.put(commodity, chains);
+	public void add(TransportChain transportChain, double singleInstanceAmount_ton, int numberOfInstances) {
+		final Commodity commodity = transportChain.getCommodity();
+		final OD od = transportChain.getOD();
+
+		final Set<TransportChain> existingChains = this.commodity2od2transportChains
+				.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
+				.computeIfAbsent(od, od2 -> new LinkedHashSet<>(1));
+		existingChains.add(transportChain);
+
+		this.commodity2od2annualShipments.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
+				.computeIfAbsent(od, od2 -> new LinkedList<>())
+				.add(new AnnualShipment(commodity, od, singleInstanceAmount_ton, numberOfInstances));
 	}
 
-	public PWCMatrix getPWCMatrix(final Commodity commodity) {
-		return this.commodity2pwcMatrix.get(commodity);
-	}
+	public String createChainStatsTable(int maxRowCnt, Commodity commodity) {
 
-	public Map<OD, List<TransportChain>> getTransportChains(Commodity commodity) {
-		return this.commodity2od2chains.get(commodity);
-	}
+		final Map<List<List<SamgodsConstants.TransportMode>>, Integer> modeSeq2cnt = new LinkedHashMap<>();
+		for (Set<TransportChain> chains : this.commodity2od2transportChains.get(commodity).values()) {
+			for (TransportChain chain : chains) {
+				List<List<SamgodsConstants.TransportMode>> modes = chain.getTransportModeSequence();
+				modeSeq2cnt.compute(modes, (m, c) -> c == null ? 1 : c + 1);
+			}
+		}
+		final List<Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer>> sortedEntries = MiscUtils
+				.getSortedInstance(modeSeq2cnt);
 
-	public List<TransportChain> getTransportChains(Commodity commodity, OD od) {
-		return this.commodity2od2chains.get(commodity).get(od);
-	}
+		final long total = modeSeq2cnt.values().stream().mapToLong(c -> c).sum();
+		final AsciiTable table = new AsciiTable();
+		table.addRule();
+		table.addRow("Rank", "episodes", "Count", "Share [%]");
+		table.addRule();
+		table.addRow("", "Total", total, 100);
+		table.addRule();
+		for (int i = 0; i < Math.min(maxRowCnt, sortedEntries.size()); i++) {
+			Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer> entry = sortedEntries.get(i);
+			table.addRow(i + 1,
+					entry.getKey().stream()
+							.map(e -> "[" + e.stream().map(m -> m.toString()).collect(Collectors.joining(",")) + "]")
+							.collect(Collectors.joining(",")),
+					entry.getValue(), MathHelpers.round(100.0 * entry.getValue().doubleValue() / total, 2));
+			table.addRule();
+		}
 
-	public List<TransportChain> getTransportChains(Commodity commodity, Id<Node> origin, Id<Node> destination) {
-		return this.getTransportChains(commodity, new OD(origin, destination));
-	}
-
-	public void downsample(Commodity commodity, final double samplingRate) {
-		final Random rnd = new Random();
-		final Set<OD> downsampledODs = this.getTransportChains(commodity).keySet().stream()
-				.filter(k -> rnd.nextDouble() < samplingRate).collect(Collectors.toSet());
-		this.getTransportChains(commodity).keySet().retainAll(downsampledODs);
-		this.getPWCMatrix(commodity).getOd2Amount_ton_yr().keySet().retainAll(downsampledODs);
+		final StringBuffer result = new StringBuffer();
+		result.append("\nCOMMODITY: " + commodity + ", occurrence of logistic chains (NOT freight volumes)\n");
+		result.append(table.render());
+		return result.toString();
 	}
 
 }

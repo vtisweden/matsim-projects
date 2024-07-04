@@ -42,14 +42,14 @@ import org.matsim.vehicles.VehicleUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * 
@@ -89,8 +89,9 @@ public class NTMCalcSerializerTest {
 			int episodeCnt = rnd.nextInt(maxEpisodeCnt + 1);
 			for (int episodeNr = 0; episodeNr < episodeCnt; episodeNr++) {
 
-				TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road,
-						SamgodsConstants.Commodity.AGRICULTURE, false);
+				TransportChain chain = new TransportChain(SamgodsConstants.Commodity.AGRICULTURE, false);
+				TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road);
+				chain.addEpisode(episode, false);
 
 				int legCnt = rnd.nextInt(maxLegCnt + 1);
 				for (int legNr = 0; legNr < legCnt; legNr++) {
@@ -131,9 +132,7 @@ public class NTMCalcSerializerTest {
 						routeLinks.add(link);
 					}
 
-					TransportLeg leg = new TransportLeg(
-							new OD(routeNodes.getFirst().getId(), routeNodes.getLast().getId()),
-							SamgodsConstants.TransportMode.Road);
+					TransportLeg leg = new TransportLeg(routeNodes.getFirst().getId(), routeNodes.getLast().getId());
 					leg.setRoute(routeLinks);
 					episode.addLeg(leg);
 				}

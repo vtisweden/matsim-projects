@@ -25,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -34,16 +36,16 @@ import org.matsim.api.core.v01.network.Node;
 import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.ShipmentSizeClass;
-import se.vti.samgods.logistics.AnnualShipment;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.ChainChoiReader;
-import se.vti.samgods.logistics.PWCMatrix;
 import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportDemand;
+import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.choicemodel.Alternative;
 import se.vti.samgods.logistics.choicemodel.AnnualShipmentUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
 import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
-import se.vti.samgods.models.saana.SaanaModelRunner;
 import se.vti.samgods.network.NetworkRouter;
 import se.vti.samgods.network.NetworkRoutingData;
 import se.vti.samgods.network.SamgodsNetworkReader;
@@ -61,12 +63,11 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  */
 public class TestSamgods {
 
-	static Logger log = Logger.getLogger(SaanaModelRunner.class);
+	static Logger log = Logger.getLogger(TestSamgods.class);
 
 	public static void main(String[] args) throws IOException {
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.METAL,
-//				SamgodsConstants.Commodity.OTHERMINERAL);
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER);
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
 		double samplingRate = 1.0;
 
@@ -88,15 +89,12 @@ public class TestSamgods {
 
 		// LOAD DEMAND
 
-		Map<SamgodsConstants.Commodity, PWCMatrix> commodity2pwc = new LinkedHashMap<>();
-		Map<SamgodsConstants.Commodity, Map<OD, List<TransportChain>>> commodity2OD2chains = new LinkedHashMap<>();
+		TransportDemand transportDemand = new TransportDemand();
 
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-			ChainChoiReader commodityReader = new ChainChoiReader(commodity).setStoreSamgodsShipments(false)
-					.setSamplingRate(samplingRate, new Random(4711))
+			new ChainChoiReader(commodity, transportDemand)
+					.setSamplingRate(samplingRate, new Random(4711)).checkAgainstNetwork(network)
 					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
-			commodity2pwc.put(commodity, commodityReader.getPWCMatrix());
-			commodity2OD2chains.put(commodity, commodityReader.getOD2transportChains());
 		}
 
 		// CREATE COST CONTAINERS
@@ -122,24 +120,32 @@ public class TestSamgods {
 		NetworkRoutingData routingData = new NetworkRoutingData(network, empiricalEpisodeCostModel,
 				fallbackEpisodeCostModel, fleet);
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-			Map<OD, List<TransportChain>> od2chains = commodity2OD2chains.get(commodity);
-			NetworkRouter router = new NetworkRouter(routingData).setLogProgress(false);
+			Map<OD, Set<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
+			NetworkRouter router = new NetworkRouter(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
 			router.route(commodity, od2chains);
-
-			for (Map.Entry<OD, List<TransportChain>> od2failed : router.getOD2failedChains().entrySet()) {
-				log.warn("Removing " + od2failed.getValue().size() + " chains with incomplete routes from OD "
-						+ od2failed.getKey());
-				od2chains.get(od2failed.getKey()).removeAll(od2failed.getValue());
+		}
+		
+		// REMOVE UNROUTED CHAINS
+		
+		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+			long removedCnt = 0;
+			long totalCnt = 0;
+			for (Map.Entry<OD, Set<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity).entrySet()) {
+				final int chainCnt = entry.getValue().size();
+				totalCnt += chainCnt;
+				entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toSet()));
+				removedCnt += chainCnt - entry.getValue().size();
 			}
+			log.warn(
+					commodity + ": Removed " + removedCnt + " out of " + totalCnt + " chains with incomplete routes. ");
 		}
 
 		// RUN LOGISTICS MODEL
 
 		AnnualShipmentUtilityFunction utilityFunction = new AnnualShipmentUtilityFunction() {
 			@Override
-			public double computeUtility(ShipmentSizeClass realizedShipmentSizeClass, AnnualShipment annualShipment,
+			public double computeUtility(Commodity commodity, AnnualShipment annualShipment,
 					DetailedTransportCost transportCost_1_ton) {
-				// TODO include storage cost
 				return -transportCost_1_ton.getMonetaryCost() * annualShipment.getTotalAmount_ton();
 			}
 		};
@@ -151,22 +157,57 @@ public class TestSamgods {
 		ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-			PWCMatrix pwc = commodity2pwc.get(commodity);
-			Map<OD, List<TransportChain>> od2chains = commodity2OD2chains.get(commodity);
-			for (OD od : pwc.getOd2Amount_ton_yr().keySet()) {
-				double amount_ton_yr = pwc.getOd2Amount_ton_yr().get(od);
-				List<TransportChain> chains = od2chains.get(od);
-				if (chains.size() == 0) {
-					log.warn("No feasible transport chains in OD pair " + od + ", loosing + " + amount_ton_yr + " of " + commodity + ".");
-				} else {
-					List<Alternative> alternatives = choiceSetGenerator.createChoiceSet(chains, amount_ton_yr,
-							commodity);
-					Alternative choice = choiceModel.choose(alternatives, scale);
-					System.out.println(choice);
+			long cnt = 0;
+
+			for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
+					.get(commodity).entrySet()) {
+				final OD od = e.getKey();
+
+				final Set<TransportChain> transportChains = transportDemand.commodity2od2transportChains.get(commodity)
+						.get(od);
+				if (transportChains.size() > 0) {
+
+					// encapsulate >>>
+
+					Map<TransportChain, DetailedTransportCost> transportChain2transportUnitCost_1_ton = new LinkedHashMap<>(
+							transportChains.size());
+					for (TransportChain transportChain : transportChains) {
+						DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
+						for (TransportEpisode episode : transportChain.getEpisodes()) {
+							DetailedTransportCost episodeCost = null;
+							if (empiricalEpisodeCostModel != null) {
+								episodeCost = empiricalEpisodeCostModel.computeCost_1_ton(episode);
+							}
+							if (episodeCost == null) {
+								episodeCost = fallbackEpisodeCostModel.computeCost_1_ton(episode);
+							}
+							builder.addLoadingCost(episodeCost.loadingCost)
+									.addLoadingDuration_h(episodeCost.loadingDuration_h)
+									.addMoveCost(episodeCost.moveCost).addMoveDuration_h(episodeCost.moveDuration_h)
+									.addTransferCost(episodeCost.transferCost)
+									.addTransferDuration_h(episodeCost.transferDuration_h)
+									.addUnloadingCost(episodeCost.unloadingCost)
+									.addUnloadingDuration_h(episodeCost.unloadingDuration_h);
+						}
+						transportChain2transportUnitCost_1_ton.put(transportChain, builder.build());
+					}
+
+					// encapsuate <<<
+
+					for (TransportDemand.AnnualShipment shipment : e.getValue()) {
+						List<Alternative> alternatives = choiceSetGenerator.createChoiceSet(commodity, shipment,
+								transportChain2transportUnitCost_1_ton);
+						for (int instance = 0; instance < shipment.getNumberOfInstances(); instance++) {
+							Alternative choice = choiceModel.choose(alternatives, scale);
+							assert (choice != null);
+							cnt++;
+						}
+					}
 				}
 			}
+			log.info(commodity + ": Created " + cnt + " shipments.");
 		}
 
-		System.out.println("... DONE");
+		log.info("DONE");
 	}
 }

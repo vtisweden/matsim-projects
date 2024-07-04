@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,7 +30,6 @@ import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 
 /**
@@ -41,24 +41,26 @@ public class TransportLeg {
 
 	// defining
 	private final OD od;
-	private final TransportMode mode;
+//	private final TransportMode mode;
+	private TransportEpisode parent;
 
+	// TODO derived
 	private List<Id<Link>> route = null;
 	private Boolean containsFerry = null;
 
-	// derived
-//	private Double length_m = null;
-//	private Double duration_s = null;
-
-	public TransportLeg(OD od, TransportMode mode) {
+	public TransportLeg(OD od) {
 		this.od = od;
-		this.mode = mode;
+//		this.mode = mode;
 	}
 
-	public TransportLeg(Id<Node> origin, Id<Node> destination, TransportMode mode) {
-		this(new OD(origin, destination), mode);
+	public TransportLeg(Id<Node> origin, Id<Node> destination) {
+		this(new OD(origin, destination));
 	}
 
+	void setParent(TransportEpisode parent) {
+		this.parent = parent;
+	}
+	
 	public Id<Node> getOrigin() {
 		return this.od.origin;
 	}
@@ -71,10 +73,30 @@ public class TransportLeg {
 		return this.od;
 	}
 
-	public SamgodsConstants.TransportMode getMode() {
-		return this.mode;
+	public SamgodsConstants.Commodity getCommodity() {
+		if (this.parent == null) {
+			return null;
+		} else {
+			return this.parent.getCommodity();
+		}
 	}
-	
+
+	public Boolean isContainer() {
+		if (this.parent == null) {
+			return null;
+		} else {
+			return this.parent.isContainer();
+		}
+	}
+
+	public SamgodsConstants.TransportMode getMode() {
+		if (this.parent == null) {
+			return null;
+		} else {
+			return this.parent.getMode();
+		}
+	}
+
 	public Boolean containsFerry() {
 		return this.containsFerry;
 	}
@@ -93,33 +115,32 @@ public class TransportLeg {
 	public List<Id<Link>> getRouteView() {
 		return this.route;
 	}
-
-//	public Double getLength_m() {
-//		return this.length_m;
-//	}
-//
-//	public Double getDuration_s() {
-//		return this.duration_s;
-//	}
+	
+	public boolean isRouted() {
+		return (this.route != null);
+	}
 
 	// -------------------- OVERRIDING OF Object --------------------
 
+	private List<Object> asList() {
+		return Arrays.asList(this.getCommodity(), this.isContainer(), this.getMode(), this.od,
+				(this.route == null) ? null : this.getRouteView());
+	}
+
 	@Override
 	public int hashCode() {
-		int code = this.od.hashCode() + 31 * this.mode.hashCode();
-		if (this.route != null) {
-			code = this.route.hashCode() + 31 * code;
-		}
-		return code;
+		return this.asList().hashCode();
 	}
 
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof TransportLeg)) {
+		if (this == other) {
+			return true;
+		} else if (!(other instanceof TransportLeg)) {
 			return false;
+		} else {
+			return this.asList().equals(((TransportLeg) other).asList());
 		}
-		final TransportLeg otherLeg = (TransportLeg) other;
-		return this.od.equals(otherLeg.od) && (this.mode.equals(otherLeg.mode) && this.route.equals(otherLeg.route));
 	}
 
 }

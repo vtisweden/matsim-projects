@@ -21,7 +21,7 @@ package se.vti.samgods.logistics.choicemodel;
 
 import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.AnnualShipment;
+import se.vti.samgods.logistics.TransportDemand;
 
 /**
  * 
@@ -30,7 +30,6 @@ import se.vti.samgods.logistics.AnnualShipment;
  */
 public interface AnnualShipmentUtilityFunction {
 
-	double computeUtility(SamgodsConstants.ShipmentSizeClass realizedShipmentSizeClass, AnnualShipment annualShipment,
-			DetailedTransportCost transportCost_1_ton);
+	double computeUtility(SamgodsConstants.Commodity commodity, TransportDemand.AnnualShipment annualShipment, DetailedTransportCost transportCost_1_ton);
 
 }

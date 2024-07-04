@@ -28,19 +28,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Network;
 
-import de.vandermeer.asciitable.AsciiTable;
-import floetteroed.utilities.math.MathHelpers;
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.utils.MiscUtils;
+import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 
 /**
  * 
@@ -110,41 +108,36 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- MEMBERS --------------------
 
-	private final PWCMatrix pwcMatrix;
-
-	private final Map<OD, List<TransportChain>> od2chains;
-
 	private final SamgodsConstants.Commodity commodity;
+
+	private final TransportDemand transportDemand;
 
 	private double samplingRate = 1.0;
 	private Random rnd = null;
 
-	private List<AnnualShipment> samgodsShipments = null;
+	private Network network;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChainChoiReader(final SamgodsConstants.Commodity commodity) {
-		this.pwcMatrix = new PWCMatrix(commodity);
-		this.od2chains = new LinkedHashMap<>();
+	public ChainChoiReader(final SamgodsConstants.Commodity commodity, final TransportDemand transportDemand) {
 		this.commodity = commodity;
+		this.transportDemand = transportDemand;
 	}
 
-	// -------------------- IMPLEMENTATION --------------------
-
-	public ChainChoiReader setStoreSamgodsShipments(boolean storeSamgodsShipments) {
-		if (storeSamgodsShipments && this.samgodsShipments == null) {
-			this.samgodsShipments = new LinkedList<>();
-		} else {
-			this.samgodsShipments = null;
-		}
-		return this;
-	}
+	// -------------------- SETTERS AND GETTERS --------------------
 
 	public ChainChoiReader setSamplingRate(double rate, Random rnd) {
 		this.samplingRate = rate;
 		this.rnd = rnd;
 		return this;
 	}
+
+	public ChainChoiReader checkAgainstNetwork(Network network) {
+		this.network = network;
+		return this;
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
 
 	public ChainChoiReader parse(String fileName) {
 		Logger.getLogger(this.getClass()).info(
@@ -160,18 +153,6 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		return this;
 	}
 
-	public PWCMatrix getPWCMatrix() {
-		return this.pwcMatrix;
-	}
-
-	public Map<OD, List<TransportChain>> getOD2transportChains() {
-		return this.od2chains;
-	}
-
-	public List<AnnualShipment> getSamgodsShipments() {
-		return this.samgodsShipments;
-	}
-
 	// ----- IMPLEMENTATION OF AbstractTabularFileHandlerWithHeaderLine -----
 
 	@Override
@@ -183,12 +164,16 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 		// Load OD demand.
 
-		final double volume_ton_yr = this.getDoubleValue(Prob) * this.getDoubleValue(AnnualVolumeTonnesPerRelation)
-				* this.getIntValue(NRelations);
+		final double singleInstanceVolume_ton_yr = this.getDoubleValue(Prob)
+				* this.getDoubleValue(AnnualVolumeTonnesPerRelation);
+		final int numberOfInstances = this.getIntValue(NRelations);
+
+//		final double volume_ton_yr = this.getDoubleValue(Prob) * this.getDoubleValue(AnnualVolumeTonnesPerRelation)
+//				* this.getIntValue(NRelations);
 		final long origin = Long.parseLong(this.getStringValue(Orig));
 		final long destination = Long.parseLong(this.getStringValue(Dest));
 		final OD od = new OD(Id.createNodeId(origin), Id.createNodeId(destination));
-		this.pwcMatrix.add(od, volume_ton_yr);
+//		this.pwcMatrix.add(od, singleInstanceVolume_ton_yr * numberOfInstances);
 
 		// Load chain legs.
 
@@ -200,12 +185,13 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		final List<String> destinationColumns = destinationColumnsByChainLength.get(chainType.length());
 
 		final List<TransportLeg> legs = new ArrayList<>(chainType.length());
+		final List<SamgodsConstants.TransportMode> modes = new ArrayList<>(chainType.length());
 		for (int i = 0; i < chainType.length(); i++) {
-			final char samgodsMode = chainType.charAt(i);
 			final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
 			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
-			legs.add(new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination),
-					code2mode.get(samgodsMode)));
+			legs.add(new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination)));
+			modes.add(code2mode.get(chainType.charAt(i)));
+
 		}
 
 		// filter out ferry episodes
@@ -215,14 +201,17 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			if (SAMGODS_FERRY_MODES.contains(chainType.charAt(i))) {
 				assert (!SAMGODS_FERRY_MODES.contains(chainType.charAt(i - 1)));
 				assert (!SAMGODS_FERRY_MODES.contains(chainType.charAt(i + 1)));
-				assert (legs.get(i - 1).getMode().equals(legs.get(i + 1).getMode()));
 
 				final TransportLeg condensedLeg = new TransportLeg(legs.get(i - 1).getOrigin(),
-						legs.get(i + 1).getDestination(), legs.get(i - 1).getMode());
-
+						legs.get(i + 1).getDestination());
 				legs.remove(i + 1);
 				legs.remove(i);
 				legs.set(i - 1, condensedLeg);
+
+				final SamgodsConstants.TransportMode condensedMode = modes.get(i - 1);
+				modes.remove(i + 1);
+				modes.remove(i);
+				modes.set(i - 1, condensedMode);
 
 			} else {
 				i++;
@@ -232,76 +221,45 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		// Compose episodes from legs.
 
 		if (legs.size() > 0) {
-
 			for (boolean isContainer : new boolean[] { true, false }) {
-				
-				final TransportChain transportChain = new TransportChain(od);
+
+				final TransportChain transportChain = new TransportChain(this.commodity, isContainer);
+
 				TransportEpisode currentEpisode = null;
-				for (TransportLeg leg : legs) {
+				assert (legs.size() == modes.size());
+				for (int legIndex = 0; legIndex < legs.size(); legIndex++) {
+					final TransportLeg leg = legs.get(legIndex);
+					final SamgodsConstants.TransportMode mode = modes.get(legIndex);
 					if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
-							|| !SamgodsConstants.TransportMode.Rail.equals(leg.getMode())) {
-						currentEpisode = new TransportEpisode(leg.getMode(), this.commodity, isContainer);
+							|| !SamgodsConstants.TransportMode.Rail.equals(mode)) {
+						currentEpisode = new TransportEpisode(mode);
 						transportChain.addEpisode(currentEpisode, false);
 					}
+					assert (currentEpisode.getMode().equals(mode));
 					currentEpisode.addLeg(leg);
 				}
-				this.od2chains.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
-				
-				// TODO Only for testing.
-				if (!isContainer && (this.samgodsShipments != null)) {
-					this.samgodsShipments.add(new AnnualShipment(this.commodity, transportChain, volume_ton_yr));
+
+				if ((this.network == null) || this.network.getNodes().keySet()
+						.containsAll(transportChain.getLoadingTransferUnloadingNodes())) {
+					this.transportDemand.add(transportChain, singleInstanceVolume_ton_yr,
+							numberOfInstances);
 				}
 			}
 		}
-	}
-
-	public String createChainStatsTable(int maxRowCnt) {
-
-		final Map<List<List<SamgodsConstants.TransportMode>>, Integer> modeSeq2cnt = new LinkedHashMap<>();
-		for (List<TransportChain> chains : this.od2chains.values()) {
-			for (TransportChain chain : chains) {
-				List<List<SamgodsConstants.TransportMode>> modes = chain.getTransportModeSequence();
-				modeSeq2cnt.compute(modes, (m, c) -> c == null ? 1 : c + 1);
-			}
-		}
-		final List<Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer>> sortedEntries = MiscUtils
-				.getSortedInstance(modeSeq2cnt);
-
-		final long total = modeSeq2cnt.values().stream().mapToLong(c -> c).sum();
-		final AsciiTable table = new AsciiTable();
-		table.addRule();
-		table.addRow("Rank", "episodes", "Count", "Share [%]");
-		table.addRule();
-		table.addRow("", "Total", total, 100);
-		table.addRule();
-		for (int i = 0; i < Math.min(maxRowCnt, sortedEntries.size()); i++) {
-			Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer> entry = sortedEntries.get(i);
-			table.addRow(i + 1,
-					entry.getKey().stream()
-							.map(e -> "[" + e.stream().map(m -> m.toString()).collect(Collectors.joining(",")) + "]")
-							.collect(Collectors.joining(",")),
-					entry.getValue(), MathHelpers.round(100.0 * entry.getValue().doubleValue() / total, 2));
-			table.addRule();
-		}
-
-		final StringBuffer result = new StringBuffer();
-		result.append("\nCOMMODITY: " + this.commodity + ", occurrence of logistic chains (NOT freight volumes)\n");
-		result.append(table.render());
-		return result.toString();
 	}
 
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) {
 
-		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-			final ChainChoiReader reader = new ChainChoiReader(commodity).setStoreSamgodsShipments(true)
-					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
-			System.out.println(reader.createChainStatsTable(10));
-			System.out.println(reader.getPWCMatrix().createProductionConsumptionStatsTable(10));
-			AnnualShipmentJsonSerializer.writeToFile(reader.getSamgodsShipments(),
-					"./input_2024/" + commodity + "-chains.samgods-out.json");
-		}
+//		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
+//			final ChainChoiReader reader = new ChainChoiReader(commodity).setStoreSamgodsShipments(true)
+//					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
+//			System.out.println(reader.createChainStatsTable(10));
+//			System.out.println(reader.getPWCMatrix().createProductionConsumptionStatsTable(10));
+//			AnnualShipmentJsonSerializer.writeToFile(reader.getSamgodsShipments(),
+//					"./input_2024/" + commodity + "-chains.samgods-out.json");
+//		}
 	}
 
 }
