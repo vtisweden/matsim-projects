@@ -67,9 +67,9 @@ public class TestSamgods {
 
 	public static void main(String[] args) throws IOException {
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER);
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AIR);
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		double samplingRate = 1;
 
 		log.info("STARTED ...");
 
@@ -92,8 +92,7 @@ public class TestSamgods {
 		TransportDemand transportDemand = new TransportDemand();
 
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-			new ChainChoiReader(commodity, transportDemand)
-					.setSamplingRate(samplingRate, new Random(4711)).checkAgainstNetwork(network)
+			new ChainChoiReader(commodity, transportDemand).setSamplingRate(samplingRate, new Random(4711))
 					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
 		}
 
@@ -124,13 +123,14 @@ public class TestSamgods {
 			NetworkRouter router = new NetworkRouter(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
 			router.route(commodity, od2chains);
 		}
-		
+
 		// REMOVE UNROUTED CHAINS
-		
+
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			long removedCnt = 0;
 			long totalCnt = 0;
-			for (Map.Entry<OD, Set<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity).entrySet()) {
+			for (Map.Entry<OD, Set<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity)
+					.entrySet()) {
 				final int chainCnt = entry.getValue().size();
 				totalCnt += chainCnt;
 				entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toSet()));
@@ -157,7 +157,8 @@ public class TestSamgods {
 		ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-			long cnt = 0;
+			long success = 0;
+			long failure = 0;
 
 			for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
 					.get(commodity).entrySet()) {
@@ -172,6 +173,8 @@ public class TestSamgods {
 					Map<TransportChain, DetailedTransportCost> transportChain2transportUnitCost_1_ton = new LinkedHashMap<>(
 							transportChains.size());
 					for (TransportChain transportChain : transportChains) {
+						boolean valid = true;
+
 						DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
 						for (TransportEpisode episode : transportChain.getEpisodes()) {
 							DetailedTransportCost episodeCost = null;
@@ -181,31 +184,42 @@ public class TestSamgods {
 							if (episodeCost == null) {
 								episodeCost = fallbackEpisodeCostModel.computeCost_1_ton(episode);
 							}
-							builder.addLoadingCost(episodeCost.loadingCost)
-									.addLoadingDuration_h(episodeCost.loadingDuration_h)
-									.addMoveCost(episodeCost.moveCost).addMoveDuration_h(episodeCost.moveDuration_h)
-									.addTransferCost(episodeCost.transferCost)
-									.addTransferDuration_h(episodeCost.transferDuration_h)
-									.addUnloadingCost(episodeCost.unloadingCost)
-									.addUnloadingDuration_h(episodeCost.unloadingDuration_h);
+							if (episodeCost != null) {
+								builder.addLoadingCost(episodeCost.loadingCost)
+										.addLoadingDuration_h(episodeCost.loadingDuration_h)
+										.addMoveCost(episodeCost.moveCost).addMoveDuration_h(episodeCost.moveDuration_h)
+										.addTransferCost(episodeCost.transferCost)
+										.addTransferDuration_h(episodeCost.transferDuration_h)
+										.addUnloadingCost(episodeCost.unloadingCost)
+										.addUnloadingDuration_h(episodeCost.unloadingDuration_h);
+							} else {
+								valid = false;
+								break;
+							}
 						}
-						transportChain2transportUnitCost_1_ton.put(transportChain, builder.build());
+						if (valid) {
+							transportChain2transportUnitCost_1_ton.put(transportChain, builder.build());
+						}
 					}
 
 					// encapsuate <<<
 
-					for (TransportDemand.AnnualShipment shipment : e.getValue()) {
-						List<Alternative> alternatives = choiceSetGenerator.createChoiceSet(commodity, shipment,
-								transportChain2transportUnitCost_1_ton);
-						for (int instance = 0; instance < shipment.getNumberOfInstances(); instance++) {
-							Alternative choice = choiceModel.choose(alternatives, scale);
-							assert (choice != null);
-							cnt++;
+					if (transportChain2transportUnitCost_1_ton.size() > 0) {
+						for (TransportDemand.AnnualShipment shipment : e.getValue()) {
+							List<Alternative> alternatives = choiceSetGenerator.createChoiceSet(commodity, shipment,
+									transportChain2transportUnitCost_1_ton);
+							for (int instance = 0; instance < shipment.getNumberOfInstances(); instance++) {
+								Alternative choice = choiceModel.choose(alternatives, scale);
+								assert (choice != null);
+								success++;
+							}
 						}
+					} else {
+						failure += e.getValue().stream().mapToInt(s -> s.getNumberOfInstances()).sum();
 					}
 				}
 			}
-			log.info(commodity + ": Created " + cnt + " shipments.");
+			log.info(commodity + ": Created " + success + " shipments out of " + (success + failure) + ".");
 		}
 
 		log.info("DONE");

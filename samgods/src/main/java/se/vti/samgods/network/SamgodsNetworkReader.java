@@ -110,10 +110,11 @@ public class SamgodsNetworkReader {
 					.valueOf(record.get(LINK_MODE));
 //			final Set<String> matsimModes = new HashSet<>(samgodsMode.matsimModes);
 
-			final double speed_km_h;
+			double speed_km_h;
 			if (speed1_km_h != null) {
 				if (speed2_km_h != null) {
-					speed_km_h = Math.min(speed1_km_h, speed2_km_h);
+					// TODO revisit.
+					speed_km_h = Math.max(speed1_km_h, speed2_km_h);
 				} else {
 					speed_km_h = speed1_km_h;
 				}
@@ -129,7 +130,7 @@ public class SamgodsNetworkReader {
 //				log.info("speed_km_h = " + speed_km_h + "\t speed1_km_h = " + speed1_km_h + "\t speed2_km_h = "
 //						+ speed2_km_h);
 //			}
-
+			
 			if (speed_km_h < 1e-3) {
 				Logger.getLogger(SamgodsNetworkReader.class)
 						.warn("Skipping link " + id + " because of too low speed: " + speed_km_h + " km/h.");

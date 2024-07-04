@@ -48,7 +48,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	// -------------------- CONSTANTS --------------------
 
 	private static final Logger log = Logger.getLogger(FallbackEpisodeCostModel.class);
-	
+
 	// -------------------- MEMBERS --------------------
 
 	private final VehicleFleet fleet;
@@ -78,10 +78,14 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	@Override
 	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) {
-		final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils
-				.getFreightAttributes(this.fleet.getRepresentativeVehicleType(episode));
-		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
-				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
+		final VehicleType vehicleType = this.fleet.getRepresentativeVehicleType(episode);
+		if (vehicleType == null) {
+			return null;
+		} else {
+			final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils.getFreightAttributes(vehicleType);
+			return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
+					this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
+		}
 	}
 
 	@Override
@@ -91,7 +95,8 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		final VehicleType representativeVehicleType = this.fleet.getRepresentativeVehicleType(commodity, mode,
 				isContainer, null);
 		if (representativeVehicleType == null) {
-			log.warn("Could not find a representative vehicle type for: commodity = " + commodity +", mode = " + mode + ", isContainer = " + isContainer);
+			log.warn("Could not find a representative vehicle type for: commodity = " + commodity + ", mode = " + mode
+					+ ", isContainer = " + isContainer);
 			return null;
 		}
 		final VehicleType representativeFerryCompatibleVehicleType = this.fleet.getRepresentativeVehicleType(commodity,

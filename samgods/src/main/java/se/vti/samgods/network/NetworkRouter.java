@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.router.AStarLandmarksFactory;
@@ -193,9 +192,8 @@ public class NetworkRouter {
 						final LeastCostPathCalculator router = job.isContainer ? this.mode2containerRouter.get(job.mode)
 								: this.mode2noContainerRouter.get(job.mode);
 						if ((from != null) && (to != null) && (router != null)) {
-							final List<Link> links = router.calcLeastCostPath(from, to, 0, null, null).links;
-							job.leg.setRoute(links);
-							if (links == null) {
+							job.leg.setRoute(router.calcLeastCostPath(from, to, 0, null, null).links);
+							if (job.leg.getRouteView() == null) {
 								if (logProgress) {
 									registerFailedRouteNoConnection(this);
 								}
@@ -244,27 +242,32 @@ public class NetworkRouter {
 		return this;
 	}
 
-	public void route(Commodity commodity, Map<OD, Set<TransportChain>> od2chains) {
+	public void route(Commodity commodity, Map<OD, Set<TransportChain>> od2chainsSet) {
+		final Map<OD, List<TransportChain>> od2chainsList = od2chainsSet.entrySet().stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> new ArrayList<>(e.getValue())));
+		od2chainsSet.clear();
+		final Set<RoutingJob> allJobs = od2chainsList.values().stream().flatMap(l -> l.stream())
+				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).map(l -> new RoutingJob(l))
+				.collect(Collectors.toSet());
+		this.routeInternally(commodity, allJobs);
+		od2chainsList.entrySet().stream().forEach(e -> od2chainsSet.put(e.getKey(), new LinkedHashSet<>(e.getValue())));
+	}
+
+	private void routeInternally(Commodity commodity, Set<RoutingJob> allJobs) {
 
 		final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
 
-		final Set<TransportLeg> allJobs = od2chains.values().stream().flatMap(cl -> cl.stream())
-				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).collect(Collectors.toSet());
-
-		final long legsPerThread = allJobs.size() / threadCnt;
+		final long jobsPerThread = allJobs.size() / threadCnt;
 
 		final ExecutorService threadPool = Executors.newFixedThreadPool(threadCnt);
 
-		final Iterator<TransportLeg> jobIterator = allJobs.iterator();
+		final Iterator<RoutingJob> jobIterator = allJobs.iterator();
 
 		for (int thread = 0; thread < threadCnt; thread++) {
 
-			long jobLegCnt = 0;
 			final List<RoutingJob> jobs = new LinkedList<>();
-			while (jobIterator.hasNext() && ((jobLegCnt < legsPerThread) || (thread == threadCnt - 1))) {
-				final TransportLeg leg = jobIterator.next();
-				jobLegCnt++;
-				jobs.add(new RoutingJob(leg));
+			while (jobIterator.hasNext() && ((jobs.size() < jobsPerThread) || (thread == threadCnt - 1))) {
+				jobs.add(jobIterator.next());
 			}
 
 			final Map<TransportMode, Network> mode2network = new LinkedHashMap<>();
