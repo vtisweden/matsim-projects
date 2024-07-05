@@ -27,6 +27,7 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 
 /**
@@ -97,16 +98,18 @@ public class SamgodsVehicleAttributes {
 				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
 
-	public synchronized double speedOnLink_m_s(Link link) {
+	public synchronized double speedOnLink_m_s(Link link) throws InsufficientDataException {
 		if (this.speed_km_h != null) {
 			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
-		} else {
-			assert (Double.isFinite(link.getFreespeed()));
+		} else if (Double.isFinite(link.getFreespeed())) {
 			return link.getFreespeed();
+		} else {
+			throw new InsufficientDataException(this.getClass(), "Neither attributes of vehicle type " + this.id
+					+ " nor link " + link.getId() + " contains (finite) speed information.");
 		}
 	}
 
-	public synchronized double travelTimeOnLink_s(Link link) {
+	public synchronized double travelTimeOnLink_s(Link link) throws InsufficientDataException {
 		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
 	}
 
@@ -148,13 +151,23 @@ public class SamgodsVehicleAttributes {
 		public Builder() {
 		}
 
-		public SamgodsVehicleAttributes buildFreightVehicleAttributes() {
-			return new SamgodsVehicleAttributes(this.id, this.description, this.mode, this.cost_1_km, this.cost_1_h,
-					this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
-					this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
+		public Id<VehicleType> getId() {
+			return this.id;
 		}
 
-		public VehicleType buildVehicleType() {
+		public SamgodsVehicleAttributes buildFreightVehicleAttributes() throws InsufficientDataException {
+			try {
+				return new SamgodsVehicleAttributes(this.id, this.description, this.mode, this.cost_1_km, this.cost_1_h,
+						this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
+						this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
+			} catch (Exception e) {
+				throw new InsufficientDataException(this.getClass(),
+						"Insufficient parameter data to build vehicle type " + this.id + ".");
+
+			}
+		}
+
+		public VehicleType buildVehicleType() throws InsufficientDataException {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
 			type.getAttributes().putAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME,
 					this.buildFreightVehicleAttributes());

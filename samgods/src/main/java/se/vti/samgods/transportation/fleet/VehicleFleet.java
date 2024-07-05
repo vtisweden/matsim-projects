@@ -34,6 +34,7 @@ import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
 import de.vandermeer.asciitable.AsciiTable;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
@@ -169,16 +170,17 @@ public class VehicleFleet {
 		}
 	}
 
+	//
+
 	private final Map<VehicleClassification, List<VehicleType>> classification2type = new LinkedHashMap<>();
 
 	private final Map<VehicleClassification, VehicleType> classification2representativeType = new LinkedHashMap<>();
 
-	public List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
+	private List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
 		final VehicleClassification classification = new VehicleClassification(commodity, mode, isContainer,
 				containsFerry);
 		List<VehicleType> result = this.classification2type.get(classification);
-
 		if (result == null) {
 			result = new ArrayList<>();
 			for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
@@ -192,17 +194,12 @@ public class VehicleFleet {
 			}
 			this.classification2type.put(classification, result);
 		}
-
 		return result;
 	}
 
-	public List<VehicleType> getCompatibleVehicleTypes(TransportEpisode episode) {
-		return this.getCompatibleVehicleTypes(episode.getCommodity(), episode.getMode(), episode.isContainer(),
-				episode.containsFerry());
-	}
-
 	public VehicleType getRepresentativeVehicleType(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
+			throws InsufficientDataException {
 
 		final VehicleClassification classification = new VehicleClassification(commodity, mode, isContainer,
 				containsFerry);
@@ -223,14 +220,17 @@ public class VehicleFleet {
 						resultDeviation_ton = candidateDeviation_ton;
 					}
 				}
+				this.classification2representativeType.put(classification, result);
+			} else {
+				throw new InsufficientDataException(this.getClass(), "No representative vehicle type.", commodity, null,
+						mode, isContainer, containsFerry);
 			}
-			this.classification2representativeType.put(classification, result);
 		}
 
 		return result;
 	}
 
-	public VehicleType getRepresentativeVehicleType(TransportEpisode episode) {
+	public VehicleType getRepresentativeVehicleType(TransportEpisode episode) throws InsufficientDataException {
 		return this.getRepresentativeVehicleType(episode.getCommodity(), episode.getMode(), episode.isContainer(),
 				episode.containsFerry());
 	}

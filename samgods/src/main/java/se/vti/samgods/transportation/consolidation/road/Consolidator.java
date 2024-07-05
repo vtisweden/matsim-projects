@@ -32,6 +32,7 @@ import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.BasicTransportCost;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -73,8 +74,8 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(Random rnd, TransportEpisode transportEpisode, VehicleFleet fleet,
-			int shipmentPeriod_day, ConsolidationCostModel costModel, ConsolidationChoiceModel choiceModel) {
+	public Consolidator(Random rnd, TransportEpisode transportEpisode, VehicleFleet fleet, int shipmentPeriod_day,
+			ConsolidationCostModel costModel, ConsolidationChoiceModel choiceModel) {
 		this.rnd = rnd;
 		this.transportEpisode = transportEpisode;
 		this.fleet = fleet;
@@ -117,17 +118,25 @@ public class Consolidator {
 			final Map<Vehicle, TransportCost> veh2cost = new LinkedHashMap<>(
 					this.prototypeVehicles.size() + alreadyUsedVehicles.size());
 			for (Vehicle vehicle : this.prototypeVehicles.values()) {
-				TransportCost vehCost = this.costModel.computeInVehicleShipmentCost(vehicle, shipment.getWeight_ton(),
-						this.assignmentsOverDays.get(day));
-				if (vehCost != null) {
-					veh2cost.put(vehicle, vehCost);
+				try {
+					TransportCost vehCost = this.costModel.computeInVehicleShipmentCost(vehicle,
+							shipment.getWeight_ton(), this.assignmentsOverDays.get(day));
+					if (vehCost != null) {
+						veh2cost.put(vehicle, vehCost);
+					}
+				} catch (InsufficientDataException e) {
+					e.log(this.getClass(), "TODO");
 				}
 			}
 			for (Vehicle vehicle : alreadyUsedVehicles) {
-				BasicTransportCost vehCost = this.costModel.computeInVehicleShipmentCost(vehicle, shipment.getWeight_ton(),
-						this.assignmentsOverDays.get(day));
-				if (vehCost != null) {
-					veh2cost.put(vehicle, vehCost);
+				try {
+					BasicTransportCost vehCost = this.costModel.computeInVehicleShipmentCost(vehicle,
+							shipment.getWeight_ton(), this.assignmentsOverDays.get(day));
+					if (vehCost != null) {
+						veh2cost.put(vehicle, vehCost);
+					}
+				} catch (InsufficientDataException e) {
+					e.log(this.getClass(), "TODO");
 				}
 			}
 

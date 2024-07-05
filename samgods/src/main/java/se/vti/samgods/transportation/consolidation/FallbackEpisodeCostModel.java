@@ -19,10 +19,8 @@
  */
 package se.vti.samgods.transportation.consolidation;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.VehicleType;
@@ -30,6 +28,7 @@ import org.matsim.vehicles.VehicleType;
 import floetteroed.utilities.Units;
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.SamgodsLinkAttributes;
@@ -47,7 +46,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(FallbackEpisodeCostModel.class);
+//	private static final Logger log = Logger.getLogger(FallbackEpisodeCostModel.class);
 
 	// -------------------- MEMBERS --------------------
 
@@ -77,56 +76,49 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
 
 	@Override
-	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) {
+	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 		final VehicleType vehicleType = this.fleet.getRepresentativeVehicleType(episode);
-		if (vehicleType == null) {
-			return null;
-		} else {
-			final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils.getFreightAttributes(vehicleType);
-			return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
-					this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
-		}
+		final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils.getFreightAttributes(vehicleType);
+		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
+				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
 	}
 
 	@Override
-	public Map<Link, BasicTransportCost> createLinkTransportCosts(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network) {
-
-		final VehicleType representativeVehicleType = this.fleet.getRepresentativeVehicleType(commodity, mode,
-				isContainer, null);
-		if (representativeVehicleType == null) {
-			log.warn("Could not find a representative vehicle type for: commodity = " + commodity + ", mode = " + mode
-					+ ", isContainer = " + isContainer);
-			return null;
-		}
-		final VehicleType representativeFerryCompatibleVehicleType = this.fleet.getRepresentativeVehicleType(commodity,
-				mode, isContainer, true);
+	public void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost,
+			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
+			Network network) throws InsufficientDataException {
 
 		final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils
-				.getFreightAttributes(representativeVehicleType);
-		final SamgodsVehicleAttributes ferryCompatibleVehicleAttributes = ConsolidationUtils.getFreightAttributes(
-				representativeFerryCompatibleVehicleType != null ? representativeFerryCompatibleVehicleType
-						: representativeVehicleType);
+				.getFreightAttributes(this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, false));
 
-		Map<Link, BasicTransportCost> link2costs = new LinkedHashMap<>(network.getLinks().size());
+		SamgodsVehicleAttributes ferryCompatibleVehicleAttributes;
+		try {
+			ferryCompatibleVehicleAttributes = ConsolidationUtils
+					.getFreightAttributes(this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, true));
+		} catch (InsufficientDataException e) {
+			ferryCompatibleVehicleAttributes = vehicleAttributes;
+		}
+
 		for (Link link : network.getLinks().values()) {
-			final double length_km = Units.KM_PER_M * link.getLength();
-			final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
-			assert (Double.isFinite(length_km));
-			assert (Double.isFinite(duration_h));
-			assert (link.getId() != null);
-			if (SamgodsLinkAttributes.isFerry(link)) {
-				link2costs
-						.put(link,
-								new BasicTransportCost(1.0,
-										duration_h * ferryCompatibleVehicleAttributes.onFerryCost_1_h
-												+ length_km * ferryCompatibleVehicleAttributes.onFerryCost_1_km,
-										duration_h));
-			} else {
-				link2costs.put(link, new BasicTransportCost(1.0,
-						duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km, duration_h));
+			if (!link2cost.containsKey(link)) {
+				final double length_km = Units.KM_PER_M * link.getLength();
+				final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
+				assert (Double.isFinite(length_km));
+				assert (Double.isFinite(duration_h));
+				assert (link.getId() != null);
+				if (SamgodsLinkAttributes.isFerry(link)) {
+					link2cost.put(link,
+							new BasicTransportCost(1.0,
+									duration_h * ferryCompatibleVehicleAttributes.onFerryCost_1_h
+											+ length_km * ferryCompatibleVehicleAttributes.onFerryCost_1_km,
+									duration_h));
+				} else {
+					link2cost.put(link,
+							new BasicTransportCost(1.0,
+									duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km,
+									duration_h));
+				}
 			}
 		}
-		return link2costs;
 	}
 }

@@ -42,6 +42,7 @@ import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -276,28 +277,23 @@ public class NetworkRouter {
 			final Map<TransportMode, TravelTime> mode2containerTravelTime = new LinkedHashMap<>();
 			final Map<TransportMode, TravelTime> mode2noContainerTravelTime = new LinkedHashMap<>();
 			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
-
-				final Network network = this.routingData.createNetwork(mode);
-				if (network != null) {
-
-					final TravelDisutility containerDisutility = this.routingData.createDisutility(commodity, mode,
-							network, true);
-					if (containerDisutility != null) {
-						mode2containerDisutility.put(mode, containerDisutility);
-						mode2containerTravelTime.put(mode,
-								this.routingData.createTravelTime(commodity, mode, network, true));
-					}
-
-					final TravelDisutility noContainerDisutility = this.routingData.createDisutility(commodity, mode,
-							network, false);
-					if (noContainerDisutility != null) {
-						mode2noContainerDisutility.put(mode, noContainerDisutility);
-						mode2noContainerTravelTime.put(mode,
-								this.routingData.createTravelTime(commodity, mode, network, false));
-					}
-
-					if (containerDisutility != null || noContainerDisutility != null) {
+				if (!mode.isFerry()) {
+					final Network network = this.routingData.createNetwork(mode);
+					try {
+						this.routingData.createNetworkData(commodity, mode, network, true);
+						mode2containerDisutility.put(mode, this.routingData.getAndClearDisutility());
+						mode2containerTravelTime.put(mode, this.routingData.getAndClearTravelTime());
 						mode2network.put(mode, network);
+					} catch (InsufficientDataException e) {
+						e.log(this.getClass(), "No travel disutility.", commodity, null, mode, true, null);
+					}
+					try {
+						this.routingData.createNetworkData(commodity, mode, network, false);
+						mode2noContainerDisutility.put(mode, this.routingData.getAndClearDisutility());
+						mode2noContainerTravelTime.put(mode, this.routingData.getAndClearTravelTime());
+						mode2network.put(mode, network);
+					} catch (InsufficientDataException e) {
+						e.log(this.getClass(), "No travel disutility.", commodity, null, mode, false, null);
 					}
 				}
 			}

@@ -60,6 +60,26 @@ public class TransportChain {
 		return this.commodity;
 	}
 
+	public Boolean containsFerry() {
+		boolean chainContainsFerry = false;
+		boolean chainContainsNull = false;
+		for (TransportEpisode episode : this.episodes) {
+			final Boolean episodeContainsFerry = episode.containsFerry();
+			if (episodeContainsFerry == null) {
+				chainContainsNull = true;
+			} else {
+				chainContainsFerry |= episodeContainsFerry;
+			}
+		}
+		if (chainContainsFerry) {
+			return true;
+		} else if (chainContainsNull) {
+			return null;
+		} else {
+			return false;
+		}
+	}
+
 	public OD getOD() {
 		return new OD(this.episodes.getFirst().getLoadingNode(), this.episodes.getLast().getUnloadingNode());
 	}
@@ -107,10 +127,10 @@ public class TransportChain {
 		}
 		return true;
 	}
-	
+
 	public Set<Id<Node>> getLoadingTransferUnloadingNodes() {
 		final Set<Id<Node>> result = new LinkedHashSet<>();
-		this.episodes.stream().flatMap(e -> e.getLegs().stream()).forEach( l -> {
+		this.episodes.stream().flatMap(e -> e.getLegs().stream()).forEach(l -> {
 			result.add(l.getOrigin());
 			result.add(l.getDestination());
 		});

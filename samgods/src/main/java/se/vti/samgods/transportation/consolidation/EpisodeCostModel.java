@@ -26,6 +26,7 @@ import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 
@@ -36,8 +37,8 @@ import se.vti.samgods.logistics.TransportEpisode;
  */
 public interface EpisodeCostModel {
 
-	DetailedTransportCost computeCost_1_ton(TransportEpisode episode);
+	DetailedTransportCost computeCost_1_ton(TransportEpisode episode) throws InsufficientDataException;
 
-	Map<Link, BasicTransportCost> createLinkTransportCosts(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network);
+	void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost, SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network) throws InsufficientDataException;
 }

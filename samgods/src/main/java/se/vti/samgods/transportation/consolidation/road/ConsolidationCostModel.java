@@ -29,6 +29,7 @@ import org.matsim.vehicles.Vehicle;
 import floetteroed.utilities.Units;
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
@@ -62,7 +63,7 @@ public class ConsolidationCostModel {
 	// -------------------- IMPLEMENTATION --------------------
 
 	public DetailedTransportCost computeEpisodeCost(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
-			TransportEpisode episode) {
+			TransportEpisode episode) throws InsufficientDataException {
 
 		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton);
 
@@ -118,7 +119,7 @@ public class ConsolidationCostModel {
 	}
 
 	public BasicTransportCost computeInVehicleShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
-			ShipmentVehicleAssignment assignment) {
+			ShipmentVehicleAssignment assignment) throws InsufficientDataException {
 
 		final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
 		final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);

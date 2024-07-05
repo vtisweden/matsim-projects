@@ -27,9 +27,8 @@ import se.vti.samgods.DetailedTransportCost;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.ShipmentSizeClass;
-import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
+import se.vti.samgods.logistics.TransportDemand;
 
 /**
  * 
@@ -40,54 +39,13 @@ public class ChoiceSetGenerator {
 
 	// -------------------- MEMBERS --------------------
 
-//	private final EpisodeCostModel empiricalEpisodeCostModel;
-//	private final EpisodeCostModel fallbackCostModel;
-
 	private final AnnualShipmentUtilityFunction utilityFunction;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChoiceSetGenerator(
-			EpisodeCostModel empiricalEpisodeCostModel, EpisodeCostModel fallbackCostModel,
-			final AnnualShipmentUtilityFunction utilityFunction) {
-//		this.empiricalEpisodeCostModel = empiricalEpisodeCostModel;
-//		this.fallbackCostModel = fallbackCostModel;
+	public ChoiceSetGenerator(final AnnualShipmentUtilityFunction utilityFunction) {
 		this.utilityFunction = utilityFunction;
 	}
-
-	// -------------------- INTERNALS --------------------
-
-//	private DetailedTransportCost computeCost_1_ton(TransportChain transportChain) {
-//		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
-//		for (TransportEpisode episode : transportChain.getEpisodes()) {
-//			DetailedTransportCost episodeCost = null;
-//			if (this.empiricalEpisodeCostModel != null) {
-//				episodeCost = this.empiricalEpisodeCostModel.computeCost_1_ton(episode);
-//			}
-//			if (episodeCost == null) {
-//				episodeCost = this.fallbackCostModel.computeCost_1_ton(episode);
-//			}
-//			builder.addLoadingCost(episodeCost.loadingCost).addLoadingDuration_h(episodeCost.loadingDuration_h)
-//					.addMoveCost(episodeCost.moveCost).addMoveDuration_h(episodeCost.moveDuration_h)
-//					.addTransferCost(episodeCost.transferCost).addTransferDuration_h(episodeCost.transferDuration_h)
-//					.addUnloadingCost(episodeCost.unloadingCost)
-//					.addUnloadingDuration_h(episodeCost.unloadingDuration_h);
-//		}
-//		return builder.build();
-//	}
-
-//	private List<Alternative> combineWithSizeClass(Commodity commodity, OD od, AnnualShipments.AnnualShipment shipment,
-//			final SamgodsConstants.ShipmentSizeClass sizeClass, List<TransportChain> transportChains) {
-//		final ArrayList<Alternative> result = new ArrayList<>(transportChains.size());
-//		for (TransportChain transportChain : transportChains) {
-//			// TODO Compute upstream and store?
-//			final DetailedTransportCost transportUnitCost_1_ton = this.computeCost_1_ton(transportChain);
-//			// TODO Add storage cost!
-//			result.add(new Alternative(sizeClass, transportChain,
-//					this.utilityFunction.computeUtility(commodity, transportUnitCost_1_ton)));
-//		}
-//		return result;
-//	}
 
 	// -------------------- IMPLEMENTATION --------------------
 

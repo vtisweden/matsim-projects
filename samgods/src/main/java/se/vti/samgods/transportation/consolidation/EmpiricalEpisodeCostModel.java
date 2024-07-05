@@ -30,6 +30,8 @@ import org.matsim.vehicles.Vehicle;
 
 import se.vti.samgods.BasicTransportCost;
 import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.InsufficientDataException;
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
@@ -134,24 +136,21 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 
 	}
 
-	// -------------------- --------------------
+	// -------------------- MEMBERS --------------------
 
 	private final ConsolidationCostModel consolidationCostModel;
-
-	private final Network network;
 
 	private final Map<TransportEpisode, CumulativeDetailedData> episode2data = new LinkedHashMap<>();
 
 	// -------------------- --------------------
 
-	public EmpiricalEpisodeCostModel(ConsolidationCostModel consolidationCostModel, Network network) {
+	public EmpiricalEpisodeCostModel(ConsolidationCostModel consolidationCostModel) {
 		this.consolidationCostModel = consolidationCostModel;
-		this.network = network;
 	}
 
 	// -------------------- --------------------
 
-	public void add(ShipmentVehicleAssignment assignment) {
+	public void add(ShipmentVehicleAssignment assignment) throws InsufficientDataException {
 		final TransportEpisode episode = assignment.getTransportEpisode();
 
 		CumulativeDetailedData cumulativeCost = this.episode2data.computeIfAbsent(episode,
@@ -167,18 +166,21 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	@Override
-	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) {
+	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 		CumulativeDetailedData data = this.episode2data.get(episode);
 		if (data == null) {
-			return null;
+			throw new InsufficientDataException(this.getClass(), "No empirical data for transport episode.",
+					episode.getCommodity(), new OD(episode.getLoadingNode(), episode.getUnloadingNode()),
+					episode.getMode(), episode.isContainer(), episode.containsFerry());
 		} else {
 			return data.createUnitCost();
 		}
 	}
 
 	@Override
-	public Map<Link, BasicTransportCost> createLinkTransportCosts(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network) {
+	public void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost,
+			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
+			Network network) throws InsufficientDataException {
 
 		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>();
 		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
@@ -188,22 +190,22 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 					&& (isContainer == null || isContainer.equals(episode.isContainer()))) {
 				for (TransportLeg leg : episode.getLegs()) {
 					final CumulativeDetailedData episodeData = e2d.getValue();
-					final List<Link> links = NetworkUtils.getLinks(this.network, leg.getRouteView());
+					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteView());
 					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
 					for (Link link : links) {
-						final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
-						link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
-								weight * episodeData.getMonetaryCostTimesTons_ton(),
-								weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
+						if (!link2cost.containsKey(link)) {
+							final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
+							link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
+									weight * episodeData.getMonetaryCostTimesTons_ton(),
+									weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
+						}
 					}
 				}
 			}
 		}
 
-		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>();
 		for (Map.Entry<Link, CumulativeBasicData> l2d : link2data.entrySet()) {
 			link2cost.put(l2d.getKey(), l2d.getValue().createUnitData());
 		}
-		return link2cost;
 	}
 }

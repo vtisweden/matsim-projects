@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.network;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -33,8 +34,9 @@ import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.BasicTransportCost;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
+import se.vti.samgods.transportation.consolidation.EpisodeCostModels;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
@@ -50,19 +52,15 @@ public class NetworkRoutingData {
 
 	private final Network multimodalNetwork;
 
-	private final EpisodeCostModel empiricalEpisodeCostModel;
-
-	private final EpisodeCostModel fallbackEpisodeCostModel;
+	private final EpisodeCostModels episodeCostModels;
 
 	private final VehicleFleet fleet;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public NetworkRoutingData(Network multimodalNetwork, EpisodeCostModel empiricalEpisodeCostModel,
-			EpisodeCostModel fallbackEpisodeCostModel, VehicleFleet fleet) {
+	public NetworkRoutingData(Network multimodalNetwork, EpisodeCostModels episodeCostModels, VehicleFleet fleet) {
 		this.multimodalNetwork = multimodalNetwork;
-		this.empiricalEpisodeCostModel = empiricalEpisodeCostModel;
-		this.fallbackEpisodeCostModel = fallbackEpisodeCostModel;
+		this.episodeCostModels = episodeCostModels;
 		this.fleet = fleet;
 	}
 
@@ -73,55 +71,35 @@ public class NetworkRoutingData {
 	}
 
 	public Network createNetwork(SamgodsConstants.TransportMode mode) {
-		if (mode.isFerry()) {
-			return null;
-		}
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, mode.matsimModes);
 		return unimodalNetwork;
 	}
 
-	public TravelDisutility createDisutility(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
-			Network network, boolean isContainer) {
+	private TravelDisutility mostRecentlyCreatedTravelDisutility = null;
+	private TravelTime mostRecentyCreatedTravelTime = null;
 
-		if (this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null) == null) {
-			return null;
-		}
+	public TravelDisutility getAndClearDisutility() {
+		final TravelDisutility result = this.mostRecentlyCreatedTravelDisutility;
+		this.mostRecentlyCreatedTravelDisutility = null;
+		return result;
+	}
 
-		final Map<Link, Double> link2disutility;
-		if (this.empiricalEpisodeCostModel != null) {
-			link2disutility = this.empiricalEpisodeCostModel
-					.createLinkTransportCosts(commodity, mode, isContainer, network).entrySet().stream()
-					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getMonetaryCost()));
-			if (link2disutility.size() < network.getLinks().size()) {
-				final Map<Link, BasicTransportCost> link2fallbackDisutility = this.fallbackEpisodeCostModel
-						.createLinkTransportCosts(commodity, mode, isContainer, network);
-				for (Link link : network.getLinks().values()) {
-					if (!link2disutility.containsKey(link)) {
-						link2disutility.put(link, link2fallbackDisutility.get(link).getMonetaryCost());
-					}
-				}
-			}
-		} else {
+	public TravelTime getAndClearTravelTime() {
+		final TravelTime result = this.mostRecentyCreatedTravelTime;
+		this.mostRecentyCreatedTravelTime = null;
+		return result;
+	}
 
-			Map<Link, BasicTransportCost> link2cost = this.fallbackEpisodeCostModel.createLinkTransportCosts(commodity,
-					mode, isContainer, network);
+	public void createNetworkData(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+			Network network, boolean isContainer) throws InsufficientDataException {
 
-//			link2disutility = new LinkedHashMap<>();
-//			for (Map.Entry<Id<Link>, BasicTransportCost> e : link2cost.entrySet()) {
-//				Id<Link> linkId = e.getKey();
-//				Link link = network.getLinks().get(linkId);
-//				double monetaryCost = e.getValue().getMonetaryCost();
-//				System.out.println("Id = " + linkId + ", link=" + link + ", monetaryCost = " + monetaryCost);
-//				link2disutility.put(link, monetaryCost);				
-//			}
+		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>(network.getLinks().size());
+		this.episodeCostModels.populateLink2transportCosts(link2cost, commodity, mode, isContainer, network);
 
-			link2disutility = link2cost.entrySet().stream()
-					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getMonetaryCost()));
-		}
-
-		return new TravelDisutility() {
-
+		final Map<Link, Double> link2disutility = link2cost.entrySet().stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getMonetaryCost()));
+		this.mostRecentlyCreatedTravelDisutility = new TravelDisutility() {
 			@Override
 			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
 				assert (person == null);
@@ -134,19 +112,10 @@ public class NetworkRoutingData {
 				return link2disutility.get(link);
 			}
 		};
-	}
 
-	public TravelTime createTravelTime(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
-			Network network, boolean isContainer) {
-
-		if (this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null) == null) {
-			return null;
-		}
-
-		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel
-				.createLinkTransportCosts(commodity, mode, isContainer, network).entrySet().stream()
+		final Map<Link, Double> link2tt = link2cost.entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> Units.S_PER_H * e.getValue().getDuration_h()));
-		return new TravelTime() {
+		this.mostRecentyCreatedTravelTime = new TravelTime() {
 			@Override
 			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
 				assert (person == null);
@@ -155,4 +124,86 @@ public class NetworkRoutingData {
 			}
 		};
 	}
+
+//	public TravelDisutility createDisutility(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+//			Network network, boolean isContainer) throws InsufficientDataException {
+//
+////		if (this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null) == null) {
+////			throw new InsufficientDataException(
+////					"No representative vehicle type for commodity " + commodity + ", mode = " + mode
+////							+ ", isContainer = " + isContainer + ".",
+////					InsufficientDataException.Cause.MISSING_REPRESENTATIVE_VEHICLE_TYPE, this.getClass());
+////		}
+//
+//		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>(network.getLinks().size());
+//		this.episodeCostModels.populateLink2transportCosts(link2cost, commodity, mode, isContainer, network);
+//
+//		final Map<Link, Double> link2disutility = link2cost.entrySet().stream()
+//				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getMonetaryCost()));
+//
+////		if (this.empiricalEpisodeCostModel != null) {
+////			link2disutility = this.empiricalEpisodeCostModel
+////					.createLinkTransportCosts(commodity, mode, isContainer, network).entrySet().stream()
+////					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getMonetaryCost()));
+////			if (link2disutility.size() < network.getLinks().size()) {
+////				final Map<Link, BasicTransportCost> link2fallbackDisutility = this.fallbackEpisodeCostModel
+////						.createLinkTransportCosts(commodity, mode, isContainer, network);
+////				for (Link link : network.getLinks().values()) {
+////					if (!link2disutility.containsKey(link)) {
+////						link2disutility.put(link, link2fallbackDisutility.get(link).getMonetaryCost());
+////					}
+////				}
+////			}
+////		} else {
+////
+////			Map<Link, BasicTransportCost> link2cost = this.fallbackEpisodeCostModel.createLinkTransportCosts(commodity,
+////					mode, isContainer, network);
+////
+////			link2disutility = link2cost.entrySet().stream()
+////					.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getMonetaryCost()));
+////		}
+//
+//		return new TravelDisutility() {
+//
+//			@Override
+//			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
+//				assert (person == null);
+//				assert (vehicle == null);
+//				return this.getLinkMinimumTravelDisutility(link);
+//			}
+//
+//			@Override
+//			public double getLinkMinimumTravelDisutility(Link link) {
+//				return link2disutility.get(link);
+//			}
+//		};
+//	}
+//
+//	public TravelTime createTravelTime(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+//			Network network, boolean isContainer) throws InsufficientDataException {
+//
+////		if (this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null) == null) {
+////			throw new InsufficientDataException(
+////					"No representative vehicle type for commodity " + commodity + ", mode = " + mode
+////							+ ", isContainer = " + isContainer + ".",
+////					InsufficientDataException.Cause.MISSING_REPRESENTATIVE_VEHICLE_TYPE, this.getClass());
+////		}
+//
+//		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>(network.getLinks().size());
+//		this.episodeCostModels.populateLink2transportCosts(link2cost, commodity, mode, isContainer, network);
+//		final Map<Link, Double> link2tt = link2cost.entrySet().stream()
+//				.collect(Collectors.toMap(e -> e.getKey(), e -> Units.S_PER_H * e.getValue().getDuration_h()));
+//
+////		final Map<Link, Double> link2tt = this.fallbackEpisodeCostModel
+////				.createLinkTransportCosts(commodity, mode, isContainer, network).entrySet().stream()
+////				.collect(Collectors.toMap(e -> e.getKey(), e -> Units.S_PER_H * e.getValue().getDuration_h()));
+//		return new TravelTime() {
+//			@Override
+//			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
+//				assert (person == null);
+//				assert (vehicle == null);
+//				return link2tt.get(link);
+//			}
+//		};
+//	}
 }

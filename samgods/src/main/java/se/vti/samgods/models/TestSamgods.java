@@ -34,6 +34,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.DetailedTransportCost;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -50,6 +51,7 @@ import se.vti.samgods.network.NetworkRouter;
 import se.vti.samgods.network.NetworkRoutingData;
 import se.vti.samgods.network.SamgodsNetworkReader;
 import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
+import se.vti.samgods.transportation.consolidation.EpisodeCostModels;
 import se.vti.samgods.transportation.consolidation.FallbackEpisodeCostModel;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
@@ -67,7 +69,8 @@ public class TestSamgods {
 
 	public static void main(String[] args) throws IOException {
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AIR);
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
+//				SamgodsConstants.Commodity.AIR);
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
 		double samplingRate = 1;
 
@@ -112,12 +115,11 @@ public class TestSamgods {
 
 		ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
 		EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel);
-		EpisodeCostModel empiricalEpisodeCostModel = null;
+		EpisodeCostModels episodeCostModels = new EpisodeCostModels(fallbackEpisodeCostModel);
 
 		// ROUTE CHAINS
 
-		NetworkRoutingData routingData = new NetworkRoutingData(network, empiricalEpisodeCostModel,
-				fallbackEpisodeCostModel, fleet);
+		NetworkRoutingData routingData = new NetworkRoutingData(network, episodeCostModels, fleet);
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			Map<OD, Set<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
 			NetworkRouter router = new NetworkRouter(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
@@ -152,39 +154,32 @@ public class TestSamgods {
 
 		double scale = 0.0;
 
-		ChoiceSetGenerator choiceSetGenerator = new ChoiceSetGenerator(empiricalEpisodeCostModel,
-				fallbackEpisodeCostModel, utilityFunction);
+		ChoiceSetGenerator choiceSetGenerator = new ChoiceSetGenerator(utilityFunction);
 		ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-			long success = 0;
-			long failure = 0;
-
+			long cnt = 0;
 			for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
 					.get(commodity).entrySet()) {
 				final OD od = e.getKey();
-
 				final Set<TransportChain> transportChains = transportDemand.commodity2od2transportChains.get(commodity)
 						.get(od);
-				if (transportChains.size() > 0) {
+				if (transportChains.size() == 0) {
+					new InsufficientDataException(TestSamgods.class, "No transport chains available.", commodity, od,
+							null, null, null);
+				} else {
 
 					// encapsulate >>>
 
 					Map<TransportChain, DetailedTransportCost> transportChain2transportUnitCost_1_ton = new LinkedHashMap<>(
 							transportChains.size());
 					for (TransportChain transportChain : transportChains) {
-						boolean valid = true;
+						try {
+							DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder()
+									.addAmount_ton(1.0);
+							for (TransportEpisode episode : transportChain.getEpisodes()) {
 
-						DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
-						for (TransportEpisode episode : transportChain.getEpisodes()) {
-							DetailedTransportCost episodeCost = null;
-							if (empiricalEpisodeCostModel != null) {
-								episodeCost = empiricalEpisodeCostModel.computeCost_1_ton(episode);
-							}
-							if (episodeCost == null) {
-								episodeCost = fallbackEpisodeCostModel.computeCost_1_ton(episode);
-							}
-							if (episodeCost != null) {
+								DetailedTransportCost episodeCost = episodeCostModels.computeCost_1_ton(episode);
 								builder.addLoadingCost(episodeCost.loadingCost)
 										.addLoadingDuration_h(episodeCost.loadingDuration_h)
 										.addMoveCost(episodeCost.moveCost).addMoveDuration_h(episodeCost.moveDuration_h)
@@ -192,34 +187,38 @@ public class TestSamgods {
 										.addTransferDuration_h(episodeCost.transferDuration_h)
 										.addUnloadingCost(episodeCost.unloadingCost)
 										.addUnloadingDuration_h(episodeCost.unloadingDuration_h);
-							} else {
-								valid = false;
-								break;
+
 							}
-						}
-						if (valid) {
 							transportChain2transportUnitCost_1_ton.put(transportChain, builder.build());
+						} catch (InsufficientDataException e0) {
+							e0.log(TestSamgods.class, "No cost data for at least one episode in transport chain.",
+									commodity, od, null, transportChain.isContainer(), transportChain.containsFerry());
 						}
 					}
 
-					// encapsuate <<<
-
-					if (transportChain2transportUnitCost_1_ton.size() > 0) {
+					if (transportChain2transportUnitCost_1_ton.size() == 0) {
+						new InsufficientDataException(TestSamgods.class,
+								"No transport chains with sufficient cost data available.", commodity, od, null, null,
+								null).log(TestSamgods.class, "dito");
+					} else {
 						for (TransportDemand.AnnualShipment shipment : e.getValue()) {
 							List<Alternative> alternatives = choiceSetGenerator.createChoiceSet(commodity, shipment,
 									transportChain2transportUnitCost_1_ton);
 							for (int instance = 0; instance < shipment.getNumberOfInstances(); instance++) {
 								Alternative choice = choiceModel.choose(alternatives, scale);
 								assert (choice != null);
-								success++;
+								cnt++;
 							}
 						}
-					} else {
-						failure += e.getValue().stream().mapToInt(s -> s.getNumberOfInstances()).sum();
 					}
+
+					// encapsuate <<<
+
 				}
+
 			}
-			log.info(commodity + ": Created " + success + " shipments out of " + (success + failure) + ".");
+
+			log.info(commodity + ": Created " + cnt + " shipments.");
 		}
 
 		log.info("DONE");
