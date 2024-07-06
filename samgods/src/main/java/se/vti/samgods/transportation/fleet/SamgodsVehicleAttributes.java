@@ -27,8 +27,8 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.InsufficientDataException;
 
 /**
  * 

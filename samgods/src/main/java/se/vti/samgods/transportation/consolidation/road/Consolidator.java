@@ -31,9 +31,9 @@ import java.util.Set;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.BasicTransportCost;
-import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**

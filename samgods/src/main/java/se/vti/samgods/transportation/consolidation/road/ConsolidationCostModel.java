@@ -27,12 +27,12 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.BasicTransportCost;
 import se.vti.samgods.transportation.DetailedTransportCost;
-import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**

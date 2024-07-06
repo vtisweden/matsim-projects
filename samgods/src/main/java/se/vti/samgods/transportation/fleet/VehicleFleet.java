@@ -34,9 +34,9 @@ import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
 import de.vandermeer.asciitable.AsciiTable;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.PrototypeVehicle;
 

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation;
+package se.vti.samgods;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;

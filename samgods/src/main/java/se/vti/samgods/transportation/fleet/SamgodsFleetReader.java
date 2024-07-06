@@ -32,8 +32,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.utils.ParseNumberUtils;
 

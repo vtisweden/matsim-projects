@@ -28,6 +28,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.vehicles.Vehicle;
 
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;

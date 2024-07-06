@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.ShipmentSize;
@@ -36,7 +37,6 @@ import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.models.TestSamgods;
 import se.vti.samgods.transportation.DetailedTransportCost;
 import se.vti.samgods.transportation.EpisodeCostModel;
-import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.utils.ChoiceModelUtils;
 
 /**

@@ -27,6 +27,7 @@ import java.util.Map;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 

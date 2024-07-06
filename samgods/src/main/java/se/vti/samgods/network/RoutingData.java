@@ -33,10 +33,10 @@ import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.transportation.BasicTransportCost;
 import se.vti.samgods.transportation.EpisodeCostModels;
-import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**

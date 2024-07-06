@@ -32,6 +32,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -50,7 +51,6 @@ import se.vti.samgods.transportation.DetailedTransportCost;
 import se.vti.samgods.transportation.EpisodeCostModel;
 import se.vti.samgods.transportation.EpisodeCostModels;
 import se.vti.samgods.transportation.FallbackEpisodeCostModel;
-import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
