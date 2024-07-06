@@ -27,11 +27,11 @@ import se.vti.samgods.logistics.TransportChain;
  * @author GunnarF
  *
  */
-public class Alternative {
+public class ChainAndShipmentSize {
 
 	// -------------------- PUBLIC CONSTANTS --------------------
 
-	public final SamgodsConstants.ShipmentSizeClass sizeClass;
+	public final SamgodsConstants.ShipmentSize sizeClass;
 
 	public final TransportChain transportChain;
 
@@ -39,7 +39,7 @@ public class Alternative {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Alternative(final SamgodsConstants.ShipmentSizeClass sizeClass, final TransportChain transportChain,
+	public ChainAndShipmentSize(final SamgodsConstants.ShipmentSize sizeClass, final TransportChain transportChain,
 			final double utility) {
 		this.sizeClass = sizeClass;
 		this.transportChain = transportChain;

@@ -31,10 +31,9 @@ import java.util.Set;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.BasicTransportCost;
-import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.transportation.BasicTransportCost;
+import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
@@ -111,15 +110,15 @@ public class Consolidator {
 		 * (1) Identify which vehicles are available and what they cost.
 		 */
 
-		final List<Map<Vehicle, TransportCost>> vehicle2costOverDays = new ArrayList<>(this.shipmentPeriod_day);
+		final List<Map<Vehicle, BasicTransportCost>> vehicle2costOverDays = new ArrayList<>(this.shipmentPeriod_day);
 		for (int day = 0; day < this.shipmentPeriod_day; day++) {
 			final Set<Vehicle> alreadyUsedVehicles = this.assignmentsOverDays.get(day).getVehicle2shipments().keySet();
 
-			final Map<Vehicle, TransportCost> veh2cost = new LinkedHashMap<>(
+			final Map<Vehicle, BasicTransportCost> veh2cost = new LinkedHashMap<>(
 					this.prototypeVehicles.size() + alreadyUsedVehicles.size());
 			for (Vehicle vehicle : this.prototypeVehicles.values()) {
 				try {
-					TransportCost vehCost = this.costModel.computeInVehicleShipmentCost(vehicle,
+					BasicTransportCost vehCost = this.costModel.computeInVehicleShipmentCost(vehicle,
 							shipment.getWeight_ton(), this.assignmentsOverDays.get(day));
 					if (vehCost != null) {
 						veh2cost.put(vehicle, vehCost);

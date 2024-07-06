@@ -17,12 +17,12 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics.choicemodel;
+package se.vti.samgods.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Function;
 
 /**
  * Can be instantiated for parallel use.
@@ -42,13 +42,14 @@ public class ChoiceModelUtils {
 		this.rnd = rnd;
 	}
 
-	public List<Double> computeLogitProbabilities(final List<Alternative> alternatives,
-			final double scale) {
+	public <A> List<Double> computeLogitProbabilities(final List<A> alternatives,
+			final Function<A, Double> alternative2utility) {
 		final List<Double> result = new ArrayList<>(alternatives.size());
-		final double maxUtility = alternatives.stream().mapToDouble(a -> a.utility).max().getAsDouble();
+		final double maxUtility = alternatives.stream().mapToDouble(a -> alternative2utility.apply(a)).max()
+				.getAsDouble();
 		double denom = 0.0;
-		for (Alternative alternative : alternatives) {
-			final double num = Math.exp(scale * (alternative.utility - maxUtility));
+		for (A alternative : alternatives) {
+			final double num = Math.exp(alternative2utility.apply(alternative) - maxUtility);
 			result.add(num);
 			denom += num;
 		}
@@ -58,8 +59,7 @@ public class ChoiceModelUtils {
 		return result;
 	}
 
-	public Alternative chooseFromProbabilities(final List<Alternative> alternatives,
-			final List<Double> probabilities) {
+	public <A> A chooseFromProbabilities(final List<A> alternatives, final List<Double> probabilities) {
 		double probaSum = 0.0;
 		final double threshold = this.rnd.nextDouble();
 		for (int i = 0; i < alternatives.size(); i++) {
@@ -72,7 +72,8 @@ public class ChoiceModelUtils {
 		return alternatives.get(this.rnd.nextInt(alternatives.size()));
 	}
 
-	public Alternative choose(final List<Alternative> alternatives, double scale) {
-		return this.chooseFromProbabilities(alternatives, this.computeLogitProbabilities(alternatives, scale));
+	public <A> A choose(final List<A> alternatives, final Function<A, Double> alternative2utility) {
+		return this.chooseFromProbabilities(alternatives,
+				this.computeLogitProbabilities(alternatives, alternative2utility));
 	}
 }

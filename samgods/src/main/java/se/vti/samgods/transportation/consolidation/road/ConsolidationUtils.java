@@ -57,7 +57,7 @@ public class ConsolidationUtils {
 	}
 
 	public static List<Shipment> disaggregateIntoAnalysisPeriod(TransportDemand.AnnualShipment annualShipment, int analysisPeriod_days,
-			SamgodsConstants.ShipmentSizeClass sizeClass) {
+			SamgodsConstants.ShipmentSize sizeClass) {
 
 		final double amountPerPeriod_ton = annualShipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
 		final double shipmentsPerPeriod = amountPerPeriod_ton / sizeClass.getMeanValue_ton();

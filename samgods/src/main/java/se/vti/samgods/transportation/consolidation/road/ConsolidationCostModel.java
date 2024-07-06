@@ -27,13 +27,12 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.BasicTransportCost;
-import se.vti.samgods.DetailedTransportCost;
-import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.TransportCost;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.samgods.network.LinkAttributes;
+import se.vti.samgods.transportation.BasicTransportCost;
+import se.vti.samgods.transportation.DetailedTransportCost;
+import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
@@ -105,7 +104,7 @@ public class ConsolidationCostModel {
 				double length_km = Units.KM_H_PER_M_S * link.getLength();
 				double tt_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
 				builder.addMoveDuration_h(tt_h);
-				if (SamgodsLinkAttributes.isFerry(link)) {
+				if (LinkAttributes.isFerry(link)) {
 					builder.addMoveCost(tt_h * vehicleAttrs.onFerryCost_1_h);
 					builder.addMoveCost(length_km * vehicleAttrs.onFerryCost_1_km);
 				} else {
@@ -128,11 +127,11 @@ public class ConsolidationCostModel {
 		final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton); // TODO
 
 		if (feasible) {
-			final TransportCost vehicleCost = computeEpisodeCost(ConsolidationUtils.getFreightAttributes(vehicle),
+			final DetailedTransportCost vehicleCost = computeEpisodeCost(
+					ConsolidationUtils.getFreightAttributes(vehicle),
 					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
 			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
-			return new BasicTransportCost(assignedWeight_ton, share * vehicleCost.getMonetaryCost(),
-					vehicleCost.getDuration_h());
+			return new BasicTransportCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);
 		} else {
 			return null;
 		}

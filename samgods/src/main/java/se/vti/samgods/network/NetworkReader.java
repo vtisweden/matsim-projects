@@ -44,11 +44,11 @@ import se.vti.samgods.utils.ParseNumberUtils;
  * @author GunnarF
  *
  */
-public class SamgodsNetworkReader {
+public class NetworkReader {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(SamgodsNetworkReader.class);
+	private static final Logger log = Logger.getLogger(NetworkReader.class);
 
 	private static final String NODE_COUNTER = "N";
 	private static final String NODE_X = "X";
@@ -67,7 +67,7 @@ public class SamgodsNetworkReader {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	private SamgodsNetworkReader() {
+	private NetworkReader() {
 		// Do not instantiate.
 	}
 
@@ -132,7 +132,7 @@ public class SamgodsNetworkReader {
 //			}
 			
 			if (speed_km_h < 1e-3) {
-				Logger.getLogger(SamgodsNetworkReader.class)
+				Logger.getLogger(NetworkReader.class)
 						.warn("Skipping link " + id + " because of too low speed: " + speed_km_h + " km/h.");
 			} else {
 				final double capacity_veh_h = ParseNumberUtils
@@ -144,8 +144,8 @@ public class SamgodsNetworkReader {
 				final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
 						Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
 				link.setAllowedModes(samgodsMode.matsimModes);
-				link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
-						new SamgodsLinkAttributes(samgodsMode, speed1_km_h, speed2_km_h));
+				link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
+						new LinkAttributes(samgodsMode, speed1_km_h, speed2_km_h));
 			}
 		}
 
@@ -170,13 +170,13 @@ public class SamgodsNetworkReader {
 		Map<String, Double> mode2lanesSum = new LinkedHashMap<>();
 
 		for (Link link : network.getLinks().values()) {
-			String mode = SamgodsLinkAttributes.getSamgodsMode(link).toString();
+			String mode = LinkAttributes.getSamgodsMode(link).toString();
 			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			mode2lengthSum.compute(mode, (m, l) -> l == null ? link.getLength() : l + link.getLength());
 			mode2lanesSum.compute(mode, (m, l) -> l == null ? link.getNumberOfLanes() : l + link.getNumberOfLanes());
 			mode2speedSum.compute(mode, (m, s) -> s == null ? link.getFreespeed() : s + link.getFreespeed());
 
-			SamgodsLinkAttributes attr = SamgodsLinkAttributes.getAttrs(link);
+			LinkAttributes attr = LinkAttributes.getAttrs(link);
 			if (attr.speed1_km_h != null && attr.speed1_km_h != 0) {
 				mode2speed1Sum.compute(mode, (m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
 				mode2speed1cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
@@ -212,11 +212,11 @@ public class SamgodsNetworkReader {
 
 	public static void main(String[] args) throws IOException {
 
-		Network network = SamgodsNetworkReader.load("./input_2024/node_parameters.csv",
+		Network network = NetworkReader.load("./input_2024/node_parameters.csv",
 				"./input_2024/link_parameters.csv");
 		NetworkUtils.writeNetwork(network, "./input_2024/matsim-network.xml");
 
 		System.out.println();
-		System.out.println(SamgodsNetworkReader.createNetworkStatsTable(network));
+		System.out.println(NetworkReader.createNetworkStatsTable(network));
 	}
 }

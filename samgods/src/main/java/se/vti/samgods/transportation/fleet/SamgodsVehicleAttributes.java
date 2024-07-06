@@ -27,8 +27,8 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.transportation.InsufficientDataException;
 
 /**
  * 
@@ -98,7 +98,7 @@ public class SamgodsVehicleAttributes {
 				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
 
-	public synchronized double speedOnLink_m_s(Link link) throws InsufficientDataException {
+	public double speedOnLink_m_s(Link link) throws InsufficientDataException {
 		if (this.speed_km_h != null) {
 			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
 		} else if (Double.isFinite(link.getFreespeed())) {
@@ -109,18 +109,18 @@ public class SamgodsVehicleAttributes {
 		}
 	}
 
-	public synchronized double travelTimeOnLink_s(Link link) throws InsufficientDataException {
+	public double travelTimeOnLink_s(Link link) throws InsufficientDataException {
 		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
 	}
 
-	public synchronized boolean containsData(SamgodsConstants.Commodity commodity) {
+	public boolean containsData(SamgodsConstants.Commodity commodity) {
 		return this.loadCost_1_ton.get(commodity) != null || this.loadTime_h.get(commodity) != null
 				|| this.transferCost_1_ton.get(commodity) != null || this.transferTime_h.get(commodity) != null;
 	}
 
 	public static class Builder {
 
-		private Id<VehicleType> id = null;
+		public final Id<VehicleType> id;
 
 		private String description = null;
 
@@ -148,11 +148,8 @@ public class SamgodsVehicleAttributes {
 
 		private ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferTime_h = new ConcurrentHashMap<>(16);
 
-		public Builder() {
-		}
-
-		public Id<VehicleType> getId() {
-			return this.id;
+		public Builder(String name) {
+			this.id = Id.create(name, VehicleType.class);
 		}
 
 		public SamgodsVehicleAttributes buildFreightVehicleAttributes() throws InsufficientDataException {
@@ -174,10 +171,10 @@ public class SamgodsVehicleAttributes {
 			return type;
 		}
 
-		public Builder setName(String name) {
-			this.id = Id.create(name, VehicleType.class);
-			return this;
-		}
+//		public Builder setName(String name) {
+//			this.id = Id.create(name, VehicleType.class);
+//			return this;
+//		}
 
 		public Builder setDescription(String description) {
 			this.description = description;

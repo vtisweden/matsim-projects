@@ -34,6 +34,7 @@ import floetteroed.utilities.math.MathHelpers;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.external.rail.AnnualShipmentJsonSerializer;
 import se.vti.samgods.utils.MiscUtils;
 
 /**
@@ -76,7 +77,7 @@ public class TransportDemand {
 			return this.od;
 		}
 
-		public double getSingleInstanceAmount() {
+		public double getSingleInstanceAmount_ton() {
 			return this.singleInstanceAmount_ton;
 		}
 

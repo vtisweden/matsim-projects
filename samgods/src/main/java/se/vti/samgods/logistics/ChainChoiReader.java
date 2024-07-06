@@ -24,12 +24,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import org.apache.log4j.Logger;
+import org.jfree.util.Log;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Network;
 
@@ -38,7 +38,6 @@ import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 
 /**
  * 
@@ -178,9 +177,16 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		// Load chain legs.
 
 		String chainType = this.getStringValue(ChainType);
-		for (int i = 1; i < 10; i++) { // TODO Revisit.
-			chainType = chainType.replace("" + i, "");
+		{
+			final String oldChainType = chainType;
+			for (int i = 1; i < 10; i++) { // TODO Revisit.
+				chainType = chainType.replace("" + i, "");
+			}
+			if (oldChainType.length() > chainType.length()) {
+				Log.warn("Reduced chain type " + oldChainType + " to " + chainType + ".");
+			}
 		}
+
 		final List<String> originColumns = originsColumnsByChainLength.get(chainType.length());
 		final List<String> destinationColumns = destinationColumnsByChainLength.get(chainType.length());
 
@@ -241,8 +247,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 				if ((this.network == null) || this.network.getNodes().keySet()
 						.containsAll(transportChain.getLoadingTransferUnloadingNodes())) {
-					this.transportDemand.add(transportChain, singleInstanceVolume_ton_yr,
-							numberOfInstances);
+					this.transportDemand.add(transportChain, singleInstanceVolume_ton_yr, numberOfInstances);
 				}
 			}
 		}

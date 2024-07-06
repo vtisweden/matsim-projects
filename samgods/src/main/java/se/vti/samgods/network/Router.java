@@ -42,20 +42,20 @@ import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.transportation.InsufficientDataException;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class NetworkRouter {
+public class Router {
 
 	private long lastUpdate_ms = System.currentTimeMillis();
 
@@ -225,20 +225,20 @@ public class NetworkRouter {
 
 	private int maxThreads = Integer.MAX_VALUE;
 
-	private final NetworkRoutingData routingData;
+	private final RoutingData routingData;
 
 	private boolean logProgress = false;
 
-	public NetworkRouter(NetworkRoutingData routingData) {
+	public Router(RoutingData routingData) {
 		this.routingData = routingData;
 	}
 
-	public NetworkRouter setLogProgress(boolean logProgress) {
+	public Router setLogProgress(boolean logProgress) {
 		this.logProgress = logProgress;
 		return this;
 	}
 
-	public NetworkRouter setMaxThreads(int maxThreads) {
+	public Router setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
 		return this;
 	}

@@ -32,8 +32,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.utils.ParseNumberUtils;
 
@@ -86,10 +86,6 @@ public class SamgodsFleetReader {
 
 	private static final String SUFFIX_INDICATING_CONTAINER = "_CONTAINER";
 
-	// TODO Where?
-	private static final double MAGIC_NUMBER_INDICATING_IMPOSSIBLE_TRANSFER = 99999;
-	private static final double MAGIC_NUMBER_INDICATING_IMPOSSIBLE_FERRY = 0;
-
 	// -------------------- MEMBERS --------------------
 
 	private final VehicleFleet fleet;
@@ -108,10 +104,10 @@ public class SamgodsFleetReader {
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(vehicleTypeFile))) {
 			for (boolean container : new boolean[] { false, true }) {
-				final SamgodsVehicleAttributes.Builder builder = new SamgodsVehicleAttributes.Builder();
+				final SamgodsVehicleAttributes.Builder builder = new SamgodsVehicleAttributes.Builder(
+						record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""));
 				vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
-				builder.setName(record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""))
-						.setDescription(record.get(VEH_DESCRIPTION)).setTransportMode(transportMode)
+				builder.setDescription(record.get(VEH_DESCRIPTION)).setTransportMode(transportMode)
 						.setCost_1_km(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_KM)))
 						.setCost_1_h(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_H)))
 						.setCapacity_ton(ParseNumberUtils.parseDoubleOrNull(record.get(CAPACITY_TON)))
@@ -189,7 +185,7 @@ public class SamgodsFleetReader {
 				this.fleet.getVehicles().addVehicleType(vehicleType);
 
 			} catch (InsufficientDataException e) {
-				e.log(this.getClass(), "Failed to build vehicle type " + builder.getId() + ".");
+				e.log(this.getClass(), "Failed to build vehicle type " + builder.id + ".");
 			}
 		}
 	}

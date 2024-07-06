@@ -28,6 +28,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
@@ -56,6 +57,10 @@ public class TransportEpisode {
 
 	public void setParent(TransportChain parent) {
 		this.parent = parent;
+	}
+	
+	public OD getOD() {
+		return new OD(this.getLoadingNode(), this.getUnloadingNode());
 	}
 	
 	public Boolean containsFerry() {

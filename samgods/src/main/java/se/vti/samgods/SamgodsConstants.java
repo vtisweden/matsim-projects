@@ -105,7 +105,7 @@ public class SamgodsConstants {
 		return Commodity.values().length;
 	}
 
-	public static enum ShipmentSizeClass {
+	public static enum ShipmentSize {
 
 		SIZE01(1e-3, 51), SIZE02(51, 201), SIZE03(201, 801), SIZE04(801, 3001), SIZE05(3001, 7501), SIZE06(7501, 12501),
 		SIZE07(12501, 20001), SIZE08(20001, 30001), SIZE09(30001, 35001), SIZE10(35001, 40001), SIZE11(40001, 45001),
@@ -117,7 +117,7 @@ public class SamgodsConstants {
 		private final double lowerValue_ton;
 		private final double upperValue_ton;
 
-		private ShipmentSizeClass(double lowerValue_ton, double upperValue_ton) {
+		private ShipmentSize(double lowerValue_ton, double upperValue_ton) {
 			if (lowerValue_ton < MIN_SHIPMENT_SIZE) {
 				throw new IllegalArgumentException();
 			}
@@ -144,8 +144,8 @@ public class SamgodsConstants {
 			return 0.5 * (this.lowerValue_ton + this.upperValue_ton);
 		}
 
-		public static ShipmentSizeClass getSmallestClass_ton() {
-			return ShipmentSizeClass.values()[0];
+		public static ShipmentSize getSmallestClass_ton() {
+			return ShipmentSize.values()[0];
 		}
 	}
 

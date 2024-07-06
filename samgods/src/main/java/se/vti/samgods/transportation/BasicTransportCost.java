@@ -17,18 +17,18 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods;
+package se.vti.samgods.transportation;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class BasicTransportCost implements TransportCost {
+public class BasicTransportCost {
 
-	private final double amount_ton;
-	private final double monetaryCost;
-	private final double duration_h;
+	public final double amount_ton;
+	public final double monetaryCost;
+	public final double duration_h;
 
 	public BasicTransportCost(double amount_ton, double cost, double duration_h) {
 		this.amount_ton = amount_ton;
@@ -36,18 +36,15 @@ public class BasicTransportCost implements TransportCost {
 		this.duration_h = duration_h;
 	}
 
-	@Override
-	public double getAmount_ton() {
-		return amount_ton;
-	}
-
-	@Override
-	public double getMonetaryCost() {
-		return monetaryCost;
-	}
-
-	@Override
-	public double getDuration_h() {
-		return duration_h;
-	}	
+//	public double getAmount_ton() {
+//		return amount_ton;
+//	}
+//
+//	public double getMonetaryCost() {
+//		return monetaryCost;
+//	}
+//
+//	public double getDuration_h() {
+//		return duration_h;
+//	}	
 }

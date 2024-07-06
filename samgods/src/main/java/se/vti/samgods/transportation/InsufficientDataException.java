@@ -17,13 +17,20 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods;
+package se.vti.samgods.transportation;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
+
+import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 
@@ -46,7 +53,8 @@ public class InsufficientDataException extends Exception {
 				for (InsufficientDataException e : trace) {
 					msg.append("  " + e.toString() + "\n");
 				}
-				msg.append("--------------------------------------------------------------------------------------------------------------------------------------------");
+				msg.append(
+						"--------------------------------------------------------------------------------------------------------------------------------------------");
 				log.warn(msg);
 			}
 		}));
@@ -74,9 +82,29 @@ public class InsufficientDataException extends Exception {
 		this(throwClass, throwMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
 	}
 
+	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportEpisode episode) {
+		this(throwClass, throwMessage + " " + context(episode.getCommodity(), episode.getOD(), episode.getMode(),
+				episode.isContainer(), episode.containsFerry()));
+	}
+
+	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportChain chain) {
+		this(throwClass, throwMessage + " "
+				+ context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), chain.containsFerry()));
+	}
+
 	public synchronized void log(Class<?> catchClass, String catchMessage, SamgodsConstants.Commodity commodity, OD od,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
 		this.log(catchClass, catchMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
+	}
+
+	public synchronized void log(Class<?> catchClass, String catchMessage, TransportEpisode episode) {
+		this.log(catchClass, catchMessage + " " + context(episode.getCommodity(), episode.getOD(), episode.getMode(),
+				episode.isContainer(), episode.containsFerry()));
+	}
+
+	public synchronized void log(Class<?> catchClass, String catchMessage, TransportChain chain) {
+		this.log(catchClass, catchMessage + " "
+				+ context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), chain.containsFerry()));
 	}
 
 	public synchronized void log() {

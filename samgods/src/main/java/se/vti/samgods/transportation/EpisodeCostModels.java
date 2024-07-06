@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation;
+package se.vti.samgods.transportation;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -27,9 +27,6 @@ import java.util.Map;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 
-import se.vti.samgods.BasicTransportCost;
-import se.vti.samgods.DetailedTransportCost;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 
@@ -56,14 +53,15 @@ public class EpisodeCostModels implements EpisodeCostModel {
 	}
 
 	@Override
-	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
+	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		for (EpisodeCostModel model : this.models) {
 			try {
-				return model.computeCost_1_ton(episode);
+				return model.computeUnitCost(episode);
 			} catch (InsufficientDataException e) {
 			}
 		}
-		throw new InsufficientDataException(this.getClass(), "No model available to compute episode unit cost.");
+		throw new InsufficientDataException(this.getClass(), "No model available to compute episode unit cost.",
+				episode);
 	}
 
 	@Override
@@ -81,7 +79,8 @@ public class EpisodeCostModels implements EpisodeCostModel {
 			throw new InsufficientDataException(this.getClass(),
 					"No model available to compute link transport cost for "
 							+ (network.getLinks().size() - link2cost.size()) + " out of " + network.getLinks().size()
-							+ " links.");
+							+ " links.",
+					commodity, null, mode, isContainer, null);
 		}
 	}
 

@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.utils
+ * se.vti.samgods.transportation.consolidation
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,28 +17,25 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.utils;
+package se.vti.samgods.transportation;
 
-import java.util.Arrays;
+import java.util.Map;
+
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class CommodityModeGrouping extends TupleGrouping<SamgodsConstants.Commodity, SamgodsConstants.TransportMode> {
+public interface EpisodeCostModel {
 
-	public CommodityModeGrouping(Iterable<Commodity> firstDomain, Iterable<TransportMode> secondDomain) {
-		super(firstDomain, secondDomain);
-	}
+	DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException;
 
-	public CommodityModeGrouping() {
-		this(Arrays.asList(SamgodsConstants.Commodity.values()),
-				Arrays.asList(SamgodsConstants.TransportMode.values()));
-	}
-
+	void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost, SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network) throws InsufficientDataException;
 }

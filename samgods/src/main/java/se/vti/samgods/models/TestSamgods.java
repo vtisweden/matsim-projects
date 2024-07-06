@@ -21,7 +21,6 @@ package se.vti.samgods.models;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -33,26 +32,25 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.DetailedTransportCost;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.ChainChoiReader;
+import se.vti.samgods.logistics.StorageCost;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
-import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.choicemodel.Alternative;
 import se.vti.samgods.logistics.choicemodel.AnnualShipmentUtilityFunction;
-import se.vti.samgods.logistics.choicemodel.ChoiceModelUtils;
-import se.vti.samgods.logistics.choicemodel.ChoiceSetGenerator;
-import se.vti.samgods.network.NetworkRouter;
-import se.vti.samgods.network.NetworkRoutingData;
-import se.vti.samgods.network.SamgodsNetworkReader;
-import se.vti.samgods.transportation.consolidation.EpisodeCostModel;
-import se.vti.samgods.transportation.consolidation.EpisodeCostModels;
-import se.vti.samgods.transportation.consolidation.FallbackEpisodeCostModel;
+import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
+import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeChoiceModel;
+import se.vti.samgods.network.NetworkReader;
+import se.vti.samgods.network.Router;
+import se.vti.samgods.network.RoutingData;
+import se.vti.samgods.transportation.DetailedTransportCost;
+import se.vti.samgods.transportation.EpisodeCostModel;
+import se.vti.samgods.transportation.EpisodeCostModels;
+import se.vti.samgods.transportation.FallbackEpisodeCostModel;
+import se.vti.samgods.transportation.InsufficientDataException;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
@@ -72,7 +70,7 @@ public class TestSamgods {
 //		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
 //				SamgodsConstants.Commodity.AIR);
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1;
+		double samplingRate = 1.0;
 
 		log.info("STARTED ...");
 
@@ -87,8 +85,7 @@ public class TestSamgods {
 		fleetReader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 				SamgodsConstants.TransportMode.Sea);
 
-		Network network = SamgodsNetworkReader.load("./input_2024/node_parameters.csv",
-				"./input_2024/link_parameters.csv");
+		Network network = NetworkReader.load("./input_2024/node_parameters.csv", "./input_2024/link_parameters.csv");
 
 		// LOAD DEMAND
 
@@ -119,10 +116,10 @@ public class TestSamgods {
 
 		// ROUTE CHAINS
 
-		NetworkRoutingData routingData = new NetworkRoutingData(network, episodeCostModels, fleet);
+		RoutingData routingData = new RoutingData(network, episodeCostModels, fleet);
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			Map<OD, Set<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
-			NetworkRouter router = new NetworkRouter(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
+			Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
 			router.route(commodity, od2chains);
 		}
 
@@ -146,74 +143,29 @@ public class TestSamgods {
 
 		AnnualShipmentUtilityFunction utilityFunction = new AnnualShipmentUtilityFunction() {
 			@Override
-			public double computeUtility(Commodity commodity, AnnualShipment annualShipment,
-					DetailedTransportCost transportCost_1_ton) {
-				return -transportCost_1_ton.getMonetaryCost() * annualShipment.getTotalAmount_ton();
+			public double computeUtility(Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost,
+					StorageCost storageUnitCost) {
+				return -transportUnitCost.monetaryCost * amount_ton;
 			}
 		};
 
-		double scale = 0.0;
-
-		ChoiceSetGenerator choiceSetGenerator = new ChoiceSetGenerator(utilityFunction);
-		ChoiceModelUtils choiceModel = new ChoiceModelUtils();
-
+		ChainAndShipmentSizeChoiceModel choiceModel = new ChainAndShipmentSizeChoiceModel(utilityFunction,
+				episodeCostModels);
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			long cnt = 0;
 			for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
 					.get(commodity).entrySet()) {
 				final OD od = e.getKey();
+				final List<AnnualShipment> annualShipments = e.getValue();
 				final Set<TransportChain> transportChains = transportDemand.commodity2od2transportChains.get(commodity)
 						.get(od);
 				if (transportChains.size() == 0) {
 					new InsufficientDataException(TestSamgods.class, "No transport chains available.", commodity, od,
 							null, null, null);
 				} else {
-
-					// encapsulate >>>
-
-					Map<TransportChain, DetailedTransportCost> transportChain2transportUnitCost_1_ton = new LinkedHashMap<>(
-							transportChains.size());
-					for (TransportChain transportChain : transportChains) {
-						try {
-							DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder()
-									.addAmount_ton(1.0);
-							for (TransportEpisode episode : transportChain.getEpisodes()) {
-
-								DetailedTransportCost episodeCost = episodeCostModels.computeCost_1_ton(episode);
-								builder.addLoadingCost(episodeCost.loadingCost)
-										.addLoadingDuration_h(episodeCost.loadingDuration_h)
-										.addMoveCost(episodeCost.moveCost).addMoveDuration_h(episodeCost.moveDuration_h)
-										.addTransferCost(episodeCost.transferCost)
-										.addTransferDuration_h(episodeCost.transferDuration_h)
-										.addUnloadingCost(episodeCost.unloadingCost)
-										.addUnloadingDuration_h(episodeCost.unloadingDuration_h);
-
-							}
-							transportChain2transportUnitCost_1_ton.put(transportChain, builder.build());
-						} catch (InsufficientDataException e0) {
-							e0.log(TestSamgods.class, "No cost data for at least one episode in transport chain.",
-									commodity, od, null, transportChain.isContainer(), transportChain.containsFerry());
-						}
-					}
-
-					if (transportChain2transportUnitCost_1_ton.size() == 0) {
-						new InsufficientDataException(TestSamgods.class,
-								"No transport chains with sufficient cost data available.", commodity, od, null, null,
-								null).log(TestSamgods.class, "dito");
-					} else {
-						for (TransportDemand.AnnualShipment shipment : e.getValue()) {
-							List<Alternative> alternatives = choiceSetGenerator.createChoiceSet(commodity, shipment,
-									transportChain2transportUnitCost_1_ton);
-							for (int instance = 0; instance < shipment.getNumberOfInstances(); instance++) {
-								Alternative choice = choiceModel.choose(alternatives, scale);
-								assert (choice != null);
-								cnt++;
-							}
-						}
-					}
-
-					// encapsuate <<<
-
+					List<ChainAndShipmentSize> choices = choiceModel.choose(commodity, od, transportChains,
+							annualShipments);
+					cnt += choices.size();
 				}
 
 			}

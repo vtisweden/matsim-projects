@@ -30,7 +30,7 @@ import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.samgods.network.LinkAttributes;
 
 /**
  * 
@@ -108,7 +108,7 @@ public class TransportLeg {
 		} else {
 			this.route = Collections.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
 			this.containsFerry = route.stream().anyMatch(
-					l -> SamgodsConstants.TransportMode.Ferry.equals(SamgodsLinkAttributes.getSamgodsMode(l)));
+					l -> SamgodsConstants.TransportMode.Ferry.equals(LinkAttributes.getSamgodsMode(l)));
 		}
 	}
 

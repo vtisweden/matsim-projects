@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods
+ * se.vti.samgods.logistics
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,19 +17,13 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods;
+package se.vti.samgods.logistics;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface TransportCost {
-
-	double getAmount_ton();
-
-	double getMonetaryCost();
-
-	double getDuration_h();
-
+public class StorageCost {
+	// placeholder
 }

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation;
+package se.vti.samgods.transportation;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,10 +28,6 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.vehicles.Vehicle;
 
-import se.vti.samgods.BasicTransportCost;
-import se.vti.samgods.DetailedTransportCost;
-import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
@@ -166,12 +162,10 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	@Override
-	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
+	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		CumulativeDetailedData data = this.episode2data.get(episode);
 		if (data == null) {
-			throw new InsufficientDataException(this.getClass(), "No empirical data for transport episode.",
-					episode.getCommodity(), new OD(episode.getLoadingNode(), episode.getUnloadingNode()),
-					episode.getMode(), episode.isContainer(), episode.containsFerry());
+			throw new InsufficientDataException(this.getClass(), "No empirical data for transport episode.", episode);
 		} else {
 			return data.createUnitCost();
 		}

@@ -17,14 +17,42 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods;
+package se.vti.samgods.transportation;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class DetailedTransportCost implements TransportCost {
+public class DetailedTransportCost extends BasicTransportCost {
+
+	public final double loadingCost;
+	public final double unloadingCost;
+	public final double transferCost;
+	public final double moveCost;
+
+	public final double loadingDuration_h;
+	public final double unloadingDuration_h;
+	public final double transferDuration_h;
+	public final double moveDuration_h;
+
+	private DetailedTransportCost(double amount_ton, double loadingCost, double unloadingCost, double transferCost,
+			double moveCost, double loadingDuration_h, double unloadingDuration_h, double transferDuration_h,
+			double moveDuration_h) {
+
+		super(amount_ton, loadingCost + unloadingCost + transferCost + moveCost,
+				loadingDuration_h + unloadingDuration_h + transferDuration_h + moveDuration_h);
+
+		this.loadingCost = loadingCost;
+		this.unloadingCost = unloadingCost;
+		this.transferCost = transferCost;
+		this.moveCost = moveCost;
+
+		this.loadingDuration_h = loadingDuration_h;
+		this.unloadingDuration_h = unloadingDuration_h;
+		this.transferDuration_h = transferDuration_h;
+		this.moveDuration_h = moveDuration_h;
+	}
 
 	public static class Builder {
 		private Double amount_ton;
@@ -100,51 +128,6 @@ public class DetailedTransportCost implements TransportCost {
 		public Builder addMoveDuration_h(Double moveDuration_h) {
 			this.moveDuration_h = this.sum(this.moveDuration_h, moveDuration_h);
 			return this;
-		}		
+		}
 	}
-
-	public final double amount_ton;
-
-	public final double loadingCost;
-	public final double unloadingCost;
-	public final double transferCost;
-	public final double moveCost;
-
-	public final double loadingDuration_h;
-	public final double unloadingDuration_h;
-	public final double transferDuration_h;
-	public final double moveDuration_h;
-
-	private DetailedTransportCost(double amount_ton, double loadingCost, double unloadingCost, double transferCost,
-			double moveCost, double loadingDuration_h, double unloadingDuration_h, double transferDuration_h,
-			double moveDuration_h) {
-
-		this.amount_ton = amount_ton;
-
-		this.loadingCost = loadingCost;
-		this.unloadingCost = unloadingCost;
-		this.transferCost = transferCost;
-		this.moveCost = moveCost;
-
-		this.loadingDuration_h = loadingDuration_h;
-		this.unloadingDuration_h = unloadingDuration_h;
-		this.transferDuration_h = transferDuration_h;
-		this.moveDuration_h = moveDuration_h;
-	}
-
-	@Override
-	public double getAmount_ton() {
-		return this.amount_ton;
-	}
-
-	@Override
-	public double getMonetaryCost() {
-		return this.loadingCost + this.unloadingCost + this.transferCost + this.moveCost;
-	}
-
-	@Override
-	public double getDuration_h() {
-		return this.loadingDuration_h + this.unloadingDuration_h + this.transferDuration_h + this.moveDuration_h;
-	}
-
 }

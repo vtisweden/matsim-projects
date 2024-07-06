@@ -28,7 +28,7 @@ import se.vti.samgods.SamgodsConstants;
  * @author GunnarF
  *
  */
-public class SamgodsLinkAttributes {
+public class LinkAttributes {
 
 	public static final String ATTRIBUTE_NAME = "samgods";
 
@@ -37,15 +37,15 @@ public class SamgodsLinkAttributes {
 	public final Double speed1_km_h;
 
 	public final Double speed2_km_h;
-	
-	public SamgodsLinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
+
+	public LinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
 		this.samgodsMode = samgodsMode;
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
 	}
 
-	public static SamgodsLinkAttributes getAttrs(Link link) {
-		return (SamgodsLinkAttributes)link.getAttributes().getAttribute(ATTRIBUTE_NAME);
+	public static LinkAttributes getAttrs(Link link) {
+		return (LinkAttributes) link.getAttributes().getAttribute(ATTRIBUTE_NAME);
 	}
 
 	public static SamgodsConstants.TransportMode getSamgodsMode(Link link) {
@@ -59,7 +59,7 @@ public class SamgodsLinkAttributes {
 	public static Double getSpeed2_km_h(Link link) {
 		return getAttrs(link).speed2_km_h;
 	}
-	
+
 	public static boolean isFerry(Link link) {
 		return SamgodsConstants.TransportMode.Ferry.equals(getAttrs(link).samgodsMode);
 	}

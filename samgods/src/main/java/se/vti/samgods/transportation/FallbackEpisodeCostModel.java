@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation;
+package se.vti.samgods.transportation;
 
 import java.util.Map;
 
@@ -26,12 +26,9 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.BasicTransportCost;
-import se.vti.samgods.DetailedTransportCost;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
@@ -76,7 +73,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
 
 	@Override
-	public DetailedTransportCost computeCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
+	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		final VehicleType vehicleType = this.fleet.getRepresentativeVehicleType(episode);
 		final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils.getFreightAttributes(vehicleType);
 		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
@@ -106,7 +103,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 				assert (Double.isFinite(length_km));
 				assert (Double.isFinite(duration_h));
 				assert (link.getId() != null);
-				if (SamgodsLinkAttributes.isFerry(link)) {
+				if (LinkAttributes.isFerry(link)) {
 					link2cost.put(link,
 							new BasicTransportCost(1.0,
 									duration_h * ferryCompatibleVehicleAttributes.onFerryCost_1_h
