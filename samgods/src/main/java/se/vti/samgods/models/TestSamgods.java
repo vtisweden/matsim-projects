@@ -41,7 +41,7 @@ import se.vti.samgods.logistics.StorageCost;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
-import se.vti.samgods.logistics.choicemodel.AnnualShipmentUtilityFunction;
+import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeChoiceModel;
 import se.vti.samgods.network.NetworkReader;
@@ -116,7 +116,7 @@ public class TestSamgods {
 
 		// ROUTE CHAINS
 
-		RoutingData routingData = new RoutingData(network, episodeCostModels, fleet);
+		RoutingData routingData = new RoutingData(network, episodeCostModels);
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			Map<OD, Set<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
 			Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
@@ -141,7 +141,7 @@ public class TestSamgods {
 
 		// RUN LOGISTICS MODEL
 
-		AnnualShipmentUtilityFunction utilityFunction = new AnnualShipmentUtilityFunction() {
+		ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
 			@Override
 			public double computeUtility(Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost,
 					StorageCost storageUnitCost) {

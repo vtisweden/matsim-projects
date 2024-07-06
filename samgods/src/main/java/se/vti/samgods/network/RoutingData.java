@@ -36,8 +36,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.transportation.BasicTransportCost;
-import se.vti.samgods.transportation.EpisodeCostModels;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.EpisodeCostModel;
 
 /**
  * 
@@ -52,16 +51,13 @@ public class RoutingData {
 
 	private final Network multimodalNetwork;
 
-	private final EpisodeCostModels episodeCostModels;
-
-	private final VehicleFleet fleet;
+	private final EpisodeCostModel episodeCostModel;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoutingData(Network multimodalNetwork, EpisodeCostModels episodeCostModels, VehicleFleet fleet) {
+	public RoutingData(Network multimodalNetwork, EpisodeCostModel episodeCostModel) {
 		this.multimodalNetwork = multimodalNetwork;
-		this.episodeCostModels = episodeCostModels;
-		this.fleet = fleet;
+		this.episodeCostModel = episodeCostModel;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -95,7 +91,7 @@ public class RoutingData {
 			Network network, boolean isContainer) throws InsufficientDataException {
 
 		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>(network.getLinks().size());
-		this.episodeCostModels.populateLink2transportCosts(link2cost, commodity, mode, isContainer, network);
+		this.episodeCostModel.populateLink2transportCosts(link2cost, commodity, mode, isContainer, network);
 
 		final Map<Link, Double> link2disutility = link2cost.entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().monetaryCost));

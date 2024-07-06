@@ -28,7 +28,7 @@ import se.vti.samgods.transportation.DetailedTransportCost;
  * @author GunnarF
  *
  */
-public interface AnnualShipmentUtilityFunction {
+public interface ChainAndShipmentSizeUtilityFunction {
 
 	double computeUtility(SamgodsConstants.Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost,
 			StorageCost storageUnitCost);

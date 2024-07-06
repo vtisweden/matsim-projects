@@ -50,13 +50,13 @@ public class ChainAndShipmentSizeChoiceModel {
 
 	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
-	private final AnnualShipmentUtilityFunction utilityFunction;
+	private final ChainAndShipmentSizeUtilityFunction utilityFunction;
 
 	private final EpisodeCostModel episodeCostModel;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChainAndShipmentSizeChoiceModel(final AnnualShipmentUtilityFunction utilityFunction,
+	public ChainAndShipmentSizeChoiceModel(final ChainAndShipmentSizeUtilityFunction utilityFunction,
 			EpisodeCostModel episodeCostModel) {
 		this.utilityFunction = utilityFunction;
 		this.episodeCostModel = episodeCostModel;
