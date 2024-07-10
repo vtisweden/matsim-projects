@@ -24,7 +24,7 @@
 	<module>skellefteaV2X</module>
 	<module>roundtrips</module>
 	<module>od2roundtrips</module>
-
+	<module>renate</module>
   </modules>
 
   <repositories>

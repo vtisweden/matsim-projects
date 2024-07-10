@@ -1,4 +1,4 @@
-package utils;
+package se.vti.renate.utils;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;

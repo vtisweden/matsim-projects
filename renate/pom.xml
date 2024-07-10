@@ -1,80 +1,73 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>RENATE.od_estimation</groupId>
-	<artifactId>MichaelSederlin</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+  <parent>
+    <groupId>se.vti.matsim-projects</groupId>
+  	<artifactId>se.vti.matsim-projects</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
 
-	<name>Dynamic OD Estimation</name>
-	<description></description>
-
-	<properties>
-		<matsim.version>14.0</matsim.version>
-
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<!-- <maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target> -->
-				<maven.compiler.source>16</maven.compiler.source>
-				<maven.compiler.target>16</maven.compiler.target>
-	</properties>
-
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>renate</artifactId>
+  
 	<repositories>
-		<!--Note that in general repositories are not transitive, so they need to be repeated at every level where needed.-->
-		  <repository>
-			  <!-- Geotools is not on Maven central -->
-			  <id>osgeo</id>
-			  <name>Geotools repository</name>
-			  <!-- <url>http://download.osgeo.org/webdav/geotools</url> -->
-			  <url>https://repo.osgeo.org/repository/release/</url>
-		  </repository>
-		  <repository>
-			  <!-- Repository for MATSim (MATSim is not on Maven central, releases and snapshots) -->
-			  <id>matsim</id>
-			  <url>https://repo.matsim.org/repository/matsim</url>
-		  </repository>
-		  <!-- for dependencies of osm-network-reader -->
-		  <repository>
-			  <id>topobyte</id>
-			  <url>https://mvn.topobyte.de</url>
-		  </repository>
-		  <!-- for dependencies of osm-network-reader -->
-		  <repository>
-			  <id>slimjars</id>
-			  <url>https://mvn.slimjars.com</url>
-		  </repository>
-		  
-		  <repository>
-			  <id>jitpack.io</id>
-			  <url>https://jitpack.io</url>
-		  </repository>
-		  
-	  </repositories>
-  
-	  <dependencies>
-  
-		  <dependency>
-			  <groupId>se.vti.matsim-projects</groupId>
-			  <artifactId>od2roundtrips</artifactId>
-			  <version>0.0.1-SNAPSHOT</version>
-		  </dependency>
-		  
-	  </dependencies>
-  
-	  <build>
-		  <plugins>
-			  <plugin>
-				  <!-- This plugin makes source files and javadocs available inside eclipse.  In IntelliJ, this works without plugin.-->
-				  <groupId>org.apache.maven.plugins</groupId>
-				  <artifactId>maven-eclipse-plugin</artifactId>
-				  <version>2.10</version>
-				  <configuration>
-					  <downloadSources>true</downloadSources>
-					  <downloadJavadocs>true</downloadJavadocs>
-				  </configuration>
-			  </plugin>
-		  </plugins>
-	  </build>
-  
+	  <!--Note that in general repositories are not transitive, so they need to be repeated at every level where needed.-->
+		<repository>
+			<!-- Geotools is not on Maven central -->
+			<id>osgeo</id>
+			<name>Geotools repository</name>
+			<!-- <url>http://download.osgeo.org/webdav/geotools</url> -->
+			<url>https://repo.osgeo.org/repository/release/</url>
+		</repository>
+		<repository>
+			<!-- Repository for MATSim (MATSim is not on Maven central, releases and snapshots) -->
+			<id>matsim</id>
+			<url>https://repo.matsim.org/repository/matsim</url>
+		</repository>
+		<!-- for dependencies of osm-network-reader -->
+		<repository>
+			<id>topobyte</id>
+			<url>https://mvn.topobyte.de</url>
+		</repository>
+		<!-- for dependencies of osm-network-reader -->
+		<repository>
+			<id>slimjars</id>
+			<url>https://mvn.slimjars.com</url>
+		</repository>
+		
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+		
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>se.vti.matsim-projects</groupId>
+			<artifactId>utils</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>se.vti.matsim-projects</groupId>
+			<artifactId>od2roundtrips</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<!-- This plugin makes source files and javadocs available inside eclipse.  In IntelliJ, this works without plugin.-->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<version>2.10</version>
+				<configuration>
+					<downloadSources>true</downloadSources>
+					<downloadJavadocs>true</downloadJavadocs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

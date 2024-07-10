@@ -1,4 +1,4 @@
-package utils;
+package se.vti.renate.utils;
 
 
 public class SimulationConfig {

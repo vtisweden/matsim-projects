@@ -1,4 +1,4 @@
-package estimation;
+package se.vti.renate.utils;
 
 import java.io.IOException;
 import java.io.OutputStream;
