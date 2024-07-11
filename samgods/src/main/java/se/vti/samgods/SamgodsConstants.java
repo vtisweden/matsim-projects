@@ -22,10 +22,7 @@ package se.vti.samgods;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 
@@ -34,13 +31,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SamgodsConstants {
 
+	// -------------------- TRANSPORT MODES --------------------
+
 	public static enum TransportMode {
+
 		Road(org.matsim.api.core.v01.TransportMode.car), Rail(org.matsim.api.core.v01.TransportMode.train),
 		Sea(org.matsim.api.core.v01.TransportMode.ship), Air(org.matsim.api.core.v01.TransportMode.airplane),
 		Ferry(org.matsim.api.core.v01.TransportMode.car, org.matsim.api.core.v01.TransportMode.train);
 
 		public final Set<String> matsimModes;
-		
+
 		public boolean isFerry() {
 			return Ferry.equals(this);
 		}
@@ -48,29 +48,10 @@ public class SamgodsConstants {
 		private TransportMode(String... matsimModes) {
 			this.matsimModes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(matsimModes)));
 		}
-	};
 
-//	// TODO Does this have to be synchronized?
-//	public static final Map<SamgodsConstants.TransportMode, Set<String>> samgodsMode2matsimModes;
-//	static {
-//		samgodsMode2matsimModes = new ConcurrentHashMap<>(SamgodsConstants.TransportMode.values().length);
-//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Road,
-//				Collections.singleton(org.matsim.api.core.v01.TransportMode.car));
-//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Ferry,
-//				Collections.synchronizedSet(new HashSet<>(Arrays.asList(org.matsim.api.core.v01.TransportMode.car,
-//						org.matsim.api.core.v01.TransportMode.train))));
-//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Rail,
-//				Collections.singleton(org.matsim.api.core.v01.TransportMode.train));
-//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Sea,
-//				Collections.singleton(org.matsim.api.core.v01.TransportMode.ship));
-//		samgodsMode2matsimModes.put(SamgodsConstants.TransportMode.Air,
-//				Collections.singleton(org.matsim.api.core.v01.TransportMode.airplane));
-//		assert (samgodsMode2matsimModes.size() == SamgodsConstants.TransportMode.values().length);
-//	}
-
-	public static int modeCnt() {
-		return TransportMode.values().length;
 	}
+
+	// -------------------- COMMODITIES --------------------
 
 	public static enum Commodity {
 
@@ -91,19 +72,15 @@ public class SamgodsConstants {
 		public final int code;
 		public final String description;
 
-		public String twoDigitCode() {
-			return (this.code < 10) ? ("0" + this.code) : ("" + this.code);
-		}
-
 		private Commodity(int code, String name) {
 			this.code = code;
 			this.description = name;
 		}
-	};
 
-	public static int commodityCnt() {
-		return Commodity.values().length;
-	}
+		public String twoDigitCode() {
+			return (this.code < 10) ? ("0" + this.code) : ("" + this.code);
+		}
+	};
 
 	public static enum ShipmentSize {
 
@@ -114,12 +91,12 @@ public class SamgodsConstants {
 
 		public static final double MIN_SHIPMENT_SIZE = 1e-3;
 
-		private final double lowerValue_ton;
-		private final double upperValue_ton;
+		public final double lowerValue_ton;
+		public final double upperValue_ton;
 
 		private ShipmentSize(double lowerValue_ton, double upperValue_ton) {
 			if (lowerValue_ton < MIN_SHIPMENT_SIZE) {
-				throw new IllegalArgumentException();
+				throw new IllegalArgumentException("Shipment size below " + MIN_SHIPMENT_SIZE + " ton.");
 			}
 			if (upperValue_ton < lowerValue_ton) {
 				throw new IllegalArgumentException();
@@ -128,23 +105,15 @@ public class SamgodsConstants {
 			this.upperValue_ton = upperValue_ton;
 		}
 
-		public String toString() {
-			return "size[" + this.lowerValue_ton + "," + this.upperValue_ton + ")tons";
-		}
-
-		public double getLowerValue_ton() {
-			return this.lowerValue_ton;
-		}
-
-		public double getUpperValue_ton() {
-			return this.upperValue_ton;
-		}
-
 		public double getMeanValue_ton() {
 			return 0.5 * (this.lowerValue_ton + this.upperValue_ton);
 		}
 
-		public static ShipmentSize getSmallestClass_ton() {
+		public String toString() {
+			return "Size[" + this.lowerValue_ton + "," + this.upperValue_ton + ")tons";
+		}
+
+		public static ShipmentSize getSmallestSize_ton() {
 			return ShipmentSize.values()[0];
 		}
 	}

@@ -39,7 +39,9 @@ public class OD {
 
 	@Override
 	public boolean equals(Object other) {
-		if (other instanceof OD) {
+		if (this == other) {
+			return true;
+		} else if (other instanceof OD) {
 			final OD otherOD = (OD) other;
 			return (this.origin.equals(otherOD.origin) && (this.destination.equals(otherOD.destination)));
 		} else {
@@ -51,10 +53,9 @@ public class OD {
 	public int hashCode() {
 		return this.origin.hashCode() + 31 * this.destination.hashCode();
 	}
-	
+
 	@Override
 	public String toString() {
-		return this.origin + "/" + this.destination;
+		return "OD(" + this.origin + "," + this.destination + ")";
 	}
-
 }

@@ -94,7 +94,7 @@ public class ChainAndShipmentSizeChoiceModel {
 					commodity, od, null, null, null);
 			return new ArrayList<>(0);
 		} else {
-			
+
 			final List<ChainAndShipmentSize> choices = new ArrayList<>(annualShipments.size());
 			for (AnnualShipment annualShipment : annualShipments) {
 
@@ -103,8 +103,8 @@ public class ChainAndShipmentSizeChoiceModel {
 					final TransportChain transportChain = e.getKey();
 					final DetailedTransportCost transportUnitCost = e.getValue();
 					for (ShipmentSize size : SamgodsConstants.ShipmentSize.values()) {
-						if ((annualShipment.getSingleInstanceAmount_ton() >= size.getUpperValue_ton())
-								|| SamgodsConstants.ShipmentSize.getSmallestClass_ton().equals(size)) {
+						if ((annualShipment.getSingleInstanceAmount_ton() >= size.upperValue_ton)
+								|| SamgodsConstants.ShipmentSize.getSmallestSize_ton().equals(size)) {
 							// >>> TODO >>>
 							final StorageCost storageUnitCost = null;
 							// <<< TODO <<<

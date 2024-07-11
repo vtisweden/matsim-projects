@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 
@@ -38,9 +36,11 @@ import se.vti.samgods.logistics.TransportEpisode;
 @SuppressWarnings("serial")
 public class InsufficientDataException extends Exception {
 
+	// -------------------- GLOBAL LOGGING --------------------
+
 	private static Logger log = Logger.getLogger(InsufficientDataException.class);
 
-	private static LinkedList<InsufficientDataException> trace = new LinkedList<>();
+	private static LinkedList<InsufficientDataException> history = new LinkedList<>();
 
 	static {
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -48,7 +48,7 @@ public class InsufficientDataException extends Exception {
 			public void run() {
 				StringBuffer msg = new StringBuffer(
 						"\n--------------------------------------------------------------------------------------------------------------------------------------------\n");
-				for (InsufficientDataException e : trace) {
+				for (InsufficientDataException e : history) {
 					msg.append("  " + e.toString() + "\n");
 				}
 				msg.append(
@@ -58,62 +58,16 @@ public class InsufficientDataException extends Exception {
 		}));
 	}
 
-	private Class<?> throwClass;
+	// -------------------- STATIC INTERNALS --------------------
 
-	private Class<?> catchClass = null;
-	private String catchMessage = null;
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage) {
-		super(throwMessage);
-		this.throwClass = throwClass;
-	}
-
-	public synchronized void log(Class<?> catchClass, String catchMessage) {
-		this.catchMessage = catchMessage;
-		this.catchClass = catchClass;
-		trace.add(this);
-		log.warn(this.toString());
-	}
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage, SamgodsConstants.Commodity commodity,
-			OD od, SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-		this(throwClass, throwMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
-	}
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportEpisode episode) {
-		this(throwClass, throwMessage + " " + context(episode.getCommodity(), episode.getOD(), episode.getMode(),
-				episode.isContainer(), episode.containsFerry()));
-	}
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportChain chain) {
-		this(throwClass, throwMessage + " "
-				+ context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), chain.containsFerry()));
-	}
-
-	public synchronized void log(Class<?> catchClass, String catchMessage, SamgodsConstants.Commodity commodity, OD od,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-		this.log(catchClass, catchMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
-	}
-
-	public synchronized void log(Class<?> catchClass, String catchMessage, TransportEpisode episode) {
-		this.log(catchClass, catchMessage + " " + context(episode.getCommodity(), episode.getOD(), episode.getMode(),
-				episode.isContainer(), episode.containsFerry()));
-	}
-
-	public synchronized void log(Class<?> catchClass, String catchMessage, TransportChain chain) {
-		this.log(catchClass, catchMessage + " "
-				+ context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), chain.containsFerry()));
-	}
-
-	public synchronized void log() {
-		this.log(this.throwClass, "Dito");
-	}
-
-	private synchronized static String context(SamgodsConstants.Commodity commodity, OD od,
+	private static synchronized String context(SamgodsConstants.Commodity commodity, OD od,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
 		List<String> msgList = new LinkedList<>();
 		if (commodity != null) {
 			msgList.add("commodity=" + commodity);
+		}
+		if (od != null) {
+			msgList.add("od=" + od);
 		}
 		if (mode != null) {
 			msgList.add("mode=" + mode);
@@ -127,9 +81,70 @@ public class InsufficientDataException extends Exception {
 		return msgList.stream().collect(Collectors.joining(", "));
 	}
 
+	private static synchronized String context(TransportEpisode episode) {
+		return context(episode.getCommodity(), episode.getOD(), episode.getMode(), episode.isContainer(),
+				episode.containsFerry());
+	}
+
+	private static synchronized String context(TransportChain chain) {
+		return context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), chain.containsFerry());
+	}
+
+	// -------------------- MEMBERS --------------------
+
+	private Class<?> throwClass;
+
+	private Class<?> catchClass = null;
+	private String catchMessage = null;
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public InsufficientDataException(Class<?> throwClass, String throwMessage) {
+		super(throwMessage);
+		this.throwClass = throwClass;
+	}
+
+	public InsufficientDataException(Class<?> throwClass, String throwMessage, SamgodsConstants.Commodity commodity,
+			OD od, SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+		this(throwClass, throwMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
+	}
+
+	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportEpisode episode) {
+		this(throwClass, throwMessage + " " + context(episode));
+	}
+
+	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportChain chain) {
+		this(throwClass, throwMessage + " " + context(chain));
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public synchronized void log(Class<?> catchClass, String catchMessage) {
+		this.catchMessage = catchMessage;
+		this.catchClass = catchClass;
+		history.add(this);
+		log.warn(this.toString());
+	}
+
+	public synchronized void log(Class<?> catchClass, String catchMessage, SamgodsConstants.Commodity commodity, OD od,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+		this.log(catchClass, catchMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
+	}
+
+	public synchronized void log(Class<?> catchClass, String catchMessage, TransportEpisode episode) {
+		this.log(catchClass, catchMessage + " " + context(episode));
+	}
+
+	public synchronized void log(Class<?> catchClass, String catchMessage, TransportChain chain) {
+		this.log(catchClass, catchMessage + " " + context(chain));
+	}
+
+	public synchronized void log() {
+		this.log(this.throwClass, "./.");
+	}
+
 	public String toString() {
 		return this.throwClass.getSimpleName() + "[" + this.getMessage() + "] ==> " + this.catchClass.getSimpleName()
 				+ "[" + this.catchMessage + "]";
 	}
-
 }
