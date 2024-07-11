@@ -19,20 +19,23 @@
  */
 package se.vti.samgods.utils;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 
 /**
- * Can be instantiated for parallel use.
  * 
  * @author GunnarF
  *
  */
 public class ChoiceModelUtils {
 
+	// -------------------- CONSTANTS --------------------
+
 	private final Random rnd;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public ChoiceModelUtils() {
 		this.rnd = new Random();
@@ -42,38 +45,74 @@ public class ChoiceModelUtils {
 		this.rnd = rnd;
 	}
 
-	public <A> List<Double> computeLogitProbabilities(final List<A> alternatives,
-			final Function<A, Double> alternative2utility) {
-		final List<Double> result = new ArrayList<>(alternatives.size());
-		final double maxUtility = alternatives.stream().mapToDouble(a -> alternative2utility.apply(a)).max()
-				.getAsDouble();
-		double denom = 0.0;
-		for (A alternative : alternatives) {
-			final double num = Math.exp(alternative2utility.apply(alternative) - maxUtility);
-			result.add(num);
-			denom += num;
-		}
-		for (int i = 0; i < result.size(); i++) {
-			result.set(i, result.get(i) / denom);
-		}
-		return result;
+	// -------------------- IMPLEMENTATION --------------------
+
+	public <A> double[] computeUtilities(final List<A> alternatives, final Function<A, Double> alternative2utility) {
+		return alternatives.stream().mapToDouble(a -> alternative2utility.apply(a)).toArray();
 	}
 
-	public <A> A chooseFromProbabilities(final List<A> alternatives, final List<Double> probabilities) {
+	public double[] computeLogitProbabilities(final double[] utilities) {
+		final double[] probabilities = new double[utilities.length];
+		final double maxUtility = Arrays.stream(utilities).max().getAsDouble();
+		double denom = 0.0;
+		for (int i = 0; i < utilities.length; i++) {
+			final double utility = utilities[i];
+			final double num = Math.exp(utility - maxUtility);
+			probabilities[i] = num;
+			denom += num;
+		}
+		for (int i = 0; i < probabilities.length; i++) {
+			probabilities[i] = probabilities[i] / denom;
+		}
+		return probabilities;
+	}
+
+	public <A> A chooseFromProbabilities(final List<A> alternatives, final double[] probabilities) {
 		double probaSum = 0.0;
 		final double threshold = this.rnd.nextDouble();
 		for (int i = 0; i < alternatives.size(); i++) {
-			probaSum += probabilities.get(i);
+			probaSum += probabilities[i];
 			if (threshold < probaSum) {
 				return alternatives.get(i);
 			}
 		}
-		// May end up here very rarely for numerical reasons?
+		// May end up here very rarely for numerical reasons.
 		return alternatives.get(this.rnd.nextInt(alternatives.size()));
 	}
 
 	public <A> A choose(final List<A> alternatives, final Function<A, Double> alternative2utility) {
 		return this.chooseFromProbabilities(alternatives,
-				this.computeLogitProbabilities(alternatives, alternative2utility));
+				this.computeLogitProbabilities(this.computeUtilities(alternatives, alternative2utility)));
+	}
+
+	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
+
+	public static void main(String[] args) {
+
+		int one = 1;
+		int two = 2;
+		List<Integer> alternatives = Arrays.asList(one, two);
+
+		Function<Integer, Double> alt2utl = new Function<>() {
+			@Override
+			public Double apply(Integer alt) {
+				return alt.doubleValue();
+			}
+		};
+
+		double p1 = Math.exp(one - two) / (Math.exp(one - two) + Math.exp(two - two));
+
+		ChoiceModelUtils model = new ChoiceModelUtils();
+
+		double oneCnt = 0;
+		for (int r = 0; r < 1000 * 1000; r++) {
+			int choice = model.choose(alternatives, alt2utl);
+			if (choice == one) {
+				oneCnt++;
+			}
+			if (r % 1000 == 0) {
+				System.out.println(oneCnt / r - p1);
+			}
+		}
 	}
 }

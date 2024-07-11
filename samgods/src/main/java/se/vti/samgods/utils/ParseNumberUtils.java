@@ -52,21 +52,4 @@ public class ParseNumberUtils {
 	public static Integer parseIntOrNull(String str) {
 		return parseIntOrDefault(str, null);
 	}
-
-	public static String divideOrNothing(Double num, Integer den) {
-		if (num == null || den == null || den == 0) {
-			return "";
-		} else {
-			return "" + (num / den);
-		}
-	}
-
-	public static Double divideOrNull(Double num, Double den) {
-		if ((num != null) & (den != null) & (den > 1e-8)) {
-			return num / den;
-		} else {
-			return null;
-		}
-
-	}
 }

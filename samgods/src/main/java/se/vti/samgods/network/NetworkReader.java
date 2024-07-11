@@ -196,16 +196,24 @@ public class NetworkReader {
 			final String mode = e.getKey();
 			final int cnt = e.getValue();
 			table.addRow(mode, cnt,
-					ParseNumberUtils.divideOrNothing(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
-					ParseNumberUtils.divideOrNothing(mode2lanesSum.get(mode), cnt),
-					ParseNumberUtils.divideOrNothing(Units.KM_H_PER_M_S * mode2speedSum.get(mode), cnt),
-					ParseNumberUtils.divideOrNothing(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
-					ParseNumberUtils.divideOrNothing(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));
+					divideOrEmpty(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
+					divideOrEmpty(mode2lanesSum.get(mode), cnt),
+					divideOrEmpty(Units.KM_H_PER_M_S * mode2speedSum.get(mode), cnt),
+					divideOrEmpty(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
+					divideOrEmpty(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)));
 			table.addRule();
 		}
 		result.append(table.render());
 
 		return result.toString();
+	}
+
+	private static String divideOrEmpty(Double num, Integer den) {
+		if (num == null || den == null || den == 0) {
+			return "";
+		} else {
+			return "" + (num / den);
+		}
 	}
 
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------

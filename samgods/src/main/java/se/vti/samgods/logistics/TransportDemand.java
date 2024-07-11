@@ -127,7 +127,7 @@ public class TransportDemand {
 			}
 		}
 		final List<Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer>> sortedEntries = MiscUtils
-				.getSortedInstance(modeSeq2cnt);
+				.getSortedEntryListLargestFirst(modeSeq2cnt);
 
 		final long total = modeSeq2cnt.values().stream().mapToLong(c -> c).sum();
 		final AsciiTable table = new AsciiTable();
