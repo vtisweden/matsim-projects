@@ -185,7 +185,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 					&& (isContainer == null || isContainer.equals(episode.isContainer()))) {
 				for (TransportLeg leg : episode.getLegs()) {
 					final CumulativeDetailedData episodeData = e2d.getValue();
-					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteView());
+					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteIdsView());
 					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
 					for (Link link : links) {
 						if (!link2cost.containsKey(link)) {

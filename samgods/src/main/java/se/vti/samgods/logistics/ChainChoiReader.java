@@ -239,14 +239,14 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 					if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
 							|| !SamgodsConstants.TransportMode.Rail.equals(mode)) {
 						currentEpisode = new TransportEpisode(mode);
-						transportChain.addEpisode(currentEpisode, false);
+						transportChain.addEpisode(currentEpisode);
 					}
 					assert (currentEpisode.getMode().equals(mode));
 					currentEpisode.addLeg(leg);
 				}
 
 				if ((this.network == null) || this.network.getNodes().keySet()
-						.containsAll(transportChain.getLoadingTransferUnloadingNodes())) {
+						.containsAll(transportChain.getLoadingTransferUnloadingNodesSet())) {
 					this.transportDemand.add(transportChain, singleInstanceVolume_ton_yr, numberOfInstances);
 				}
 			}

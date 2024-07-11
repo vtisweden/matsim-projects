@@ -82,7 +82,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		gen.writeFieldName("links");
 		gen.writeStartArray();
 		for (TransportLeg leg : vehicleEpisode.getTransportEpisode().getLegs()) {
-			for (Id<Link> linkId : leg.getRouteView()) {
+			for (Id<Link> linkId : leg.getRouteIdsView()) {
 				final Link link = this.network.getLinks().get(linkId);
 				gen.writeStartObject();
 				gen.writeStringField("linkId", linkId.toString());
@@ -129,7 +129,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		episode.addLeg(leg);
 		
 		TransportChain chain = new TransportChain(SamgodsConstants.Commodity.AGRICULTURE, false);
-		chain.addEpisode(episode, false);
+		chain.addEpisode(episode);
 
 		VehicleEpisode vehicleEpisode = new VehicleEpisode(veh, 123.45, episode);
 

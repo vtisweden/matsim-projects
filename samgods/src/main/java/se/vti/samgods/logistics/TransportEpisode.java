@@ -22,10 +22,8 @@ package se.vti.samgods.logistics;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
@@ -39,30 +37,30 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
  */
 public class TransportEpisode {
 
+	// -------------------- MEMBERS --------------------
+
 	private final TransportMode mode;
 
-//	private final Commodity commodity;
-
-//	private final boolean isContainer;
-
 	private final LinkedList<TransportLeg> legs = new LinkedList<>();
-	
+
 	private TransportChain parent;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public TransportEpisode(TransportMode mode) {
 		this.mode = mode;
-//		this.commodity = commodity;
-//		this.isContainer = isContainer;
 	}
 
-	public void setParent(TransportChain parent) {
+	// -------------------- IMPLEMENTATION --------------------
+
+	void setParent(TransportChain parent) {
 		this.parent = parent;
 	}
-	
+
 	public OD getOD() {
 		return new OD(this.getLoadingNode(), this.getUnloadingNode());
 	}
-	
+
 	public Boolean containsFerry() {
 		boolean episodeContainsFerry = false;
 		boolean episodeContainsNull = false;
@@ -81,10 +79,6 @@ public class TransportEpisode {
 		} else {
 			return false;
 		}
-	}
-
-	public List<List<Id<Link>>> getRoutesView() {
-		return this.legs.stream().map(l -> l.getRouteView()).collect(Collectors.toList());
 	}
 
 	public void addLeg(final TransportLeg leg) {
@@ -117,46 +111,68 @@ public class TransportEpisode {
 	}
 
 	public Id<Node> getLoadingNode() {
-		return this.legs.getFirst().getOrigin();
+		if (this.legs.size() == 0) {
+			return null;
+		} else {
+			return this.legs.getFirst().getOrigin();
+		}
 	}
 
 	public Id<Node> getUnloadingNode() {
-		return this.legs.getLast().getDestination();
+		if (this.legs.size() == 0) {
+			return null;
+		} else {
+			return this.legs.getLast().getDestination();
+		}
 	}
 
-	public int getTransferNodeCnt() {
-		return this.legs.size() - 1;
+	public Integer getTransferNodeCnt() {
+		if (this.legs.size() == 0) {
+			return null;
+		} else {
+			return this.legs.size() - 1;
+		}
 	}
 
 	private List<Id<Node>> createNodeList(boolean onlyTransfers) {
-		LinkedList<Id<Node>> result = new LinkedList<>();
-		if (!onlyTransfers) {
-			result.add(this.legs.getFirst().getOrigin());
+		if (this.legs == null) {
+			return null;
+		} else if (this.legs.size() == 0) {
+			return Arrays.asList(this.getOD().origin, this.getOD().destination);
+		} else {
+			final LinkedList<Id<Node>> result = new LinkedList<>();
+			if (!onlyTransfers) {
+				result.add(this.legs.getFirst().getOrigin());
+			}
+			for (TransportLeg leg : this.legs) {
+				result.add(leg.getDestination());
+			}
+			if (onlyTransfers) {
+				result.removeLast();
+			}
+			return result;
 		}
-		for (TransportLeg leg : this.legs) {
-			result.add(leg.getDestination());
-		}
-		if (onlyTransfers) {
-			result.removeLast();
-		}
-		return result;
 	}
 
 	public List<Id<Node>> createTransferNodesList() {
 		return this.createNodeList(true);
 	}
 
-	public List<Id<Node>> createAllNodesList() {
+	public List<Id<Node>> createLoadingTransferUnloadingNodeList() {
 		return this.createNodeList(false);
 	}
-	
-	public boolean isRouted() {
-		for (TransportLeg leg : this.legs) {
-			if (!leg.isRouted()) {
-				return false;
+
+	public Boolean isRouted() {
+		if (this.legs == null) {
+			return null;
+		} else {
+			for (TransportLeg leg : this.legs) {
+				if (!leg.isRouted()) {
+					return false;
+				}
 			}
+			return true;
 		}
-		return true;
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------

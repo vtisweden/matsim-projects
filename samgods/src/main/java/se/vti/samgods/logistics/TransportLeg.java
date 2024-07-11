@@ -39,28 +39,32 @@ import se.vti.samgods.network.LinkAttributes;
  */
 public class TransportLeg {
 
+	// -------------------- MEMBERS --------------------
+
 	// defining
 	private final OD od;
-//	private final TransportMode mode;
 	private TransportEpisode parent;
 
-	// TODO derived
-	private List<Id<Link>> route = null;
+	// derived
+	private List<Id<Link>> routeIds = null;
 	private Boolean containsFerry = null;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public TransportLeg(OD od) {
 		this.od = od;
-//		this.mode = mode;
 	}
 
 	public TransportLeg(Id<Node> origin, Id<Node> destination) {
 		this(new OD(origin, destination));
 	}
 
-	void setParent(TransportEpisode parent) {
+	// -------------------- IMPLEMENTATION --------------------
+
+	/* package */ void setParent(TransportEpisode parent) {
 		this.parent = parent;
 	}
-	
+
 	public Id<Node> getOrigin() {
 		return this.od.origin;
 	}
@@ -103,28 +107,28 @@ public class TransportLeg {
 
 	public void setRoute(final List<Link> route) {
 		if (route == null) {
-			this.route = null;
+			this.routeIds = null;
 			this.containsFerry = null;
 		} else {
-			this.route = Collections.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
-			this.containsFerry = route.stream().anyMatch(
-					l -> SamgodsConstants.TransportMode.Ferry.equals(LinkAttributes.getSamgodsMode(l)));
+			this.routeIds = Collections
+					.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
+			this.containsFerry = route.stream().anyMatch(l -> LinkAttributes.getSamgodsMode(l).isFerry());
 		}
 	}
 
-	public List<Id<Link>> getRouteView() {
-		return this.route;
+	public List<Id<Link>> getRouteIdsView() {
+		return this.routeIds;
 	}
-	
+
 	public boolean isRouted() {
-		return (this.route != null);
+		return (this.routeIds != null);
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------
 
+	// TODO Inefficient for many calls to hashCode or to equals.
 	private List<Object> asList() {
-		return Arrays.asList(this.getCommodity(), this.isContainer(), this.getMode(), this.od,
-				(this.route == null) ? null : this.getRouteView());
+		return Arrays.asList(this.getCommodity(), this.isContainer(), this.getMode(), this.od);
 	}
 
 	@Override
@@ -142,5 +146,4 @@ public class TransportLeg {
 			return this.asList().equals(((TransportLeg) other).asList());
 		}
 	}
-
 }

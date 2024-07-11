@@ -44,10 +44,10 @@ import se.vti.samgods.utils.MiscUtils;
  */
 public class TransportDemand {
 
+	// -------------------- INNER CLASS --------------------
+
 	@JsonSerialize(using = AnnualShipmentJsonSerializer.class)
 	public class AnnualShipment {
-
-		// -------------------- CONSTANTS --------------------
 
 		private final SamgodsConstants.Commodity commodity;
 
@@ -57,8 +57,6 @@ public class TransportDemand {
 
 		private final int numberOfInstances;
 
-		// -------------------- CONSTRUCTION --------------------
-
 		private AnnualShipment(SamgodsConstants.Commodity commodity, OD od, double singleInstanceAmount_ton,
 				int numberOfInstances) {
 			this.commodity = commodity;
@@ -66,8 +64,6 @@ public class TransportDemand {
 			this.singleInstanceAmount_ton = singleInstanceAmount_ton;
 			this.numberOfInstances = numberOfInstances;
 		}
-
-		// -------------------- GETTERS --------------------
 
 		public SamgodsConstants.Commodity getCommodity() {
 			return this.commodity;
@@ -88,20 +84,20 @@ public class TransportDemand {
 		public double getTotalAmount_ton() {
 			return this.singleInstanceAmount_ton * this.numberOfInstances;
 		}
-
 	}
+
+	// -------------------- MEMBERS --------------------
 
 	public final Map<Commodity, Map<OD, Set<TransportChain>>> commodity2od2transportChains = new LinkedHashMap<>();
 
 	public final Map<Commodity, Map<OD, List<AnnualShipment>>> commodity2od2annualShipments = new LinkedHashMap<>();
 
+	// -------------------- CONSTRUCTION --------------------
+
 	public TransportDemand() {
 	}
 
-	public Set<OD> collectAllODsWithChains() {
-		return this.commodity2od2transportChains.values().stream().flatMap(od2ch -> od2ch.keySet().stream())
-				.collect(Collectors.toSet());
-	}
+	// -------------------- IMPLEMENTATION --------------------
 
 	public void add(TransportChain transportChain, double singleInstanceAmount_ton, int numberOfInstances) {
 		final Commodity commodity = transportChain.getCommodity();
@@ -116,6 +112,13 @@ public class TransportDemand {
 				.computeIfAbsent(od, od2 -> new LinkedList<>())
 				.add(new AnnualShipment(commodity, od, singleInstanceAmount_ton, numberOfInstances));
 	}
+
+	public Set<OD> collectAllODsWithChains() {
+		return this.commodity2od2transportChains.values().stream().flatMap(od2ch -> od2ch.keySet().stream())
+				.collect(Collectors.toSet());
+	}
+
+	// TODO CONTINUE HERE. WOULD BE BETTEER TO RANK CHAINS BY VOLUME.
 
 	public String createChainStatsTable(int maxRowCnt, Commodity commodity) {
 

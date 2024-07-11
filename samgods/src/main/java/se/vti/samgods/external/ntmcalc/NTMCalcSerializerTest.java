@@ -91,7 +91,7 @@ public class NTMCalcSerializerTest {
 
 				TransportChain chain = new TransportChain(SamgodsConstants.Commodity.AGRICULTURE, false);
 				TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road);
-				chain.addEpisode(episode, false);
+				chain.addEpisode(episode);
 
 				int legCnt = rnd.nextInt(maxLegCnt + 1);
 				for (int legNr = 0; legNr < legCnt; legNr++) {

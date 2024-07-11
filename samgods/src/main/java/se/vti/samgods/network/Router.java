@@ -194,7 +194,7 @@ public class Router {
 								: this.mode2noContainerRouter.get(job.mode);
 						if ((from != null) && (to != null) && (router != null)) {
 							job.leg.setRoute(router.calcLeastCostPath(from, to, 0, null, null).links);
-							if (job.leg.getRouteView() == null) {
+							if (job.leg.getRouteIdsView() == null) {
 								if (logProgress) {
 									registerFailedRouteNoConnection(this);
 								}

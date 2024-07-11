@@ -100,7 +100,7 @@ public class ConsolidationCostModel {
 		builder.addMoveCost(0.0);// otherwise null
 		builder.addMoveDuration_h(0.0);// otherwise null
 		for (TransportLeg leg : episode.getLegs()) {
-			for (Link link : NetworkUtils.getLinks(this.network, leg.getRouteView())) {
+			for (Link link : NetworkUtils.getLinks(this.network, leg.getRouteIdsView())) {
 				double length_km = Units.KM_H_PER_M_S * link.getLength();
 				double tt_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
 				builder.addMoveDuration_h(tt_h);
