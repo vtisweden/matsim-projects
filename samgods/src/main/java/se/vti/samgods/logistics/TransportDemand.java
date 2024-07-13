@@ -38,6 +38,8 @@ import se.vti.samgods.external.rail.AnnualShipmentJsonSerializer;
 import se.vti.samgods.utils.MiscUtils;
 
 /**
+ * This represents the annual shipments of one or more independent shippers.
+ * Meaning that the singleInstanceAmount_ton is not the shipment size but the a
  * 
  * @author GunnarF
  *
@@ -53,15 +55,15 @@ public class TransportDemand {
 
 		private final OD od;
 
-		private final double singleInstanceAmount_ton;
+		private final double singleInstanceAnnualAmount_ton;
 
 		private final int numberOfInstances;
 
-		private AnnualShipment(SamgodsConstants.Commodity commodity, OD od, double singleInstanceAmount_ton,
+		private AnnualShipment(SamgodsConstants.Commodity commodity, OD od, double singleInstanceAnnualAmount_ton,
 				int numberOfInstances) {
 			this.commodity = commodity;
 			this.od = od;
-			this.singleInstanceAmount_ton = singleInstanceAmount_ton;
+			this.singleInstanceAnnualAmount_ton = singleInstanceAnnualAmount_ton;
 			this.numberOfInstances = numberOfInstances;
 		}
 
@@ -73,8 +75,8 @@ public class TransportDemand {
 			return this.od;
 		}
 
-		public double getSingleInstanceAmount_ton() {
-			return this.singleInstanceAmount_ton;
+		public double getSingleInstanceAnnualAmount_ton() {
+			return this.singleInstanceAnnualAmount_ton;
 		}
 
 		public int getNumberOfInstances() {
@@ -82,7 +84,7 @@ public class TransportDemand {
 		}
 
 		public double getTotalAmount_ton() {
-			return this.singleInstanceAmount_ton * this.numberOfInstances;
+			return this.singleInstanceAnnualAmount_ton * this.numberOfInstances;
 		}
 	}
 

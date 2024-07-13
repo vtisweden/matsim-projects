@@ -30,7 +30,22 @@ import se.vti.samgods.transportation.DetailedTransportCost;
  */
 public interface ChainAndShipmentSizeUtilityFunction {
 
-	double computeUtility(SamgodsConstants.Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost,
-			StorageCost storageUnitCost);
+	/**
+	 * Assumes that consolidation and storage cost have been transferred into
+	 * respective unit costs, meaning that total costs result from a scale-up of
+	 * unit costs with annualAmount_ton.
+	 * 
+	 * The purpose of this interface is to enable the separate weighting of
+	 * individual cost terms (monetary, time, distance) into one commodity-specific
+	 * utility value.
+	 * 
+	 * @param commodity
+	 * @param annualAmount_ton
+	 * @param transportUnitCost
+	 * @param storageUnitCost
+	 * @return
+	 */
+	double computeUtility(SamgodsConstants.Commodity commodity, double annualAmount_ton,
+			DetailedTransportCost transportUnitCost, StorageCost storageUnitCost);
 
 }

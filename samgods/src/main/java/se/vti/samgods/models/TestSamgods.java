@@ -41,9 +41,9 @@ import se.vti.samgods.logistics.StorageCost;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
-import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeChoiceModel;
+import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
 import se.vti.samgods.network.RoutingData;
@@ -67,10 +67,10 @@ public class TestSamgods {
 
 	public static void main(String[] args) throws IOException {
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
-//				SamgodsConstants.Commodity.AIR);
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
+				SamgodsConstants.Commodity.AIR);
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+		double samplingRate = 0.01;
 
 		log.info("STARTED ...");
 
@@ -143,8 +143,8 @@ public class TestSamgods {
 
 		ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
 			@Override
-			public double computeUtility(Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost,
-					StorageCost storageUnitCost) {
+			public double computeUtility(Commodity commodity, double amount_ton,
+					DetailedTransportCost transportUnitCost, StorageCost storageUnitCost) {
 				return -transportUnitCost.monetaryCost * amount_ton;
 			}
 		};

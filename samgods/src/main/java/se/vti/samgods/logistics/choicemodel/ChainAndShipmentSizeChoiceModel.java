@@ -34,7 +34,6 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.models.TestSamgods;
 import se.vti.samgods.transportation.DetailedTransportCost;
 import se.vti.samgods.transportation.EpisodeCostModel;
 import se.vti.samgods.utils.ChoiceModelUtils;
@@ -103,28 +102,21 @@ public class ChainAndShipmentSizeChoiceModel {
 					final TransportChain transportChain = e.getKey();
 					final DetailedTransportCost transportUnitCost = e.getValue();
 					for (ShipmentSize size : SamgodsConstants.ShipmentSize.values()) {
-						if ((annualShipment.getSingleInstanceAmount_ton() >= size.upperValue_ton)
+						if ((annualShipment.getSingleInstanceAnnualAmount_ton() >= size.upperValue_ton)
 								|| SamgodsConstants.ShipmentSize.getSmallestSize_ton().equals(size)) {
-							// >>> TODO >>>
-							final StorageCost storageUnitCost = null;
-							// <<< TODO <<<
+							final StorageCost storageUnitCost = null; // TODO Shipment-size dependent.
 							alternatives.add(new ChainAndShipmentSize(size, transportChain,
 									this.utilityFunction.computeUtility(commodity,
-											annualShipment.getSingleInstanceAmount_ton(), transportUnitCost,
+											annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost,
 											storageUnitCost)));
 						}
 					}
 				}
 
-				if (alternatives.size() == 0) {
-					new InsufficientDataException(TestSamgods.class, "Insufficient cost data for this transport chain.",
-							commodity, od, null, null, null).log(TestSamgods.class, "dito");
-				} else {
-					for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
-						final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
-						assert (choice != null);
-						choices.add(choice);
-					}
+				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
+					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
+					assert (choice != null);
+					choices.add(choice);
 				}
 			}
 			return choices;
