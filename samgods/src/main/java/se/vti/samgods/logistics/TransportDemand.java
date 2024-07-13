@@ -118,14 +118,14 @@ public class TransportDemand {
 				.collect(Collectors.toSet());
 	}
 
-	// TODO CONTINUE HERE. WOULD BE BETTEER TO RANK CHAINS BY VOLUME.
-
 	public String createChainStatsTable(int maxRowCnt, Commodity commodity) {
+		// TODO OD flow -> chain assignment may not yet be available, hence just
+		// counting chains.
 
 		final Map<List<List<SamgodsConstants.TransportMode>>, Integer> modeSeq2cnt = new LinkedHashMap<>();
 		for (Set<TransportChain> chains : this.commodity2od2transportChains.get(commodity).values()) {
 			for (TransportChain chain : chains) {
-				List<List<SamgodsConstants.TransportMode>> modes = chain.getTransportModeSequence();
+				final List<List<SamgodsConstants.TransportMode>> modes = chain.getTransportModeSequence();
 				modeSeq2cnt.compute(modes, (m, c) -> c == null ? 1 : c + 1);
 			}
 		}
@@ -141,18 +141,18 @@ public class TransportDemand {
 		table.addRule();
 		for (int i = 0; i < Math.min(maxRowCnt, sortedEntries.size()); i++) {
 			Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer> entry = sortedEntries.get(i);
-			table.addRow(i + 1,
-					entry.getKey().stream()
-							.map(e -> "[" + e.stream().map(m -> m.toString()).collect(Collectors.joining(",")) + "]")
-							.collect(Collectors.joining(",")),
+			table.addRow(i + 1, entry.getKey(),
+//					entry.getKey().stream()
+//							.map(e -> "[" + e.stream().map(m -> m.toString()).collect(Collectors.joining(",")) + "]")
+//							.collect(Collectors.joining(",")),
 					entry.getValue(), MathHelpers.round(100.0 * entry.getValue().doubleValue() / total, 2));
 			table.addRule();
 		}
 
 		final StringBuffer result = new StringBuffer();
-		result.append("\nCOMMODITY: " + commodity + ", occurrence of logistic chains (NOT freight volumes)\n");
+		result.append(
+				"\nCOMMODITY: " + commodity + ", counting occurrences of logistic chains (NOT freight volumes)\n");
 		result.append(table.render());
 		return result.toString();
 	}
-
 }

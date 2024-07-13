@@ -24,17 +24,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.jfree.util.Log;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.api.core.v01.network.Node;
 
 import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import floetteroed.utilities.tabularfileparser.TabularFileParser;
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
@@ -66,10 +70,10 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			Arrays.asList(Orig2, Dest), Arrays.asList(Orig2, Orig3, Dest), Arrays.asList(Orig2, Orig3, Orig4, Dest),
 			Arrays.asList(Orig2, Orig3, Orig4, Orig5, Dest));
 
-	private static final char SAMGODS_ROAD_FERRY_MODE = 'P';
-	private static final char SAMGODS_RAIL_FERRY_MODE = 'Q';
-	private static final List<Character> SAMGODS_FERRY_MODES = Collections
-			.unmodifiableList(Arrays.asList(SAMGODS_ROAD_FERRY_MODE, SAMGODS_RAIL_FERRY_MODE));
+	private static final char SamgodsRoadFerryMode = 'P';
+	private static final char SamgodsRailFerryMode = 'Q';
+	private static final List<Character> SamgodsFerryModes = Collections
+			.unmodifiableList(Arrays.asList(SamgodsRoadFerryMode, SamgodsRailFerryMode));
 
 	private final static Map<Character, TransportMode> code2mode;
 	static {
@@ -100,8 +104,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		code2mode.put('N', SamgodsConstants.TransportMode.Sea);
 		code2mode.put('O', SamgodsConstants.TransportMode.Sea);
 		code2mode.put('W', SamgodsConstants.TransportMode.Sea);
-		code2mode.put(SAMGODS_ROAD_FERRY_MODE, SamgodsConstants.TransportMode.Road);
-		code2mode.put(SAMGODS_RAIL_FERRY_MODE, SamgodsConstants.TransportMode.Rail);
+		code2mode.put(SamgodsRoadFerryMode, SamgodsConstants.TransportMode.Road);
+		code2mode.put(SamgodsRailFerryMode, SamgodsConstants.TransportMode.Rail);
 		code2mode.put('R', SamgodsConstants.TransportMode.Air);
 	}
 
@@ -140,7 +144,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	public ChainChoiReader parse(String fileName) {
 		Logger.getLogger(this.getClass()).info(
-				"Parsing file:" + fileName + (this.samplingRate < 1 ? " at sampling rate " + this.samplingRate : ""));
+				"Parsing file:" + fileName + (this.samplingRate < 1 ? " with sampling rate " + this.samplingRate : ""));
 		final TabularFileParser parser = new TabularFileParser();
 		parser.setDelimiterRegex("\\s");
 		parser.setOmitEmptyColumns(false);
@@ -151,8 +155,6 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		}
 		return this;
 	}
-
-	// ----- IMPLEMENTATION OF AbstractTabularFileHandlerWithHeaderLine -----
 
 	@Override
 	public void startCurrentDataRow() {
@@ -167,19 +169,17 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 				* this.getDoubleValue(AnnualVolumeTonnesPerRelation);
 		final int numberOfInstances = this.getIntValue(NRelations);
 
-//		final double volume_ton_yr = this.getDoubleValue(Prob) * this.getDoubleValue(AnnualVolumeTonnesPerRelation)
-//				* this.getIntValue(NRelations);
 		final long origin = Long.parseLong(this.getStringValue(Orig));
 		final long destination = Long.parseLong(this.getStringValue(Dest));
 		final OD od = new OD(Id.createNodeId(origin), Id.createNodeId(destination));
-//		this.pwcMatrix.add(od, singleInstanceVolume_ton_yr * numberOfInstances);
 
 		// Load chain legs.
 
 		String chainType = this.getStringValue(ChainType);
 		{
 			final String oldChainType = chainType;
-			for (int i = 1; i < 10; i++) { // TODO Revisit.
+			for (int i = 1; i < 10; i++) {
+				// TODO Replace leg types with number codes. Revisit.
 				chainType = chainType.replace("" + i, "");
 			}
 			if (oldChainType.length() > chainType.length()) {
@@ -197,16 +197,20 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
 			legs.add(new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination)));
 			modes.add(code2mode.get(chainType.charAt(i)));
-
 		}
 
 		// filter out ferry episodes
 
+		assert (!SamgodsFerryModes.contains(chainType.charAt(0)));
+		assert (!SamgodsFerryModes.contains(chainType.charAt(chainType.length() - 1)));
+
 		int i = 1;
 		while (i < legs.size() - 1) {
-			if (SAMGODS_FERRY_MODES.contains(chainType.charAt(i))) {
-				assert (!SAMGODS_FERRY_MODES.contains(chainType.charAt(i - 1)));
-				assert (!SAMGODS_FERRY_MODES.contains(chainType.charAt(i + 1)));
+			if (SamgodsFerryModes.contains(chainType.charAt(i))) {
+				assert (!SamgodsFerryModes.contains(chainType.charAt(i - 1)));
+				assert (!SamgodsFerryModes.contains(chainType.charAt(i + 1)));
+				assert (modes.get(i - 1).equals(modes.get(i)));
+				assert (modes.get(i).equals(modes.get(i + 1)));
 
 				final TransportLeg condensedLeg = new TransportLeg(legs.get(i - 1).getOrigin(),
 						legs.get(i + 1).getDestination());
@@ -218,35 +222,44 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 				modes.remove(i + 1);
 				modes.remove(i);
 				modes.set(i - 1, condensedMode);
-
 			} else {
 				i++;
 			}
 		}
+		assert (legs.size() == modes.size());
 
 		// Compose episodes from legs.
 
 		if (legs.size() > 0) {
+			// TODO Could already here filter out impossible commodity/container
+			// combinations.
 			for (boolean isContainer : new boolean[] { true, false }) {
 
 				final TransportChain transportChain = new TransportChain(this.commodity, isContainer);
 
 				TransportEpisode currentEpisode = null;
-				assert (legs.size() == modes.size());
 				for (int legIndex = 0; legIndex < legs.size(); legIndex++) {
 					final TransportLeg leg = legs.get(legIndex);
-					final SamgodsConstants.TransportMode mode = modes.get(legIndex);
+					final SamgodsConstants.TransportMode legMode = modes.get(legIndex);
 					if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
-							|| !SamgodsConstants.TransportMode.Rail.equals(mode)) {
-						currentEpisode = new TransportEpisode(mode);
+							|| !SamgodsConstants.TransportMode.Rail.equals(legMode)) {
+						// There are NOT two subsequent rail legs.
+						currentEpisode = new TransportEpisode(legMode);
 						transportChain.addEpisode(currentEpisode);
 					}
-					assert (currentEpisode.getMode().equals(mode));
+					assert (currentEpisode.getMode().equals(legMode));
 					currentEpisode.addLeg(leg);
 				}
 
-				if ((this.network == null) || this.network.getNodes().keySet()
+				if ((this.network != null) && !this.network.getNodes().keySet()
 						.containsAll(transportChain.getLoadingTransferUnloadingNodesSet())) {
+					final Set<Id<Node>> nodeIdsNotInNetwork = new LinkedHashSet<>(
+							transportChain.getLoadingTransferUnloadingNodesSet());
+					nodeIdsNotInNetwork.removeAll(this.network.getNodes().keySet());
+					new InsufficientDataException(this.getClass(),
+							"Transport chain contained nodes " + nodeIdsNotInNetwork + " that are not in the network.",
+							transportChain).log();
+				} else {
 					this.transportDemand.add(transportChain, singleInstanceVolume_ton_yr, numberOfInstances);
 				}
 			}
@@ -255,8 +268,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
-	public static void main(String[] args) {
-
+//	public static void main(String[] args) {
+//
 //		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 //			final ChainChoiReader reader = new ChainChoiReader(commodity).setStoreSamgodsShipments(true)
 //					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
@@ -265,6 +278,6 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 //			AnnualShipmentJsonSerializer.writeToFile(reader.getSamgodsShipments(),
 //					"./input_2024/" + commodity + "-chains.samgods-out.json");
 //		}
-	}
+//	}
 
 }
