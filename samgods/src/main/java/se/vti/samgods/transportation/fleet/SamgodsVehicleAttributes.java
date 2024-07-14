@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.transportation.fleet;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.matsim.api.core.v01.Id;
@@ -31,17 +33,18 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 
 /**
+ * Used in parallel routing, hence synchronized throughout.
  * 
  * @author GunnarF
  *
  */
 public class SamgodsVehicleAttributes {
 
+	// -------------------- CONSTANTS --------------------
+
 	public static final String ATTRIBUTE_NAME = "freight";
 
 	public final Id<VehicleType> id;
-
-	public final String description;
 
 	public final SamgodsConstants.TransportMode mode;
 
@@ -67,14 +70,15 @@ public class SamgodsVehicleAttributes {
 
 	public final ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferTime_h;
 
-	private SamgodsVehicleAttributes(Id<VehicleType> id, String description, SamgodsConstants.TransportMode mode,
-			double cost_1_km, double cost_1_h, double capacity_ton, Double onFerryCost_1_km, Double onFerryCost_1_h,
-			Double speed_km_h, boolean container, ConcurrentHashMap<SamgodsConstants.Commodity, Double> loadCost_1_ton,
-			ConcurrentHashMap<SamgodsConstants.Commodity, Double> loadTime_h,
-			ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferCost_1_ton,
-			ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferTime_h) {
+	// -------------------- CONSTRUCTION (private, use builder) --------------------
+
+	private SamgodsVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode mode, double cost_1_km,
+			double cost_1_h, double capacity_ton, Double onFerryCost_1_km, Double onFerryCost_1_h, Double speed_km_h,
+			boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
+			Map<SamgodsConstants.Commodity, Double> loadTime_h,
+			Map<SamgodsConstants.Commodity, Double> transferCost_1_ton,
+			Map<SamgodsConstants.Commodity, Double> transferTime_h) {
 		this.id = id;
-		this.description = description;
 		this.mode = mode;
 		this.cost_1_km = cost_1_km;
 		this.cost_1_h = cost_1_h;
@@ -83,40 +87,39 @@ public class SamgodsVehicleAttributes {
 		this.onFerryCost_1_h = onFerryCost_1_h;
 		this.speed_km_h = speed_km_h;
 		this.isContainer = container;
-		this.loadCost_1_ton = loadCost_1_ton;
-		this.loadTime_h = loadTime_h;
-		this.transferCost_1_ton = transferCost_1_ton;
-		this.transferTime_h = transferTime_h;
+		this.loadCost_1_ton = new ConcurrentHashMap<>(loadCost_1_ton);
+		this.loadTime_h = new ConcurrentHashMap<>(loadTime_h);
+		this.transferCost_1_ton = new ConcurrentHashMap<>(transferCost_1_ton);
+		this.transferTime_h = new ConcurrentHashMap<>(transferTime_h);
 	}
 
-	public boolean ferryCompatible() {
-		return (this.onFerryCost_1_h != null) && (this.onFerryCost_1_h != null);
+	// -------------------- IMPLEMENTATION, thread safe --------------------
+
+	public synchronized boolean isFerryCompatible() {
+		return (this.onFerryCost_1_km != null) && (this.onFerryCost_1_h != null);
 	}
 
-	public boolean commodityCompatible(SamgodsConstants.Commodity commodity) {
+	public synchronized boolean isCompatible(SamgodsConstants.Commodity commodity) {
 		return this.loadCost_1_ton.containsKey(commodity) && this.loadTime_h.containsKey(commodity)
 				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
 
-	public double speedOnLink_m_s(Link link) throws InsufficientDataException {
+	public synchronized double speedOnLink_m_s(Link link) throws InsufficientDataException {
 		if (this.speed_km_h != null) {
 			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
 		} else if (Double.isFinite(link.getFreespeed())) {
 			return link.getFreespeed();
 		} else {
-			throw new InsufficientDataException(this.getClass(), "Neither attributes of vehicle type " + this.id
-					+ " nor link " + link.getId() + " contains (finite) speed information.");
+			throw new InsufficientDataException(this.getClass(), "Neither vehicle type " + this.id + " nor link "
+					+ link.getId() + " contains (finite) speed information.");
 		}
 	}
 
-	public double travelTimeOnLink_s(Link link) throws InsufficientDataException {
+	public synchronized double travelTimeOnLink_s(Link link) throws InsufficientDataException {
 		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
 	}
 
-	public boolean containsData(SamgodsConstants.Commodity commodity) {
-		return this.loadCost_1_ton.get(commodity) != null || this.loadTime_h.get(commodity) != null
-				|| this.transferCost_1_ton.get(commodity) != null || this.transferTime_h.get(commodity) != null;
-	}
+	// -------------------- BUILDER --------------------
 
 	public static class Builder {
 
@@ -140,48 +143,42 @@ public class SamgodsVehicleAttributes {
 
 		private Boolean container = null;
 
-		private ConcurrentHashMap<SamgodsConstants.Commodity, Double> loadCost_1_ton = new ConcurrentHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> loadCost_1_ton = new LinkedHashMap<>();
 
-		private ConcurrentHashMap<SamgodsConstants.Commodity, Double> loadTime_h = new ConcurrentHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> loadTime_h = new LinkedHashMap<>();
 
-		private ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferCost_1_ton = new ConcurrentHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> transferCost_1_ton = new LinkedHashMap<>();
 
-		private ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferTime_h = new ConcurrentHashMap<>(16);
+		private Map<SamgodsConstants.Commodity, Double> transferTime_h = new LinkedHashMap<>();
 
 		public Builder(String name) {
 			this.id = Id.create(name, VehicleType.class);
 		}
 
-		public SamgodsVehicleAttributes buildFreightVehicleAttributes() throws InsufficientDataException {
+		private SamgodsVehicleAttributes buildVehicleAttributes() throws InsufficientDataException {
 			try {
-				return new SamgodsVehicleAttributes(this.id, this.description, this.mode, this.cost_1_km, this.cost_1_h,
+				return new SamgodsVehicleAttributes(this.id, this.mode, this.cost_1_km, this.cost_1_h,
 						this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
 						this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
-			} catch (Exception e) {
+			} catch (Exception e /* Arises when assigning null Double object to primitive double. */) {
 				throw new InsufficientDataException(this.getClass(),
 						"Insufficient parameter data to build vehicle type " + this.id + ".");
-
 			}
 		}
 
 		public VehicleType buildVehicleType() throws InsufficientDataException {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
-			type.getAttributes().putAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME,
-					this.buildFreightVehicleAttributes());
+			type.setDescription(this.description);
+			type.getAttributes().putAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME, this.buildVehicleAttributes());
 			return type;
 		}
-
-//		public Builder setName(String name) {
-//			this.id = Id.create(name, VehicleType.class);
-//			return this;
-//		}
 
 		public Builder setDescription(String description) {
 			this.description = description;
 			return this;
 		}
 
-		public Builder setTransportMode(SamgodsConstants.TransportMode mode) {
+		public Builder setMode(SamgodsConstants.TransportMode mode) {
 			this.mode = mode;
 			return this;
 		}

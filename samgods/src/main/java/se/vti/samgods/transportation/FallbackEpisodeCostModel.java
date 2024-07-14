@@ -87,7 +87,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 			Network network) throws InsufficientDataException {
 
 		final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils
-				.getFreightAttributes(this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, false));
+				.getFreightAttributes(this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null));
 
 		SamgodsVehicleAttributes ferryCompatibleVehicleAttributes;
 		try {

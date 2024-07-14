@@ -107,7 +107,7 @@ public class SamgodsFleetReader {
 				final SamgodsVehicleAttributes.Builder builder = new SamgodsVehicleAttributes.Builder(
 						record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""));
 				vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
-				builder.setDescription(record.get(VEH_DESCRIPTION)).setTransportMode(transportMode)
+				builder.setDescription(record.get(VEH_DESCRIPTION)).setMode(transportMode)
 						.setCost_1_km(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_KM)))
 						.setCost_1_h(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_H)))
 						.setCapacity_ton(ParseNumberUtils.parseDoubleOrNull(record.get(CAPACITY_TON)))
@@ -204,15 +204,15 @@ public class SamgodsFleetReader {
 		reader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 				SamgodsConstants.TransportMode.Sea);
 
-//		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Air));
-//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Air));
-//
-//		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail));
-//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail));
-//
-//		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Road));
-//		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Road));
-//		
+		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Air));
+		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Air));
+
+		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail));
+		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail));
+
+		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Road));
+		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Road));
+
 		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Sea));
 		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Sea));
 

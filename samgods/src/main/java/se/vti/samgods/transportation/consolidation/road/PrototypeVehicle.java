@@ -19,10 +19,14 @@
  */
 package se.vti.samgods.transportation.consolidation.road;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.matsim.api.core.v01.Id;
 import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.Vehicles;
 
 /**
  * 
@@ -34,14 +38,23 @@ import org.matsim.vehicles.VehicleType;
 public class PrototypeVehicle implements Vehicle {
 
 	private final VehicleType type;
-	
+
 	private final Id<Vehicle> id;
-	
-	public PrototypeVehicle(VehicleType type) {
+
+	private PrototypeVehicle(VehicleType type) {
 		this.type = type;
 		this.id = Id.create(type.getId(), Vehicle.class);
 	}
-	
+
+	public static Map<VehicleType, Vehicle> createPrototypeVehicles(Vehicles vehicles) {
+		final Map<VehicleType, Vehicle> type2veh = new LinkedHashMap<>(vehicles.getVehicleTypes().size());
+		for (VehicleType type : vehicles.getVehicleTypes().values()) {
+			final Vehicle prototype = new PrototypeVehicle(type);
+			type2veh.put(type, prototype);
+		}
+		return type2veh;
+	}
+
 	@Override
 	public Id<Vehicle> getId() {
 		return this.id;
@@ -56,6 +69,5 @@ public class PrototypeVehicle implements Vehicle {
 	public Attributes getAttributes() {
 		throw new UnsupportedOperationException();
 	}
-
 
 }

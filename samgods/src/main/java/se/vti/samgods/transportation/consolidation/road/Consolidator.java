@@ -81,7 +81,8 @@ public class Consolidator {
 		this.shipmentPeriod_day = shipmentPeriod_day;
 		this.costModel = costModel;
 		this.choiceModel = choiceModel;
-		this.prototypeVehicles = Collections.unmodifiableMap(fleet.createPrototypeVehicles());
+		this.prototypeVehicles = Collections
+				.unmodifiableMap(PrototypeVehicle.createPrototypeVehicles(fleet.getVehicles()));
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
