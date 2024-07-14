@@ -35,6 +35,7 @@ import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.ShipmentVehicleAssignment;
+import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * TODO This is now about all commodities, which are defining members of
@@ -69,9 +70,9 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 			this.tons = tons;
 		}
 
-		void add(double monetaryCost, double durationTimesTons_hTon, double tons) {
-			this.monetaryCostTimesTons_ton += monetaryCost;
-			this.durationTimesTons_hTon += durationTimesTons_hTon;
+		void add(double monetaryCost, double duration_h, double tons) {
+			this.monetaryCostTimesTons_ton += monetaryCost * tons;
+			this.durationTimesTons_hTon += duration_h * tons;
 			this.tons += tons;
 		}
 
@@ -119,7 +120,8 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 					+ this.transferDurationTimesTons_hTon + this.moveDurationTimesTons_hTon;
 		}
 
-		DetailedTransportCost createUnitCost() {
+		DetailedTransportCost createUnitCost() throws InsufficientDataException {
+			assert (this.tons > 1e-8);
 			return new DetailedTransportCost.Builder().addAmount_ton(1.0)
 					.addLoadingCost(this.loadingCostTimesTons_ton / this.tons)
 					.addUnloadingCost(this.unloadingCostTimesTons_ton / this.tons)
@@ -130,7 +132,6 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 					.addTransferDuration_h(this.transferDurationTimesTons_hTon / this.tons)
 					.addMoveDuration_h(this.moveDurationTimesTons_hTon / this.tons).build();
 		}
-
 	}
 
 	// -------------------- MEMBERS --------------------
@@ -139,18 +140,17 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 
 	private final Map<TransportEpisode, CumulativeDetailedData> episode2data = new LinkedHashMap<>();
 
-	// -------------------- --------------------
+	// -------------------- CONSTRUCTION --------------------
 
 	public EmpiricalEpisodeCostModel(ConsolidationCostModel consolidationCostModel) {
 		this.consolidationCostModel = consolidationCostModel;
 	}
 
-	// -------------------- --------------------
+	// -------------------- IMPLEMENTATION --------------------
 
 	public void add(ShipmentVehicleAssignment assignment) throws InsufficientDataException {
 		final TransportEpisode episode = assignment.getTransportEpisode();
-
-		CumulativeDetailedData cumulativeCost = this.episode2data.computeIfAbsent(episode,
+		final CumulativeDetailedData cumulativeCost = this.episode2data.computeIfAbsent(episode,
 				e -> new CumulativeDetailedData());
 
 		for (Map.Entry<Vehicle, Double> entry : assignment.getVehicle2payload_ton().entrySet()) {
@@ -164,7 +164,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 
 	@Override
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
-		CumulativeDetailedData data = this.episode2data.get(episode);
+		final CumulativeDetailedData data = this.episode2data.get(episode);
 		if (data == null) {
 			throw new InsufficientDataException(this.getClass(), "No empirical data for transport episode.", episode);
 		} else {
@@ -176,17 +176,19 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	public void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
 			Network network) throws InsufficientDataException {
+		final VehicleFleet.VehicleClassification vehicleClassification = new VehicleFleet.VehicleClassification(
+				commodity, mode, isContainer, null);
 
-		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>();
+		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>(network.getLinks().size());
 		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
-			TransportEpisode episode = e2d.getKey();
-			if ((commodity == null || commodity.equals(episode.getCommodity()))
-					&& (mode == null || mode.equals(episode.getMode()))
-					&& (isContainer == null || isContainer.equals(episode.isContainer()))) {
+			final TransportEpisode episode = e2d.getKey();
+			if (vehicleClassification.isCompatible(episode)) {
 				for (TransportLeg leg : episode.getLegs()) {
 					final CumulativeDetailedData episodeData = e2d.getValue();
 					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteIdsView());
 					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
+					
+					// TODO CONTINUE HERE. This should yield an average over ALL links.
 					for (Link link : links) {
 						if (!link2cost.containsKey(link)) {
 							final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
@@ -195,6 +197,8 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 									weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
 						}
 					}
+					// TODO
+					
 				}
 			}
 		}

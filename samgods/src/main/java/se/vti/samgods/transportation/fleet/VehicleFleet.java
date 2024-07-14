@@ -71,13 +71,13 @@ public class VehicleFleet {
 
 	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
-	private class VehicleClassification {
+	public static class VehicleClassification {
 		final SamgodsConstants.Commodity commodity;
 		final SamgodsConstants.TransportMode mode;
 		final Boolean isContainer;
 		final Boolean containsFerry;
 
-		VehicleClassification(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+		public VehicleClassification(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
 				Boolean isContainer, Boolean containsFerry) {
 			this.commodity = commodity;
 			this.mode = mode;
@@ -85,15 +85,26 @@ public class VehicleFleet {
 			this.containsFerry = containsFerry;
 		}
 
-		boolean isCompatible(VehicleType type) {
-			final SamgodsVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(type);
+		public boolean isCompatible(SamgodsVehicleAttributes attrs) {
 			return (this.commodity == null || attrs.isCompatible(this.commodity))
 					&& (this.mode == null || this.mode.equals(attrs.mode))
 					&& (this.isContainer == null || this.isContainer.equals(attrs.isContainer))
 					&& (this.containsFerry == null || !this.containsFerry || attrs.isFerryCompatible());
 		}
 
-		List<Object> asList() {
+		public boolean isCompatible(VehicleType type) {
+			return this.isCompatible(ConsolidationUtils.getFreightAttributes(type));
+		}
+
+		public boolean isCompatible(TransportEpisode episode) {
+			return (this.commodity == null || this.commodity.equals(episode.getCommodity()))
+					&& (this.mode == null || this.mode.equals(episode.getMode()))
+					&& (this.isContainer == null || this.isContainer.equals(episode.isContainer()))
+					&& (this.containsFerry == null || episode.containsFerry() == null
+							|| this.containsFerry.equals(episode.containsFerry()));
+		}
+
+		private List<Object> asList() {
 			return Arrays.asList(this.commodity, this.mode, this.isContainer, this.containsFerry);
 		}
 
@@ -157,8 +168,16 @@ public class VehicleFleet {
 		return result;
 	}
 
-	public VehicleType getRepresentativeVehicleType(TransportEpisode episode) throws InsufficientDataException {
-		return this.getRepresentativeVehicleType(episode.getCommodity(), episode.getMode(), episode.isContainer(),
+	public SamgodsVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
+			throws InsufficientDataException {
+		return ConsolidationUtils
+				.getFreightAttributes(this.getRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
+	}
+
+	public SamgodsVehicleAttributes getRepresentativeVehicleAttributes(TransportEpisode episode)
+			throws InsufficientDataException {
+		return this.getRepresentativeVehicleAttributes(episode.getCommodity(), episode.getMode(), episode.isContainer(),
 				episode.containsFerry());
 	}
 

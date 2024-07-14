@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.transportation;
 
+import se.vti.samgods.InsufficientDataException;
+
 /**
  * 
  * @author GunnarF
@@ -54,6 +56,8 @@ public class DetailedTransportCost extends BasicTransportCost {
 		this.moveDuration_h = moveDuration_h;
 	}
 
+	// -------------------- BUILDER --------------------
+
 	public static class Builder {
 		private Double amount_ton;
 
@@ -68,13 +72,6 @@ public class DetailedTransportCost extends BasicTransportCost {
 		private Double moveDuration_h;
 
 		public Builder() {
-		}
-
-		public DetailedTransportCost build() {
-			// Null Double values raise exception when cast here to primitive double.
-			return new DetailedTransportCost(this.amount_ton, this.loadingCost, this.unloadingCost, this.transferCost,
-					this.moveCost, this.loadingDuration_h, this.unloadingDuration_h, this.transferDuration_h,
-					this.moveDuration_h);
 		}
 
 		private double sum(Double sum, double addend) {
@@ -128,6 +125,18 @@ public class DetailedTransportCost extends BasicTransportCost {
 		public Builder addMoveDuration_h(Double moveDuration_h) {
 			this.moveDuration_h = this.sum(this.moveDuration_h, moveDuration_h);
 			return this;
+		}
+
+		public DetailedTransportCost build() throws InsufficientDataException {
+			try {
+				// Null values raise exception when cast to primitive double.
+				return new DetailedTransportCost(this.amount_ton, this.loadingCost, this.unloadingCost,
+						this.transferCost, this.moveCost, this.loadingDuration_h, this.unloadingDuration_h,
+						this.transferDuration_h, this.moveDuration_h);
+			} catch (Exception e) {
+				throw new InsufficientDataException(this.getClass(),
+						"Insufficent data to build detailed transport cost.");
+			}
 		}
 	}
 }

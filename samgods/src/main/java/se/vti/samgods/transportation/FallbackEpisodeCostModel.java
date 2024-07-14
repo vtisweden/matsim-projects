@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
@@ -31,7 +30,6 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -42,22 +40,12 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  */
 public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
-	// -------------------- CONSTANTS --------------------
-
-//	private static final Logger log = Logger.getLogger(FallbackEpisodeCostModel.class);
-
 	// -------------------- MEMBERS --------------------
 
 	private final VehicleFleet fleet;
 	private final ConsolidationCostModel consolidationCostModel;
 
 	private double capacityUsageFactor = 0.7;
-
-//	private final Map<SamgodsConstants.TransportMode, SamgodsVehicleAttributes> mode2representativeContainerVehicleAttributes = new LinkedHashMap<>();
-//	private final Map<SamgodsConstants.TransportMode, SamgodsVehicleAttributes> mode2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
-//
-//	private final Map<CommodityModeGrouping.Group, SamgodsVehicleAttributes> group2representativeContainerVehicleAttributes = new LinkedHashMap<>();
-//	private final Map<CommodityModeGrouping.Group, SamgodsVehicleAttributes> group2representativeNoContainerVehicleAttributes = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -75,8 +63,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	@Override
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
-		final VehicleType vehicleType = this.fleet.getRepresentativeVehicleType(episode);
-		final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils.getFreightAttributes(vehicleType);
+		final SamgodsVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
 		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
 				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
 	}
@@ -86,13 +73,13 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
 			Network network) throws InsufficientDataException {
 
-		final SamgodsVehicleAttributes vehicleAttributes = ConsolidationUtils
-				.getFreightAttributes(this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, null));
+		final SamgodsVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity,
+				mode, isContainer, null);
 
 		SamgodsVehicleAttributes ferryCompatibleVehicleAttributes;
 		try {
-			ferryCompatibleVehicleAttributes = ConsolidationUtils
-					.getFreightAttributes(this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, true));
+			ferryCompatibleVehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity, mode,
+					isContainer, true);
 		} catch (InsufficientDataException e) {
 			ferryCompatibleVehicleAttributes = vehicleAttributes;
 		}
@@ -103,7 +90,6 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 				final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
 				assert (Double.isFinite(length_km));
 				assert (Double.isFinite(duration_h));
-				assert (link.getId() != null);
 				if (LinkAttributes.isFerry(link)) {
 					link2cost.put(link,
 							new BasicTransportCost(1.0,

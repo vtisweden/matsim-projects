@@ -35,16 +35,4 @@ public class BasicTransportCost {
 		this.monetaryCost = cost;
 		this.duration_h = duration_h;
 	}
-
-//	public double getAmount_ton() {
-//		return amount_ton;
-//	}
-//
-//	public double getMonetaryCost() {
-//		return monetaryCost;
-//	}
-//
-//	public double getDuration_h() {
-//		return duration_h;
-//	}	
 }

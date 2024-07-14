@@ -38,7 +38,11 @@ import se.vti.samgods.logistics.TransportEpisode;
  */
 public class EpisodeCostModels implements EpisodeCostModel {
 
+	// -------------------- MEMBERS --------------------
+
 	private List<EpisodeCostModel> models = new LinkedList<>();
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public EpisodeCostModels() {
 	}
@@ -48,6 +52,8 @@ public class EpisodeCostModels implements EpisodeCostModel {
 			this.add(model);
 		}
 	}
+
+	// -------------------- IMPLEMENTATION --------------------
 
 	public void add(EpisodeCostModel episodeCostModel) {
 		this.models.add(episodeCostModel);
@@ -80,9 +86,8 @@ public class EpisodeCostModels implements EpisodeCostModel {
 			throw new InsufficientDataException(this.getClass(),
 					"No model available to compute link transport cost for "
 							+ (network.getLinks().size() - link2cost.size()) + " out of " + network.getLinks().size()
-							+ " links.",
+							+ " network links.",
 					commodity, null, mode, isContainer, null);
 		}
 	}
-
 }
