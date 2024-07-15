@@ -48,6 +48,10 @@ public class TransportChain {
 
 	private final LinkedList<TransportEpisode> episodes = new LinkedList<>();
 
+	private List<Object> asList() {
+		return Arrays.asList(this.commodity, this.isContainer, this.episodes);
+	}
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportChain(Commodity commodity, boolean isContainer) {
@@ -146,10 +150,6 @@ public class TransportChain {
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------
-
-	private List<Object> asList() {
-		return Arrays.asList(this.commodity, this.isContainer, this.episodes);
-	}
 
 	@Override
 	public int hashCode() {

@@ -41,9 +41,14 @@ public class TransportLeg {
 
 	// -------------------- MEMBERS --------------------
 
-	// defining
 	private final OD od;
+
 	private TransportEpisode parent;
+
+	// TODO Inefficient for many calls to hashCode or to equals.
+	private List<Object> asList() {
+		return Arrays.asList(this.getCommodity(), this.isContainer(), this.getMode(), this.od);
+	}
 
 	// derived
 	private List<Id<Link>> routeIds = null;
@@ -125,11 +130,6 @@ public class TransportLeg {
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------
-
-	// TODO Inefficient for many calls to hashCode or to equals.
-	private List<Object> asList() {
-		return Arrays.asList(this.getCommodity(), this.isContainer(), this.getMode(), this.od);
-	}
 
 	@Override
 	public int hashCode() {

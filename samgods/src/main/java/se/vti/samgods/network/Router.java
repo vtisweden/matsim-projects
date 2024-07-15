@@ -317,7 +317,7 @@ public class Router {
 //				.collect(Collectors.toSet());
 //		this.routeInternally(commodity, allJobs);
 //		od2chainsList.entrySet().stream().forEach(e -> od2chainsSet.put(e.getKey(), new LinkedHashSet<>(e.getValue())));
-		final List<RoutingJob> allJobs = od2chainsSet.values().stream().flatMap(l -> l.stream())
+		final List<RoutingJob> allJobs = od2chainsSet.values().stream().flatMap(s -> s.stream())
 				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).map(l -> new RoutingJob(l))
 				.collect(Collectors.toList());
 		this.routeInternally(commodity, allJobs);

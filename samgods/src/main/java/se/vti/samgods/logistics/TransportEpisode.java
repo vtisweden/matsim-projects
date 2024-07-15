@@ -45,6 +45,11 @@ public class TransportEpisode {
 
 	private TransportChain parent;
 
+	private List<Object> asList() {
+		return Arrays.asList(this.getCommodity(), this.isContainer(), this.mode, this.legs);
+	}
+
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportEpisode(TransportMode mode) {
@@ -176,10 +181,6 @@ public class TransportEpisode {
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------
-
-	private List<Object> asList() {
-		return Arrays.asList(this.getCommodity(), this.isContainer(), this.mode, this.legs);
-	}
 
 	@Override
 	public int hashCode() {
