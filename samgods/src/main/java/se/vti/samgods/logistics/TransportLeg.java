@@ -112,7 +112,7 @@ public class TransportLeg {
 		} else {
 			this.routeIds = Collections
 					.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
-			this.containsFerry = route.stream().anyMatch(l -> LinkAttributes.getSamgodsMode(l).isFerry());
+			this.containsFerry = route.stream().anyMatch(l -> LinkAttributes.getMode(l).isFerry());
 		}
 	}
 

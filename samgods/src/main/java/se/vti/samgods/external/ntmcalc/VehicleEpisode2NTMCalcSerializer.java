@@ -92,7 +92,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 					throw new RuntimeException(
 							"Link " + linkId + " has not exactly one mode: " + link.getAllowedModes());
 				}
-				final String samgodsMode = LinkAttributes.getSamgodsMode(link).toString();
+				final String samgodsMode = LinkAttributes.getMode(link).toString();
 				gen.writeStringField("mode", samgodsMode);
 				if (LinkAttributes.isFerry(link)) {
 					gen.writeNumberField("vesselDWT", 5678.9); // TODO!!!

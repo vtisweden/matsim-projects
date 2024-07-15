@@ -30,26 +30,36 @@ import se.vti.samgods.SamgodsConstants;
  */
 public class LinkAttributes {
 
-	public static final String ATTRIBUTE_NAME = "samgods";
+	// -------------------- CONSTANTS --------------------
 
-	public SamgodsConstants.TransportMode samgodsMode;
+	public static final String ATTRIBUTE_NAME = "freight";
+
+	public SamgodsConstants.TransportMode mode;
 
 	public final Double speed1_km_h;
 
 	public final Double speed2_km_h;
 
+	// -------------------- CONSTRUCTION --------------------
+
 	public LinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
-		this.samgodsMode = samgodsMode;
+		this.mode = samgodsMode;
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
 	}
+
+	// -------------------- (STATIC) IMPLEMENTATION --------------------
 
 	public static LinkAttributes getAttrs(Link link) {
 		return (LinkAttributes) link.getAttributes().getAttribute(ATTRIBUTE_NAME);
 	}
 
-	public static SamgodsConstants.TransportMode getSamgodsMode(Link link) {
-		return getAttrs(link).samgodsMode;
+	public static SamgodsConstants.TransportMode getMode(Link link) {
+		return getAttrs(link).mode;
+	}
+
+	public static boolean isFerry(Link link) {
+		return getAttrs(link).mode.isFerry();
 	}
 
 	public static Double getSpeed1_km_h(Link link) {
@@ -59,9 +69,4 @@ public class LinkAttributes {
 	public static Double getSpeed2_km_h(Link link) {
 		return getAttrs(link).speed2_km_h;
 	}
-
-	public static boolean isFerry(Link link) {
-		return SamgodsConstants.TransportMode.Ferry.equals(getAttrs(link).samgodsMode);
-	}
-
 }

@@ -45,6 +45,10 @@ public class SamgodsConstants {
 			return Ferry.equals(this);
 		}
 
+		public boolean isRail() {
+			return Rail.equals(this);
+		}
+
 		private TransportMode(String... matsimModes) {
 			this.matsimModes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(matsimModes)));
 		}

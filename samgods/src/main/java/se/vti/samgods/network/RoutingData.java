@@ -45,8 +45,6 @@ import se.vti.samgods.transportation.EpisodeCostModel;
  */
 public class RoutingData {
 
-//	private static final Logger log = Logger.getLogger(NetworkRoutingData.class);
-
 	// -------------------- MEMBERS --------------------
 
 	private final Network multimodalNetwork;
