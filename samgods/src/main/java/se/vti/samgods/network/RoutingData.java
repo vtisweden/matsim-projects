@@ -51,6 +51,9 @@ public class RoutingData {
 
 	private final EpisodeCostModel episodeCostModel;
 
+	private TravelDisutility mostRecentlyCreatedTravelDisutility = null;
+	private TravelTime mostRecentyCreatedTravelTime = null;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public RoutingData(Network multimodalNetwork, EpisodeCostModel episodeCostModel) {
@@ -69,9 +72,6 @@ public class RoutingData {
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, mode.matsimModes);
 		return unimodalNetwork;
 	}
-
-	private TravelDisutility mostRecentlyCreatedTravelDisutility = null;
-	private TravelTime mostRecentyCreatedTravelTime = null;
 
 	public TravelDisutility getAndClearDisutility() {
 		final TravelDisutility result = this.mostRecentlyCreatedTravelDisutility;

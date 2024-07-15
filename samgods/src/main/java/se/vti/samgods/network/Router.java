@@ -19,8 +19,8 @@
  */
 package se.vti.samgods.network;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -57,6 +57,10 @@ import se.vti.samgods.logistics.TransportLeg;
  */
 public class Router {
 
+	// -------------------- LOGGING, ONLY FOR TESTING --------------------
+
+	private static final Logger log = Logger.getLogger(Router.class);
+
 	private long lastUpdate_ms = System.currentTimeMillis();
 
 	private Set<Runnable> recentlyActiveThreads = new LinkedHashSet<>();
@@ -68,10 +72,9 @@ public class Router {
 
 	private void msgOrNot() {
 		if (System.currentTimeMillis() - this.lastUpdate_ms > 500) {
-			Logger.getLogger(this.getClass())
-					.info("found " + this.foundRoutes + ", failed: " + this.failedRoutesNoOD + " (no OD), "
-							+ this.failedRoutesNoConnection + " (no connection), " + this.failedRoutesNoRouter
-							+ " (no router)" + ", active threads: " + this.recentlyActiveThreads.size());
+			log.info("found " + this.foundRoutes + ", failed: " + this.failedRoutesNoOD + " (no OD), "
+					+ this.failedRoutesNoConnection + " (no connection), " + this.failedRoutesNoRouter + " (no router)"
+					+ ", active threads: " + this.recentlyActiveThreads.size());
 			this.lastUpdate_ms = System.currentTimeMillis();
 			this.recentlyActiveThreads.clear();
 		}
@@ -101,8 +104,10 @@ public class Router {
 		this.recentlyActiveThreads.add(thread);
 	}
 
+	// -------------------- INNER CLASSES --------------------
+
 	/**
-	 * Helper class to avoid that parallel routing does not get problems with
+	 * Helper class to avoid that parallel routing gets problems with
 	 * non-synchronized leg/episode/chain references.
 	 * 
 	 * @author GunnarF
@@ -130,6 +135,8 @@ public class Router {
 	 */
 	private class RoutingThread implements Runnable {
 
+		private final Logger log = Logger.getLogger(Router.RoutingThread.class);
+
 		private final String name;
 
 		private final Iterable<RoutingJob> jobs;
@@ -142,7 +149,7 @@ public class Router {
 				final Map<TransportMode, TravelDisutility> mode2containerDisutility,
 				final Map<TransportMode, TravelDisutility> mode2noContainerDisutility,
 				final Map<TransportMode, TravelTime> mode2containerTravelTime,
-				final Map<TransportMode, TravelTime> mode2noContainerTravelTime, final int threads) {
+				final Map<TransportMode, TravelTime> mode2noContainerTravelTime) {
 
 			this.name = name;
 
@@ -153,7 +160,7 @@ public class Router {
 			this.mode2network = mode2network;
 			this.mode2containerRouter = new LinkedHashMap<>(mode2network.size());
 			this.mode2noContainerRouter = new LinkedHashMap<>(mode2network.size());
-			final AStarLandmarksFactory factory = new AStarLandmarksFactory(threads);
+			final AStarLandmarksFactory factory = new AStarLandmarksFactory(4); // TODO
 			for (Map.Entry<SamgodsConstants.TransportMode, Network> e : mode2network.entrySet()) {
 				final TransportMode mode = e.getKey();
 				final Network unimodalNetwork = e.getValue();
@@ -170,64 +177,54 @@ public class Router {
 
 		@Override
 		public void run() {
-			Logger.getLogger(this.getClass()).info("THREAD STARTED: " + this.name);
-			try {
-				for (RoutingJob job : this.jobs) {
-					if (job.od.origin.equals(job.od.destination)) {
-						job.leg.setRoute(new ArrayList<>(0));
-						if (logProgress) {
+			log.info("THREAD STARTED: " + this.name);
+			for (RoutingJob job : this.jobs) {
+				if (job.od.origin.equals(job.od.destination)) {
+					job.leg.setRoute(new ArrayList<>(0));
+					if (logProgress) {
+						registerFoundRoute(this);
+					}
+				} else {
+					final LeastCostPathCalculator router = job.isContainer ? this.mode2containerRouter.get(job.mode)
+							: this.mode2noContainerRouter.get(job.mode);
+					final Map<Id<Node>, ? extends Node> nodes = this.mode2network.get(job.mode).getNodes();
+					final Node from = nodes.get(job.od.origin);
+					final Node to = nodes.get(job.od.destination);
+					if ((from != null) && (to != null) && (router != null)) {
+						job.leg.setRoute(router.calcLeastCostPath(from, to, 0, null, null).links);
+						if (job.leg.getRouteIdsView() == null) {
+							if (logProgress) {
+								registerFailedRouteNoConnection(this);
+							}
+						} else if (logProgress) {
 							registerFoundRoute(this);
 						}
 					} else {
-						Map<Id<Node>, ? extends Node> nodes;
-						try {
-							nodes = this.mode2network.get(job.mode).getNodes();
-							assert (nodes != null);
-						} catch (Exception e) {
-							e.printStackTrace();
-							System.exit(0);
-							nodes = null;
-						}
-						final Node from = nodes.get(job.od.origin);
-						final Node to = nodes.get(job.od.destination);
-						final LeastCostPathCalculator router = job.isContainer ? this.mode2containerRouter.get(job.mode)
-								: this.mode2noContainerRouter.get(job.mode);
-						if ((from != null) && (to != null) && (router != null)) {
-							job.leg.setRoute(router.calcLeastCostPath(from, to, 0, null, null).links);
-							if (job.leg.getRouteIdsView() == null) {
-								if (logProgress) {
-									registerFailedRouteNoConnection(this);
-								}
-							} else if (logProgress) {
-								registerFoundRoute(this);
-							}
-						} else {
-							if (logProgress) {
-								if (from == null || to == null) {
-									registerFailedRouteNoOD(this);
-								} else if (router == null) {
-									registerFailedRouteNoRouter(this);
-								} else {
-									throw new RuntimeException("impossible");
-								}
+						if (logProgress) {
+							if (from == null || to == null) {
+								registerFailedRouteNoOD(this);
+							} else if (router == null) {
+								registerFailedRouteNoRouter(this);
+							} else {
+								throw new RuntimeException("impossible");
 							}
 						}
 					}
 				}
-
-			} catch (AssertionError e) {
-				e.printStackTrace();
-				throw e;
 			}
-			Logger.getLogger(this.getClass()).info("THREAD ENDED: " + this.name);
+			log.info("THREAD ENDED: " + this.name);
 		}
 	}
 
-	private int maxThreads = Integer.MAX_VALUE;
+	// -------------------- CONSTANTS AND MEMBERS --------------------
 
 	private final RoutingData routingData;
 
 	private boolean logProgress = false;
+
+	private int maxThreads = Integer.MAX_VALUE;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public Router(RoutingData routingData) {
 		this.routingData = routingData;
@@ -243,25 +240,14 @@ public class Router {
 		return this;
 	}
 
-	public void route(Commodity commodity, Map<OD, Set<TransportChain>> od2chainsSet) {
-		final Map<OD, List<TransportChain>> od2chainsList = od2chainsSet.entrySet().stream()
-				.collect(Collectors.toMap(e -> e.getKey(), e -> new ArrayList<>(e.getValue())));
-		od2chainsSet.clear();
-		final Set<RoutingJob> allJobs = od2chainsList.values().stream().flatMap(l -> l.stream())
-				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).map(l -> new RoutingJob(l))
-				.collect(Collectors.toSet());
-		this.routeInternally(commodity, allJobs);
-		od2chainsList.entrySet().stream().forEach(e -> od2chainsSet.put(e.getKey(), new LinkedHashSet<>(e.getValue())));
-	}
+	// -------------------- INTERNALS --------------------
 
-	private void routeInternally(Commodity commodity, Set<RoutingJob> allJobs) {
+	private void routeInternally(Commodity commodity, Collection<RoutingJob> allJobs) {
 
 		final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
-
 		final long jobsPerThread = allJobs.size() / threadCnt;
 
 		final ExecutorService threadPool = Executors.newFixedThreadPool(threadCnt);
-
 		final Iterator<RoutingJob> jobIterator = allJobs.iterator();
 
 		for (int thread = 0; thread < threadCnt; thread++) {
@@ -300,7 +286,7 @@ public class Router {
 
 			final RoutingThread routingThread = new RoutingThread(commodity + "_" + thread + "_" + jobs.size() + "jobs",
 					jobs, mode2network, mode2containerDisutility, mode2noContainerDisutility, mode2containerTravelTime,
-					mode2noContainerTravelTime, threadCnt);
+					mode2noContainerTravelTime);
 			threadPool.execute(routingThread);
 		}
 
@@ -313,76 +299,27 @@ public class Router {
 		}
 	}
 
-	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
+	// -------------------- IMPLEMENTATION --------------------
 
-	public static void main(String[] args) throws IOException {
-
-//		System.out.println("STARTED ...");
-//
-//		VehicleFleet fleet = new VehicleFleet();
-//		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
-//		fleetReader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
-//				SamgodsConstants.TransportMode.Air);
-//		fleetReader.load_v12("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
-//				SamgodsConstants.TransportMode.Rail);
-//		fleetReader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
-//				SamgodsConstants.TransportMode.Road);
-//		fleetReader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
-//				SamgodsConstants.TransportMode.Sea);
-//
-//		Network network = SamgodsNetworkReader.load("./input_2024/node_parameters.csv",
-//				"./input_2024/link_parameters.csv");
-//
-//		PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
-//			@Override
-//			public double getTotalArrivalDelay_h(Id<Node> nodeId) {
-//				return 0;
-//			}
-//
-//			@Override
-//			public double getTotalDepartureDelay_h(Id<Node> nodeId) {
-//				return 0;
-//			}
-//		};
-//
-//		ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
-//
-////		CommodityModeGrouping grouping = new CommodityModeGrouping();
-////		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-////			grouping.addCartesian(null, Arrays.asList(mode));
-////		}
-//
-//		EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel);
-//		EpisodeCostModel empiricalEpisodeCostModel = null;
-//
-//		NetworkRoutingData routingData = new NetworkRoutingData(network, empiricalEpisodeCostModel,
-//				fallbackEpisodeCostModel, fleet);
-//		NetworkRouter router = new NetworkRouter(routingData).setLogProgress(false);
-//
-//		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-//			ChainChoiReader commodityReader = new ChainChoiReader(commodity).setStoreSamgodsShipments(false)
-////					.setSamplingRate(1e-1, new Random(4711))
-//					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
-//
-//			for (List<TransportChain> chains : commodityReader.getOD2transportChains().values()) {
-//				for (TransportChain chain : chains) {
-//					for (TransportEpisode episode : chain.getEpisodes()) {
-//						for (TransportLeg leg : episode.getLegs()) {
-//							assert (network.getNodes().containsKey(leg.getOrigin()));
-//							assert (network.getNodes().containsKey(leg.getDestination()));
-//						}
-//					}
-//				}
-//			}
-//
-//			router.route(commodity, commodityReader.getOD2transportChains());
-////			for (List<TransportChain> chains : commodityReader.getOD2transportChains().values()) {
-////				for (TransportChain chain : chains) {
-////					System.out.println("  " + chain.getRoutesView());
-////				}
-////			}
-//		}
-//
-//		System.out.println("... DONE");
+	public void route(Commodity commodity, Map<OD, Set<TransportChain>> od2chainsSet) {
+		/*
+		 * Takes the chains out of the set and into a list before routing because
+		 * TransportChain.equals(..) and hashcode(..) react to the route being set or
+		 * not, meaning that routing must not take place will the chains are in a set.
+		 * 
+		 * TODO May no longer be necessary!
+		 */
+//		final Map<OD, List<TransportChain>> od2chainsList = od2chainsSet.entrySet().stream()
+//				.collect(Collectors.toMap(e -> e.getKey(), e -> new ArrayList<>(e.getValue())));
+//		od2chainsSet.clear();
+//		final Set<RoutingJob> allJobs = od2chainsList.values().stream().flatMap(l -> l.stream())
+//				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).map(l -> new RoutingJob(l))
+//				.collect(Collectors.toSet());
+//		this.routeInternally(commodity, allJobs);
+//		od2chainsList.entrySet().stream().forEach(e -> od2chainsSet.put(e.getKey(), new LinkedHashSet<>(e.getValue())));
+		final List<RoutingJob> allJobs = od2chainsSet.values().stream().flatMap(l -> l.stream())
+				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).map(l -> new RoutingJob(l))
+				.collect(Collectors.toList());
+		this.routeInternally(commodity, allJobs);
 	}
 }

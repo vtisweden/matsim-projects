@@ -67,10 +67,10 @@ public class TestSamgods {
 
 	public static void main(String[] args) throws IOException {
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
-				SamgodsConstants.Commodity.AIR);
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 0.01;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
+//				SamgodsConstants.Commodity.AIR);
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+		double samplingRate = 1.0;
 
 		log.info("STARTED ...");
 
