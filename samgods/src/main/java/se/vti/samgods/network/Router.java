@@ -20,7 +20,6 @@
 package se.vti.samgods.network;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -125,6 +124,10 @@ public class Router {
 			this.mode = leg.getMode();
 			this.leg = leg;
 		}
+		
+		synchronized void setRoute(List link) {
+			this.leg.setRoute(link);
+		}
 	}
 
 	/**
@@ -180,7 +183,7 @@ public class Router {
 			log.info("THREAD STARTED: " + this.name);
 			for (RoutingJob job : this.jobs) {
 				if (job.od.origin.equals(job.od.destination)) {
-					job.leg.setRoute(new ArrayList<>(0));
+					job.setRoute(new ArrayList<>(0));
 					if (logProgress) {
 						registerFoundRoute(this);
 					}
@@ -191,7 +194,7 @@ public class Router {
 					final Node from = nodes.get(job.od.origin);
 					final Node to = nodes.get(job.od.destination);
 					if ((from != null) && (to != null) && (router != null)) {
-						job.leg.setRoute(router.calcLeastCostPath(from, to, 0, null, null).links);
+						job.setRoute(router.calcLeastCostPath(from, to, 0, null, null).links);
 						if (job.leg.getRouteIdsView() == null) {
 							if (logProgress) {
 								registerFailedRouteNoConnection(this);
@@ -242,7 +245,7 @@ public class Router {
 
 	// -------------------- INTERNALS --------------------
 
-	private void routeInternally(Commodity commodity, Collection<RoutingJob> allJobs) {
+	private void routeInternally(Commodity commodity, List<RoutingJob> allJobs) {
 
 		final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
 		final long jobsPerThread = allJobs.size() / threadCnt;
@@ -301,7 +304,7 @@ public class Router {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void route(Commodity commodity, Map<OD, Set<TransportChain>> od2chainsSet) {
+	public void route(Commodity commodity, Map<OD, List<TransportChain>> od2chainsSet) {
 		/*
 		 * Takes the chains out of the set and into a list before routing because
 		 * TransportChain.equals(..) and hashcode(..) react to the route being set or

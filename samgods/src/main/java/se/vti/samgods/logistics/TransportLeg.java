@@ -46,9 +46,9 @@ public class TransportLeg {
 	private TransportEpisode parent;
 
 	// TODO Inefficient for many calls to hashCode or to equals.
-	private List<Object> asList() {
-		return Arrays.asList(this.getCommodity(), this.isContainer(), this.getMode(), this.od);
-	}
+//	private List<Object> asList() {
+//		return Arrays.asList(this.getCommodity(), this.isContainer(), this.getMode(), this.od);
+//	}
 
 	// derived
 	private List<Id<Link>> routeIds = null;
@@ -131,19 +131,19 @@ public class TransportLeg {
 
 	// -------------------- OVERRIDING OF Object --------------------
 
-	@Override
-	public int hashCode() {
-		return this.asList().hashCode();
-	}
-
-	@Override
-	public boolean equals(Object other) {
-		if (this == other) {
-			return true;
-		} else if (!(other instanceof TransportLeg)) {
-			return false;
-		} else {
-			return this.asList().equals(((TransportLeg) other).asList());
-		}
-	}
+//	@Override
+//	public int hashCode() {
+//		return this.asList().hashCode();
+//	}
+//
+//	@Override
+//	public boolean equals(Object other) {
+//		if (this == other) {
+//			return true;
+//		} else if (!(other instanceof TransportLeg)) {
+//			return false;
+//		} else {
+//			return this.asList().equals(((TransportLeg) other).asList());
+//		}
+//	}
 }

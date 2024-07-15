@@ -20,7 +20,6 @@
 package se.vti.samgods.logistics;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +89,7 @@ public class TransportDemand {
 
 	// -------------------- MEMBERS --------------------
 
-	public final Map<Commodity, Map<OD, Set<TransportChain>>> commodity2od2transportChains = new LinkedHashMap<>();
+	public final Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2transportChains = new LinkedHashMap<>();
 
 	public final Map<Commodity, Map<OD, List<AnnualShipment>>> commodity2od2annualShipments = new LinkedHashMap<>();
 
@@ -105,10 +104,8 @@ public class TransportDemand {
 		final Commodity commodity = transportChain.getCommodity();
 		final OD od = transportChain.getOD();
 
-		final Set<TransportChain> existingChains = this.commodity2od2transportChains
-				.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
-				.computeIfAbsent(od, od2 -> new LinkedHashSet<>(1));
-		existingChains.add(transportChain);
+		this.commodity2od2transportChains.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
+				.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
 
 		this.commodity2od2annualShipments.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
 				.computeIfAbsent(od, od2 -> new LinkedList<>())
@@ -125,7 +122,7 @@ public class TransportDemand {
 		// counting chains.
 
 		final Map<List<List<SamgodsConstants.TransportMode>>, Integer> modeSeq2cnt = new LinkedHashMap<>();
-		for (Set<TransportChain> chains : this.commodity2od2transportChains.get(commodity).values()) {
+		for (List<TransportChain> chains : this.commodity2od2transportChains.get(commodity).values()) {
 			for (TransportChain chain : chains) {
 				final List<List<SamgodsConstants.TransportMode>> modes = chain.getTransportModeSequence();
 				modeSeq2cnt.compute(modes, (m, c) -> c == null ? 1 : c + 1);

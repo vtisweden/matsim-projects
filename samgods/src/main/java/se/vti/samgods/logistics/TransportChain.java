@@ -48,9 +48,9 @@ public class TransportChain {
 
 	private final LinkedList<TransportEpisode> episodes = new LinkedList<>();
 
-	private List<Object> asList() {
-		return Arrays.asList(this.commodity, this.isContainer, this.episodes);
-	}
+//	private List<Object> asList() {
+//		return Arrays.asList(this.commodity, this.isContainer, this.episodes);
+//	}
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -151,19 +151,19 @@ public class TransportChain {
 
 	// -------------------- OVERRIDING OF Object --------------------
 
-	@Override
-	public int hashCode() {
-		return this.asList().hashCode();
-	}
-
-	@Override
-	public boolean equals(Object other) {
-		if (this == other) {
-			return true;
-		} else if (!(other instanceof TransportChain)) {
-			return false;
-		} else {
-			return this.asList().equals(((TransportChain) other).asList());
-		}
-	}
+//	@Override
+//	public int hashCode() {
+//		return this.asList().hashCode();
+//	}
+//
+//	@Override
+//	public boolean equals(Object other) {
+//		if (this == other) {
+//			return true;
+//		} else if (!(other instanceof TransportChain)) {
+//			return false;
+//		} else {
+//			return this.asList().equals(((TransportChain) other).asList());
+//		}
+//	}
 }

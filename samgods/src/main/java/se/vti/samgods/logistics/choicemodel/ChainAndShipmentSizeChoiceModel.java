@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
@@ -64,7 +63,7 @@ public class ChainAndShipmentSizeChoiceModel {
 	// -------------------- IMPLEMENTATION --------------------
 
 	public List<ChainAndShipmentSize> choose(SamgodsConstants.Commodity commodity, OD od,
-			Set<TransportChain> transportChains, List<TransportDemand.AnnualShipment> annualShipments) {
+			List<TransportChain> transportChains, List<TransportDemand.AnnualShipment> annualShipments) {
 
 		final Map<TransportChain, DetailedTransportCost> chain2transportUnitCost = new LinkedHashMap<>(
 				transportChains.size());

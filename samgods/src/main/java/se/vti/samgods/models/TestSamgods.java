@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
@@ -70,7 +69,7 @@ public class TestSamgods {
 //		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
 //				SamgodsConstants.Commodity.AIR);
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		double samplingRate = 0.01;
 
 		log.info("STARTED ...");
 
@@ -118,7 +117,7 @@ public class TestSamgods {
 
 		RoutingData routingData = new RoutingData(network, episodeCostModels);
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-			Map<OD, Set<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
+			Map<OD, List<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
 			Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
 			router.route(commodity, od2chains);
 		}
@@ -128,11 +127,11 @@ public class TestSamgods {
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			long removedCnt = 0;
 			long totalCnt = 0;
-			for (Map.Entry<OD, Set<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity)
+			for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity)
 					.entrySet()) {
 				final int chainCnt = entry.getValue().size();
 				totalCnt += chainCnt;
-				entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toSet()));
+				entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toList()));
 				removedCnt += chainCnt - entry.getValue().size();
 			}
 			log.warn(
@@ -157,7 +156,7 @@ public class TestSamgods {
 					.get(commodity).entrySet()) {
 				final OD od = e.getKey();
 				final List<AnnualShipment> annualShipments = e.getValue();
-				final Set<TransportChain> transportChains = transportDemand.commodity2od2transportChains.get(commodity)
+				final List<TransportChain> transportChains = transportDemand.commodity2od2transportChains.get(commodity)
 						.get(od);
 				if (transportChains.size() == 0) {
 					new InsufficientDataException(TestSamgods.class, "No transport chains available.", commodity, od,

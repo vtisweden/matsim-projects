@@ -45,11 +45,10 @@ public class TransportEpisode {
 
 	private TransportChain parent;
 
-	private List<Object> asList() {
-		return Arrays.asList(this.getCommodity(), this.isContainer(), this.mode, this.legs);
-	}
-
-
+//	private List<Object> asList() {
+//		return Arrays.asList(this.getCommodity(), this.isContainer(), this.mode, this.legs);
+//	}
+	
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportEpisode(TransportMode mode) {
@@ -182,19 +181,19 @@ public class TransportEpisode {
 
 	// -------------------- OVERRIDING OF Object --------------------
 
-	@Override
-	public int hashCode() {
-		return this.asList().hashCode();
-	}
-
-	@Override
-	public boolean equals(Object other) {
-		if (this == other) {
-			return true;
-		} else if (!(other instanceof TransportEpisode)) {
-			return false;
-		} else {
-			return this.asList().equals(((TransportEpisode) other).asList());
-		}
-	}
+//	@Override
+//	public int hashCode() {
+//		return this.asList().hashCode();
+//	}
+//
+//	@Override
+//	public boolean equals(Object other) {
+//		if (this == other) {
+//			return true;
+//		} else if (!(other instanceof TransportEpisode)) {
+//			return false;
+//		} else {
+//			return this.asList().equals(((TransportEpisode) other).asList());
+//		}
+//	}
 }
