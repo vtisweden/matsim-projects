@@ -69,7 +69,7 @@ public class TestSamgods {
 //		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
 //				SamgodsConstants.Commodity.AIR);
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 0.01;
+		double samplingRate = 1.0;
 
 		log.info("STARTED ...");
 
