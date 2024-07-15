@@ -183,22 +183,23 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
 			final TransportEpisode episode = e2d.getKey();
 			if (vehicleClassification.isCompatible(episode)) {
+				final CumulativeDetailedData episodeData = e2d.getValue();
 				for (TransportLeg leg : episode.getLegs()) {
-					final CumulativeDetailedData episodeData = e2d.getValue();
 					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteIdsView());
 					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
-					
-					// TODO CONTINUE HERE. This should yield an average over ALL links.
-					for (Link link : links) {
-						if (!link2cost.containsKey(link)) {
-							final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
-							link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
-									weight * episodeData.getMonetaryCostTimesTons_ton(),
-									weight * episodeData.getDurationTimesTons_hTon(), episodeData.tons);
+					if (routeLength_m > 1e-8) {
+						for (Link link : links) {
+							// Only complete cost data, do not override existing data:
+							if (!link2cost.containsKey(link)) {
+								// TODO Weight should rather be travel time dependent.
+								final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
+								link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
+										weight * episodeData.getMonetaryCostTimesTons_ton() / episodeData.tons,
+										weight * episodeData.getDurationTimesTons_hTon() / episodeData.tons,
+										episodeData.tons);
+							}
 						}
 					}
-					// TODO
-					
 				}
 			}
 		}
