@@ -17,17 +17,19 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation.road;
+package se.vti.samgods.transportation.consolidation;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
-
-import org.matsim.vehicles.Vehicle;
-import org.matsim.vehicles.VehicleType;
+import java.util.Map;
 
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.Signature;
+import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 
@@ -39,32 +41,27 @@ public class ConsolidationUtils {
 	private ConsolidationUtils() {
 	}
 
-	public static SamgodsVehicleAttributes getFreightAttributes(VehicleType vehicleType) {
-		return (SamgodsVehicleAttributes) vehicleType.getAttributes()
-				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+	public static Map<Signature.Episode, List<TransportChain>> createEpisodeSignature2chains(
+			List<TransportChain> chains) {
+		final Map<Signature.Episode, List<TransportChain>> signature2chains = new LinkedHashMap<>();
+		for (TransportChain chain : chains) {
+			for (TransportEpisode episode : chain.getEpisodes()) {
+				final Signature.Episode signature = new Signature.Episode(episode);
+				signature2chains.computeIfAbsent(signature, s -> new LinkedList<>()).add(chain);
+			}
+		}
+		return signature2chains;
 	}
 
-	public static SamgodsVehicleAttributes getFreightAttributes(Vehicle vehicle) {
-		return getFreightAttributes(vehicle.getType());
-	}
-
-	public static double getCapacity_ton(VehicleType vehicleType) {
-		return getFreightAttributes(vehicleType).capacity_ton;
-	}
-
-	public static double getCapacity_ton(Vehicle vehicle) {
-		return getFreightAttributes(vehicle).capacity_ton;
-	}
-
-	public static List<Shipment> disaggregateIntoAnalysisPeriod(TransportDemand.AnnualShipment annualShipment, int analysisPeriod_days,
-			SamgodsConstants.ShipmentSize sizeClass) {
+	public static List<Shipment> disaggregateIntoAnalysisPeriod(TransportDemand.AnnualShipment annualShipment,
+			int analysisPeriod_days, SamgodsConstants.ShipmentSize sizeClass) {
 
 		final double amountPerPeriod_ton = annualShipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
 		final double shipmentsPerPeriod = amountPerPeriod_ton / sizeClass.getMeanValue_ton();
-		final double singleShipmentSize_ton = amountPerPeriod_ton / Math.ceil(shipmentsPerPeriod);
 
-		final int completeShipmentsPerPeriod = (int) shipmentsPerPeriod;
+		final int completeShipmentsPerPeriod = (int) Math.floor(shipmentsPerPeriod);
 		final double fractionalShipmentsPerPeriod = shipmentsPerPeriod - completeShipmentsPerPeriod;
+		final double singleShipmentSize_ton = amountPerPeriod_ton / Math.ceil(shipmentsPerPeriod);
 
 		final List<Shipment> shipments = new ArrayList<>(
 				completeShipmentsPerPeriod + (fractionalShipmentsPerPeriod > 0 ? 1 : 0));
@@ -72,7 +69,8 @@ public class ConsolidationUtils {
 			shipments.add(new Shipment(annualShipment.getCommodity(), singleShipmentSize_ton, 1.0));
 		}
 		if (fractionalShipmentsPerPeriod > 0) {
-			shipments.add(new Shipment(annualShipment.getCommodity(), singleShipmentSize_ton, fractionalShipmentsPerPeriod));
+			shipments.add(
+					new Shipment(annualShipment.getCommodity(), singleShipmentSize_ton, fractionalShipmentsPerPeriod));
 		}
 
 		return shipments;

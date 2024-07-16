@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
@@ -38,7 +39,7 @@ import se.vti.samgods.SamgodsConstants;
  * @author GunnarF
  *
  */
-public class SamgodsVehicleAttributes {
+public class FreightVehicleAttributes {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -72,7 +73,7 @@ public class SamgodsVehicleAttributes {
 
 	// -------------------- CONSTRUCTION (private, use builder) --------------------
 
-	private SamgodsVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode mode, double cost_1_km,
+	private FreightVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode mode, double cost_1_km,
 			double cost_1_h, double capacity_ton, Double onFerryCost_1_km, Double onFerryCost_1_h, Double speed_km_h,
 			boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> loadTime_h,
@@ -119,6 +120,25 @@ public class SamgodsVehicleAttributes {
 		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
 	}
 
+	// -------------------- STATIC IMPLEMENTATION --------------------
+	
+	public static FreightVehicleAttributes getFreightAttributes(VehicleType vehicleType) {
+		return (FreightVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
+	}
+
+	public static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
+		return getFreightAttributes(vehicle.getType());
+	}
+
+	public static double getCapacity_ton(VehicleType vehicleType) {
+		return getFreightAttributes(vehicleType).capacity_ton;
+	}
+
+	public static double getCapacity_ton(Vehicle vehicle) {
+		return getFreightAttributes(vehicle).capacity_ton;
+	}
+	
 	// -------------------- BUILDER --------------------
 
 	public static class Builder {
@@ -155,9 +175,9 @@ public class SamgodsVehicleAttributes {
 			this.id = Id.create(name, VehicleType.class);
 		}
 
-		private SamgodsVehicleAttributes buildVehicleAttributes() throws InsufficientDataException {
+		private FreightVehicleAttributes buildVehicleAttributes() throws InsufficientDataException {
 			try {
-				return new SamgodsVehicleAttributes(this.id, this.mode, this.cost_1_km, this.cost_1_h,
+				return new FreightVehicleAttributes(this.id, this.mode, this.cost_1_km, this.cost_1_h,
 						this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
 						this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 			} catch (Exception e /* Arises when assigning null Double object to primitive double. */) {
@@ -169,7 +189,7 @@ public class SamgodsVehicleAttributes {
 		public VehicleType buildVehicleType() throws InsufficientDataException {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
 			type.setDescription(this.description);
-			type.getAttributes().putAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME, this.buildVehicleAttributes());
+			type.getAttributes().putAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME, this.buildVehicleAttributes());
 			return type;
 		}
 

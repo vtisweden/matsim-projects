@@ -30,12 +30,12 @@ import org.matsim.vehicles.Vehicle;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.ShipmentVehicleAssignment;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**
  * TODO This is now about all commodities, which are defining members of
@@ -157,7 +157,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 			final Vehicle vehicle = entry.getKey();
 			final double payload_ton = entry.getValue();
 			final DetailedTransportCost vehicleCost = this.consolidationCostModel
-					.computeEpisodeCost(ConsolidationUtils.getFreightAttributes(vehicle), payload_ton, episode);
+					.computeEpisodeCost(FreightVehicleAttributes.getFreightAttributes(vehicle), payload_ton, episode);
 			cumulativeCost.add(vehicleCost);
 		}
 	}
@@ -176,13 +176,12 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	public void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
 			Network network) throws InsufficientDataException {
-		final VehicleFleet.VehicleClassification vehicleClassification = new VehicleFleet.VehicleClassification(
-				commodity, mode, isContainer, null);
+		final Signature.Episode signature = new Signature.Episode(commodity, mode, isContainer, null, null);
 
 		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>(network.getLinks().size());
 		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
 			final TransportEpisode episode = e2d.getKey();
-			if (vehicleClassification.isCompatible(episode)) {
+			if (signature.isCompatible(episode)) {
 				final CumulativeDetailedData episodeData = e2d.getValue();
 				for (TransportLeg leg : episode.getLegs()) {
 					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteIdsView());

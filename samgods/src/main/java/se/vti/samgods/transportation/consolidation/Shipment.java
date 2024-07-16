@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation.road;
+package se.vti.samgods.transportation.consolidation;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 
@@ -28,16 +28,26 @@ import se.vti.samgods.SamgodsConstants.Commodity;
  */
 public class Shipment {
 
+	// -------------------- CONSTANTS --------------------
+
 	private final Commodity commodity;
 
 	private final double tons;
 
 	private final double probability;
 
+	// -------------------- CONSTRUCTION --------------------
+
 	public Shipment(final Commodity commodity, final double tons, double probability) {
 		this.commodity = commodity;
 		this.tons = tons;
 		this.probability = probability;
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public Commodity getCommodity() {
+		return this.commodity;
 	}
 
 	public double getWeight_ton() {
@@ -46,10 +56,6 @@ public class Shipment {
 
 	public double getProbability() {
 		return this.probability;
-	}
-
-	public Commodity getCommodity() {
-		return this.commodity;
 	}
 
 	@Override

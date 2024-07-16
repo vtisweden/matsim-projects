@@ -20,7 +20,6 @@
 package se.vti.samgods.transportation.consolidation.road;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -34,6 +33,7 @@ import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Tuple;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**
  * 
@@ -67,8 +67,8 @@ public class ConsolidationReport {
 		Collections.sort(this.allVehicleTypes, new Comparator<VehicleType>() {
 			@Override
 			public int compare(VehicleType type1, VehicleType type2) {
-				return Double.compare(ConsolidationUtils.getCapacity_ton(type1),
-						ConsolidationUtils.getCapacity_ton(type2));
+				return Double.compare(FreightVehicleAttributes.getCapacity_ton(type1),
+						FreightVehicleAttributes.getCapacity_ton(type2));
 			}
 		});
 
@@ -129,16 +129,16 @@ public class ConsolidationReport {
 	@Override
 	public String toString() {
 		StringBuffer result = new StringBuffer();
-		
+
 		for (int day = 0; day < this.vehicleCommodityMatrixOverDays.size(); day++) {
 			result.append("DAY " + (day + 1) + "/" + this.vehicleCommodityMatrixOverDays.size() + "\n");
 			result.append(this.vehicleCommodityMatrixToString(this.vehicleCommodityMatrixOverDays.get(day)));
 			result.append("\n");
 		}
-		
+
 		result.append("\n");
 		result.append("TOTALS OVER DAYS\n");
-		
+
 		result.append("day");
 		for (VehicleType type : this.allVehicleTypes) {
 			result.append("\t");
@@ -149,9 +149,9 @@ public class ConsolidationReport {
 			result.append(commodity);
 		}
 		result.append("\n");
-		
-		for (int day = 0; day < this.vehicleCommodityMatrixOverDays.size(); day++) {			
-			
+
+		for (int day = 0; day < this.vehicleCommodityMatrixOverDays.size(); day++) {
+
 			final double[][] vehicleCommodityMatrix = this.vehicleCommodityMatrixOverDays.get(day);
 			final double[] vehSums = new double[this.allVehicleTypes.size()];
 			final double[] comSums = new double[this.allCommodities.size()];
@@ -161,7 +161,7 @@ public class ConsolidationReport {
 					comSums[j] += vehicleCommodityMatrix[i][j];
 				}
 			}
-			
+
 			result.append(day + 1);
 			for (int i = 0; i < this.allVehicleTypes.size(); i++) {
 				result.append("\t");
@@ -171,7 +171,7 @@ public class ConsolidationReport {
 				result.append("\t");
 				result.append(comSums[j]);
 			}
-			result.append("\n");			
+			result.append("\n");
 		}
 
 		return result.toString();

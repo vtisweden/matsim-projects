@@ -47,7 +47,7 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.LinkAttributes;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -119,13 +119,11 @@ public class NTMCalcSerializerTest {
 							if (rnd.nextDouble() < 0.9) {
 								double speed1_km_h = Arrays.asList(30, 50, 70, 90, 110).get(rnd.nextInt(5));
 								link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
-										new LinkAttributes(SamgodsConstants.TransportMode.Road, speed1_km_h,
-												null));
+										new LinkAttributes(SamgodsConstants.TransportMode.Road, speed1_km_h, null));
 							} else {
 								double speed1_km_h = Arrays.asList(5, 10, 15, 20, 25).get(rnd.nextInt(5));
 								link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
-										new LinkAttributes(SamgodsConstants.TransportMode.Ferry, speed1_km_h,
-												null));
+										new LinkAttributes(SamgodsConstants.TransportMode.Ferry, speed1_km_h, null));
 							}
 
 						}
@@ -137,8 +135,8 @@ public class NTMCalcSerializerTest {
 					episode.addLeg(leg);
 				}
 
-				allEpisodes.add(new VehicleEpisode(veh, rnd.nextDouble() * ConsolidationUtils.getCapacity_ton(vehType),
-						episode));
+				allEpisodes.add(new VehicleEpisode(veh,
+						rnd.nextDouble() * FreightVehicleAttributes.getCapacity_ton(vehType), episode));
 			}
 		}
 

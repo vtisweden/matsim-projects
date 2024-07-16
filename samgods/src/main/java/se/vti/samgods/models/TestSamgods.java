@@ -50,6 +50,7 @@ import se.vti.samgods.transportation.DetailedTransportCost;
 import se.vti.samgods.transportation.EpisodeCostModel;
 import se.vti.samgods.transportation.EpisodeCostModels;
 import se.vti.samgods.transportation.FallbackEpisodeCostModel;
+import se.vti.samgods.transportation.consolidation.ConsolidationUtils;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
@@ -66,10 +67,10 @@ public class TestSamgods {
 
 	public static void main(String[] args) throws IOException {
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
-//				SamgodsConstants.Commodity.AIR);
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
+				SamgodsConstants.Commodity.AIR);
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+		double samplingRate = 0.01;
 
 		log.info("STARTED ...");
 
@@ -168,9 +169,23 @@ public class TestSamgods {
 				}
 
 			}
-
 			log.info(commodity + ": Created " + cnt + " shipments.");
 		}
+
+		// PREPARE CONSOLIDATION
+
+		long episodeCnt = 0;
+		long signatureCnt = 0;
+		for (Map.Entry<SamgodsConstants.Commodity, Map<OD, List<TransportChain>>> commodityAndMap : transportDemand.commodity2od2transportChains
+				.entrySet()) {
+			log.info(commodityAndMap.getKey() + ": Preparing for consolidation.");
+			for (Map.Entry<OD, List<TransportChain>> odAndChains : commodityAndMap.getValue().entrySet()) {
+				episodeCnt += odAndChains.getValue().stream().mapToInt(c -> c.getEpisodes().size()).sum();
+				signatureCnt += ConsolidationUtils.createEpisodeSignature2chains(odAndChains.getValue()).size();
+			}
+		}
+		log.info("Encountered " + episodeCnt + " episodes.");
+		log.info("Encountered " + signatureCnt + " episode signatures.");
 
 		log.info("DONE");
 	}

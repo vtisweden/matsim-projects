@@ -33,7 +33,7 @@ import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.BasicTransportCost;
 import se.vti.samgods.transportation.DetailedTransportCost;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**
  * 
@@ -61,7 +61,7 @@ public class ConsolidationCostModel {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public DetailedTransportCost computeEpisodeCost(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
+	public DetailedTransportCost computeEpisodeCost(FreightVehicleAttributes vehicleAttrs, double payload_ton,
 			TransportEpisode episode) throws InsufficientDataException {
 
 		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton);
@@ -120,7 +120,7 @@ public class ConsolidationCostModel {
 	public BasicTransportCost computeInVehicleShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
 			ShipmentVehicleAssignment assignment) throws InsufficientDataException {
 
-		final double vehicleCapacity_ton = ConsolidationUtils.getCapacity_ton(vehicle);
+		final double vehicleCapacity_ton = FreightVehicleAttributes.getCapacity_ton(vehicle);
 		final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
 		assert (availableCapacity_ton >= 0);
 		final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
@@ -128,7 +128,7 @@ public class ConsolidationCostModel {
 
 		if (feasible) {
 			final DetailedTransportCost vehicleCost = computeEpisodeCost(
-					ConsolidationUtils.getFreightAttributes(vehicle),
+					FreightVehicleAttributes.getFreightAttributes(vehicle),
 					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
 			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
 			return new BasicTransportCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);

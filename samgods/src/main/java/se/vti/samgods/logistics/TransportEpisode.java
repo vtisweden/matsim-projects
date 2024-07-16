@@ -19,11 +19,13 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
@@ -45,10 +47,6 @@ public class TransportEpisode {
 
 	private TransportChain parent;
 
-//	private List<Object> asList() {
-//		return Arrays.asList(this.getCommodity(), this.isContainer(), this.mode, this.legs);
-//	}
-	
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportEpisode(TransportMode mode) {
@@ -179,21 +177,12 @@ public class TransportEpisode {
 		}
 	}
 
-	// -------------------- OVERRIDING OF Object --------------------
-
-//	@Override
-//	public int hashCode() {
-//		return this.asList().hashCode();
-//	}
-//
-//	@Override
-//	public boolean equals(Object other) {
-//		if (this == other) {
-//			return true;
-//		} else if (!(other instanceof TransportEpisode)) {
-//			return false;
-//		} else {
-//			return this.asList().equals(((TransportEpisode) other).asList());
-//		}
-//	}
+	public List<List<Id<Link>>> createLinkIds() {
+		assert (this.isRouted());
+		final List<List<Id<Link>>> result = new ArrayList<>(this.legs.size());
+		for (TransportLeg leg : this.legs) {
+			result.add(leg.getRouteIdsView());
+		}
+		return result;
+	}
 }

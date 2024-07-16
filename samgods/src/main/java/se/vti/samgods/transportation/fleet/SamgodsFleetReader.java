@@ -34,7 +34,6 @@ import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationUtils;
 import se.vti.samgods.utils.ParseNumberUtils;
 
 /**
@@ -100,11 +99,11 @@ public class SamgodsFleetReader {
 
 	public void load_v12(String vehicleTypeFile, String costFile, SamgodsConstants.TransportMode transportMode)
 			throws IOException {
-		final Map<String, SamgodsVehicleAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
+		final Map<String, FreightVehicleAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(vehicleTypeFile))) {
 			for (boolean container : new boolean[] { false, true }) {
-				final SamgodsVehicleAttributes.Builder builder = new SamgodsVehicleAttributes.Builder(
+				final FreightVehicleAttributes.Builder builder = new FreightVehicleAttributes.Builder(
 						record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""));
 				vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
 				builder.setDescription(record.get(VEH_DESCRIPTION)).setMode(transportMode)
@@ -138,11 +137,11 @@ public class SamgodsFleetReader {
 							ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_TIME_H)));
 		}
 
-		for (SamgodsVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
+		for (FreightVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
 			try {
 				VehicleType vehicleType = builder.buildVehicleType();
 
-				SamgodsVehicleAttributes attrs = ConsolidationUtils.getFreightAttributes(vehicleType);
+				FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 				if (attrs.onFerryCost_1_h == null) {
 					log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
 				}

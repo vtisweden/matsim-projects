@@ -34,6 +34,8 @@ import org.matsim.vehicles.VehicleType;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.BasicTransportCost;
+import se.vti.samgods.transportation.consolidation.Shipment;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
@@ -166,7 +168,7 @@ public class Consolidator {
 
 			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
 			final double assigned_ton = Math.min(remaining_ton,
-					ConsolidationUtils.getCapacity_ton(assignedVehicle) - assignment.getPayload_ton(assignedVehicle));
+					FreightVehicleAttributes.getCapacity_ton(assignedVehicle) - assignment.getPayload_ton(assignedVehicle));
 			assignment.assign(shipment, assignedVehicle, assigned_ton);
 			remaining_ton -= assigned_ton;
 
@@ -175,7 +177,7 @@ public class Consolidator {
 			 * or it is not not full because the shipment is completely assigned. In either
 			 * case, it will no longer be considered.
 			 */
-			assert (Math.abs(ConsolidationUtils.getCapacity_ton(assignedVehicle)
+			assert (Math.abs(FreightVehicleAttributes.getCapacity_ton(assignedVehicle)
 					- assignment.getPayload_ton(assignedVehicle)) <= 1e-8 || remaining_ton <= 1e-8);
 			vehicle2costOverDays.get(slot.day).remove(assignedVehicle);
 		}

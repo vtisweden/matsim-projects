@@ -30,7 +30,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
@@ -63,7 +63,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	@Override
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
-		final SamgodsVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
+		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
 		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
 				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
 	}
@@ -73,10 +73,10 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
 			Network network) throws InsufficientDataException {
 
-		final SamgodsVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity,
+		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity,
 				mode, isContainer, null);
 
-		SamgodsVehicleAttributes ferryCompatibleVehicleAttributes;
+		FreightVehicleAttributes ferryCompatibleVehicleAttributes;
 		try {
 			ferryCompatibleVehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity, mode,
 					isContainer, true);
