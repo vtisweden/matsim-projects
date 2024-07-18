@@ -173,7 +173,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	@Override
-	public void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost,
+	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
 			Network network) throws InsufficientDataException {
 		final Signature.Episode signature = new Signature.Episode(commodity, mode, isContainer, null, null);

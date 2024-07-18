@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportChain;
@@ -42,12 +43,14 @@ public class ConsolidationUtils {
 	}
 
 	public static Map<Signature.Episode, List<TransportChain>> createEpisodeSignature2chains(
-			List<TransportChain> chains) {
+			Map<OD, List<TransportChain>> od2chains) {
 		final Map<Signature.Episode, List<TransportChain>> signature2chains = new LinkedHashMap<>();
-		for (TransportChain chain : chains) {
-			for (TransportEpisode episode : chain.getEpisodes()) {
-				final Signature.Episode signature = new Signature.Episode(episode);
-				signature2chains.computeIfAbsent(signature, s -> new LinkedList<>()).add(chain);
+		for (Map.Entry<OD, List<TransportChain>> odAndChains : od2chains.entrySet()) {
+			for (TransportChain chain : odAndChains.getValue()) {
+				for (TransportEpisode episode : chain.getEpisodes()) {
+					final Signature.Episode signature = new Signature.Episode(episode);
+					signature2chains.computeIfAbsent(signature, s -> new LinkedList<>()).add(chain);
+				}
 			}
 		}
 		return signature2chains;
@@ -57,7 +60,7 @@ public class ConsolidationUtils {
 			int analysisPeriod_days, SamgodsConstants.ShipmentSize sizeClass) {
 
 		final double amountPerPeriod_ton = annualShipment.getTotalAmount_ton() * analysisPeriod_days / 365.0;
-		final double shipmentsPerPeriod = amountPerPeriod_ton / sizeClass.getMeanValue_ton();
+		final double shipmentsPerPeriod = amountPerPeriod_ton / sizeClass.getRepresentativeValue_ton();
 
 		final int completeShipmentsPerPeriod = (int) Math.floor(shipmentsPerPeriod);
 		final double fractionalShipmentsPerPeriod = shipmentsPerPeriod - completeShipmentsPerPeriod;

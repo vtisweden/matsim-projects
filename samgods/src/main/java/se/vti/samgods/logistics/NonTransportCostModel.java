@@ -19,11 +19,16 @@
  */
 package se.vti.samgods.logistics;
 
+import se.vti.samgods.SamgodsConstants;
+
 /**
  * 
  * @author GunnarF
  *
  */
-public class StorageCost {
-	// placeholder
+public interface NonTransportCostModel {
+
+	NonTransportCost computeCost(SamgodsConstants.Commodity commodity, SamgodsConstants.ShipmentSize shipmentSize,
+			double annualAmount_ton, double transportChainDuration_h);
+
 }

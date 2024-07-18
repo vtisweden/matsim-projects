@@ -89,7 +89,7 @@ public class RoutingData {
 			Network network, boolean isContainer) throws InsufficientDataException {
 
 		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>(network.getLinks().size());
-		this.episodeCostModel.populateLink2transportCosts(link2cost, commodity, mode, isContainer, network);
+		this.episodeCostModel.populateLink2transportCost(link2cost, commodity, mode, isContainer, network);
 
 		final Map<Link, Double> link2disutility = link2cost.entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().monetaryCost));

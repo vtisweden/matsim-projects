@@ -38,6 +38,12 @@ public class InsufficientDataException extends Exception {
 
 	// -------------------- GLOBAL LOGGING --------------------
 
+	private static boolean logDuringRuntime = true;
+
+	public static void setLogDuringRuntime(boolean log) {
+		logDuringRuntime = log;
+	}
+
 	private static Logger log = Logger.getLogger(InsufficientDataException.class);
 
 	private static LinkedList<InsufficientDataException> history = new LinkedList<>();
@@ -123,7 +129,9 @@ public class InsufficientDataException extends Exception {
 		this.catchMessage = catchMessage;
 		this.catchClass = catchClass;
 		history.add(this);
-		log.warn(this.toString());
+		if (logDuringRuntime) {
+			log.warn(this.toString());
+		}
 	}
 
 	public synchronized void log(Class<?> catchClass, String catchMessage, SamgodsConstants.Commodity commodity, OD od,

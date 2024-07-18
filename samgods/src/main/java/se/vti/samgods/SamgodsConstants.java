@@ -85,6 +85,10 @@ public class SamgodsConstants {
 			return (this.code < 10) ? ("0" + this.code) : ("" + this.code);
 		}
 	};
+	
+	public static int commodityCnt() {
+		return Commodity.values().length;
+	}
 
 	public static enum ShipmentSize {
 
@@ -109,7 +113,7 @@ public class SamgodsConstants {
 			this.upperValue_ton = upperValue_ton;
 		}
 
-		public double getMeanValue_ton() {
+		public double getRepresentativeValue_ton() {
 			return 0.5 * (this.lowerValue_ton + this.upperValue_ton);
 		}
 
@@ -120,6 +124,10 @@ public class SamgodsConstants {
 		public static ShipmentSize getSmallestSize_ton() {
 			return ShipmentSize.values()[0];
 		}
+	}
+	
+	public static int shipmentSizeCnt() {
+		return ShipmentSize.values().length;
 	}
 
 }

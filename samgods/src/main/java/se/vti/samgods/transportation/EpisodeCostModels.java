@@ -72,13 +72,13 @@ public class EpisodeCostModels implements EpisodeCostModel {
 	}
 
 	@Override
-	public void populateLink2transportCosts(Map<Link, BasicTransportCost> link2cost,
+	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
 			Network network) throws InsufficientDataException {
 		final Iterator<EpisodeCostModel> modelIt = this.models.iterator();
 		while (modelIt.hasNext() && (link2cost.size() < network.getLinks().size())) {
 			try {
-				modelIt.next().populateLink2transportCosts(link2cost, commodity, mode, isContainer, network);
+				modelIt.next().populateLink2transportCost(link2cost, commodity, mode, isContainer, network);
 			} catch (InsufficientDataException e) {
 			}
 		}

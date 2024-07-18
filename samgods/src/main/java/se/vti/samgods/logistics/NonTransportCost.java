@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.transportation.consolidation
+ * se.vti.samgods.logistics
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,26 +17,31 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation;
-
-import java.util.Map;
-
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Network;
-
-import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.TransportEpisode;
+package se.vti.samgods.logistics;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface EpisodeCostModel {
+public class NonTransportCost {
 
-	DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException;
+	public final double annualAmount_ton;
 
-	void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost, SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network) throws InsufficientDataException;
+	public final double frequency_1_yr;
+
+	public final double totalOrderCost;
+
+	public final double totalEnRouteLoss;
+
+	public final double totalInventoryCost;
+
+	public NonTransportCost(double annualAmount_ton, double frequency_1_yr, double totalOrderCost,
+			double totalEnRouteLoss, double totalInventoryCost) {
+		this.annualAmount_ton = annualAmount_ton;
+		this.frequency_1_yr = frequency_1_yr;
+		this.totalOrderCost = totalOrderCost;
+		this.totalInventoryCost = totalInventoryCost;
+		this.totalEnRouteLoss = totalEnRouteLoss;
+	}
 }

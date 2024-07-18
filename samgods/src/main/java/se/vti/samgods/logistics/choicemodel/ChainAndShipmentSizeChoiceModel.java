@@ -28,7 +28,8 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.ShipmentSize;
-import se.vti.samgods.logistics.StorageCost;
+import se.vti.samgods.logistics.NonTransportCost;
+import se.vti.samgods.logistics.NonTransportCostModel;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
@@ -46,18 +47,24 @@ public class ChainAndShipmentSizeChoiceModel {
 
 	// -------------------- MEMBERS --------------------
 
+	private final double scale;
+
 	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 	private final ChainAndShipmentSizeUtilityFunction utilityFunction;
 
 	private final EpisodeCostModel episodeCostModel;
 
+	private final NonTransportCostModel nonTransportCostModel;
+
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChainAndShipmentSizeChoiceModel(final ChainAndShipmentSizeUtilityFunction utilityFunction,
-			EpisodeCostModel episodeCostModel) {
+	public ChainAndShipmentSizeChoiceModel(final double scale, EpisodeCostModel episodeCostModel,
+			NonTransportCostModel nonTransportCostModel, final ChainAndShipmentSizeUtilityFunction utilityFunction) {
+		this.scale = scale;
 		this.utilityFunction = utilityFunction;
 		this.episodeCostModel = episodeCostModel;
+		this.nonTransportCostModel = nonTransportCostModel;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -94,30 +101,36 @@ public class ChainAndShipmentSizeChoiceModel {
 		} else {
 
 			final List<ChainAndShipmentSize> choices = new ArrayList<>(annualShipments.size());
+
 			for (AnnualShipment annualShipment : annualShipments) {
 
 				final List<ChainAndShipmentSize> alternatives = new ArrayList<>();
 				for (Map.Entry<TransportChain, DetailedTransportCost> e : chain2transportUnitCost.entrySet()) {
 					final TransportChain transportChain = e.getKey();
 					final DetailedTransportCost transportUnitCost = e.getValue();
+
 					for (ShipmentSize size : SamgodsConstants.ShipmentSize.values()) {
 						if ((annualShipment.getSingleInstanceAnnualAmount_ton() >= size.upperValue_ton)
 								|| SamgodsConstants.ShipmentSize.getSmallestSize_ton().equals(size)) {
-							final StorageCost storageUnitCost = null; // TODO Shipment-size dependent.
+							final NonTransportCost totalNonTransportCost = this.nonTransportCostModel.computeCost(
+									commodity, size, annualShipment.getSingleInstanceAnnualAmount_ton(),
+									transportUnitCost.duration_h);
 							alternatives.add(new ChainAndShipmentSize(size, transportChain,
 									this.utilityFunction.computeUtility(commodity,
 											annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost,
-											storageUnitCost)));
+											totalNonTransportCost)));
 						}
 					}
 				}
 
 				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
-					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
+					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives,
+							a -> this.scale * a.utility);
 					assert (choice != null);
 					choices.add(choice);
 				}
 			}
+
 			return choices;
 		}
 	}

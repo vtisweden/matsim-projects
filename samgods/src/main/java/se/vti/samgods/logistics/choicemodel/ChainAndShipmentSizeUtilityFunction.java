@@ -20,7 +20,7 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.StorageCost;
+import se.vti.samgods.logistics.NonTransportCost;
 import se.vti.samgods.transportation.DetailedTransportCost;
 
 /**
@@ -39,13 +39,8 @@ public interface ChainAndShipmentSizeUtilityFunction {
 	 * individual cost terms (monetary, time, distance) into one commodity-specific
 	 * utility value.
 	 * 
-	 * @param commodity
-	 * @param annualAmount_ton
-	 * @param transportUnitCost
-	 * @param storageUnitCost
-	 * @return
 	 */
 	double computeUtility(SamgodsConstants.Commodity commodity, double annualAmount_ton,
-			DetailedTransportCost transportUnitCost, StorageCost storageUnitCost);
+			DetailedTransportCost transportUnitCost, NonTransportCost nonTransportCost);
 
 }
