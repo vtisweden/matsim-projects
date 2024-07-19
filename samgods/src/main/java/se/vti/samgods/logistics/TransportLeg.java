@@ -19,7 +19,6 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +27,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.network.LinkAttributes;
@@ -47,6 +47,7 @@ public class TransportLeg {
 
 	// derived
 	private List<Id<Link>> routeIds = null;
+	private Double length_km = null;
 	private Boolean containsFerry = null;
 
 	// -------------------- CONSTRUCTION --------------------
@@ -101,6 +102,10 @@ public class TransportLeg {
 		}
 	}
 
+	public Double getLength_km() {
+		return this.length_km;
+	}
+
 	public Boolean containsFerry() {
 		return this.containsFerry;
 	}
@@ -108,10 +113,12 @@ public class TransportLeg {
 	public void setRoute(final List<Link> route) {
 		if (route == null) {
 			this.routeIds = null;
+			this.length_km = null;
 			this.containsFerry = null;
 		} else {
 			this.routeIds = Collections
 					.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
+			this.length_km = Units.KM_PER_M * route.stream().mapToDouble(l -> l.getLength()).sum();
 			this.containsFerry = route.stream().anyMatch(l -> LinkAttributes.getMode(l).isFerry());
 		}
 	}

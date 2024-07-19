@@ -42,6 +42,7 @@ import se.vti.samgods.logistics.NonTransportCostModel_v1_22;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+import se.vti.samgods.logistics.choicemodel.ChainAndShipmentChoiceStats;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeChoiceModel;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
@@ -71,9 +72,8 @@ public class TestSamgods {
 
 		InsufficientDataException.setLogDuringRuntime(false);
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
-//				SamgodsConstants.Commodity.AIR);
-//		double samplingRate = 0.01;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+//		double samplingRate = 0.001;
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
 		double samplingRate = 1.0;
 
@@ -157,9 +157,10 @@ public class TestSamgods {
 			}
 		};
 
-		for (double scale : Arrays.asList(0.0, 0.01, 0.1, 1.0, 10.0, 100.0)) {
+		for (double scale : Arrays.asList(0.0, 0.0001, 0.001, 0.01, 0.1, 1.0)) {
 
 			log.info("scale = " + scale);
+			ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
 
 			ChainAndShipmentSizeChoiceModel choiceModel = new ChainAndShipmentSizeChoiceModel(scale, episodeCostModels,
 					nonTransportCostModel, utilityFunction);
@@ -181,14 +182,20 @@ public class TestSamgods {
 					} else {
 						List<ChainAndShipmentSize> choices = choiceModel.choose(commodity, od, transportChains,
 								annualShipments);
+						stats.add(commodity, choices);
 						cnt += choices.size();
 						for (ChainAndShipmentSize choice : choices) {
 							size2cnt.compute(choice.sizeClass, (s, c) -> c + 1);
 						}
 					}
 				}
-				log.info(commodity + ": Created " + cnt + " shipments. Size distribution: "
-						+ size2cnt.values().stream().map(c -> Long.toString(c)).collect(Collectors.joining(",")));
+//				log.info(commodity + ": Created " + cnt + " shipments. Size distribution: "
+//						+ MiscUtils
+//								.getSortedEntryList(size2cnt,
+//										(e, f) -> Double.compare(e.getKey().getRepresentativeValue_ton(),
+//												f.getKey().getRepresentativeValue_ton()))
+//								.stream().map(e -> e.getValue().toString()).collect(Collectors.joining(", ")));
+				log.info("\n" + stats.createChoiceStatsTable());
 			}
 		}
 

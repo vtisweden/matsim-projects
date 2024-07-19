@@ -185,4 +185,8 @@ public class TransportEpisode {
 		}
 		return result;
 	}
+	
+	public double computeLength_km() {
+		return this.legs.stream().mapToDouble(l -> l.getLength_km()).sum();
+	}
 }

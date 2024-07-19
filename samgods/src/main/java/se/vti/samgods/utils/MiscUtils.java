@@ -37,15 +37,30 @@ public class MiscUtils {
 	private MiscUtils() {
 	}
 
-	public static <K, N extends Number> List<Map.Entry<K, N>> getSortedEntryListLargestFirst(Map<K, N> map) {
+	public static <K, V> List<Map.Entry<K, V>> getSortedEntryList(Map<K, V> map,
+			Comparator<Map.Entry<K, V>> comparator) {
+		final List<Map.Entry<K, V>> entryList = new ArrayList<>(map.entrySet());
+		Collections.sort(entryList, comparator);
+		return entryList;
+	}
+
+	private static <K, N extends Number> List<Map.Entry<K, N>> getSortedEntryList(Map<K, N> map, int sortCompSgn) {
 		final List<Map.Entry<K, N>> entryList = new ArrayList<>(map.entrySet());
 		Collections.sort(entryList, new Comparator<Map.Entry<?, N>>() {
 			@Override
 			public int compare(Entry<?, N> e1, Entry<?, N> e2) {
-				return -Double.compare(e1.getValue().doubleValue(), e2.getValue().doubleValue());
+				return sortCompSgn * Double.compare(e1.getValue().doubleValue(), e2.getValue().doubleValue());
 			}
 		});
 		return entryList;
+	}
+
+	public static <K, N extends Number> List<Map.Entry<K, N>> getSortedEntryListSmallestFirst(Map<K, N> map) {
+		return getSortedEntryList(map, 1);
+	}
+
+	public static <K, N extends Number> List<Map.Entry<K, N>> getSortedEntryListLargestFirst(Map<K, N> map) {
+		return getSortedEntryList(map, -1);
 	}
 
 	public static void main(String[] args) {

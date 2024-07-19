@@ -105,12 +105,13 @@ public class ChainAndShipmentSizeChoiceModel {
 			for (AnnualShipment annualShipment : annualShipments) {
 
 				final List<ChainAndShipmentSize> alternatives = new ArrayList<>();
+
 				for (Map.Entry<TransportChain, DetailedTransportCost> e : chain2transportUnitCost.entrySet()) {
 					final TransportChain transportChain = e.getKey();
 					final DetailedTransportCost transportUnitCost = e.getValue();
 
 					for (ShipmentSize size : SamgodsConstants.ShipmentSize.values()) {
-						if ((annualShipment.getSingleInstanceAnnualAmount_ton() >= size.upperValue_ton)
+						if ((annualShipment.getSingleInstanceAnnualAmount_ton() >= size.getRepresentativeValue_ton())
 								|| SamgodsConstants.ShipmentSize.getSmallestSize_ton().equals(size)) {
 							final NonTransportCost totalNonTransportCost = this.nonTransportCostModel.computeCost(
 									commodity, size, annualShipment.getSingleInstanceAnnualAmount_ton(),

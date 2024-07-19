@@ -19,7 +19,6 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -147,6 +146,10 @@ public class TransportChain {
 			result.add(l.getDestination());
 		});
 		return result;
+	}
+	
+	public double computeLength_km() {
+		return this.episodes.stream().mapToDouble(e -> e.computeLength_km()).sum();
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------
