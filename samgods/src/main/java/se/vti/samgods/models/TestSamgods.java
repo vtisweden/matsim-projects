@@ -72,8 +72,9 @@ public class TestSamgods {
 
 		InsufficientDataException.setLogDuringRuntime(false);
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
-//		double samplingRate = 0.001;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
+//				SamgodsConstants.Commodity.AIR);
+//		double samplingRate = 0.01;
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
 		double samplingRate = 1.0;
 
@@ -195,8 +196,9 @@ public class TestSamgods {
 //										(e, f) -> Double.compare(e.getKey().getRepresentativeValue_ton(),
 //												f.getKey().getRepresentativeValue_ton()))
 //								.stream().map(e -> e.getValue().toString()).collect(Collectors.joining(", ")));
-				log.info("\n" + stats.createChoiceStatsTable());
 			}
+
+			log.info("\n" + stats.createChoiceStatsTable());
 		}
 
 		// PREPARE CONSOLIDATION

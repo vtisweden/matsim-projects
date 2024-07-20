@@ -52,6 +52,9 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- CONSTANTS --------------------
 
+	private static final Logger log = Logger.getLogger(ChainChoiReader.class);
+
+	private final static String Key = "Key";
 	private final static String NRelations = "NRelations";
 	private final static String AnnualVolumeTonnesPerRelation = "AnnualVolume_(Tonnes)";
 	private final static String Prob = "Prob";
@@ -120,6 +123,9 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private Network network;
 
+	private long usedOdCnt = 0;
+	private long ignoredOdCnt = 0;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public ChainChoiReader(final SamgodsConstants.Commodity commodity, final TransportDemand transportDemand) {
@@ -143,6 +149,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	// -------------------- IMPLEMENTATION --------------------
 
 	public ChainChoiReader parse(String fileName) {
+		this.usedOdCnt = 0;
+		this.ignoredOdCnt = 0;
 		Logger.getLogger(this.getClass()).info(
 				"Parsing file:" + fileName + (this.samplingRate < 1 ? " with sampling rate " + this.samplingRate : ""));
 		final TabularFileParser parser = new TabularFileParser();
@@ -153,25 +161,66 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		if (this.ignoredOdCnt > 0) {
+			log.warn("Ignored " + this.ignoredOdCnt + " OD pairs, kept " + this.usedOdCnt + " OD pairs.");
+		}
 		return this;
+	}
+
+	private Long key = null;
+	private Double singleInstanceVolume_ton_yr = null;
+	private Integer numberOfInstances = null;
+	private Map<OD, Double> od2proba = new LinkedHashMap<>();
+
+	private void addLastEntryToDemand() {
+
+		if (this.samplingRate == 1.0) {
+			assert (Math.abs(this.od2proba.values().stream().mapToDouble(p -> p).sum() - 1.0) <= 0.001);
+		}
+		final Map.Entry<OD, Double> odEntry = this.od2proba.entrySet().stream()
+				.max((e, f) -> e.getValue().compareTo(f.getValue())).get();
+		this.usedOdCnt++;
+		this.ignoredOdCnt += (this.od2proba.size() - 1);
+
+		this.transportDemand.add(this.commodity, odEntry.getKey(), this.singleInstanceVolume_ton_yr,
+				this.numberOfInstances);
+		this.key = null;
+		this.singleInstanceVolume_ton_yr = null;
+		this.numberOfInstances = null;
+		this.od2proba = null;
 	}
 
 	@Override
 	public void startCurrentDataRow() {
 
 		if ((this.samplingRate < 1.0) && (this.rnd.nextDouble() >= this.samplingRate)) {
-			return;
+			return; // Only for testing.
 		}
 
 		// Load OD demand.
 
-		final double singleInstanceVolume_ton_yr = this.getDoubleValue(Prob)
-				* this.getDoubleValue(AnnualVolumeTonnesPerRelation);
-		final int numberOfInstances = this.getIntValue(NRelations);
+		final long key = Long.parseLong(this.getStringValue(Key));
 
-		final long origin = Long.parseLong(this.getStringValue(Orig));
-		final long destination = Long.parseLong(this.getStringValue(Dest));
-		final OD od = new OD(Id.createNodeId(origin), Id.createNodeId(destination));
+		final double proba = this.getDoubleValue(Prob);
+		final double singleInstanceVolume_ton_yr = this.getDoubleValue(AnnualVolumeTonnesPerRelation);
+		final int numberOfInstances = this.getIntValue(NRelations);
+		final OD od = new OD(Id.createNodeId(Long.parseLong(this.getStringValue(Orig))),
+				Id.createNodeId(Long.parseLong(this.getStringValue(Dest))));
+
+		if ((this.key != null) && (this.key == key)) {
+			assert (this.singleInstanceVolume_ton_yr == singleInstanceVolume_ton_yr);
+			assert (this.numberOfInstances == numberOfInstances);
+			this.od2proba.compute(od, (od2, p2) -> p2 == null ? proba : p2 + proba);
+		} else {
+			if (this.key != null) {
+				this.addLastEntryToDemand();
+			}
+			this.key = key;
+			this.singleInstanceVolume_ton_yr = singleInstanceVolume_ton_yr;
+			this.numberOfInstances = numberOfInstances;
+			this.od2proba = new LinkedHashMap<>();
+			this.od2proba.put(od, proba);
+		}
 
 		// Load chain legs.
 
@@ -260,9 +309,17 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 							"Transport chain contained nodes " + nodeIdsNotInNetwork + " that are not in the network.",
 							transportChain).log();
 				} else {
-					this.transportDemand.add(transportChain, singleInstanceVolume_ton_yr, numberOfInstances);
+					this.transportDemand.add(transportChain);
+//					this.transportDemand.add(transportChain, singleInstanceVolume_ton_yr, numberOfInstances);
 				}
 			}
+		}
+	}
+
+	@Override
+	public void endDocument() {
+		if (this.key != null) {
+			this.addLastEntryToDemand();
 		}
 	}
 

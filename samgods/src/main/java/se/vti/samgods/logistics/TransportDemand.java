@@ -100,17 +100,30 @@ public class TransportDemand {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void add(TransportChain transportChain, double singleInstanceAmount_ton, int numberOfInstances) {
+	public void add(TransportChain transportChain) {
 		final Commodity commodity = transportChain.getCommodity();
 		final OD od = transportChain.getOD();
-
 		this.commodity2od2transportChains.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
 				.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
+	}
 
+	public void add(Commodity commodity, OD od, double singleInstanceAmount_ton, int numberOfInstances) {
 		this.commodity2od2annualShipments.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
 				.computeIfAbsent(od, od2 -> new LinkedList<>())
 				.add(new AnnualShipment(commodity, od, singleInstanceAmount_ton, numberOfInstances));
 	}
+
+//	public void add(TransportChain transportChain, double singleInstanceAmount_ton, int numberOfInstances) {
+//		final Commodity commodity = transportChain.getCommodity();
+//		final OD od = transportChain.getOD();
+//
+//		this.commodity2od2transportChains.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
+//				.computeIfAbsent(od, od2 -> new LinkedList<>()).add(transportChain);
+//
+//		this.commodity2od2annualShipments.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
+//				.computeIfAbsent(od, od2 -> new LinkedList<>())
+//				.add(new AnnualShipment(commodity, od, singleInstanceAmount_ton, numberOfInstances));
+//	}
 
 	public Set<OD> collectAllODsWithChains() {
 		return this.commodity2od2transportChains.values().stream().flatMap(od2ch -> od2ch.keySet().stream())
