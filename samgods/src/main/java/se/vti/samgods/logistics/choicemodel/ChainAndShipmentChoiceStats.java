@@ -19,14 +19,16 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.math3.stat.descriptive.rank.Median;
+
 import de.vandermeer.asciitable.AsciiTable;
-import floetteroed.utilities.math.BasicStatistics;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.utils.MiscUtils;
 
@@ -39,34 +41,41 @@ public class ChainAndShipmentChoiceStats {
 
 	private Map<SamgodsConstants.Commodity, Map<SamgodsConstants.ShipmentSize, Long>> commodity2size2cnt;
 
-	private Map<SamgodsConstants.Commodity, BasicStatistics> commodity2lengthStats;
+//	private Map<SamgodsConstants.Commodity, BasicStatistics> commodity2lengthStats;
+	private Map<SamgodsConstants.Commodity, List<Double>> commodity2lengths;
 
 	public ChainAndShipmentChoiceStats() {
 		this.commodity2size2cnt = new LinkedHashMap<>(SamgodsConstants.commodityCnt());
-		this.commodity2lengthStats = new LinkedHashMap<>(SamgodsConstants.commodityCnt());
+		this.commodity2lengths = new LinkedHashMap<>(SamgodsConstants.commodityCnt());
 		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 			this.commodity2size2cnt.put(commodity,
 					Arrays.stream(SamgodsConstants.ShipmentSize.values()).collect(Collectors.toMap(s -> s, s -> 0l)));
-			this.commodity2lengthStats.put(commodity, new BasicStatistics());
+			this.commodity2lengths.put(commodity, new ArrayList<>());
 		}
 	}
 
 	public void add(SamgodsConstants.Commodity commodity, List<ChainAndShipmentSize> choices) {
 		for (ChainAndShipmentSize choice : choices) {
 			this.commodity2size2cnt.get(commodity).compute(choice.sizeClass, (s, c) -> c + 1);
-			this.commodity2lengthStats.get(commodity).add(choice.transportChain.computeLength_km());
+			this.commodity2lengths.get(commodity).add(choice.transportChain.computeLength_km());
 		}
 	}
 
 	public String createChoiceStatsTable() {
 		final AsciiTable table = new AsciiTable();
 		table.addRule();
-		table.addRow("Commodity", "Mean length [km]", "Mean size [ton]", "Size class counts");
+		table.addRow("Commodity", "Average length [km]", "Median length [km]", "Mean class size [ton]",
+				"Size class counts");
 
 		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 
 			final long totalCnt = this.commodity2size2cnt.get(commodity).values().stream().mapToLong(c -> c).sum();
 			if (totalCnt > 0) {
+
+				final double averageLength_km = this.commodity2lengths.get(commodity).stream().mapToDouble(l -> l)
+						.average().getAsDouble();
+				final double medianLength_km = new Median()
+						.evaluate(this.commodity2lengths.get(commodity).stream().mapToDouble(l -> l).toArray());
 
 				final List<Map.Entry<SamgodsConstants.ShipmentSize, Long>> sortedSizeEntries = MiscUtils
 						.getSortedEntryList(this.commodity2size2cnt.get(commodity),
@@ -76,7 +85,7 @@ public class ChainAndShipmentChoiceStats {
 						.mapToDouble(e -> e.getKey().getRepresentativeValue_ton() * e.getValue()).sum() / totalCnt;
 
 				table.addRule();
-				table.addRow(commodity, this.commodity2lengthStats.get(commodity).getAvg(), avgSize,
+				table.addRow(commodity, averageLength_km, medianLength_km, avgSize,
 						sortedSizeEntries.stream().map(e -> e.getValue().toString()).collect(Collectors.joining(",")));
 			}
 		}

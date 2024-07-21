@@ -65,7 +65,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
 		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
-				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode);
+				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode).computeUnitCost();
 	}
 
 	@Override

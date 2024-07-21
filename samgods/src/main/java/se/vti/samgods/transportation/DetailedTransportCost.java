@@ -56,6 +56,13 @@ public class DetailedTransportCost extends BasicTransportCost {
 		this.moveDuration_h = moveDuration_h;
 	}
 
+	@Override
+	public DetailedTransportCost computeUnitCost() {
+		return new DetailedTransportCost(1.0, this.loadingCost / this.amount_ton, this.unloadingCost / this.amount_ton,
+				this.transferCost / this.amount_ton, this.moveCost / this.amount_ton, this.loadingDuration_h,
+				this.unloadingDuration_h, this.transferDuration_h, this.moveDuration_h);
+	}
+
 	// -------------------- BUILDER --------------------
 
 	public static class Builder {

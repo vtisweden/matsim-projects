@@ -35,4 +35,8 @@ public class BasicTransportCost {
 		this.monetaryCost = cost;
 		this.duration_h = duration_h;
 	}
+
+	public BasicTransportCost computeUnitCost() {
+		return new BasicTransportCost(1.0, this.monetaryCost / this.amount_ton, this.duration_h);
+	}
 }

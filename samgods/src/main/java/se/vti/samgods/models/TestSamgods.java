@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.models.saana
+ * se.vti.samgods.models
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -146,59 +146,61 @@ public class TestSamgods {
 			log.warn(
 					commodity + ": Removed " + removedCnt + " out of " + totalCnt + " chains with incomplete routes. ");
 		}
+		
+		for (double capacityUsageFactor : new double[] { 0.1, 0.5, 0.9 }) {
 
-		// RUN LOGISTICS MODEL
+			fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel)
+					.setCapacityUsageFactor(capacityUsageFactor);
+			episodeCostModels = new EpisodeCostModels(fallbackEpisodeCostModel);
 
-		ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
-			@Override
-			public double computeUtility(Commodity commodity, double amount_ton,
-					DetailedTransportCost transportUnitCost, NonTransportCost totalNonTransportCost) {
-				return -transportUnitCost.monetaryCost * amount_ton - totalNonTransportCost.totalOrderCost
-						- totalNonTransportCost.totalEnRouteLoss - totalNonTransportCost.totalInventoryCost;
-			}
-		};
+			// RUN LOGISTICS MODEL
 
-		for (double scale : Arrays.asList(0.0, 0.0001, 0.001, 0.01, 0.1, 1.0)) {
+			ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
+				@Override
+				public double computeUtility(Commodity commodity, double amount_ton,
+						DetailedTransportCost transportUnitCost, NonTransportCost totalNonTransportCost) {
+					return -transportUnitCost.monetaryCost * amount_ton - totalNonTransportCost.totalOrderCost
+							- totalNonTransportCost.totalEnRouteLoss - totalNonTransportCost.totalInventoryCost;
+				}
+			};
 
-			log.info("scale = " + scale);
-			ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
+			for (double scale : Arrays.asList(0.0, 1e-6, 1e-5, 1e-4, 1e-3)) {
 
-			ChainAndShipmentSizeChoiceModel choiceModel = new ChainAndShipmentSizeChoiceModel(scale, episodeCostModels,
-					nonTransportCostModel, utilityFunction);
-			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+				log.info("capacity usage factor = " + capacityUsageFactor + ", scale = " + scale);
+				ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
 
-				Map<SamgodsConstants.ShipmentSize, Long> size2cnt = Arrays
-						.stream(SamgodsConstants.ShipmentSize.values()).collect(Collectors.toMap(s -> s, s -> 0l));
+				ChainAndShipmentSizeChoiceModel choiceModel = new ChainAndShipmentSizeChoiceModel(scale,
+						episodeCostModels, nonTransportCostModel, utilityFunction);
+				for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 
-				long cnt = 0;
-				for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
-						.get(commodity).entrySet()) {
-					final OD od = e.getKey();
-					final List<AnnualShipment> annualShipments = e.getValue();
-					final List<TransportChain> transportChains = transportDemand.commodity2od2transportChains
-							.get(commodity).get(od);
-					if (transportChains.size() == 0) {
-						new InsufficientDataException(TestSamgods.class, "No transport chains available.", commodity,
-								od, null, null, null).log();
-					} else {
-						List<ChainAndShipmentSize> choices = choiceModel.choose(commodity, od, transportChains,
-								annualShipments);
-						stats.add(commodity, choices);
-						cnt += choices.size();
-						for (ChainAndShipmentSize choice : choices) {
-							size2cnt.compute(choice.sizeClass, (s, c) -> c + 1);
+					Map<SamgodsConstants.ShipmentSize, Long> size2cnt = Arrays
+							.stream(SamgodsConstants.ShipmentSize.values()).collect(Collectors.toMap(s -> s, s -> 0l));
+
+					long cnt = 0;
+					for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
+							.get(commodity).entrySet()) {
+						final OD od = e.getKey();
+						final List<AnnualShipment> annualShipments = e.getValue();
+						final List<TransportChain> transportChains = transportDemand.commodity2od2transportChains
+								.get(commodity).get(od);
+						if (transportChains.size() == 0) {
+							new InsufficientDataException(TestSamgods.class, "No transport chains available.",
+									commodity, od, null, null, null).log();
+						} else {
+							List<ChainAndShipmentSize> choices = choiceModel.choose(commodity, od, transportChains,
+									annualShipments);
+							stats.add(commodity, choices);
+							cnt += choices.size();
+							for (ChainAndShipmentSize choice : choices) {
+								size2cnt.compute(choice.sizeClass, (s, c) -> c + 1);
+							}
 						}
 					}
 				}
-//				log.info(commodity + ": Created " + cnt + " shipments. Size distribution: "
-//						+ MiscUtils
-//								.getSortedEntryList(size2cnt,
-//										(e, f) -> Double.compare(e.getKey().getRepresentativeValue_ton(),
-//												f.getKey().getRepresentativeValue_ton()))
-//								.stream().map(e -> e.getValue().toString()).collect(Collectors.joining(", ")));
+
+				log.info("\n" + stats.createChoiceStatsTable());
 			}
 
-			log.info("\n" + stats.createChoiceStatsTable());
 		}
 
 		// PREPARE CONSOLIDATION
