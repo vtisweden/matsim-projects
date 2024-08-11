@@ -82,8 +82,8 @@ public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 		final double den = Arrays.stream(args).map(arg -> Math.exp(arg - maxArg)).sum();
 
 		for (int _J = 0; _J <= _K; _J++) {
-			this.roundTripLogProbasBySize[_J] = Math.exp(this.gamma * _J - maxArg) / den;
-			final double logSizeProba = Math.exp(args[_J] - maxArg) / den;
+			this.roundTripLogProbasBySize[_J] = (this.gamma * _J - maxArg) - Math.log(den);
+			final double logSizeProba = (args[_J] - maxArg) - Math.log(den);
 			System.out.println(_J + "\t" + this.roundTripLogProbasBySize[_J] + "\t" + logSizeProba);
 		}
 	}
@@ -104,7 +104,7 @@ public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 //			 for (int _L = 1; _L <= 1000; _L++)
 			{
 //				for (double meanJ = 0.01 * _K; meanJ <= 0.99 * _K; meanJ += 0.01 * _K) 
-				double meanJ = 12;
+				double meanJ = 4;
 				{
 
 					new MaximumEntropyPrior(_L, _K, meanJ);
