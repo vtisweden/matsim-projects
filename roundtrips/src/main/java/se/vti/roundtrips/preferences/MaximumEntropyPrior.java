@@ -15,13 +15,21 @@ import se.vti.roundtrips.single.RoundTrip;
  */
 public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 
+	// -------------------- CONSTANTS --------------------
+
 	public final int _L;
 	public final int _K;
 	public final double meanJ;
-
 	public final double gamma;
 
+	/*
+	 * roundTripLogProbasBySize[J] contains prior log-proba of any size J round
+	 * trip. To obtain the probability of any round trip of size J, add
+	 * logOfRoundTripCnt(..).
+	 */
 	private final double[] roundTripLogProbasBySize;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public MaximumEntropyPrior(int _L, int _K, double meanJ) {
 		assert (meanJ < _K);
@@ -30,16 +38,11 @@ public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 		this._K = _K;
 		this.meanJ = meanJ;
 
-		UnivariateFunction _Jdiff = new UnivariateFunction() {
+		UnivariateFunction meanJMinusPredictedJ = new UnivariateFunction() {
 			@Override
 			public double value(double gamma) {
-
-				final double[] args = new double[_K + 1];
-				for (int _J = 0; _J <= _K; _J++) {
-					args[_J] = gamma * _J + CombinatoricsUtils.binomialCoefficientLog(_K, _J) + _J * Math.log(_L);
-				}
+				final double[] args = args(_L, _K, gamma);
 				final double maxArg = Arrays.stream(args).max().getAsDouble();
-
 				double num = 0;
 				double den = 0;
 				for (int _J = 0; _J <= _K; _J++) {
@@ -47,46 +50,70 @@ public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 					num += _J * expVal;
 					den += expVal;
 				}
-
-				return num / den - meanJ;
+				return meanJ - num / den;
 			}
 		};
 
 		double gamma0 = 0;
-		double f0 = _Jdiff.value(gamma0);
-
-		// gamma * K = 15 <=> gamma = 15 / K
-		double dir = f0 < 0 ? +(0.05 * _K / 15.0) : -(0.05 * _K / 15.0);
-		double gamma1 = gamma0 + dir;
-		double f1 = _Jdiff.value(gamma1);
-		while (f0 * f1 > 0 && Math.abs(gamma1) < 30) {
+		double meanJminusPredictedJ0 = meanJMinusPredictedJ.value(gamma0);
+		// Limit argument of exponential function: gamma * K = 15 <=> gamma = 15 / K
+		double deltaGamma = (meanJminusPredictedJ0 < 0) ? -(0.1 * _K / 15.0) : +(0.1 * _K / 15.0);
+		double gamma1 = gamma0 + deltaGamma;
+		double f1 = meanJMinusPredictedJ.value(gamma1);
+		final int maxIt = 1000 * 1000;
+		int it = 0;
+		while ((meanJminusPredictedJ0 * f1 > 0) && (it < maxIt)) {
 			gamma0 = gamma1;
-			f0 = f1;
-			gamma1 += dir;
-			f1 = _Jdiff.value(gamma1);
+			meanJminusPredictedJ0 = f1;
+			gamma1 += deltaGamma;
+			f1 = meanJMinusPredictedJ.value(gamma1);
+			it++;
+		}
+		if (it == maxIt) {
+			throw new RuntimeException("Maximum number of iterations exceeded.");
 		}
 
-		double gammaMin = Math.min(gamma0, gamma1);
-		double gammaMax = Math.max(gamma0, gamma1);
-
-		BrentSolver solver = new BrentSolver();
-		this.gamma = solver.solve(100 * 1000, _Jdiff, gammaMin, gammaMax);
+		final double gammaMin = Math.min(gamma0, gamma1);
+		final double gammaMax = Math.max(gamma0, gamma1);
+		this.gamma = new BrentSolver().solve(1000 * 1000, meanJMinusPredictedJ, gammaMin, gammaMax);
 
 		this.roundTripLogProbasBySize = new double[_K + 1];
-
-		final double[] args = new double[_K + 1];
-		for (int _J = 0; _J <= _K; _J++) {
-			args[_J] = this.gamma * _J + CombinatoricsUtils.binomialCoefficientLog(_K, _J) + _J * Math.log(_L);
-		}
+		final double[] args = this.args(_L, _K, gamma);
 		final double maxArg = Arrays.stream(args).max().getAsDouble();
-		final double den = Arrays.stream(args).map(arg -> Math.exp(arg - maxArg)).sum();
-
+		final double logDen = Math.log(Arrays.stream(args).map(arg -> Math.exp(arg - maxArg)).sum());
 		for (int _J = 0; _J <= _K; _J++) {
-			this.roundTripLogProbasBySize[_J] = (this.gamma * _J - maxArg) - Math.log(den);
-			final double logSizeProba = (args[_J] - maxArg) - Math.log(den);
-			System.out.println(_J + "\t" + this.roundTripLogProbasBySize[_J] + "\t" + logSizeProba);
+			this.roundTripLogProbasBySize[_J] = (this.gamma * _J - maxArg) - logDen;
 		}
 	}
+
+	// -------------------- INTERNALS --------------------
+
+	private double logOfRoundTripCnt(int _L, int _K, int _J) {
+		return CombinatoricsUtils.binomialCoefficientLog(_K, _J) + _J * Math.log(_L);
+	}
+
+	private double[] args(int _L, int _K, double gamma) {
+		final double[] args = new double[_K + 1];
+		for (int _J = 0; _J <= _K; _J++) {
+			args[_J] = gamma * _J + logOfRoundTripCnt(_L, _K, _J);
+		}
+		return args;
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public String createTable() {
+		final StringBuffer result = new StringBuffer(
+				"J\tln(Pr(single roundtrip of size J))\tln(Pr(any round trip size J))\n");
+		for (int _J = 0; _J <= this._K; _J++) {
+			final double logProba = this.roundTripLogProbasBySize[_J];
+			result.append(
+					_J + "\t" + logProba + "\t" + (this.logOfRoundTripCnt(this._L, this._K, _J) + logProba) + "\n");
+		}
+		return result.toString();
+	}
+
+	// --------------- IMPLEMENTATION OF PreferenceComponent ---------------
 
 	@Override
 	public double logWeight(RoundTrip<?> roundTrip) {
@@ -107,7 +134,7 @@ public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 				double meanJ = 4;
 				{
 
-					new MaximumEntropyPrior(_L, _K, meanJ);
+					System.out.println(new MaximumEntropyPrior(_L, _K, meanJ).createTable());
 
 				}
 			}
