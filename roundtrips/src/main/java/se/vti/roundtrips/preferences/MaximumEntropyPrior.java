@@ -23,9 +23,9 @@ public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 	public final double gamma;
 
 	/*
-	 * roundTripLogProbasBySize[J] contains prior log-proba of any size J round
-	 * trip. To obtain the probability of any round trip of size J, add
-	 * logOfRoundTripCnt(..).
+	 * roundTripLogProbasBySize[J] contains prior log-proba of each individual size
+	 * J round trip. To obtain the log-proba of sampling any size J round trip (i.e.
+	 * independently of which size J trip that is), add logOfRoundTripCnt(..).
 	 */
 	private final double[] roundTripLogProbasBySize;
 
