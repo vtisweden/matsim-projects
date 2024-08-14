@@ -13,7 +13,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
+public class MaximumEntropyPrior<L> extends PreferenceComponent<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -116,7 +116,7 @@ public class MaximumEntropyPrior extends PreferenceComponent<RoundTrip<?>> {
 	// --------------- IMPLEMENTATION OF PreferenceComponent ---------------
 
 	@Override
-	public double logWeight(RoundTrip<?> roundTrip) {
+	public double logWeight(RoundTrip<L> roundTrip) {
 		return this.roundTripLogProbasBySize[roundTrip.locationCnt()];
 	}
 
