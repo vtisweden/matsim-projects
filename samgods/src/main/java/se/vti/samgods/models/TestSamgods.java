@@ -20,7 +20,10 @@
 package se.vti.samgods.models;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -30,11 +33,14 @@ import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
+import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.NonTransportCost;
 import se.vti.samgods.logistics.NonTransportCostModel;
@@ -42,6 +48,7 @@ import se.vti.samgods.logistics.NonTransportCostModel_v1_22;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentChoiceStats;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeChoiceModel;
@@ -54,8 +61,11 @@ import se.vti.samgods.transportation.EpisodeCostModel;
 import se.vti.samgods.transportation.EpisodeCostModels;
 import se.vti.samgods.transportation.FallbackEpisodeCostModel;
 import se.vti.samgods.transportation.consolidation.ConsolidationUtils;
+import se.vti.samgods.transportation.consolidation.Shipment;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
+import se.vti.samgods.transportation.consolidation.uniform.UniformConsolidator;
+import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -72,8 +82,7 @@ public class TestSamgods {
 
 		InsufficientDataException.setLogDuringRuntime(false);
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.TIMBER,
-//				SamgodsConstants.Commodity.AIR);
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
 //		double samplingRate = 0.01;
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
 		double samplingRate = 1.0;
@@ -146,8 +155,10 @@ public class TestSamgods {
 			log.warn(
 					commodity + ": Removed " + removedCnt + " out of " + totalCnt + " chains with incomplete routes. ");
 		}
-		
-		for (double capacityUsageFactor : new double[] { 0.1, 0.5, 0.9 }) {
+
+		Map<TransportChain, List<Shipment>> chain2shipments = new LinkedHashMap<>();
+
+		for (double capacityUsageFactor : new double[] { 0.7 }) {
 
 			fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel)
 					.setCapacityUsageFactor(capacityUsageFactor);
@@ -164,7 +175,7 @@ public class TestSamgods {
 				}
 			};
 
-			for (double scale : Arrays.asList(0.0, 1e-6, 1e-5, 1e-4, 1e-3)) {
+			for (double scale : Arrays.asList(0.0)) {
 
 				log.info("capacity usage factor = " + capacityUsageFactor + ", scale = " + scale);
 				ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
@@ -176,7 +187,6 @@ public class TestSamgods {
 					Map<SamgodsConstants.ShipmentSize, Long> size2cnt = Arrays
 							.stream(SamgodsConstants.ShipmentSize.values()).collect(Collectors.toMap(s -> s, s -> 0l));
 
-					long cnt = 0;
 					for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
 							.get(commodity).entrySet()) {
 						final OD od = e.getKey();
@@ -190,9 +200,13 @@ public class TestSamgods {
 							List<ChainAndShipmentSize> choices = choiceModel.choose(commodity, od, transportChains,
 									annualShipments);
 							stats.add(commodity, choices);
-							cnt += choices.size();
 							for (ChainAndShipmentSize choice : choices) {
 								size2cnt.compute(choice.sizeClass, (s, c) -> c + 1);
+								List<Shipment> shipments = UniformConsolidator.createProbabilityScaledShipments(
+										ConsolidationUtils.disaggregateIntoAnalysisPeriod(choice.annualShipment, 7,
+												choice.sizeClass));
+								chain2shipments.computeIfAbsent(choice.transportChain, c -> new ArrayList<>())
+										.addAll(shipments);
 							}
 						}
 					}
@@ -200,23 +214,54 @@ public class TestSamgods {
 
 				log.info("\n" + stats.createChoiceStatsTable());
 			}
-
 		}
+
+		log.info(chain2shipments.size() + " chains");
+		log.info(chain2shipments.values().stream().mapToLong(s -> s.size()).sum() + " shipments");
 
 		// PREPARE CONSOLIDATION
 
-		long episodeCnt = 0;
-		long signatureCnt = 0;
+		Map<Signature.Episode, List<Shipment>> episodeSignature2shipments = new LinkedHashMap<>();
+
 		for (Map.Entry<SamgodsConstants.Commodity, Map<OD, List<TransportChain>>> commodityAndMap : transportDemand.commodity2od2transportChains
 				.entrySet()) {
-			log.info(commodityAndMap.getKey() + ": Preparing for consolidation.");
 			for (Map.Entry<OD, List<TransportChain>> odAndChains : commodityAndMap.getValue().entrySet()) {
-				episodeCnt += odAndChains.getValue().stream().mapToInt(c -> c.getEpisodes().size()).sum();
+				for (TransportChain chain : odAndChains.getValue()) {
+					for (TransportEpisode episode : chain.getEpisodes()) {
+						Signature.Episode signature = new Signature.Episode(episode);
+						episodeSignature2shipments.computeIfAbsent(signature, s -> new ArrayList<>())
+								.addAll(chain2shipments.getOrDefault(chain, Collections.emptyList()));
+					}
+				}
 			}
-			signatureCnt += ConsolidationUtils.createEpisodeSignature2chains(commodityAndMap.getValue()).size();
 		}
-		log.info("Encountered " + episodeCnt + " episodes.");
-		log.info("Encountered " + signatureCnt + " episode signatures.");
+
+		log.info(episodeSignature2shipments.size() + " episode signatures.");
+		log.info(episodeSignature2shipments.values().stream().mapToLong(s -> s.size()).sum() + " shipments.");
+
+		Map<Id<VehicleType>, Long> type2cnt = new LinkedHashMap<>();
+
+		for (Map.Entry<Signature.Episode, List<Shipment>> e : episodeSignature2shipments.entrySet()) {
+			UniformConsolidator consolidator = new UniformConsolidator(fleet, 7, 0.7);
+			List<List<Shipment>> shipmentsOverDays = consolidator.distributeShipmentsOverDays(e.getValue());
+			List<List<Vehicle>> vehiclesOverDays = consolidator.createVehiclesOverDays(shipmentsOverDays);
+
+			for (List<Vehicle> vehicles : vehiclesOverDays) {
+				for (Vehicle vehicle : vehicles) {
+					type2cnt.compute(vehicle.getType().getId(), (id, cnt) -> cnt == null ? 1 : cnt + 1);
+				}
+			}
+		}
+
+		double totalTons = type2cnt.entrySet().stream().mapToDouble(
+				e -> FreightVehicleAttributes.getCapacity_ton(fleet.getVehicles().getVehicleTypes().get(e.getKey()))
+						* e.getValue())
+				.sum();
+
+		for (VehicleType type : fleet.getVehicles().getVehicleTypes().values()) {
+			System.out.println(type.getId() + "\t" + type2cnt.getOrDefault(type.getId(), 0l)
+					* FreightVehicleAttributes.getCapacity_ton(type) / totalTons);
+		}
 
 		log.info("DONE");
 	}

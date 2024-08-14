@@ -24,11 +24,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.matsim.api.core.v01.Id;
+import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
@@ -44,6 +49,8 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  *
  */
 public class UniformConsolidator {
+
+	private boolean verbose = false;
 
 	/*- TODOs
 	 * 
@@ -110,7 +117,7 @@ public class UniformConsolidator {
 
 	// REMOVE STOCHASTICITY
 
-	public List<Shipment> createProbabilityScaledShipments(List<Shipment> shipments) {
+	public static List<Shipment> createProbabilityScaledShipments(List<Shipment> shipments) {
 		final List<Shipment> result = shipments.stream()
 				.map(s -> new Shipment(s.getCommodity(), s.getProbability() * s.getWeight_ton(), 1.0))
 				.collect(Collectors.toList());
@@ -140,6 +147,16 @@ public class UniformConsolidator {
 					.reduce((d, e) -> dailyLoad_ton[d] <= dailyLoad_ton[e] ? d : e).getAsInt();
 			shipmentsPerDay.get(day).add(shipment);
 			dailyLoad_ton[day] += shipment.getWeight_ton();
+
+			if (this.verbose) {
+				System.out.println(
+						Arrays.stream(dailyLoad_ton).boxed().map(l -> l.toString()).collect(Collectors.joining("\t"))
+								+ "\t\t");
+			}
+		}
+
+		if (this.verbose) {
+			System.out.println();
 		}
 
 		return shipmentsPerDay;
@@ -147,48 +164,7 @@ public class UniformConsolidator {
 
 	// FLEET DISTRIBUTION
 
-	private double[] vehTonsPerDay(int[][] vehTypesPerDay) {
-		double[] vehTonsPerDay = new double[this.numberOfDays];
-		for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
-			for (int day = 0; day < this.numberOfDays; day++) {
-				double tons = this.vehCaps[vehTypeIndex] * vehTypesPerDay[day][vehTypeIndex];
-				vehTonsPerDay[day] += tons;
-			}
-		}
-		return vehTonsPerDay;
-	}
-
-	private double[] vehTonsPerType(int[][] vehTypesPerDay) {
-		double[] vehTonsPerType = new double[this.vehTypesDescendingCapacity.size()];
-		for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
-			for (int day = 0; day < this.numberOfDays; day++) {
-				double tons = this.vehCaps[vehTypeIndex] * vehTypesPerDay[day][vehTypeIndex];
-				vehTonsPerType[vehTypeIndex] += tons;
-			}
-		}
-		return vehTonsPerType;
-	}
-
-	private double fleetAssignmentObjectiveFunction(int[][] vehTypesPerDay, double[] minCapacityPerDay_ton) {
-
-		double[] vehTonsPerType = this.vehTonsPerType(vehTypesPerDay);
-		double[] vehTonsPerDay = this.vehTonsPerDay(vehTypesPerDay);
-		double totalVehTons = Arrays.stream(vehTonsPerType).sum();
-
-		double vehFreqE2 = 0.0;
-		for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
-			vehFreqE2 += Math.pow(vehTonsPerType[vehTypeIndex] - this.vehTonFreq[vehTypeIndex] * totalVehTons, 2.0);
-		}
-
-		double demandE2 = 0.0;
-		for (int day = 0; day < this.numberOfDays; day++) {
-			demandE2 += Math.pow(vehTonsPerDay[day] - minCapacityPerDay_ton[day] / this.transportEfficiency, 2.0);
-		}
-
-		return vehFreqE2 / this.vehTypesDescendingCapacity.size() + demandE2 / this.numberOfDays;
-	}
-
-	public int[][] computeOptimalFleetAssignment(List<List<Shipment>> shipmentsPerDay) {
+	public List<List<Vehicle>> createVehiclesOverDays(List<List<Shipment>> shipmentsPerDay) {
 
 		final double[] minCapacityPerDay_ton = new double[this.numberOfDays];
 		for (int day = 0; day < this.numberOfDays; day++) {
@@ -196,64 +172,110 @@ public class UniformConsolidator {
 		}
 
 		final int[][] vehTypesPerDay = new int[this.numberOfDays][this.vehTypesDescendingCapacity.size()];
+		final double[] vehTonsPerDay = new double[this.numberOfDays];
+		final double[] vehTonsPerType = new double[this.vehTypesDescendingCapacity.size()];
+		double totalVehTons = 0.0;
+
 		boolean done = false;
 		boolean feasible = false;
-		double objFct = Double.POSITIVE_INFINITY;
+
+		double vehFreqE2 = 0;
+		double demandE2 = Arrays.stream(minCapacityPerDay_ton).map(d -> Math.pow(d / this.transportEfficiency, 2.0))
+				.sum();
+
+		double vehFreqE2Weight = 1.0 / this.vehTypesDescendingCapacity.size();
+		double demandE2Weight = 1.0 / this.numberOfDays;
+
 		while (!done) {
 
-			double bestObjFct = Double.POSITIVE_INFINITY;
+			double bestVehFreqE2 = Double.POSITIVE_INFINITY;
+			double bestDemandE2 = Double.POSITIVE_INFINITY;
+
 			int bestDay = -1;
 			int bestVehTypeIndex = -1;
 			Boolean bestIsFeasible = null;
+
 			for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
 				for (int day = 0; day < this.numberOfDays; day++) {
 					vehTypesPerDay[day][vehTypeIndex]++;
-					double candObjFct = this.fleetAssignmentObjectiveFunction(vehTypesPerDay, minCapacityPerDay_ton);
-					if (candObjFct < bestObjFct) {
-						bestObjFct = candObjFct;
+
+					double candVehFreqE2 = 0.0;
+					for (int vehTypeIndex2 = 0; vehTypeIndex2 < this.vehTypesDescendingCapacity
+							.size(); vehTypeIndex2++) {
+						candVehFreqE2 += Math.pow(
+								vehTonsPerType[vehTypeIndex2]
+										+ (vehTypeIndex2 == vehTypeIndex ? this.vehCaps[vehTypeIndex] : 0.0)
+										- this.vehTonFreq[vehTypeIndex2] * (totalVehTons + this.vehCaps[vehTypeIndex]),
+								2.0);
+					}
+
+					double candDemandE2 = demandE2
+							- Math.pow(vehTonsPerDay[day] - minCapacityPerDay_ton[day] / this.transportEfficiency, 2.0)
+							+ Math.pow((vehTonsPerDay[day] + this.vehCaps[vehTypeIndex])
+									- minCapacityPerDay_ton[day] / this.transportEfficiency, 2.0);
+
+					if (vehFreqE2Weight * candVehFreqE2 + demandE2Weight * candDemandE2 < vehFreqE2Weight
+							* bestVehFreqE2 + demandE2Weight * bestDemandE2) {
+
 						bestDay = day;
 						bestVehTypeIndex = vehTypeIndex;
 
+						bestVehFreqE2 = candVehFreqE2;
+						bestDemandE2 = candDemandE2;
+
 						bestIsFeasible = true;
-						double[] vehTonsPerDay = this.vehTonsPerDay(vehTypesPerDay);
 						for (int day2 = 0; day2 < this.numberOfDays; day2++) {
-							bestIsFeasible = bestIsFeasible && (vehTonsPerDay[day2] >= minCapacityPerDay_ton[day2]);
+							bestIsFeasible = bestIsFeasible && (vehTonsPerDay[day2]
+									+ (day2 == day ? this.vehCaps[vehTypeIndex] : 0.0) >= minCapacityPerDay_ton[day2]);
 						}
 					}
 					vehTypesPerDay[day][vehTypeIndex]--;
 				}
 			}
-			
-			
-			if (bestObjFct >= objFct && feasible) {
+
+			if (vehFreqE2Weight * bestVehFreqE2 + demandE2Weight * bestDemandE2 >= vehFreqE2Weight * vehFreqE2
+					+ demandE2Weight * demandE2 && feasible) {
 				done = true;
 			} else {
 				vehTypesPerDay[bestDay][bestVehTypeIndex]++;
-				objFct = bestObjFct;
+				vehTonsPerDay[bestDay] += this.vehCaps[bestVehTypeIndex];
+				vehTonsPerType[bestVehTypeIndex] += this.vehCaps[bestVehTypeIndex];
+				totalVehTons += this.vehCaps[bestVehTypeIndex];
 				feasible = bestIsFeasible;
+
+				vehFreqE2 = bestVehFreqE2;
+				demandE2 = bestDemandE2;
+
 			}
 
-			System.out.print(objFct + "\t" + feasible + "\t\t");
-			
-			double[] vehTonsPerDay = this.vehTonsPerDay(vehTypesPerDay);
-			for (int day = 0; day < this.numberOfDays; day++) {
-				double target = minCapacityPerDay_ton[day] / this.transportEfficiency;
-				System.out.print((vehTonsPerDay[day] - target) / target);
+			if (this.verbose) {
+				System.out.print(vehFreqE2 + "\t" + demandE2 + "\t" + feasible + "\t\t");
+				for (int day = 0; day < this.numberOfDays; day++) {
+					double target = minCapacityPerDay_ton[day] / this.transportEfficiency;
+					System.out.print((vehTonsPerDay[day] - target) / target);
+					System.out.print("\t");
+				}
 				System.out.print("\t");
+				for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
+					double target = this.vehTonFreq[vehTypeIndex] * Arrays.stream(vehTonsPerType).sum();
+					System.out.print((vehTonsPerType[vehTypeIndex] - target) / target);
+					System.out.print("\t");
+				}
+				System.out.println();
 			}
-			System.out.print("\t");
-
-			double[] vehTonsPerType = this.vehTonsPerType(vehTypesPerDay);
-			for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
-				double target = this.vehTonFreq[vehTypeIndex] * Arrays.stream(vehTonsPerType).sum();
-				System.out.print((vehTonsPerType[vehTypeIndex] - target) / target);
-				System.out.print("\t");
-			}
-
-			System.out.println();
 		}
-		
-		return vehTypesPerDay;
+
+		final List<List<Vehicle>> vehiclesOverDays = new ArrayList<>(this.numberOfDays);
+		for (int day = 0; day < this.numberOfDays; day++) {
+			final List<Vehicle> vehicles = new LinkedList<>();
+			for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
+				for (int n = 0; n < vehTypesPerDay[day][vehTypeIndex]; n++) {
+					vehicles.add(fleet.createAndAddVehicle(this.vehTypesDescendingCapacity.get(vehTypeIndex)));
+				}
+			}
+			vehiclesOverDays.add(vehicles);
+		}
+		return vehiclesOverDays;
 	}
 
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
@@ -267,7 +289,7 @@ public class UniformConsolidator {
 		Random rnd = new Random();
 		UniformConsolidator uc = new UniformConsolidator(fleet, 7, 0.7);
 
-		int shipmentCnt = 10;
+		int shipmentCnt = 1000;
 		List<Shipment> shipments = new ArrayList<>(shipmentCnt);
 		for (int i = 0; i < shipmentCnt; i++) {
 			double tons = 20.0 * rnd.nextExponential();
@@ -275,11 +297,28 @@ public class UniformConsolidator {
 			shipments.add(new Shipment(null, tons, proba));
 		}
 
-		shipments = uc.createProbabilityScaledShipments(shipments);
-		List<List<Shipment>> shipmentsPerDay = uc.distributeShipmentsOverDays(shipments);
-		int[][] optimalFleet = uc.computeOptimalFleetAssignment(shipmentsPerDay);
+		shipments = UniformConsolidator.createProbabilityScaledShipments(shipments);
+		List<List<Shipment>> shipmentsOverDay = uc.distributeShipmentsOverDays(shipments);
+		List<List<Vehicle>> vehiclesOverDays = uc.createVehiclesOverDays(shipmentsOverDay);
 
-		System.out.println("DONE");
+		Map<Id<VehicleType>, Long> type2cnt = new LinkedHashMap<>();
+		for (List<Vehicle> vehicles : vehiclesOverDays) {
+			for (Vehicle vehicle : vehicles) {
+				type2cnt.compute(vehicle.getType().getId(), (id, cnt) -> cnt == null ? 1 : cnt + 1);
+			}
+		}
+		double totalTons = type2cnt.entrySet().stream().mapToDouble(
+				e -> FreightVehicleAttributes.getCapacity_ton(fleet.getVehicles().getVehicleTypes().get(e.getKey()))
+						* e.getValue())
+				.sum();
+
+		for (VehicleType type : fleet.getVehicles().getVehicleTypes().values()) {
+			System.out.print(type2cnt.getOrDefault(type.getId(), 0l) * FreightVehicleAttributes.getCapacity_ton(type)
+					/ totalTons);
+			System.out.print("\t");
+		}
+		System.out.println();
+
 	}
 
 }

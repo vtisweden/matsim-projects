@@ -21,6 +21,7 @@ package se.vti.samgods.logistics.choicemodel;
 
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 
 /**
  * 
@@ -31,6 +32,8 @@ public class ChainAndShipmentSize {
 
 	// -------------------- PUBLIC CONSTANTS --------------------
 
+	public final AnnualShipment annualShipment;
+
 	public final SamgodsConstants.ShipmentSize sizeClass;
 
 	public final TransportChain transportChain;
@@ -39,8 +42,9 @@ public class ChainAndShipmentSize {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChainAndShipmentSize(final SamgodsConstants.ShipmentSize sizeClass, final TransportChain transportChain,
-			final double utility) {
+	public ChainAndShipmentSize(AnnualShipment annualShipment, final SamgodsConstants.ShipmentSize sizeClass,
+			final TransportChain transportChain, final double utility) {
+		this.annualShipment = annualShipment;
 		this.sizeClass = sizeClass;
 		this.transportChain = transportChain;
 		this.utility = utility;

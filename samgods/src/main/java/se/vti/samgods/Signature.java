@@ -55,6 +55,11 @@ public class Signature {
 				return false;
 			}
 		}
+		
+		@Override
+		public String toString() {
+			return this.asList().toString();
+		}
 	}
 
 	public static class Episode extends ListRepresented {

@@ -116,7 +116,7 @@ public class ChainAndShipmentSizeChoiceModel {
 							final NonTransportCost totalNonTransportCost = this.nonTransportCostModel.computeCost(
 									commodity, size, annualShipment.getSingleInstanceAnnualAmount_ton(),
 									transportUnitCost.duration_h);
-							alternatives.add(new ChainAndShipmentSize(size, transportChain,
+							alternatives.add(new ChainAndShipmentSize(annualShipment, size, transportChain,
 									this.utilityFunction.computeUtility(commodity,
 											annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost,
 											totalNonTransportCost)));
