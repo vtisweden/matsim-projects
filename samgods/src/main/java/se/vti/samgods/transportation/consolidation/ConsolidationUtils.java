@@ -20,10 +20,13 @@
 package se.vti.samgods.transportation.consolidation;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
@@ -78,20 +81,4 @@ public class ConsolidationUtils {
 
 		return shipments;
 	}
-
-// TESTING
-//
-//	public static void main(String[] args) {
-//		Random rnd = new Random();
-//		for (int r = 0; r < 10000; r++) {
-//			AnnualShipment recurrentShipment = new AnnualShipment(null, null, 100.0); // , rnd.nextDouble() *
-//																							// 365.0);
-//			int analysisPeriod_days = 1 + rnd.nextInt(365);
-//			List<Shipment> shipments = disaggregate(recurrentShipment, analysisPeriod_days);
-//			double realized = shipments.stream().mapToDouble(s -> s.getWeight_ton() * s.getProbability()).sum();
-//			double target = recurrentShipment.getTotalAmount_ton() * (analysisPeriod_days / 365.0);
-//			System.out.println((realized - target) / target);
-//		}
-//	}
-
 }

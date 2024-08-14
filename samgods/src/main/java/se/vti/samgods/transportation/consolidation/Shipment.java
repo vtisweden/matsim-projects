@@ -57,7 +57,7 @@ public class Shipment {
 	public double getProbability() {
 		return this.probability;
 	}
-
+	
 	@Override
 	public String toString() {
 		return this.commodity + "(" + this.tons + "ton,Pr=" + this.probability + ")";
