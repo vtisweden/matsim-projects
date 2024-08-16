@@ -20,13 +20,10 @@
 package se.vti.samgods.transportation.consolidation;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;

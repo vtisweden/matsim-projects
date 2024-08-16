@@ -124,6 +124,12 @@ public class UniformConsolidator {
 		return result;
 	}
 
+	public static List<Shipment> createSimulatedShipments(List<Shipment> shipments, Random rnd) {
+		final List<Shipment> result = shipments.stream().filter(s -> rnd.nextDouble() < s.getProbability())
+				.map(s -> new Shipment(s.getCommodity(), s.getWeight_ton(), 1.0)).collect(Collectors.toList());
+		return result;
+	}
+
 	// WEEKLY DISTRIBUTION, DISCRETE
 
 	public List<List<Shipment>> distributeShipmentsOverDays(List<Shipment> shipments) {

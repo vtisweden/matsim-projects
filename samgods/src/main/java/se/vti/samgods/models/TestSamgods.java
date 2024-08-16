@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -79,6 +80,8 @@ public class TestSamgods {
 	static Logger log = Logger.getLogger(TestSamgods.class);
 
 	public static void main(String[] args) throws IOException {
+
+		Random rnd = new Random();
 
 		InsufficientDataException.setLogDuringRuntime(false);
 
@@ -156,6 +159,8 @@ public class TestSamgods {
 					commodity + ": Removed " + removedCnt + " out of " + totalCnt + " chains with incomplete routes. ");
 		}
 
+		// RUN LOGISTICS MODEL
+
 		Map<TransportChain, List<Shipment>> chain2shipments = new LinkedHashMap<>();
 
 		for (double capacityUsageFactor : new double[] { 0.7 }) {
@@ -163,8 +168,6 @@ public class TestSamgods {
 			fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel)
 					.setCapacityUsageFactor(capacityUsageFactor);
 			episodeCostModels = new EpisodeCostModels(fallbackEpisodeCostModel);
-
-			// RUN LOGISTICS MODEL
 
 			ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
 				@Override
@@ -175,7 +178,7 @@ public class TestSamgods {
 				}
 			};
 
-			for (double scale : Arrays.asList(0.0)) {
+			for (double scale : Arrays.asList(1.0)) {
 
 				log.info("capacity usage factor = " + capacityUsageFactor + ", scale = " + scale);
 				ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
@@ -202,11 +205,14 @@ public class TestSamgods {
 							stats.add(commodity, choices);
 							for (ChainAndShipmentSize choice : choices) {
 								size2cnt.compute(choice.sizeClass, (s, c) -> c + 1);
-								List<Shipment> shipments = UniformConsolidator.createProbabilityScaledShipments(
+								List<Shipment> shipments = UniformConsolidator.createSimulatedShipments(
 										ConsolidationUtils.disaggregateIntoAnalysisPeriod(choice.annualShipment, 7,
-												choice.sizeClass));
-								chain2shipments.computeIfAbsent(choice.transportChain, c -> new ArrayList<>())
-										.addAll(shipments);
+												choice.sizeClass),
+										rnd);
+								if (shipments.size() > 0) {
+									chain2shipments.computeIfAbsent(choice.transportChain, c -> new ArrayList<>())
+											.addAll(shipments);
+								}
 							}
 						}
 					}
@@ -215,7 +221,6 @@ public class TestSamgods {
 				log.info("\n" + stats.createChoiceStatsTable());
 			}
 		}
-
 		log.info(chain2shipments.size() + " chains");
 		log.info(chain2shipments.values().stream().mapToLong(s -> s.size()).sum() + " shipments");
 
@@ -241,27 +246,44 @@ public class TestSamgods {
 
 		Map<Id<VehicleType>, Long> type2cnt = new LinkedHashMap<>();
 
+		System.out.println();
+		System.out.println("totalDemand[ton]\tmeanVehicleCapacity[ton]");
 		for (Map.Entry<Signature.Episode, List<Shipment>> e : episodeSignature2shipments.entrySet()) {
 			UniformConsolidator consolidator = new UniformConsolidator(fleet, 7, 0.7);
 			List<List<Shipment>> shipmentsOverDays = consolidator.distributeShipmentsOverDays(e.getValue());
-			List<List<Vehicle>> vehiclesOverDays = consolidator.createVehiclesOverDays(shipmentsOverDays);
+			double totalDemand_ton = shipmentsOverDays.stream().flatMap(l -> l.stream())
+					.mapToDouble(s -> s.getWeight_ton()).sum();
+			if (totalDemand_ton > 0) {
+				List<List<Vehicle>> vehiclesOverDays = consolidator.createVehiclesOverDays(shipmentsOverDays);
 
-			for (List<Vehicle> vehicles : vehiclesOverDays) {
-				for (Vehicle vehicle : vehicles) {
-					type2cnt.compute(vehicle.getType().getId(), (id, cnt) -> cnt == null ? 1 : cnt + 1);
+				for (List<Vehicle> vehicles : vehiclesOverDays) {
+					for (Vehicle vehicle : vehicles) {
+						type2cnt.compute(vehicle.getType().getId(), (id, cnt) -> cnt == null ? 1 : cnt + 1);
+					}
+				}
+
+				if (Math.random() < 1e-1) {
+					OptionalDouble meanCapacity_ton = vehiclesOverDays.stream().flatMap(l -> l.stream())
+							.mapToDouble(v -> FreightVehicleAttributes.getCapacity_ton(v)).average();
+					if (meanCapacity_ton.isPresent()) {
+						System.out.println(totalDemand_ton + "\t" + meanCapacity_ton.getAsDouble());
+					}
 				}
 			}
 		}
+
+		System.out.println();
 
 		double totalTons = type2cnt.entrySet().stream().mapToDouble(
 				e -> FreightVehicleAttributes.getCapacity_ton(fleet.getVehicles().getVehicleTypes().get(e.getKey()))
 						* e.getValue())
 				.sum();
-
+		System.out.println("vehType\tshare");
 		for (VehicleType type : fleet.getVehicles().getVehicleTypes().values()) {
 			System.out.println(type.getId() + "\t" + type2cnt.getOrDefault(type.getId(), 0l)
 					* FreightVehicleAttributes.getCapacity_ton(type) / totalTons);
 		}
+		System.out.println();
 
 		log.info("DONE");
 	}
