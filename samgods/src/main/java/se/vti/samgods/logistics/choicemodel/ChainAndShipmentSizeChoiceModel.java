@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
@@ -57,6 +58,8 @@ public class ChainAndShipmentSizeChoiceModel {
 
 	private final NonTransportCostModel nonTransportCostModel;
 
+	private boolean enforceMaxShipmentSize = false;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public ChainAndShipmentSizeChoiceModel(final double scale, EpisodeCostModel episodeCostModel,
@@ -65,6 +68,11 @@ public class ChainAndShipmentSizeChoiceModel {
 		this.utilityFunction = utilityFunction;
 		this.episodeCostModel = episodeCostModel;
 		this.nonTransportCostModel = nonTransportCostModel;
+	}
+
+	public ChainAndShipmentSizeChoiceModel setEnforceMaxShipmentSize(boolean enforceMaxShipmentSize) {
+		this.enforceMaxShipmentSize = enforceMaxShipmentSize;
+		return this;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -104,7 +112,7 @@ public class ChainAndShipmentSizeChoiceModel {
 
 			for (AnnualShipment annualShipment : annualShipments) {
 
-				final List<ChainAndShipmentSize> alternatives = new ArrayList<>();
+				List<ChainAndShipmentSize> alternatives = new ArrayList<>();
 
 				for (Map.Entry<TransportChain, DetailedTransportCost> e : chain2transportUnitCost.entrySet()) {
 					final TransportChain transportChain = e.getKey();
@@ -122,6 +130,15 @@ public class ChainAndShipmentSizeChoiceModel {
 											totalNonTransportCost)));
 						}
 					}
+				}
+
+				if (this.enforceMaxShipmentSize) {
+					ShipmentSize maxSize = alternatives.stream()
+							.max((a, b) -> Double.compare(a.sizeClass.getRepresentativeValue_ton(),
+									b.sizeClass.getRepresentativeValue_ton()))
+							.get().sizeClass;
+					alternatives = alternatives.stream().filter(a -> a.sizeClass.equals(maxSize))
+							.collect(Collectors.toList());
 				}
 
 				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {

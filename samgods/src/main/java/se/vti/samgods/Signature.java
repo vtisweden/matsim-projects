@@ -88,7 +88,7 @@ public class Signature {
 			this(episode.getCommodity(), episode.getMode(), episode.isContainer(), episode.containsFerry(),
 					episode.createLinkIds());
 		}
-
+		
 		public boolean isCompatible(FreightVehicleAttributes attrs) {
 			return (this.commodity == null || attrs.isCompatible(this.commodity))
 					&& (this.mode == null || this.mode.equals(attrs.mode))

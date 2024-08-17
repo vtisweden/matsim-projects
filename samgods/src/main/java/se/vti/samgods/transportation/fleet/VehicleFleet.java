@@ -68,6 +68,29 @@ public class VehicleFleet {
 		return this.vehicles;
 	}
 
+	// -------------------- COMPATIBLE VEHICLE TYPES --------------------
+
+	private final Map<Signature.Episode, List<VehicleType>> signature2compatibleTypes = new LinkedHashMap<>();
+
+	public List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+
+		final Signature.Episode signature = new Signature.Episode(commodity, mode, isContainer, containsFerry, null);
+		List<VehicleType> result = this.signature2compatibleTypes.get(signature);
+
+		if (result == null) {
+			result = new ArrayList<>();
+			for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+				if (signature.isCompatible(type)) {
+					result.add(type);
+				}
+			}
+			this.signature2compatibleTypes.put(signature, result);
+		}
+
+		return result;
+	}
+
 	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
 	private final Map<Signature.Episode, VehicleType> signature2representativeType = new LinkedHashMap<>();
@@ -81,18 +104,14 @@ public class VehicleFleet {
 
 		if (result == null) {
 
-			final List<VehicleType> matchingTypes = new ArrayList<>();
-			for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-				if (signature.isCompatible(type)) {
-					matchingTypes.add(type);
-				}
-			}
+			final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
+					containsFerry);
 
-			if (matchingTypes.size() > 0) {
-				final double meanCapacity_ton = matchingTypes.stream()
+			if (compatibleTypes.size() > 0) {
+				final double meanCapacity_ton = compatibleTypes.stream()
 						.mapToDouble(t -> FreightVehicleAttributes.getCapacity_ton(t)).average().getAsDouble();
 				double resultDeviation_ton = Double.POSITIVE_INFINITY;
-				for (VehicleType candidate : matchingTypes) {
+				for (VehicleType candidate : compatibleTypes) {
 					final double candidateDeviation_ton = Math
 							.abs(FreightVehicleAttributes.getCapacity_ton(candidate) - meanCapacity_ton);
 					if (candidateDeviation_ton < resultDeviation_ton) {
@@ -107,7 +126,6 @@ public class VehicleFleet {
 			}
 		}
 
-		assert (result != null);
 		return result;
 	}
 
