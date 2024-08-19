@@ -53,6 +53,7 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentChoiceStats;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeChoiceModel;
@@ -99,14 +100,15 @@ public class TestSamgods {
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.TIMBER, 14);
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 14);
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 14);
-		
-		InsufficientDataException.setLogDuringRuntime(false);
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
-//		double samplingRate = 0.01;
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		InsufficientDataException.setLogDuringRuntime(true);
 
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+		double samplingRate = 0.01;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+//		double samplingRate = 1.0;
+
+		boolean disaggregateRail = true;
 		boolean flexiblePeriod = true;
 		boolean skipUnusedIntervals = true;
 
@@ -115,7 +117,7 @@ public class TestSamgods {
 		int maxIterations = 5;
 		boolean useNonTransportCosts = true;
 
-		boolean checkUnitCost = false;
+		boolean checkUnitCost = true;
 
 		boolean routed = false;
 		boolean reroute = false;
@@ -319,39 +321,51 @@ public class TestSamgods {
 								+ e.getKey());
 					} else {
 
-						HalfLoopConsolidator.FleetAssignment assignment = consolidator
-								.computeOptimalFleetAssignment(episode, shipments);
-						double vehicleCnt = assignment.expectedNumberOfSimultaneouslyMovingVehicles();
-						double length_km = episode.getLegs().stream().mapToDouble(l -> l.getLength_km()).sum();
-
-						mode2efficiencyTimesVehicleCntSum.compute(episode.getMode(),
-								(m, s) -> s == null ? assignment.transportEfficiency() * vehicleCnt
-										: s + assignment.transportEfficiency() * vehicleCnt);
-						vehicleType2vehicleCntSum.compute(assignment.vehicleType,
-								(t, c) -> c == null ? vehicleCnt : c + vehicleCnt);
-						mode2vehicleCntSum.compute(episode.getMode(),
-								(m, c) -> c == null ? vehicleCnt : c + vehicleCnt);
-
-						mode2sumOfCosts.compute(episode.getMode(),
-								(m, s) -> s == null ? assignment.unitCost_1_ton * totalDemand_ton
-										: s + assignment.unitCost_1_ton * totalDemand_ton);
-						mode2sumOfTonKm.compute(episode.getMode(),
-								(m, s) -> s == null ? totalDemand_ton * length_km : s + totalDemand_ton * length_km);
-
-						if (checkUnitCost) {
-							assert (Math
-									.abs(assignment.unitCost_1_ton
-											- consolidationCostModel
-													.computeEpisodeCost(
-															FreightVehicleAttributes
-																	.getFreightAttributes(assignment.vehicleType),
-															assignment.payload_ton, episode)
-													.computeUnitCost().monetaryCost) <= 1.0);
+						final List<TransportLeg> legs;
+						if (disaggregateRail && episode.getMode().equals(TransportMode.Rail)
+								&& episode.getLegs().size() > 1) {
+							legs = episode.getLegs();
+						} else {
+							legs = Collections.singletonList(null);
 						}
 
-						episode2efficiency.compute(e.getKey(),
-								(epi, eff) -> eff == null ? assignment.transportEfficiency()
-										: innoWeight * assignment.transportEfficiency() + (1.0 - innoWeight) * eff);
+						for (TransportLeg leg : legs) {
+
+							HalfLoopConsolidator.FleetAssignment assignment = consolidator
+									.computeOptimalFleetAssignment(episode, leg, shipments);
+							double vehicleCnt = assignment.expectedNumberOfSimultaneouslyMovingVehicles();
+							double length_km = (leg == null
+									? episode.getLegs().stream().mapToDouble(l -> l.getLength_km()).sum()
+									: leg.getLength_km());
+
+							mode2efficiencyTimesVehicleCntSum.compute(episode.getMode(),
+									(m, s) -> s == null ? assignment.transportEfficiency() * vehicleCnt
+											: s + assignment.transportEfficiency() * vehicleCnt);
+							vehicleType2vehicleCntSum.compute(assignment.vehicleType,
+									(t, c) -> c == null ? vehicleCnt : c + vehicleCnt);
+							mode2vehicleCntSum.compute(episode.getMode(),
+									(m, c) -> c == null ? vehicleCnt : c + vehicleCnt);
+
+							mode2sumOfCosts.compute(episode.getMode(),
+									(m, s) -> s == null ? assignment.unitCost_1_ton * totalDemand_ton
+											: s + assignment.unitCost_1_ton * totalDemand_ton);
+							mode2sumOfTonKm.compute(episode.getMode(), (m, s) -> s == null ? totalDemand_ton * length_km
+									: s + totalDemand_ton * length_km);
+
+							if (checkUnitCost) {
+								assert (Math
+										.abs(assignment.unitCost_1_ton - consolidationCostModel
+												.computeEpisodeCost(
+														FreightVehicleAttributes
+																.getFreightAttributes(assignment.vehicleType),
+														assignment.payload_ton, episode, leg)
+												.computeUnitCost().monetaryCost) <= 1.0);
+							}
+
+							episode2efficiency.compute(e.getKey(),
+									(epi, eff) -> eff == null ? assignment.transportEfficiency()
+											: innoWeight * assignment.transportEfficiency() + (1.0 - innoWeight) * eff);
+						}
 					}
 
 				} catch (InsufficientDataException e1) {

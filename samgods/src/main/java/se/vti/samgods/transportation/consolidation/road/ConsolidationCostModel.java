@@ -19,10 +19,11 @@
  */
 package se.vti.samgods.transportation.consolidation.road;
 
-import org.matsim.api.core.v01.Id;
+import java.util.Collections;
+import java.util.List;
+
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.vehicles.Vehicle;
 
@@ -59,63 +60,71 @@ public class ConsolidationCostModel {
 		this.network = network;
 	}
 
+	// -------------------- INTERNALS --------------------
+
+	private void addEpisodeLegCostToBuilder(FreightVehicleAttributes vehicleAttrs, double payload_ton,
+			TransportEpisode episode, TransportLeg leg, DetailedTransportCost.Builder builder)
+			throws InsufficientDataException {
+
+		if (leg == episode.getLegs().getFirst()) {
+			builder.addLoadingDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(episode.getLoadingNode()));
+			builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(episode.getCommodity())
+					* Math.max(minTransferredAmount_ton, payload_ton));
+		} else {
+			builder.addTransferDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(leg.getOrigin()));
+			builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(episode.getCommodity())
+					* Math.max(minTransferredAmount_ton, payload_ton));
+		}
+
+		for (Link link : NetworkUtils.getLinks(this.network, leg.getRouteIdsView())) {
+			double length_km = Units.KM_H_PER_M_S * link.getLength();
+			double tt_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
+			builder.addMoveDuration_h(tt_h);
+			if (LinkAttributes.isFerry(link)) {
+				builder.addMoveCost(tt_h * vehicleAttrs.onFerryCost_1_h);
+				builder.addMoveCost(length_km * vehicleAttrs.onFerryCost_1_km);
+			} else {
+				builder.addMoveCost(tt_h * vehicleAttrs.cost_1_h);
+				builder.addMoveCost(length_km * vehicleAttrs.cost_1_km);
+			}
+		}
+
+		if (leg == episode.getLegs().getLast()) {
+			builder.addUnloadingDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(episode.getUnloadingNode()));
+			builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(episode.getCommodity())
+					* Math.max(minTransferredAmount_ton, payload_ton));
+		} else {
+			builder.addTransferDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(leg.getDestination()));
+			builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(episode.getCommodity())
+					* Math.max(minTransferredAmount_ton, payload_ton));
+		}
+	}
+
 	// -------------------- IMPLEMENTATION --------------------
 
 	public DetailedTransportCost computeEpisodeCost(FreightVehicleAttributes vehicleAttrs, double payload_ton,
-			TransportEpisode episode) throws InsufficientDataException {
+			TransportEpisode episode, TransportLeg leg) throws InsufficientDataException {
 
-		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton);
+		DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton)
+				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
+				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
 
-		/*
-		 * Loading/unloading at origin/destination. Specific to this shipment, not
-		 * shared.
-		 */
-
-		builder.addLoadingDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(episode.getLoadingNode()));
-		builder.addUnloadingDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(episode.getUnloadingNode()));
-
-		builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(episode.getCommodity())
-				* Math.max(minTransferredAmount_ton, payload_ton));
-		builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(episode.getCommodity())
-				* Math.max(minTransferredAmount_ton, payload_ton));
-
-		/*
-		 * Transfer at intermediate nodes. Specific to this shipment, not shared.
-		 */
-
-		builder.addTransferCost(
-				episode.getTransferNodeCnt() * vehicleAttrs.transferCost_1_ton.get(episode.getCommodity())
-						* Math.max(minTransferredAmount_ton, payload_ton));
-
-		builder.addTransferDuration_h(0.0); // otherwise null
-		for (Id<Node> transferNodeId : episode.createTransferNodesList()) {
-			builder.addTransferDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(transferNodeId)
-					+ this.performanceMeasures.getTotalDepartureDelay_h(transferNodeId));
+		final List<TransportLeg> evaluatedLegs;
+		if (leg == null) {
+			evaluatedLegs = episode.getLegs();
+		} else {
+			evaluatedLegs = Collections.singletonList(leg);
 		}
+		leg = null; // use evaluatedLegs
 
-		/*
-		 * Movement along network links.
-		 */
-
-		builder.addMoveCost(0.0);// otherwise null
-		builder.addMoveDuration_h(0.0);// otherwise null
-		for (TransportLeg leg : episode.getLegs()) {
-			for (Link link : NetworkUtils.getLinks(this.network, leg.getRouteIdsView())) {
-				double length_km = Units.KM_H_PER_M_S * link.getLength();
-				double tt_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
-				builder.addMoveDuration_h(tt_h);
-				if (LinkAttributes.isFerry(link)) {
-					builder.addMoveCost(tt_h * vehicleAttrs.onFerryCost_1_h);
-					builder.addMoveCost(length_km * vehicleAttrs.onFerryCost_1_km);
-				} else {
-					builder.addMoveCost(tt_h * vehicleAttrs.cost_1_h);
-					builder.addMoveCost(length_km * vehicleAttrs.cost_1_km);
-				}
-			}
+		for (TransportLeg evaluatedLeg : evaluatedLegs) {
+			this.addEpisodeLegCostToBuilder(vehicleAttrs, payload_ton, episode, evaluatedLeg, builder);
 		}
 
 		return builder.build();
 	}
+
+	// ---------- MICRO-FUNCTIONALITY BELOW
 
 	public BasicTransportCost computeInVehicleShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
 			ShipmentVehicleAssignment assignment) throws InsufficientDataException {
@@ -127,11 +136,12 @@ public class ConsolidationCostModel {
 		final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton); // TODO
 
 		if (feasible) {
-			final DetailedTransportCost vehicleCost = computeEpisodeCost(
-					FreightVehicleAttributes.getFreightAttributes(vehicle),
-					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
-			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
-			return new BasicTransportCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);
+			throw new UnsupportedOperationException("TODO");
+//			final DetailedTransportCost vehicleCost = computeEpisodeCost(
+//					FreightVehicleAttributes.getFreightAttributes(vehicle),
+//					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
+//			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
+//			return new BasicTransportCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);
 		} else {
 			return null;
 		}

@@ -28,6 +28,7 @@ import org.matsim.vehicles.VehicleType;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.transportation.DetailedTransportCost;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
@@ -162,16 +163,16 @@ public class HalfLoopConsolidator {
 	}
 
 	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, Integer vehicleCnt,
-			TransportEpisode episode, double totalDemand_ton, double serviceProba) throws InsufficientDataException {
+			TransportEpisode episode, TransportLeg leg, double totalDemand_ton, double serviceProba) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 		FleetAssignment result = new FleetAssignment(vehicleType,
-				this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, episode),
+				this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, episode, leg),
 				vehicleCnt, totalDemand_ton, this.flexiblePeriod,
 				this.commodity2serviceInterval_days.get(episode.getCommodity()), serviceProba);
 		boolean done = false;
 		while (!done) {
 			final FleetAssignment newResult = new FleetAssignment(vehicleType,
-					this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, result.payload_ton, episode),
+					this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, result.payload_ton, episode, leg),
 					result.vehicleCnt, totalDemand_ton, this.flexiblePeriod,
 					this.commodity2serviceInterval_days.get(episode.getCommodity()), serviceProba);
 			final double dev = Math.abs(newResult.unitCost_1_ton - result.unitCost_1_ton) / result.unitCost_1_ton;
@@ -180,8 +181,8 @@ public class HalfLoopConsolidator {
 		}
 		return result;
 	}
-
-	public FleetAssignment computeOptimalFleetAssignment(TransportEpisode episode, List<ChainAndShipmentSize> choices)
+	
+	public FleetAssignment computeOptimalFleetAssignment(TransportEpisode episode, TransportLeg leg, List<ChainAndShipmentSize> choices)
 			throws InsufficientDataException {
 
 		final double serviceProba = this.computeSingleServiceIntervalUsageProba(
@@ -196,12 +197,12 @@ public class HalfLoopConsolidator {
 
 		FleetAssignment overallBestAssignment = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, null, episode,
+			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, null, episode, leg,
 					totalDemand_ton, serviceProba);
 			boolean done = false;
 			while (!done) {
 				final FleetAssignment candAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType,
-						bestAssignmentForVehicleType.vehicleCnt + 1, episode, totalDemand_ton, serviceProba);
+						bestAssignmentForVehicleType.vehicleCnt + 1, episode, leg, totalDemand_ton, serviceProba);
 				if (candAssignmentForVehicleType.unitCost_1_ton < bestAssignmentForVehicleType.unitCost_1_ton) {
 					bestAssignmentForVehicleType = candAssignmentForVehicleType;
 				} else {

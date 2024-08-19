@@ -80,7 +80,7 @@ public class DetailedTransportCost extends BasicTransportCost {
 
 		public Builder() {
 		}
-
+		
 		private double sum(Double sum, double addend) {
 			if (sum == null) {
 				return addend;

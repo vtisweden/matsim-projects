@@ -157,7 +157,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 			final Vehicle vehicle = entry.getKey();
 			final double payload_ton = entry.getValue();
 			final DetailedTransportCost vehicleCost = this.consolidationCostModel
-					.computeEpisodeCost(FreightVehicleAttributes.getFreightAttributes(vehicle), payload_ton, episode);
+					.computeEpisodeCost(FreightVehicleAttributes.getFreightAttributes(vehicle), payload_ton, episode, null);
 			cumulativeCost.add(vehicleCost);
 		}
 	}

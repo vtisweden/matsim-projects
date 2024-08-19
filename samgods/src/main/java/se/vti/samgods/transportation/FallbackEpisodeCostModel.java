@@ -27,8 +27,8 @@ import org.matsim.api.core.v01.network.Network;
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.Signature;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
@@ -87,10 +87,8 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	@Override
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
-		return this.consolidationCostModel
-				.computeEpisodeCost(vehicleAttributes,
-						this.efficiency(episode) * vehicleAttributes.capacity_ton, episode)
-				.computeUnitCost();
+		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
+				this.efficiency(episode) * vehicleAttributes.capacity_ton, episode, null).computeUnitCost();
 	}
 
 	@Override
