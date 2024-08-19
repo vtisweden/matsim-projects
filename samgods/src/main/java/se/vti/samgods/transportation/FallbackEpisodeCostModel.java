@@ -27,6 +27,8 @@ import org.matsim.api.core.v01.network.Network;
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.Signature;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
@@ -45,27 +47,50 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	private final VehicleFleet fleet;
 	private final ConsolidationCostModel consolidationCostModel;
 
-	private double capacityUsageFactor = 0.7;
+//	private double capacityUsageFactor = 0.7;
+	private final Map<TransportMode, Double> mode2efficiency;
+	private final Map<Signature.Episode, Double> episode2efficiency;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FallbackEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel) {
+	public FallbackEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
+			Map<TransportMode, Double> mode2capacityUsage, Map<Signature.Episode, Double> episode2efficiency) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
+		this.mode2efficiency = mode2capacityUsage;
+
+		double fallbackCapacityUsage = mode2capacityUsage.values().stream().mapToDouble(e -> e).average().getAsDouble();
+		for (TransportMode mode : TransportMode.values()) {
+			if (!this.mode2efficiency.containsKey(mode)) {
+				this.mode2efficiency.put(mode, fallbackCapacityUsage);
+			}
+		}
+		this.episode2efficiency = episode2efficiency;
 	}
 
-	public FallbackEpisodeCostModel setCapacityUsageFactor(double factor) {
-		this.capacityUsageFactor = factor;
-		return this;
-	}
+//	public FallbackEpisodeCostModel setCapacityUsageFactor(double factor) {
+//		this.capacityUsageFactor = factor;
+//		return this;
+//	}
 
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
+
+	private double efficiency(TransportEpisode episode) {
+		Signature.Episode signature = new Signature.Episode(episode);
+		if (this.episode2efficiency.containsKey(signature)) {
+			return this.episode2efficiency.get(signature);
+		} else {
+			return this.mode2efficiency.get(episode.getMode());
+		}
+	}
 
 	@Override
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
-		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
-				this.capacityUsageFactor * vehicleAttributes.capacity_ton, episode).computeUnitCost();
+		return this.consolidationCostModel
+				.computeEpisodeCost(vehicleAttributes,
+						this.efficiency(episode) * vehicleAttributes.capacity_ton, episode)
+				.computeUnitCost();
 	}
 
 	@Override

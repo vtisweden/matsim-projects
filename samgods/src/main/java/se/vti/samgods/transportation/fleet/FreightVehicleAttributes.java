@@ -32,6 +32,7 @@ import org.matsim.vehicles.VehicleUtils;
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * Used in parallel routing, hence synchronized throughout.
@@ -129,6 +130,14 @@ public class FreightVehicleAttributes {
 
 	public static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
 		return getFreightAttributes(vehicle.getType());
+	}
+
+	public static TransportMode getMode(VehicleType vehicleType) {
+		return getFreightAttributes(vehicleType).mode;
+	}
+
+	public static TransportMode getMode(Vehicle vehicle) {
+		return getFreightAttributes(vehicle).mode;
 	}
 
 	public static double getCapacity_ton(VehicleType vehicleType) {

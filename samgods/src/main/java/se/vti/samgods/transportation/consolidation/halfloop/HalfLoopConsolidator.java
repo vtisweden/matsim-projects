@@ -20,10 +20,13 @@
 package se.vti.samgods.transportation.consolidation.halfloop;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.transportation.DetailedTransportCost;
@@ -44,47 +47,81 @@ public class HalfLoopConsolidator {
 
 	private final ConsolidationCostModel consolidationCostModel;
 
-	private final double serviceInterval_days;
-	private final double numberOfServiceIntervals;
+	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days;
+	private final Map<SamgodsConstants.Commodity, Double> commodity2numberOfServiceIntervals;
 
 	private final boolean flexiblePeriod;
+
+	private final boolean skipUnusedIntervals;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidator(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			int serviceInterval_days, boolean flexiblePeriod) {
+			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days, boolean flexiblePeriod,
+			boolean skipUnusedIntervals) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
-		this.serviceInterval_days = serviceInterval_days;
-		this.numberOfServiceIntervals = Math.max(1, Math.min(365, 365.0 / this.serviceInterval_days));
+		this.commodity2serviceInterval_days = commodity2serviceInterval_days;
+		this.commodity2numberOfServiceIntervals = commodity2serviceInterval_days.entrySet().stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> 365.0 / e.getValue()));
 		this.flexiblePeriod = flexiblePeriod;
+		this.skipUnusedIntervals = skipUnusedIntervals;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
+
+	private double computeSingleServiceIntervalUsageProba(double numberOfServiceIntervals,
+			List<ChainAndShipmentSize> choices) {
+		if (!this.skipUnusedIntervals) {
+			return 1.0;
+		}
+		double probaSingleServiceIntervalNotUsed = 1.0;
+		for (ChainAndShipmentSize choice : choices) {
+			final double serviceRequestsPerYearForInstance = Math.max(1,
+					Math.min(365, choice.annualShipment.getSingleInstanceAnnualAmount_ton()
+							/ choice.sizeClass.getRepresentativeValue_ton()));
+			final double probaServiceIntervalUsedForInstance = Math.min(1.0,
+					serviceRequestsPerYearForInstance / numberOfServiceIntervals);
+			probaSingleServiceIntervalNotUsed *= Math.pow(1.0 - probaServiceIntervalUsedForInstance,
+					choice.annualShipment.getNumberOfInstances());
+		}
+		return Math.max(1.0 / numberOfServiceIntervals, 1.0 - probaSingleServiceIntervalNotUsed);
+	}
 
 	public static class FleetAssignment {
 
 		public final VehicleType vehicleType;
 		public final double halfLoopDuration_h;
-		public final double demandRate_ton_h;
+		private final double halfLoopMovementDuration_h;
 		public final int minVehicleCnt;
 		public final int vehicleCnt;
 		public final double payload_ton;
-		public final double effectiveCost_1_ton;
-		public final double effectiveAssignmentPeriod_days;
+		public final double unitCost_1_ton;
+		public final double effectiveNumberOfServiceIntervals;
+		private final double serviceProba;
 
 		public FleetAssignment(VehicleType vehicleType, DetailedTransportCost halfLoopCost, Integer vehicleCnt,
-				double demandRate_ton_h, double effectiveAssignmentPeriod_h, double serviceWindow_days,
-				boolean flexiblePeriod) {
-			this.vehicleType = vehicleType;
-			final double vehCap_ton = FreightVehicleAttributes.getCapacity_ton(vehicleType);
-			/*-
-			 *              supply >= minDemand
-			 *  => vehCap * vehCnt >= minLoopDur * demandRate
-			 * <=>          vehCnt >= minLoopDur * demandRate / vehCap
-			 */
-			this.minVehicleCnt = (int) Math.ceil(2.0 * halfLoopCost.duration_h * demandRate_ton_h / vehCap_ton);
+				double totalDemand_ton, boolean flexiblePeriod, int serviceInterval_days, double serviceProba) {
 
+			final double vehCap_ton = FreightVehicleAttributes.getCapacity_ton(vehicleType);
+			this.vehicleType = vehicleType;
+			this.serviceProba = serviceProba;
+			this.halfLoopMovementDuration_h = halfLoopCost.duration_h;
+
+			final double serviceInterval_h = 24.0 * serviceInterval_days;
+			double numberOfServiceIntervals = 365.0 / serviceInterval_days;
+			this.effectiveNumberOfServiceIntervals = serviceProba * numberOfServiceIntervals;
+
+			final double effectiveDemandRate_ton_h = totalDemand_ton / (365.0 * 24.0) / serviceProba;
+
+			/*-
+			 * Per realized loop:
+			 *              supply >= minDemand
+			 *  => vehCap * vehCnt >= minLoopDur * effectiveDemandRate
+			 * <=>          vehCnt >= minLoopDur * effectiveDemandRate / vehCap
+			 */
+			this.minVehicleCnt = (int) Math
+					.ceil(2.0 * halfLoopCost.duration_h * effectiveDemandRate_ton_h / vehCap_ton);
 			if (vehicleCnt == null) {
 				vehicleCnt = this.minVehicleCnt;
 			} else if (vehicleCnt < this.minVehicleCnt) {
@@ -92,124 +129,90 @@ public class HalfLoopConsolidator {
 			}
 			this.vehicleCnt = vehicleCnt;
 
-			if (flexiblePeriod && (halfLoopCost.duration_h <= 0.5 * 24.0 * serviceWindow_days)) {
-				double unboundedHalfLoopDuration_h = this.vehicleCnt * vehCap_ton / 2.0 / demandRate_ton_h;
+			if (flexiblePeriod && (halfLoopCost.duration_h <= 0.5 * serviceInterval_h)) {
+				/*
+				 * TODO possible refinement: require that all loops are *completed* within the
+				 * service duration.
+				 */
+				double unboundedHalfLoopDuration_h = this.vehicleCnt * vehCap_ton / 2.0 / effectiveDemandRate_ton_h;
 				this.halfLoopDuration_h = Math.max(halfLoopCost.duration_h,
-						Math.min(unboundedHalfLoopDuration_h, 0.5 * 24.0 * serviceWindow_days));
+						Math.min(unboundedHalfLoopDuration_h, 0.5 * serviceInterval_h));
 			} else {
 				this.halfLoopDuration_h = halfLoopCost.duration_h;
 			}
 
-			this.demandRate_ton_h = demandRate_ton_h;
-			this.effectiveAssignmentPeriod_days = effectiveAssignmentPeriod_h / 24.0;
+			this.payload_ton = 2.0 * this.halfLoopDuration_h * effectiveDemandRate_ton_h / this.vehicleCnt;
+			this.unitCost_1_ton = halfLoopCost.monetaryCost / this.payload_ton;
+		}
 
-			this.payload_ton = 2.0 * this.halfLoopDuration_h * demandRate_ton_h / this.vehicleCnt;
-			this.effectiveCost_1_ton = halfLoopCost.monetaryCost / this.payload_ton;
+		public double expectedNumberOfSimultaneouslyMovingVehicles() {
+			return this.serviceProba * this.vehicleCnt * (this.halfLoopMovementDuration_h / this.halfLoopDuration_h);
+		}
+
+		public double transportEfficiency() {
+			return this.payload_ton / FreightVehicleAttributes.getCapacity_ton(this.vehicleType);
 		}
 
 		@Override
 		public String toString() {
 			return vehicleCnt + " vehicles of type " + this.vehicleType.getId() + " with capacity "
-					+ FreightVehicleAttributes.getCapacity_ton(this.vehicleType) + " ton each for total demand "
-					+ this.demandRate_ton_h * 24 * 30 * 12 + " ton during effectively "
-					+ this.effectiveAssignmentPeriod_days + " days";
+					+ FreightVehicleAttributes.getCapacity_ton(this.vehicleType) + " operating in "
+					+ this.effectiveNumberOfServiceIntervals + " service intervals";
 		}
-	}
-
-//	private final static int hoursPerYear = 24 * 30 * 12;
-
-	private double estimateEffectiveAssignmentPeriod_h(List<ChainAndShipmentSize> choices) {
-
-		double probaSingleServiceIntervalNotUsed = 1.0;
-		for (ChainAndShipmentSize choice : choices) {
-			double shipmentsPerYearForInstance = Math.max(1,
-					Math.min(365, choice.annualShipment.getSingleInstanceAnnualAmount_ton()
-							/ choice.sizeClass.getRepresentativeValue_ton()));
-			double shipmentsPerServiceIntervalForInstance = shipmentsPerYearForInstance / this.numberOfServiceIntervals;
-			double probaServiceIntervalUsedForInstance = Math.min(1.0, shipmentsPerServiceIntervalForInstance);
-			probaSingleServiceIntervalNotUsed *= Math.pow(1.0 - probaServiceIntervalUsedForInstance,
-					choice.annualShipment.getNumberOfInstances());
-		}
-
-		double probaServiceIntervalUsed = 1.0 - probaSingleServiceIntervalNotUsed;
-		return 24.0 * Math.min(365.0, this.serviceInterval_days / probaServiceIntervalUsed);
-
-//		double probaSingleDayNotUsed = 1.0;
-//		for (ChainAndShipmentSize choice : choices) {
-//			double shipmentsPerYear = Math.max(1,
-//					Math.min(365, choice.annualShipment.getSingleInstanceAnnualAmount_ton()
-//							/ choice.sizeClass.getRepresentativeValue_ton()));
-//			double probaSingleInstanceCoversDay = shipmentsPerYear / 365.0;
-//			probaSingleDayNotUsed *= Math.pow(1.0 - probaSingleInstanceCoversDay,
-//					choice.annualShipment.getNumberOfInstances());
-//		}
-//
-//		double probaServiceIntervalUsed = 1.0 - Math.pow(probaSingleDayNotUsed, this.serviceWindow_days);
-//		return Math.min(24 * 30 * 12, (24.0 * this.serviceWindow_days) / probaServiceIntervalUsed);
 	}
 
 	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, Integer vehicleCnt,
-			TransportEpisode episode, double demandRate_ton_h, double effectiveAssignmentPeriod_h)
-			throws InsufficientDataException {
+			TransportEpisode episode, double totalDemand_ton, double serviceProba) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
-
 		FleetAssignment result = new FleetAssignment(vehicleType,
 				this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, episode),
-				vehicleCnt, demandRate_ton_h, effectiveAssignmentPeriod_h, this.serviceInterval_days,
-				this.flexiblePeriod);
-
+				vehicleCnt, totalDemand_ton, this.flexiblePeriod,
+				this.commodity2serviceInterval_days.get(episode.getCommodity()), serviceProba);
 		boolean done = false;
 		while (!done) {
-			FleetAssignment newResult = new FleetAssignment(vehicleType,
+			final FleetAssignment newResult = new FleetAssignment(vehicleType,
 					this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, result.payload_ton, episode),
-					result.vehicleCnt, demandRate_ton_h, effectiveAssignmentPeriod_h, this.serviceInterval_days,
-					this.flexiblePeriod);
-			final double dev = Math.abs(newResult.effectiveCost_1_ton - result.effectiveCost_1_ton);
-//			System.out.println(dev); // for testing;
-			done = (dev < 0.01 / 1.0); // TODO ett öre / ton ... make configurable
+					result.vehicleCnt, totalDemand_ton, this.flexiblePeriod,
+					this.commodity2serviceInterval_days.get(episode.getCommodity()), serviceProba);
+			final double dev = Math.abs(newResult.unitCost_1_ton - result.unitCost_1_ton) / result.unitCost_1_ton;
+			done = (dev < 1e-8);
 			result = newResult;
 		}
-//		System.out.println(); // for testing
 		return result;
 	}
 
 	public FleetAssignment computeOptimalFleetAssignment(TransportEpisode episode, List<ChainAndShipmentSize> choices)
 			throws InsufficientDataException {
 
-		final double effectiveAssignmentPeriod_h = this.estimateEffectiveAssignmentPeriod_h(choices);
-		final double demandRate_ton_h = choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum()
-				/ effectiveAssignmentPeriod_h;
+		final double serviceProba = this.computeSingleServiceIntervalUsageProba(
+				this.commodity2numberOfServiceIntervals.get(episode.getCommodity()), choices);
+		final double totalDemand_ton = choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
 
 		final List<VehicleType> compatibleVehicleTypes = this.fleet.getCompatibleVehicleTypes(episode.getCommodity(),
 				episode.getMode(), episode.isContainer(), episode.containsFerry());
-		if (compatibleVehicleTypes == null || compatibleVehicleTypes.size() == 0) {
+		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
 			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.", episode);
 		}
 
 		FleetAssignment overallBestAssignment = null;
-
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-
 			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, null, episode,
-					demandRate_ton_h, effectiveAssignmentPeriod_h);
+					totalDemand_ton, serviceProba);
 			boolean done = false;
 			while (!done) {
-				FleetAssignment candAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType,
-						bestAssignmentForVehicleType.vehicleCnt + 1, episode, demandRate_ton_h,
-						effectiveAssignmentPeriod_h);
-				if (candAssignmentForVehicleType.effectiveCost_1_ton < bestAssignmentForVehicleType.effectiveCost_1_ton) {
+				final FleetAssignment candAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType,
+						bestAssignmentForVehicleType.vehicleCnt + 1, episode, totalDemand_ton, serviceProba);
+				if (candAssignmentForVehicleType.unitCost_1_ton < bestAssignmentForVehicleType.unitCost_1_ton) {
 					bestAssignmentForVehicleType = candAssignmentForVehicleType;
 				} else {
 					done = true;
 				}
 			}
-
 			if ((overallBestAssignment == null)
-					|| (bestAssignmentForVehicleType.effectiveCost_1_ton < overallBestAssignment.effectiveCost_1_ton)) {
+					|| (bestAssignmentForVehicleType.unitCost_1_ton < overallBestAssignment.unitCost_1_ton)) {
 				overallBestAssignment = bestAssignmentForVehicleType;
 			}
 		}
-
 		return overallBestAssignment;
 	}
 }
