@@ -67,10 +67,12 @@ public class ConsolidationCostModel {
 			throws InsufficientDataException {
 
 		if (leg == episode.getLegs().getFirst()) {
+			builder.addLoadingDuration_h(vehicleAttrs.loadTime_h.get(episode.getCommodity()));
 			builder.addLoadingDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(episode.getLoadingNode()));
 			builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(episode.getCommodity())
 					* Math.max(minTransferredAmount_ton, payload_ton));
 		} else {
+			builder.addTransferDuration_h(0.5 * vehicleAttrs.transferTime_h.get(episode.getCommodity()));
 			builder.addTransferDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(leg.getOrigin()));
 			builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(episode.getCommodity())
 					* Math.max(minTransferredAmount_ton, payload_ton));
@@ -91,10 +93,12 @@ public class ConsolidationCostModel {
 
 		if (leg == episode.getLegs().getLast()) {
 			builder.addUnloadingDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(episode.getUnloadingNode()));
+			builder.addUnloadingDuration_h(vehicleAttrs.loadTime_h.get(episode.getCommodity()));
 			builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(episode.getCommodity())
 					* Math.max(minTransferredAmount_ton, payload_ton));
 		} else {
 			builder.addTransferDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(leg.getDestination()));
+			builder.addTransferDuration_h(0.5 * vehicleAttrs.transferTime_h.get(episode.getCommodity()));
 			builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(episode.getCommodity())
 					* Math.max(minTransferredAmount_ton, payload_ton));
 		}

@@ -62,6 +62,22 @@ public class Signature {
 		}
 	}
 
+//	public static class ConsolidationUnit extends Episode {
+//		
+//		public final Boolean loadAtStart;
+//		public final Boolean unloadAtEnd;
+//
+//		@Override
+//		List<Object> asList() {
+//			List<Object> result = super.asList();
+//			result.add(loadAtStart);
+//			result.add(unloadAtEnd);
+//			return result;
+//		}
+//
+//	}
+	
+	
 	public static class Episode extends ListRepresented {
 
 		public final SamgodsConstants.Commodity commodity;
