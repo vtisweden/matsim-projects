@@ -84,10 +84,10 @@ public class ChainAndShipmentSizeChoiceModel {
 				transportChains.size());
 		for (TransportChain transportChain : transportChains) {
 			try {
-				final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
+				final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
 				for (TransportEpisode episode : transportChain.getEpisodes()) {
 					final DetailedTransportCost episodeUnitCost = this.episodeCostModel.computeUnitCost(episode);
-					builder.addLoadingCost(episodeUnitCost.loadingCost)
+					chainCostBuilder.addLoadingCost(episodeUnitCost.loadingCost)
 							.addLoadingDuration_h(episodeUnitCost.loadingDuration_h)
 							.addMoveCost(episodeUnitCost.moveCost).addMoveDuration_h(episodeUnitCost.moveDuration_h)
 							.addTransferCost(episodeUnitCost.transferCost)
@@ -95,7 +95,7 @@ public class ChainAndShipmentSizeChoiceModel {
 							.addUnloadingCost(episodeUnitCost.unloadingCost)
 							.addUnloadingDuration_h(episodeUnitCost.unloadingDuration_h);
 				}
-				chain2transportUnitCost.put(transportChain, builder.build());
+				chain2transportUnitCost.put(transportChain, chainCostBuilder.build());
 			} catch (InsufficientDataException e0) {
 				e0.log(this.getClass(), "No transport cost data for at least one episode in this transport chain.",
 						transportChain);

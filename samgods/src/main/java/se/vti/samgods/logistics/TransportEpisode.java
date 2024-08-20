@@ -55,6 +55,10 @@ public class TransportEpisode {
 
 	// -------------------- IMPLEMENTATION --------------------
 
+	public TransportChain getChain() {
+		return this.parent;
+	}
+	
 	void setParent(TransportChain parent) {
 		this.parent = parent;
 	}

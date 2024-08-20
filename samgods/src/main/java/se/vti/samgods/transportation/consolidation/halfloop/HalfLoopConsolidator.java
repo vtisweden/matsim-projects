@@ -27,8 +27,7 @@ import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.transportation.DetailedTransportCost;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
@@ -163,46 +162,48 @@ public class HalfLoopConsolidator {
 	}
 
 	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, Integer vehicleCnt,
-			TransportEpisode episode, TransportLeg leg, double totalDemand_ton, double serviceProba) throws InsufficientDataException {
+			Signature.ConsolidationEpisode signature, double totalDemand_ton, double serviceProba)
+			throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 		FleetAssignment result = new FleetAssignment(vehicleType,
-				this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, episode, leg),
+				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, signature),
 				vehicleCnt, totalDemand_ton, this.flexiblePeriod,
-				this.commodity2serviceInterval_days.get(episode.getCommodity()), serviceProba);
+				this.commodity2serviceInterval_days.get(signature.commodity), serviceProba);
 		boolean done = false;
 		while (!done) {
 			final FleetAssignment newResult = new FleetAssignment(vehicleType,
-					this.consolidationCostModel.computeEpisodeCost(vehicleAttrs, result.payload_ton, episode, leg),
+					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton, signature),
 					result.vehicleCnt, totalDemand_ton, this.flexiblePeriod,
-					this.commodity2serviceInterval_days.get(episode.getCommodity()), serviceProba);
+					this.commodity2serviceInterval_days.get(signature.commodity), serviceProba);
 			final double dev = Math.abs(newResult.unitCost_1_ton - result.unitCost_1_ton) / result.unitCost_1_ton;
 			done = (dev < 1e-8);
 			result = newResult;
 		}
 		return result;
 	}
-	
-	public FleetAssignment computeOptimalFleetAssignment(TransportEpisode episode, TransportLeg leg, List<ChainAndShipmentSize> choices)
-			throws InsufficientDataException {
+
+	public FleetAssignment computeOptimalFleetAssignment(Signature.ConsolidationEpisode signature,
+			List<ChainAndShipmentSize> choices) throws InsufficientDataException {
 
 		final double serviceProba = this.computeSingleServiceIntervalUsageProba(
-				this.commodity2numberOfServiceIntervals.get(episode.getCommodity()), choices);
+				this.commodity2numberOfServiceIntervals.get(signature.commodity), choices);
 		final double totalDemand_ton = choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
 
-		final List<VehicleType> compatibleVehicleTypes = this.fleet.getCompatibleVehicleTypes(episode.getCommodity(),
-				episode.getMode(), episode.isContainer(), episode.containsFerry());
+		final List<VehicleType> compatibleVehicleTypes = this.fleet.getCompatibleVehicleTypes(signature.commodity,
+				signature.mode, signature.isContainer, signature.containsFerry);
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
-			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.", episode);
+			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.",
+					signature.commodity, null, signature.mode, signature.isContainer, signature.containsFerry);
 		}
 
 		FleetAssignment overallBestAssignment = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, null, episode, leg,
+			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, null, signature,
 					totalDemand_ton, serviceProba);
 			boolean done = false;
 			while (!done) {
 				final FleetAssignment candAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType,
-						bestAssignmentForVehicleType.vehicleCnt + 1, episode, leg, totalDemand_ton, serviceProba);
+						bestAssignmentForVehicleType.vehicleCnt + 1, signature, totalDemand_ton, serviceProba);
 				if (candAssignmentForVehicleType.unitCost_1_ton < bestAssignmentForVehicleType.unitCost_1_ton) {
 					bestAssignmentForVehicleType = candAssignmentForVehicleType;
 				} else {

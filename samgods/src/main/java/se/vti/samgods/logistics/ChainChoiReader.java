@@ -119,6 +119,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	private final TransportDemand transportDemand;
 
 	private double samplingRate = 1.0;
+	private boolean upscale = false;
 	private Random rnd = null;
 
 	private Network network;
@@ -134,6 +135,11 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
+
+	public ChainChoiReader setUpscaleAgainstSamplingRate(boolean upscale) {
+		this.upscale = upscale;
+		return this;
+	}
 
 	public ChainChoiReader setSamplingRate(double rate, Random rnd) {
 		this.samplingRate = rate;
@@ -202,7 +208,8 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		final long key = Long.parseLong(this.getStringValue(Key));
 
 		final double proba = this.getDoubleValue(Prob);
-		final double singleInstanceVolume_ton_yr = this.getDoubleValue(AnnualVolumeTonnesPerRelation);
+		final double singleInstanceVolume_ton_yr = (this.upscale ? 1.0 / this.samplingRate : 1.0)
+				* this.getDoubleValue(AnnualVolumeTonnesPerRelation);
 		final int numberOfInstances = this.getIntValue(NRelations);
 		final OD od = new OD(Id.createNodeId(Long.parseLong(this.getStringValue(Orig))),
 				Id.createNodeId(Long.parseLong(this.getStringValue(Dest))));
@@ -288,7 +295,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 				TransportEpisode currentEpisode = null;
 				for (int legIndex = 0; legIndex < legs.size(); legIndex++) {
-					final TransportLeg leg = legs.get(legIndex);
+					final TransportLeg leg = legs.get(legIndex).deepCopy(); // individual legs for multiple chains
 					final SamgodsConstants.TransportMode legMode = modes.get(legIndex);
 					if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
 							|| !SamgodsConstants.TransportMode.Rail.equals(legMode)) {

@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.logistics;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,6 +53,15 @@ public class TransportLeg {
 
 	// -------------------- CONSTRUCTION --------------------
 
+	public TransportLeg deepCopy() {
+		TransportLeg result = new TransportLeg(this.od);
+		result.setParent(this.parent);
+		result.routeIds = this.routeIds == null ? null : new ArrayList<>(this.routeIds);
+		result.length_km = this.length_km;
+		result.containsFerry = this.containsFerry;
+		return result;
+	}
+
 	public TransportLeg(OD od) {
 		this.od = od;
 	}
@@ -61,6 +71,14 @@ public class TransportLeg {
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
+
+	public TransportEpisode getEpisode() {
+		return this.parent;
+	}
+
+	public TransportChain getChain() {
+		return this.getEpisode().getChain();
+	}
 
 	/* package */ void setParent(TransportEpisode parent) {
 		this.parent = parent;

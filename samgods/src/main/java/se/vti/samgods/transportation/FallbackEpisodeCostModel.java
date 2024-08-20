@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.transportation;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.matsim.api.core.v01.network.Link;
@@ -49,15 +50,16 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 //	private double capacityUsageFactor = 0.7;
 	private final Map<TransportMode, Double> mode2efficiency;
-	private final Map<Signature.Episode, Double> episode2efficiency;
+	private final Map<Signature.ConsolidationEpisode, Double> signature2efficiency;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public FallbackEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<TransportMode, Double> mode2capacityUsage, Map<Signature.Episode, Double> episode2efficiency) {
+			Map<TransportMode, Double> mode2capacityUsage,
+			Map<Signature.ConsolidationEpisode, Double> episode2efficiency) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
-		this.mode2efficiency = mode2capacityUsage;
+		this.mode2efficiency = new LinkedHashMap<>(mode2capacityUsage);
 
 		double fallbackCapacityUsage = mode2capacityUsage.values().stream().mapToDouble(e -> e).average().getAsDouble();
 		for (TransportMode mode : TransportMode.values()) {
@@ -65,7 +67,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 				this.mode2efficiency.put(mode, fallbackCapacityUsage);
 			}
 		}
-		this.episode2efficiency = episode2efficiency;
+		this.signature2efficiency = new LinkedHashMap<>(episode2efficiency);
 	}
 
 //	public FallbackEpisodeCostModel setCapacityUsageFactor(double factor) {
@@ -75,20 +77,34 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
 
-	private double efficiency(TransportEpisode episode) {
-		Signature.Episode signature = new Signature.Episode(episode);
-		if (this.episode2efficiency.containsKey(signature)) {
-			return this.episode2efficiency.get(signature);
-		} else {
-			return this.mode2efficiency.get(episode.getMode());
-		}
+	private double efficiency(Signature.ConsolidationEpisode signature) {
+		return this.signature2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
 
 	@Override
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
-		return this.consolidationCostModel.computeEpisodeCost(vehicleAttributes,
-				this.efficiency(episode) * vehicleAttributes.capacity_ton, episode, null).computeUnitCost();
+		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
+		for (Signature.ConsolidationEpisode signature : Signature.ConsolidationEpisode.create(episode)) {
+			final DetailedTransportCost signatureCost = this.consolidationCostModel
+					.computeSignatureCost(vehicleAttributes,
+							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature)
+					.computeUnitCost();
+			builder.addLoadingDuration_h(signatureCost.loadingDuration_h)
+					.addTransferDuration_h(signatureCost.transferDuration_h)
+					.addUnloadingDuration_h(signatureCost.unloadingDuration_h)
+					.addMoveDuration_h(signatureCost.moveDuration_h).addLoadingCost(signatureCost.loadingCost)
+					.addTransferCost(signatureCost.transferCost).addUnloadingCost(signatureCost.unloadingCost)
+					.addMoveCost(signatureCost.moveCost);
+		}
+//		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
+//				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
+//				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
+//		for (Signature.ConsolidationEpisode signature : Signature.ConsolidationEpisode.create(episode)) {
+//			this.consolidationCostModel.addSignatureCostToBuilder(vehicleAttributes,
+//					this.efficiency(signature) * vehicleAttributes.capacity_ton, signature, builder);
+//		}
+		return builder.build();
 	}
 
 	@Override
