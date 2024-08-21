@@ -145,18 +145,18 @@ public class ConsolidationCostModel {
 			Signature.ConsolidationEpisode signature, DetailedTransportCost.Builder builder)
 			throws InsufficientDataException {
 
-		final List<Id<Link>> firstLinkIds = signature.linkIds.get(0);
-		final List<Id<Link>> lastLinkIds = signature.linkIds.get(signature.linkIds.size() - 1);
+		final List<Link> firstLinks = signature.links.get(0);
+		final List<Link> lastLinks = signature.links.get(signature.links.size() - 1);
 
-		for (List<Id<Link>> linkIds : signature.linkIds) {
+		for (List<Link> links : signature.links) {
 
-			if (linkIds.size() > 0) {
+			if (links.size() > 0) {
 
-				final List<Link> links = NetworkUtils.getLinks(this.network, linkIds);
+				// final List<Link> links = NetworkUtils.getLinks(this.network, linkIds);
 				final Id<Node> firstNodeId = links.get(0).getFromNode().getId();
 				final Id<Node> lastNodeId = links.get(links.size() - 1).getToNode().getId();
 
-				if (signature.loadAtStart && (linkIds == firstLinkIds)) {
+				if (signature.loadAtStart && (links == firstLinks)) {
 					builder.addLoadingDuration_h(vehicleAttrs.loadTime_h.get(signature.commodity));
 					builder.addLoadingDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(firstNodeId));
 					builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(signature.commodity)
@@ -168,7 +168,7 @@ public class ConsolidationCostModel {
 							* Math.max(minTransferredAmount_ton, payload_ton));
 				}
 
-				if (signature.unloadAtEnd && (linkIds == lastLinkIds)) {
+				if (signature.unloadAtEnd && (links == lastLinks)) {
 					builder.addUnloadingDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(lastNodeId));
 					builder.addUnloadingDuration_h(vehicleAttrs.loadTime_h.get(signature.commodity));
 					builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(signature.commodity)

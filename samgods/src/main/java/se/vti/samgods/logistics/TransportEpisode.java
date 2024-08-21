@@ -26,11 +26,13 @@ import java.util.List;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.Signature;
 
 /**
  * 
@@ -47,18 +49,28 @@ public class TransportEpisode {
 
 	private TransportChain parent;
 
+	private List<Signature.ConsolidationEpisode> signatures = null;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportEpisode(TransportMode mode) {
 		this.mode = mode;
 	}
 
+	public void computeSignatures(Network network) {
+		this.signatures = Signature.ConsolidationEpisode.create(this, network);
+	}
+
 	// -------------------- IMPLEMENTATION --------------------
 
+	public List<Signature.ConsolidationEpisode> getSignatures() {
+		return this.signatures;
+	}
+	
 	public TransportChain getChain() {
 		return this.parent;
 	}
-	
+
 	void setParent(TransportChain parent) {
 		this.parent = parent;
 	}
@@ -189,7 +201,7 @@ public class TransportEpisode {
 		}
 		return result;
 	}
-	
+
 	public double computeLength_km() {
 		return this.legs.stream().mapToDouble(l -> l.getLength_km()).sum();
 	}

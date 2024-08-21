@@ -54,8 +54,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FallbackEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<TransportMode, Double> mode2capacityUsage,
+	public FallbackEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel, Map<TransportMode, Double> mode2capacityUsage,
 			Map<Signature.ConsolidationEpisode, Double> episode2efficiency) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
@@ -85,7 +84,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
-		for (Signature.ConsolidationEpisode signature : Signature.ConsolidationEpisode.create(episode)) {
+		for (Signature.ConsolidationEpisode signature : episode.getSignatures()) {
 			final DetailedTransportCost signatureCost = this.consolidationCostModel
 					.computeSignatureCost(vehicleAttributes,
 							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature)

@@ -149,12 +149,12 @@ public class TestSamgods {
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
-//		double samplingRate = 0.01;
-//		boolean upscale = true;
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+		double samplingRate = 0.01;
 		boolean upscale = false;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+//		double samplingRate = 1.0;
+//		boolean upscale = false;
 
 //		boolean disaggregateRail = true;
 		boolean flexiblePeriod = true;
@@ -201,19 +201,19 @@ public class TestSamgods {
 			log.info(commodity + ": avg number of chains per OD = " + chainCnt / odCnt);
 		}
 
-		for (Commodity commodity : consideredCommodities) {
-			for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity).values()) {
-				for (TransportChain chain : chains) {
-					for (TransportEpisode episode : chain.getEpisodes()) {
-						assert (episode.getChain() == chain);
-						for (TransportLeg leg : episode.getLegs()) {
-							assert (leg.getEpisode() == episode);
-							assert (leg.getChain() == chain);
-						}
-					}
-				}
-			}
-		}
+//		for (Commodity commodity : consideredCommodities) {
+//			for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity).values()) {
+//				for (TransportChain chain : chains) {
+//					for (TransportEpisode episode : chain.getEpisodes()) {
+//						assert (episode.getChain() == chain);
+//						for (TransportLeg leg : episode.getLegs()) {
+//							assert (leg.getEpisode() == episode);
+//							assert (leg.getChain() == chain);
+//						}
+//					}
+//				}
+//			}
+//		}
 
 		// ----------------------------------------------------------------------
 		// ------------------------------ ITERATIONS ----------------------------
@@ -269,10 +269,17 @@ public class TestSamgods {
 						entry.setValue(
 								entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toList()));
 						removedCnt += chainCnt - entry.getValue().size();
+
+						for (TransportChain chain : entry.getValue()) {
+							for (TransportEpisode episode : chain.getEpisodes()) {
+								episode.computeSignatures(network);
+							}
+						}
 					}
 					log.warn(commodity + ": Removed " + removedCnt + " out of " + totalCnt
 							+ " chains with incomplete routes. ");
 				}
+
 				routed = true;
 			}
 
@@ -297,7 +304,9 @@ public class TestSamgods {
 			ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
 			ChainAndShipmentSizeChoiceModel choiceModel = new ChainAndShipmentSizeChoiceModel(scale, episodeCostModels,
 					nonTransportCostModel, utilityFunction).setEnforceMaxShipmentSize(enforceMaxShipmentSize);
+
 			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+				log.info(commodity + ": simulating choices");
 //				Map<SamgodsConstants.ShipmentSize, Long> size2cnt = Arrays
 //						.stream(SamgodsConstants.ShipmentSize.values()).collect(Collectors.toMap(s -> s, s -> 0l));
 				for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
@@ -345,11 +354,15 @@ public class TestSamgods {
 //			}
 
 			Map<Signature.ConsolidationEpisode, List<ChainAndShipmentSize>> signature2choices = new LinkedHashMap<>();
+//			Map<TransportEpisode, List<Signature.ConsolidationEpisode>> episode2signatures = new LinkedHashMap<>();
 //			Map<Signature.ConsolidEpisode, List<TransportEpisode>> episodeSignature2episodes = new LinkedHashMap<>();
 			for (ChainAndShipmentSize choice : allChoices) {
+//				cnt++;
 //				log.info("OD " + choice.transportChain.getEpisodes().get(0).getOD() + " extracting consolidation episodes.");
 				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
-					List<Signature.ConsolidationEpisode> signatures = Signature.ConsolidationEpisode.create(episode);
+					List<Signature.ConsolidationEpisode> signatures = episode.getSignatures();
+//							Signature.ConsolidationEpisode.create(episode,
+//							network);
 //					if (signatures.size() > 1) {
 //						System.out.println(
 //								episode.getCommodity() + ", " + episode.getMode() + ", " + episode.isContainer() + ", "
@@ -366,6 +379,7 @@ public class TestSamgods {
 //						}						
 						signature2choices.computeIfAbsent(signature, s -> new LinkedList<>()).add(choice);
 					}
+//					episode2signatures.put(episode, signatures);
 				}
 			}
 			log.info(allChoices.stream().mapToLong(c -> c.transportChain.getEpisodes().size()).sum() + " episodes.");
@@ -388,8 +402,13 @@ public class TestSamgods {
 
 			HalfLoopConsolidator consolidator = new HalfLoopConsolidator(fleet, consolidationCostModel,
 					commodity2serviceInterval, flexiblePeriod, skipUnusedIntervals);
+			long cnt = 0;
 			for (Map.Entry<Signature.ConsolidationEpisode, List<ChainAndShipmentSize>> e : signature2choices
 					.entrySet()) {
+				cnt++;
+				if (cnt % 1000 == 0) {
+					log.info("Consolidated " + cnt + " out of " + signature2choices.size() + " signatures.");
+				}
 				try {
 //					TransportEpisode episode = episodeSignature2episodes.get(e.getKey()).get(0);
 
@@ -400,13 +419,12 @@ public class TestSamgods {
 					double totalDemand_ton = shipments.stream().mapToDouble(s -> s.annualShipment.getTotalAmount_ton())
 							.sum();
 
-//					if (episode.getLoadingNode().equals(episode.getUnloadingNode())) {
-//						log.warn("Skipping episode with origin = destination");
-//					} else if (totalDemand_ton < 0.001) {
-//						log.warn("Skipping episode with too small total demand " + totalDemand_ton + ". Signature: "
-//								+ e.getKey());
-//					} else 
-					{
+					if (signature.linkIds == null || signature.linkIds.stream().mapToInt(l -> l.size()).sum() == 0) {
+						log.warn("Skipping episode without links");
+					} else if (totalDemand_ton < 0.001) {
+						log.warn("Skipping episode with too small total demand " + totalDemand_ton + ". Signature: "
+								+ e.getKey());
+					} else {
 
 //						final List<TransportLeg> legs;
 //						if (disaggregateRail && episode.getMode().equals(TransportMode.Rail)
@@ -426,8 +444,8 @@ public class TestSamgods {
 
 //						double length_km = (leg == null ? episode.getLegs().stream().mapToDouble(l -> l.getLength_km()).sum()
 //								: leg.getLength_km());
-						double length_km = 0.001 * signature.linkIds.stream().flatMap(list -> list.stream())
-								.mapToDouble(id -> network.getLinks().get(id).getLength()).sum();
+						double length_km = 0.001 * signature.links.stream().flatMap(list -> list.stream())
+								.mapToDouble(l -> l.getLength()).sum();
 
 						mode2efficiencyTimesVehicleCntSum.compute(signature.mode,
 								(m, s) -> s == null ? assignment.transportEfficiency() * vehicleCnt

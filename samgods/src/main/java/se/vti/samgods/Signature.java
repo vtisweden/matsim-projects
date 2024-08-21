@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.SamgodsConstants.TransportMode;
@@ -69,22 +70,42 @@ public class Signature {
 
 	public static class ConsolidationEpisode extends Episode {
 
+		// defining
 		public final Boolean loadAtStart;
 		public final Boolean unloadAtEnd;
 
-		private ConsolidationEpisode(List<TransportLeg> legs, boolean loadAtStart, boolean unloadAtEnd) {
+		// derived
+		public final List<List<Link>> links;
+
+		private ConsolidationEpisode(List<TransportLeg> legs, boolean loadAtStart, boolean unloadAtEnd,
+				Network network) {
 			super(legs.get(0).getCommodity(), legs.get(0).getMode(), legs.get(0).isContainer(),
 					legs.get(0).containsFerry(),
 					legs.stream().map(l -> l.getRouteIdsView()).collect(Collectors.toList()));
 			this.loadAtStart = loadAtStart;
 			this.unloadAtEnd = unloadAtEnd;
+			
+			// not needed for compatibility check
+			if (network != null) {
+				this.links = new ArrayList<>(this.linkIds.size());
+				for (List<Id<Link>> legLinkIds : this.linkIds) {
+					this.links.add(
+							legLinkIds.stream().map(id -> network.getLinks().get(id)).collect(Collectors.toList()));
+				}
+			} else {
+				this.links = null;
+			}
 		}
 
-		private ConsolidationEpisode(TransportLeg leg, boolean loadAtStart, boolean unloadAtEnd) {
-			this(Arrays.asList(leg), loadAtStart, unloadAtEnd);
+		private ConsolidationEpisode(TransportLeg leg, boolean loadAtStart, boolean unloadAtEnd, Network network) {
+			this(Arrays.asList(leg), loadAtStart, unloadAtEnd, network);
+//			this.links = new ArrayList<>(this.linkIds.size());
+//			for (List<Id<Link>> legLinkIds : this.linkIds) {
+//				this.links.add(legLinkIds.stream().map(id -> network.getLinks().get(id)).collect(Collectors.toList()));
+//			}
 		}
 
-		public static List<ConsolidationEpisode> create(TransportEpisode episode) {
+		public static List<ConsolidationEpisode> create(TransportEpisode episode, Network network) {
 			if (episode.getLegs() == null
 					|| episode.getLegs().stream().mapToInt(l -> l.getRouteIdsView().size()).sum() == 0) {
 				return Collections.emptyList();
@@ -93,12 +114,16 @@ public class Signature {
 					// TODO What if loading / unloading happens during degenerate leg without links?
 					return episode.getLegs().stream().filter(l -> l.getRouteIdsView().size() > 0)
 							.map(l -> new ConsolidationEpisode(l, l == episode.getLegs().getFirst(),
-									l == episode.getLegs().getLast()))
+									l == episode.getLegs().getLast(), network))
 							.collect(Collectors.toList());
 				} else {
-					return Arrays.asList(new ConsolidationEpisode(episode.getLegs(), true, true));
+					return Arrays.asList(new ConsolidationEpisode(episode.getLegs(), true, true, network));
 				}
 			}
+		}
+
+		public List<List<Link>> getLinks() {
+			return this.links;
 		}
 
 		@Override
@@ -111,7 +136,7 @@ public class Signature {
 
 		@Override
 		public boolean isCompatible(TransportEpisode episode) {
-			return create(episode).contains(this);
+			return episode.getSignatures().contains(this);
 		}
 
 	}

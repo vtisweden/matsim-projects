@@ -166,7 +166,8 @@ public class HalfLoopConsolidator {
 			throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 		FleetAssignment result = new FleetAssignment(vehicleType,
-				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, signature),
+				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
+						signature),
 				vehicleCnt, totalDemand_ton, this.flexiblePeriod,
 				this.commodity2serviceInterval_days.get(signature.commodity), serviceProba);
 		boolean done = false;
@@ -178,6 +179,12 @@ public class HalfLoopConsolidator {
 			final double dev = Math.abs(newResult.unitCost_1_ton - result.unitCost_1_ton) / result.unitCost_1_ton;
 			done = (dev < 1e-8);
 			result = newResult;
+
+			if (newResult.vehicleCnt > 100 * 1000) {
+				throw new RuntimeException("More than 100'000 vehicles in dimensionFleetAssignment(..), total demand = "
+						+ totalDemand_ton + " ton, signature: " + signature);
+			}
+
 		}
 		return result;
 	}
@@ -209,6 +216,13 @@ public class HalfLoopConsolidator {
 				} else {
 					done = true;
 				}
+
+				if (candAssignmentForVehicleType.vehicleCnt > 100 * 1000) {
+					throw new RuntimeException(
+							"More than 100'000 vehicles in computeOptimalFleetAssignment(..), total demand = "
+									+ totalDemand_ton + " ton, signature: " + signature);
+				}
+
 			}
 			if ((overallBestAssignment == null)
 					|| (bestAssignmentForVehicleType.unitCost_1_ton < overallBestAssignment.unitCost_1_ton)) {
