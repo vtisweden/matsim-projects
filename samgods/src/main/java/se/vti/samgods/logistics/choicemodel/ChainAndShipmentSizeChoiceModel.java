@@ -84,7 +84,10 @@ public class ChainAndShipmentSizeChoiceModel {
 				transportChains.size());
 		for (TransportChain transportChain : transportChains) {
 			try {
-				final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
+				final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder()
+						.addAmount_ton(1.0).addLoadingCost(0.0).addLoadingDuration_h(0.0).addMoveCost(0.0)
+						.addMoveDuration_h(0.0).addTransferCost(0.0).addTransferDuration_h(0.0).addUnloadingCost(0.0)
+						.addUnloadingDuration_h(0.0);
 				for (TransportEpisode episode : transportChain.getEpisodes()) {
 					final DetailedTransportCost episodeUnitCost = this.episodeCostModel.computeUnitCost(episode);
 					chainCostBuilder.addLoadingCost(episodeUnitCost.loadingCost)

@@ -27,6 +27,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
@@ -70,6 +71,7 @@ public class RoutingData {
 	public Network createNetwork(SamgodsConstants.TransportMode mode) {
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, mode.matsimModes);
+		new NetworkCleaner().run(unimodalNetwork);
 		return unimodalNetwork;
 	}
 
