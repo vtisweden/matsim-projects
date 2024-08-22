@@ -42,9 +42,9 @@ import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
  */
 public class Signature {
 
-	public static abstract class ListRepresented {
+	private static abstract class ListRepresented {
 
-		protected abstract List<Object> asList();
+		abstract List<Object> asList();
 
 		@Override
 		public int hashCode() {
@@ -127,7 +127,7 @@ public class Signature {
 		}
 
 		@Override
-		protected List<Object> asList() {
+		List<Object> asList() {
 			List<Object> result = new ArrayList<>(super.asList());
 			result.add(this.loadAtStart);
 			result.add(this.unloadAtEnd);
@@ -151,7 +151,7 @@ public class Signature {
 		public final List<List<Id<Link>>> linkIds;
 
 		@Override
-		protected List<Object> asList() {
+		List<Object> asList() {
 			return Arrays.asList(this.commodity, this.mode, this.isContainer, this.containsFerry, this.linkIds);
 		}
 

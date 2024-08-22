@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.router.AStarLandmarksFactory;
@@ -125,16 +124,10 @@ public class Router {
 			this.mode = leg.getMode();
 			this.leg = leg;
 		}
-
-		synchronized void setRoute(List<Link> links) {
-			this.leg.setRoute(links);
+		
+		synchronized void setRoute(List link) {
+			this.leg.setRoute(link);
 		}
-
-		@Override
-		public String toString() {
-			return "OD = " + od + ", isContainer = " + isContainer + ", mode = " + mode;
-		}
-
 	}
 
 	/**
@@ -170,9 +163,7 @@ public class Router {
 			this.mode2network = mode2network;
 			this.mode2containerRouter = new LinkedHashMap<>(mode2network.size());
 			this.mode2noContainerRouter = new LinkedHashMap<>(mode2network.size());
-			final AStarLandmarksFactory factory = new AStarLandmarksFactory(4);
-//			final DijkstraFactory factory = new DijkstraFactory();
-
+			final AStarLandmarksFactory factory = new AStarLandmarksFactory(4); // TODO
 			for (Map.Entry<SamgodsConstants.TransportMode, Network> e : mode2network.entrySet()) {
 				final TransportMode mode = e.getKey();
 				final Network unimodalNetwork = e.getValue();
@@ -191,9 +182,6 @@ public class Router {
 		public void run() {
 			log.info("THREAD STARTED: " + this.name);
 			for (RoutingJob job : this.jobs) {
-
-//				log.info("Routing job: " + job);
-
 				if (job.od.origin.equals(job.od.destination)) {
 					job.setRoute(new ArrayList<>(0));
 					if (logProgress) {

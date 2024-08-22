@@ -37,7 +37,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.vehicles.VehicleType;
@@ -57,6 +56,7 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentChoiceStats;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeChoiceModel;
@@ -65,9 +65,9 @@ import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
 import se.vti.samgods.network.RoutingData;
 import se.vti.samgods.transportation.DetailedTransportCost;
+import se.vti.samgods.transportation.EpisodeCostModel;
 import se.vti.samgods.transportation.EpisodeCostModels;
 import se.vti.samgods.transportation.FallbackEpisodeCostModel;
-import se.vti.samgods.transportation.FallbackEpisodeCostModel.LinkCostSignature;
 import se.vti.samgods.transportation.consolidation.halfloop.HalfLoopConsolidator;
 import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.road.PerformanceMeasures;
@@ -145,7 +145,7 @@ public class TestSamgods {
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 14);
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 14);
 
-		InsufficientDataException.setLogDuringRuntime(false);
+		InsufficientDataException.setLogDuringRuntime(true);
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
@@ -168,7 +168,7 @@ public class TestSamgods {
 		boolean checkUnitCost = true;
 
 		boolean routed = false;
-		boolean reroute = true;
+		boolean reroute = false;
 
 		log.info("STARTED ...");
 
@@ -221,11 +221,14 @@ public class TestSamgods {
 
 		Map<TransportMode, Double> mode2efficiency = Arrays.stream(TransportMode.values())
 				.collect(Collectors.toMap(m -> m, m -> 0.7));
+
 		Map<Signature.ConsolidationEpisode, Double> signature2efficiency = new LinkedHashMap<>();
 
-		Map<LinkCostSignature, Double> linkSignature2unitCost_1_ton = new LinkedHashMap<>();
-
 		for (int iteration = 0; iteration < maxIterations; iteration++) {
+
+			double innoWeight = 1.0 / (1.0 + iteration);
+
+			// CREATE COST CONTAINERS
 
 			PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
 				@Override
@@ -240,21 +243,16 @@ public class TestSamgods {
 			};
 
 			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
-			FallbackEpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet,
-					consolidationCostModel, mode2efficiency, signature2efficiency);
-//			fallbackEpisodeCostModel.updateLinkUnitCosts_1_ton(linkSignature2unitCost_1_ton);
-
+			EpisodeCostModel fallbackEpisodeCostModel = new FallbackEpisodeCostModel(fleet, consolidationCostModel,
+					mode2efficiency, signature2efficiency);
 			EpisodeCostModels episodeCostModels = new EpisodeCostModels(fallbackEpisodeCostModel);
 
 			NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
-
-			double innoWeight = 1.0 / (1.0 + iteration);
 
 			if (!routed || reroute) {
 				// (RE) ROUTE CHAINS
 				RoutingData routingData = new RoutingData(network, episodeCostModels);
 				for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-					log.info("Routing commodity " + commodity);
 					Map<OD, List<TransportChain>> od2chains = transportDemand.commodity2od2transportChains
 							.get(commodity);
 					Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
@@ -262,7 +260,6 @@ public class TestSamgods {
 				}
 				// REMOVE UNROUTED CHAINS
 				for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-					log.info("Postprocessing commodity " + commodity);
 					long removedCnt = 0;
 					long totalCnt = 0;
 					for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains
@@ -396,8 +393,6 @@ public class TestSamgods {
 
 			// CONSOLIDATE AND STATISTICS BOKKEEPING
 
-			Map<Signature.ConsolidationEpisode, HalfLoopConsolidator.FleetAssignment> signature2assignment = new LinkedHashMap<>();
-
 			Map<TransportMode, Double> mode2efficiencyTimesVehicleCntSum = new LinkedHashMap<>();
 			Map<VehicleType, Double> vehicleType2vehicleCntSum = new LinkedHashMap<>();
 			Map<TransportMode, Double> mode2vehicleCntSum = new LinkedHashMap<>();
@@ -444,7 +439,6 @@ public class TestSamgods {
 						HalfLoopConsolidator.FleetAssignment assignment = consolidator
 								.computeOptimalFleetAssignment(signature, shipments);
 //						System.out.println("-> " + assignment);
-						signature2assignment.put(signature, assignment);
 
 						double vehicleCnt = assignment.expectedNumberOfSimultaneouslyMovingVehicles();
 
@@ -518,72 +512,6 @@ public class TestSamgods {
 			logEfficiency(mode2realizedEfficiency, iteration);
 			logFleet(vehicleType2vehicleCntSum, iteration, fleet);
 			logCost(mode2unitCost_1_tonKm, iteration);
-
-			// >>>>> TODO COMPUTE LINK EFFICIENCIES HERE >>>>>
-
-			Map<FallbackEpisodeCostModel.LinkCostSignature, Double> linkSignature2weightedUnitCostSum = new LinkedHashMap<>();
-			Map<FallbackEpisodeCostModel.LinkCostSignature, Double> linkSignature2weightSum = new LinkedHashMap<>();
-
-			for (ChainAndShipmentSize choice : allChoices) {
-				final double totalAmount_ton = choice.annualShipment.getTotalAmount_ton();
-				if (totalAmount_ton > 1e-3) {
-					for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
-						for (Signature.ConsolidationEpisode episodeSignature : episode.getSignatures()) {
-							if (episodeSignature.links != null) {
-								final double signatureLength_m = episodeSignature.links.stream()
-										.flatMap(l -> l.stream()).mapToDouble(l -> l.getLength()).sum();
-								if (signatureLength_m > 1.0) {
-									HalfLoopConsolidator.FleetAssignment assignment = signature2assignment
-											.get(episodeSignature);
-									assert (assignment.unitCost_1_ton > 0.0
-											&& Double.isFinite(assignment.unitCost_1_ton)
-											&& !Double.isNaN(assignment.unitCost_1_ton));
-									for (List<Link> links : episodeSignature.links) {
-										for (Link link : links) {
-//											final Double speed_km_h = LinkAttributes.getSpeed1_km_h(link);
-											final double weight = (link.getLength() / signatureLength_m)
-													* totalAmount_ton;
-//											if (link.getLength() > 0 && speed_km_h != null && speed_km_h > 0) {
-											final LinkCostSignature linkSignature = new LinkCostSignature(link.getId(),
-													episode.getCommodity(), episode.getMode(), episode.isContainer());
-											linkSignature2weightedUnitCostSum.compute(linkSignature, (l,
-													s) -> (s == null ? 0.0 : s) + weight * assignment.unitCost_1_ton);
-											linkSignature2weightSum.compute(linkSignature,
-													(l, s) -> (s == null ? 0.0 : s) + weight);
-//											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-//			linkSignature2unitCost_1_ton = linkSignature2weightSum.entrySet().stream().filter(e -> e.getValue() > 1e-8)
-//					.collect(Collectors.toMap(e -> e.getKey(),
-//							e -> linkSignature2weightedUnitCostSum.get(e.getKey()) / e.getValue()));
-
-			double minVal = Double.POSITIVE_INFINITY;
-			double maxVal = Double.NEGATIVE_INFINITY;
-			List<LinkCostSignature> invalidSignatures = new ArrayList<>();
-			for (Map.Entry<LinkCostSignature, Double> e : linkSignature2unitCost_1_ton.entrySet()) {
-				if (e.getValue() == null || e.getValue() <= 0 || Double.isInfinite(e.getValue())
-						|| Double.isNaN(e.getValue())) {
-					invalidSignatures.add(e.getKey());
-					log.warn("invalid unit cost " + e.getValue() + " for link signature " + e.getKey());
-				} else {
-					minVal = Math.min(minVal, e.getValue());
-					maxVal = Math.max(maxVal, e.getValue());
-				}
-			}
-			log.info("min val = " + minVal + ", max val = " + maxVal);
-
-			for (LinkCostSignature s : invalidSignatures) {
-				linkSignature2unitCost_1_ton.remove(s);
-			}
-
-			// <<<<< TODO COMPUTE LINK EFFICIENCIES HERE <<<<<
 
 //			Map<TransportMode, BasicStatistics> mode2efficiencyStats = new LinkedHashMap<>();
 
