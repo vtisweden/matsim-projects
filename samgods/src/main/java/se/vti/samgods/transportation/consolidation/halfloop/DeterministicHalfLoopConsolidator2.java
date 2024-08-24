@@ -182,33 +182,40 @@ public class DeterministicHalfLoopConsolidator2 {
 	public FleetAssignment computeOptimalFleetAssignment(Signature.ConsolidationEpisode signature,
 			List<ChainAndShipmentSize> choices) throws InsufficientDataException {
 
-		double length_km = Units.KM_PER_M
+		final double totalDemand_ton = choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
+		final double length_km = Units.KM_PER_M
 				* signature.links.stream().flatMap(l -> l.stream()).mapToDouble(l -> l.getLength()).sum();
+		final double intervalLength_days = this.commodity2serviceInterval_days.get(signature.commodity);
 
 		// >>>
 
-		double demandExpectationPerActiveServiceInterval_ton = 0.0;
-		double demandVariancePerActiveServiceInterval_ton2 = 0.0;
 		final double serviceIntervalActiveProba;
-
-		double probaSingleServiceIntervalInactive = 1.0;
-		for (ChainAndShipmentSize choice : choices) {
-			final double meanShipmentsPerYear = Math.max(1.0,
-					choice.annualShipment.getTotalAmount_ton() / choice.sizeClass.upperValue_ton);
-			final double meanShipmentsPerServiceInterval = meanShipmentsPerYear
-					* this.commodity2serviceInterval_days.get(signature.commodity) / 365.0;
-			final double meanShipmentSize_ton = choice.annualShipment.getTotalAmount_ton() / meanShipmentsPerYear;
-			probaSingleServiceIntervalInactive *= Math.exp(-meanShipmentsPerServiceInterval);
-
-			final double expectedNumberOfShipmentsPerActiveServiceInterval = meanShipmentsPerServiceInterval
-					/ (1.0 - Math.exp(-meanShipmentsPerServiceInterval));
-			demandExpectationPerActiveServiceInterval_ton += meanShipmentSize_ton
-					* expectedNumberOfShipmentsPerActiveServiceInterval;
-			demandVariancePerActiveServiceInterval_ton2 += Math.pow(meanShipmentSize_ton, 2.0)
-					* expectedNumberOfShipmentsPerActiveServiceInterval
-					* (1.0 + meanShipmentsPerServiceInterval - expectedNumberOfShipmentsPerActiveServiceInterval);
+		{
+			double probaSingleServiceIntervalInactive = 1.0;
+			for (ChainAndShipmentSize choice : choices) {
+				final double meanShipmentsPerYear = Math.max(1.0,
+						choice.annualShipment.getTotalAmount_ton() / choice.sizeClass.upperValue_ton);
+				final double meanShipmentsPerServiceInterval = meanShipmentsPerYear * intervalLength_days / 365.0;
+				probaSingleServiceIntervalInactive *= Math.exp(-meanShipmentsPerServiceInterval);
+			}
+			serviceIntervalActiveProba = 1.0 - probaSingleServiceIntervalInactive;
 		}
-		serviceIntervalActiveProba = 1.0 - probaSingleServiceIntervalInactive;
+
+		final double demandExpectationPerActiveServiceInterval_ton = (1.0 / serviceIntervalActiveProba)
+				* (intervalLength_days / 365.0) * totalDemand_ton;
+//		for (ChainAndShipmentSize choice : choices) {
+//			final double meanShipmentsPerYear = Math.max(1.0,
+//					choice.annualShipment.getTotalAmount_ton() / choice.sizeClass.upperValue_ton);
+//			final double meanShipmentSize_ton = choice.annualShipment.getTotalAmount_ton() / meanShipmentsPerYear;
+//			final double meanShipmentsPerServiceInterval = meanShipmentsPerYear
+//					* this.commodity2serviceInterval_days.get(signature.commodity) / 365.0;
+//
+//			final double expectedNumberOfShipmentsPerActiveServiceInterval = meanShipmentsPerServiceInterval
+//					/ (1.0 - Math.exp(-meanShipmentsPerServiceInterval));
+//			demandExpectationPerActiveServiceInterval_ton +=
+//
+//					meanShipmentSize_ton * expectedNumberOfShipmentsPerActiveServiceInterval;
+//		}
 
 		// <<<
 
