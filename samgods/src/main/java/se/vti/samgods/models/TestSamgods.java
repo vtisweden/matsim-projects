@@ -150,12 +150,12 @@ public class TestSamgods {
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
-		double samplingRate = 0.01;
-		boolean upscale = false;
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-//		double samplingRate = 1.0;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+//		double samplingRate = 0.01;
 //		boolean upscale = false;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+		double samplingRate = 1.0;
+		boolean upscale = false;
 
 //		boolean disaggregateRail = true;
 		boolean flexiblePeriod = true;

@@ -85,6 +85,8 @@ public class DeterministicHalfLoopConsolidator2 {
 				double serviceDemandPerActiveServiceInterval_ton, double serviceInterval_h,
 				double serviceIntervalActiveProba, double length_km) {
 
+			final double vehCap_ton = FreightVehicleAttributes.getCapacity_ton(vehicleType);
+
 			this.vehicleType = vehicleType;
 			this.serviceInterval_h = serviceInterval_h;
 			this.serviceDemandPerActiveServiceInterval_ton = serviceDemandPerActiveServiceInterval_ton;
@@ -94,8 +96,7 @@ public class DeterministicHalfLoopConsolidator2 {
 
 			// n is fleet size
 			// f is circulation frequency, per service interval
-			final double nf = Math.max(1.0,
-					serviceDemandPerActiveServiceInterval_ton / FreightVehicleAttributes.getCapacity_ton(vehicleType));
+			final double nf = Math.max(1.0, serviceDemandPerActiveServiceInterval_ton / vehCap_ton);
 
 			final double fMin = 1.0; // desirable: complete at least one loop
 			final double fMax = serviceInterval_h / this.minLoopDuration_h; // hard physical constraint
@@ -116,6 +117,7 @@ public class DeterministicHalfLoopConsolidator2 {
 				n = Math.max(1, (int) Math.ceil(nf / fMax));
 				f = fMax;
 			}
+			assert(f == Math.min(fMax, Math.max(fMin, nf / n)));
 
 			this.fleetSizeDuringActiveServiceInterval = n;
 			this.loopsPerActiveServiceInterval = f;
