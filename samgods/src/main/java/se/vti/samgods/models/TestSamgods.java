@@ -150,12 +150,12 @@ public class TestSamgods {
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
-//		double samplingRate = 0.01;
-//		boolean upscale = false;
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+		double samplingRate = 0.01;
 		boolean upscale = false;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+//		double samplingRate = 1.0;
+//		boolean upscale = false;
 
 //		boolean disaggregateRail = true;
 		boolean flexiblePeriod = true;
@@ -397,12 +397,24 @@ public class TestSamgods {
 			Map<TransportMode, Double> mode2WeightedEfficiencySum = new LinkedHashMap<>();
 			Map<TransportMode, Double> mode2CostSum = new LinkedHashMap<>();
 			Map<TransportMode, Double> mode2WeightedUnitCostSum = new LinkedHashMap<>();
-			Map<TransportMode, Double> mode2WeightedAvgPayloadSum = new LinkedHashMap<>();
-			Map<TransportMode, Double> mode2WeightedAvgCapacitySum = new LinkedHashMap<>();
 			Map<TransportMode, Double> mode2TonKmSum = new LinkedHashMap<>();
 			Map<TransportMode, Double> mode2WeightSum = new LinkedHashMap<>();
 
 			Map<VehicleType, Double> vehicleType2WeightSum = new LinkedHashMap<>();
+
+			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightedRealizedEfficiencySum = new LinkedHashMap<>();
+			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightedCostSum = new LinkedHashMap<>();
+			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightedRealizedUnitCostSum_avgOfRatio = new LinkedHashMap<>();
+			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2tonKmSum = new LinkedHashMap<>();
+			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightSum = new LinkedHashMap<>();
+
+			for (Commodity commodity : Commodity.values()) {
+				commodity2mode2weightedRealizedEfficiencySum.put(commodity, new LinkedHashMap<>());
+				commodity2mode2weightedCostSum.put(commodity, new LinkedHashMap<>());
+				commodity2mode2weightedRealizedUnitCostSum_avgOfRatio.put(commodity, new LinkedHashMap<>());
+				commodity2mode2tonKmSum.put(commodity, new LinkedHashMap<>());
+				commodity2mode2weightSum.put(commodity, new LinkedHashMap<>());
+			}
 
 			DeterministicHalfLoopConsolidator2 consolidator = new DeterministicHalfLoopConsolidator2(fleet,
 					consolidationCostModel, commodity2serviceInterval, flexiblePeriod, skipUnusedIntervals);
@@ -453,15 +465,23 @@ public class TestSamgods {
 
 						final double tonKm = totalDemand_ton * 0.5 * assignment.loopLength_km;
 
+						commodity2mode2weightedRealizedEfficiencySum.get(signature.commodity).compute(signature.mode,
+								(m, s) -> s == null ? assignment.transportEfficiency() * weight
+										: s + assignment.transportEfficiency() * weight);
+						commodity2mode2weightedCostSum.get(signature.commodity).compute(signature.mode,
+								(m, s) -> s == null ? tonKm * assignment.unitCost_1_tonKm
+										: s + tonKm * assignment.unitCost_1_tonKm);
+						commodity2mode2weightedRealizedUnitCostSum_avgOfRatio.get(signature.commodity)
+								.compute(signature.mode, (m, s) -> s == null ? assignment.unitCost_1_tonKm * weight
+										: s + assignment.unitCost_1_tonKm * weight);
+						commodity2mode2tonKmSum.get(signature.commodity).compute(signature.mode,
+								(m, c) -> c == null ? tonKm : c + tonKm);
+						commodity2mode2weightSum.get(signature.commodity).compute(signature.mode,
+								(m, c) -> c == null ? weight : c + weight);
+
 						mode2WeightedEfficiencySum.compute(signature.mode,
 								(m, s) -> s == null ? assignment.transportEfficiency() * weight
 										: s + assignment.transportEfficiency() * weight);
-						mode2WeightedAvgPayloadSum.compute(signature.mode,
-								(m, s) -> s == null ? assignment.payload_ton * weight
-										: s + assignment.payload_ton * weight);
-						mode2WeightedAvgCapacitySum.compute(signature.mode,
-								(m, s) -> s == null ? assignment.vehicleCapacity_ton() * weight
-										: s + assignment.vehicleCapacity_ton() * weight);
 						mode2CostSum.compute(signature.mode, (m, s) -> s == null ? tonKm * assignment.unitCost_1_tonKm
 								: s + tonKm * assignment.unitCost_1_tonKm);
 						mode2WeightedUnitCostSum.compute(signature.mode,
@@ -513,7 +533,9 @@ public class TestSamgods {
 			final Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency = new LinkedHashMap<>();
 			final Map<SamgodsConstants.TransportMode, Double> mode2realizedUnitCost_avgOfRatio = new LinkedHashMap<>();
 			final Map<SamgodsConstants.TransportMode, Double> mode2realizedUnitCost_ratioOfAvg = new LinkedHashMap<>();
+
 			for (SamgodsConstants.TransportMode mode : mode2WeightSum.keySet()) {
+
 				mode2realizedUnitCost_avgOfRatio.put(mode,
 						mode2WeightedUnitCostSum.get(mode) / mode2WeightSum.get(mode));
 				mode2realizedUnitCost_ratioOfAvg.put(mode, mode2CostSum.get(mode) / mode2TonKmSum.get(mode));
@@ -521,10 +543,26 @@ public class TestSamgods {
 				mode2efficiency.compute(mode, (m, e) -> e == null ? mode2realizedEfficiency.get(mode)
 						: innoWeight * mode2realizedEfficiency.get(mode) + (1.0 - innoWeight) * e);
 			}
-			logEfficiency(mode2realizedEfficiency, iteration);
+			logEfficiency(mode2realizedEfficiency, iteration, "efficiency.txt");
 			logCost(mode2realizedUnitCost_avgOfRatio, iteration, "unitcost_avg-of-ratio.txt");
 			logCost(mode2realizedUnitCost_ratioOfAvg, iteration, "unitcost_ratio-of-avg.txt");
 			logFleet(vehicleType2WeightSum, iteration, fleet);
+
+			for (Commodity commodity : consideredCommodities) {
+				logEfficiency(
+						commodity2mode2weightedRealizedEfficiencySum.get(commodity).entrySet().stream()
+								.collect(Collectors.toMap(e -> e.getKey(),
+										e -> e.getValue() / commodity2mode2weightSum.get(commodity).get(e.getKey()))),
+						iteration, commodity + "_efficiency.txt");
+				logCost(commodity2mode2weightedRealizedUnitCostSum_avgOfRatio.get(commodity).entrySet().stream()
+						.collect(Collectors.toMap(e -> e.getKey(),
+								e -> e.getValue() / commodity2mode2weightSum.get(commodity).get(e.getKey()))),
+						iteration, commodity + "_unitcost_avg-of-ratio.txt");
+				logCost(commodity2mode2weightedCostSum.get(commodity).entrySet().stream()
+						.collect(Collectors.toMap(e -> e.getKey(),
+								e -> e.getValue() / commodity2mode2tonKmSum.get(commodity).get(e.getKey()))),
+						iteration, commodity + "_unitcost_ratio-of-avg.txt");
+			}
 
 //			Map<TransportMode, BasicStatistics> mode2efficiencyStats = new LinkedHashMap<>();
 
@@ -600,14 +638,15 @@ public class TestSamgods {
 		log.info("DONE");
 	}
 
-	static void logEfficiency(Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency, int iteration) {
+	static void logEfficiency(Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency, int iteration,
+			String fileName) {
 		if (iteration == 0) {
 			String headerLine = "";
 			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 				headerLine += "efficiency(" + mode + ")\t";
 			}
 			try {
-				FileUtils.write(new File("efficiency.txt"), headerLine + "\n", false);
+				FileUtils.write(new File(fileName), headerLine + "\n", false);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -622,7 +661,36 @@ public class TestSamgods {
 			}
 		}
 		try {
-			FileUtils.write(new File("efficiency.txt"), dataLine + "\n", true);
+			FileUtils.write(new File(fileName), dataLine + "\n", true);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	static void logCost(Map<SamgodsConstants.TransportMode, Double> mode2unitCost_1_tonKm, int iteration,
+			String fileName) {
+		if (iteration == 0) {
+			String headerLine = "";
+			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+				headerLine += "unitCost(" + mode + ")[SEK/tonKm]\t";
+			}
+			try {
+				FileUtils.write(new File(fileName), headerLine + "\n", false);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		String dataLine = "";
+		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+			if (mode2unitCost_1_tonKm.containsKey(mode)) {
+				dataLine += mode2unitCost_1_tonKm.get(mode) + "\t";
+			} else {
+				dataLine += "\t";
+			}
+		}
+		try {
+			FileUtils.write(new File(fileName), dataLine + "\n", true);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -682,35 +750,6 @@ public class TestSamgods {
 		}
 		try {
 			FileUtils.write(new File("fleet.txt"), dataLine + "\n", true);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	static void logCost(Map<SamgodsConstants.TransportMode, Double> mode2unitCost_1_tonKm, int iteration,
-			String fileName) {
-		if (iteration == 0) {
-			String headerLine = "";
-			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				headerLine += "unitCost(" + mode + ")[SEK/tonKm]\t";
-			}
-			try {
-				FileUtils.write(new File(fileName), headerLine + "\n", false);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		String dataLine = "";
-		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			if (mode2unitCost_1_tonKm.containsKey(mode)) {
-				dataLine += mode2unitCost_1_tonKm.get(mode) + "\t";
-			} else {
-				dataLine += "\t";
-			}
-		}
-		try {
-			FileUtils.write(new File(fileName), dataLine + "\n", true);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
