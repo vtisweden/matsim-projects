@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation;
+package se.vti.samgods.transportation.costs;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.matsim.api.core.v01.network.Link;
@@ -32,7 +33,7 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.LinkAttributes;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
+import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -41,7 +42,7 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  * @author GunnarF
  *
  */
-public class FallbackEpisodeCostModel implements EpisodeCostModel {
+public class BasicEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- MEMBERS --------------------
 
@@ -50,13 +51,13 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 //	private double capacityUsageFactor = 0.7;
 	private final Map<TransportMode, Double> mode2efficiency;
-	private final Map<Signature.ConsolidationEpisode, Double> signature2efficiency;
+	private final Map<Signature.ConsolidationUnit, Double> signature2efficiency;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FallbackEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
+	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
 			Map<TransportMode, Double> mode2capacityUsage,
-			Map<Signature.ConsolidationEpisode, Double> episode2efficiency) {
+			Map<Signature.ConsolidationUnit, Double> episode2efficiency) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.mode2efficiency = new LinkedHashMap<>(mode2capacityUsage);
@@ -77,7 +78,7 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
 
-	private double efficiency(Signature.ConsolidationEpisode signature) {
+	private double efficiency(Signature.ConsolidationUnit signature) {
 		return this.signature2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
 
@@ -87,10 +88,12 @@ public class FallbackEpisodeCostModel implements EpisodeCostModel {
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
-		for (Signature.ConsolidationEpisode signature : episode.getSignatures()) {
+		final List<Signature.ConsolidationUnit> signatures = episode.getSignatures();
+		for (Signature.ConsolidationUnit signature : signatures) {
 			final DetailedTransportCost signatureCost = this.consolidationCostModel
 					.computeSignatureCost(vehicleAttributes,
-							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature)
+							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
+							signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature)
 					.computeUnitCost();
 			builder.addLoadingDuration_h(signatureCost.loadingDuration_h)
 					.addTransferDuration_h(signatureCost.transferDuration_h)

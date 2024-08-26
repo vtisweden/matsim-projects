@@ -42,19 +42,19 @@ public class ConsolidationUtils {
 	private ConsolidationUtils() {
 	}
 
-	public static Map<Signature.Episode, List<TransportChain>> createEpisodeSignature2chains(
-			Map<OD, List<TransportChain>> od2chains) {
-		final Map<Signature.Episode, List<TransportChain>> signature2chains = new LinkedHashMap<>();
-		for (Map.Entry<OD, List<TransportChain>> odAndChains : od2chains.entrySet()) {
-			for (TransportChain chain : odAndChains.getValue()) {
-				for (TransportEpisode episode : chain.getEpisodes()) {
-					final Signature.Episode signature = new Signature.Episode(episode);
-					signature2chains.computeIfAbsent(signature, s -> new LinkedList<>()).add(chain);
-				}
-			}
-		}
-		return signature2chains;
-	}
+//	public static Map<Signature.Episode, List<TransportChain>> createEpisodeSignature2chains(
+//			Map<OD, List<TransportChain>> od2chains) {
+//		final Map<Signature.Episode, List<TransportChain>> signature2chains = new LinkedHashMap<>();
+//		for (Map.Entry<OD, List<TransportChain>> odAndChains : od2chains.entrySet()) {
+//			for (TransportChain chain : odAndChains.getValue()) {
+//				for (TransportEpisode episode : chain.getEpisodes()) {
+//					final Signature.Episode signature = new Signature.Episode(episode);
+//					signature2chains.computeIfAbsent(signature, s -> new LinkedList<>()).add(chain);
+//				}
+//			}
+//		}
+//		return signature2chains;
+//	}
 
 	public static List<Shipment> disaggregateIntoAnalysisPeriod(TransportDemand.AnnualShipment annualShipment,
 			int analysisPeriod_days, SamgodsConstants.ShipmentSize sizeClass) {

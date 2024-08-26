@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation.halfloop;
+package se.vti.samgods.transportation.consolidation;
 
 import java.util.List;
 import java.util.Map;
@@ -30,8 +30,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
-import se.vti.samgods.transportation.DetailedTransportCost;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
+import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -40,7 +39,7 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  * @author GunnarF
  *
  */
-public class DeterministicHalfLoopConsolidator2 {
+public class HalfLoopConsolidator {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -53,7 +52,7 @@ public class DeterministicHalfLoopConsolidator2 {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public DeterministicHalfLoopConsolidator2(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
+	public HalfLoopConsolidator(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
 			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days, boolean flexiblePeriod,
 			boolean skipUnusedIntervals) {
 		this.fleet = fleet;
@@ -117,7 +116,7 @@ public class DeterministicHalfLoopConsolidator2 {
 				n = Math.max(1, (int) Math.ceil(nf / fMax));
 				f = fMax;
 			}
-			assert(f == Math.min(fMax, Math.max(fMin, nf / n)));
+			assert (f == Math.min(fMax, Math.max(fMin, nf / n)));
 
 			this.fleetSizeDuringActiveServiceInterval = n;
 			this.loopsPerActiveServiceInterval = f;
@@ -159,19 +158,20 @@ public class DeterministicHalfLoopConsolidator2 {
 //		}
 	}
 
-	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, Signature.ConsolidationEpisode signature,
+	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, Signature.ConsolidationUnit signature,
 			double serviceDemand_ton, double serviceProba, double length_km) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 
 		FleetAssignment result = new FleetAssignment(vehicleType,
 				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
-						signature),
+						signature, true, true),
 				serviceDemand_ton, Units.H_PER_D * this.commodity2serviceInterval_days.get(signature.commodity),
 				serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
 			FleetAssignment newResult = new FleetAssignment(vehicleType,
-					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton, signature),
+					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton, signature, true,
+							true),
 					serviceDemand_ton, Units.H_PER_D * this.commodity2serviceInterval_days.get(signature.commodity),
 					serviceProba, length_km);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;
@@ -181,7 +181,7 @@ public class DeterministicHalfLoopConsolidator2 {
 		return result;
 	}
 
-	public FleetAssignment computeOptimalFleetAssignment(Signature.ConsolidationEpisode signature,
+	public FleetAssignment computeOptimalFleetAssignment(Signature.ConsolidationUnit signature,
 			List<ChainAndShipmentSize> choices) throws InsufficientDataException {
 
 		final double totalDemand_ton = choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();

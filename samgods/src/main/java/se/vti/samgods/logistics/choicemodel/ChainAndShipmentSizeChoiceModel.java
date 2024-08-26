@@ -34,9 +34,9 @@ import se.vti.samgods.logistics.NonTransportCostModel;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+import se.vti.samgods.transportation.costs.DetailedTransportCost;
+import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.transportation.DetailedTransportCost;
-import se.vti.samgods.transportation.EpisodeCostModel;
 import se.vti.samgods.utils.ChoiceModelUtils;
 
 /**

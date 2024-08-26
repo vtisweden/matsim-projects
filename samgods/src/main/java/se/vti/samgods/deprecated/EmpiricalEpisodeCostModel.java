@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation;
+package se.vti.samgods.deprecated;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,10 +31,14 @@ import org.matsim.vehicles.Vehicle;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.Signature;
+import se.vti.samgods.deprecated.logitprocessconsolidation.ShipmentVehicleAssignment;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.transportation.consolidation.road.ConsolidationCostModel;
-import se.vti.samgods.transportation.consolidation.road.ShipmentVehicleAssignment;
+import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
+import se.vti.samgods.transportation.costs.BasicTransportCost;
+import se.vti.samgods.transportation.costs.DetailedTransportCost;
+import se.vti.samgods.transportation.costs.EpisodeCostModel;
+import se.vti.samgods.transportation.costs.DetailedTransportCost.Builder;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**

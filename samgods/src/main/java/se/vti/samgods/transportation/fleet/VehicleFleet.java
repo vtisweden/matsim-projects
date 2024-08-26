@@ -70,12 +70,13 @@ public class VehicleFleet {
 
 	// -------------------- COMPATIBLE VEHICLE TYPES --------------------
 
-	private final Map<Signature.Episode, List<VehicleType>> signature2compatibleTypes = new LinkedHashMap<>();
+	private final Map<Signature.ConsolidationUnit, List<VehicleType>> signature2compatibleTypes = new LinkedHashMap<>();
 
 	public List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
 
-		final Signature.Episode signature = new Signature.Episode(commodity, mode, isContainer, containsFerry, null);
+		final Signature.ConsolidationUnit signature = new Signature.ConsolidationUnit(commodity, mode, isContainer,
+				containsFerry, null, null);
 		List<VehicleType> result = this.signature2compatibleTypes.get(signature);
 
 		if (result == null) {
@@ -93,13 +94,13 @@ public class VehicleFleet {
 
 	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
-	private final Map<Signature.Episode, VehicleType> signature2representativeType = new LinkedHashMap<>();
+	private final Map<Signature.ConsolidationUnit, VehicleType> signature2representativeType = new LinkedHashMap<>();
 
 	public VehicleType getRepresentativeVehicleType(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
 			throws InsufficientDataException {
 
-		final Signature.Episode signature = new Signature.Episode(commodity, mode, isContainer, containsFerry, null);
+		final Signature.ConsolidationUnit signature = new Signature.ConsolidationUnit(commodity, mode, isContainer, containsFerry, null, null);
 		VehicleType result = this.signature2representativeType.get(signature);
 
 		if (result == null) {

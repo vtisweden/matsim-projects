@@ -35,8 +35,8 @@ import org.matsim.vehicles.Vehicle;
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.BasicTransportCost;
-import se.vti.samgods.transportation.EpisodeCostModel;
+import se.vti.samgods.transportation.costs.BasicTransportCost;
+import se.vti.samgods.transportation.costs.EpisodeCostModel;
 
 /**
  * 

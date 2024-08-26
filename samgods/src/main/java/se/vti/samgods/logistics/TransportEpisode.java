@@ -49,7 +49,7 @@ public class TransportEpisode {
 
 	private TransportChain parent;
 
-	private List<Signature.ConsolidationEpisode> signatures = null;
+	private List<Signature.ConsolidationUnit> signatures = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -58,12 +58,12 @@ public class TransportEpisode {
 	}
 
 	public void computeSignatures(Network network) {
-		this.signatures = Signature.ConsolidationEpisode.create(this, network);
+		this.signatures = Signature.ConsolidationUnit.create(this, network);
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public List<Signature.ConsolidationEpisode> getSignatures() {
+	public List<Signature.ConsolidationUnit> getSignatures() {
 		return this.signatures;
 	}
 	

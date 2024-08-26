@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation.road;
+package se.vti.samgods.deprecated.logitprocessconsolidation;
 
 import java.util.List;
 import java.util.Map;
@@ -25,8 +25,8 @@ import java.util.Random;
 
 import org.matsim.vehicles.Vehicle;
 
-import se.vti.samgods.transportation.BasicTransportCost;
 import se.vti.samgods.transportation.consolidation.Shipment;
+import se.vti.samgods.transportation.costs.BasicTransportCost;
 
 /**
  * 

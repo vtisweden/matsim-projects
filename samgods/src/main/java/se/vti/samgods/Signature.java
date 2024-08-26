@@ -68,23 +68,25 @@ public class Signature {
 		}
 	}
 
-	public static class ConsolidationEpisode extends Episode {
+	public static class ConsolidationUnit extends ListRepresented {
 
-		// defining
-		public final Boolean loadAtStart;
-		public final Boolean unloadAtEnd;
+		public final SamgodsConstants.Commodity commodity;
+		public final SamgodsConstants.TransportMode mode;
+		public final Boolean isContainer;
+		public final Boolean containsFerry;
+		public final List<List<Id<Link>>> linkIds;
 
 		// derived
 		public final List<List<Link>> links;
 
-		private ConsolidationEpisode(List<TransportLeg> legs, boolean loadAtStart, boolean unloadAtEnd,
-				Network network) {
-			super(legs.get(0).getCommodity(), legs.get(0).getMode(), legs.get(0).isContainer(),
-					legs.get(0).containsFerry(),
-					legs.stream().map(l -> l.getRouteIdsView()).collect(Collectors.toList()));
-			this.loadAtStart = loadAtStart;
-			this.unloadAtEnd = unloadAtEnd;
-			
+		public ConsolidationUnit(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
+				Boolean isContainer, Boolean containsFerry, List<List<Id<Link>>> linkIds, Network network) {
+			this.commodity = commodity;
+			this.mode = mode;
+			this.isContainer = isContainer;
+			this.containsFerry = containsFerry;
+			this.linkIds = linkIds;
+
 			// not needed for compatibility check
 			if (network != null) {
 				this.links = new ArrayList<>(this.linkIds.size());
@@ -97,15 +99,17 @@ public class Signature {
 			}
 		}
 
-		private ConsolidationEpisode(TransportLeg leg, boolean loadAtStart, boolean unloadAtEnd, Network network) {
-			this(Arrays.asList(leg), loadAtStart, unloadAtEnd, network);
-//			this.links = new ArrayList<>(this.linkIds.size());
-//			for (List<Id<Link>> legLinkIds : this.linkIds) {
-//				this.links.add(legLinkIds.stream().map(id -> network.getLinks().get(id)).collect(Collectors.toList()));
-//			}
+		private ConsolidationUnit(List<TransportLeg> legs, Network network) {
+			this(legs.get(0).getCommodity(), legs.get(0).getMode(), legs.get(0).isContainer(),
+					legs.get(0).containsFerry(),
+					legs.stream().map(l -> l.getRouteIdsView()).collect(Collectors.toList()), network);
 		}
 
-		public static List<ConsolidationEpisode> create(TransportEpisode episode, Network network) {
+		private ConsolidationUnit(TransportLeg leg, Network network) {
+			this(Arrays.asList(leg), network);
+		}
+
+		public static List<ConsolidationUnit> create(TransportEpisode episode, Network network) {
 			if (episode.getLegs() == null
 					|| episode.getLegs().stream().mapToInt(l -> l.getRouteIdsView().size()).sum() == 0) {
 				return Collections.emptyList();
@@ -113,60 +117,15 @@ public class Signature {
 				if (episode.getMode().equals(TransportMode.Rail) && episode.getLegs().size() > 1) {
 					// TODO What if loading / unloading happens during degenerate leg without links?
 					return episode.getLegs().stream().filter(l -> l.getRouteIdsView().size() > 0)
-							.map(l -> new ConsolidationEpisode(l, l == episode.getLegs().getFirst(),
-									l == episode.getLegs().getLast(), network))
-							.collect(Collectors.toList());
+							.map(l -> new ConsolidationUnit(l, network)).collect(Collectors.toList());
 				} else {
-					return Arrays.asList(new ConsolidationEpisode(episode.getLegs(), true, true, network));
+					return Arrays.asList(new ConsolidationUnit(episode.getLegs(), network));
 				}
 			}
 		}
 
 		public List<List<Link>> getLinks() {
 			return this.links;
-		}
-
-		@Override
-		List<Object> asList() {
-			List<Object> result = new ArrayList<>(super.asList());
-			result.add(this.loadAtStart);
-			result.add(this.unloadAtEnd);
-			return result;
-		}
-
-		@Override
-		public boolean isCompatible(TransportEpisode episode) {
-			return episode.getSignatures().contains(this);
-		}
-
-	}
-
-	@Deprecated
-	public static class Episode extends ListRepresented {
-
-		public final SamgodsConstants.Commodity commodity;
-		public final SamgodsConstants.TransportMode mode;
-		public final Boolean isContainer;
-		public final Boolean containsFerry;
-		public final List<List<Id<Link>>> linkIds;
-
-		@Override
-		List<Object> asList() {
-			return Arrays.asList(this.commodity, this.mode, this.isContainer, this.containsFerry, this.linkIds);
-		}
-
-		public Episode(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
-				Boolean containsFerry, List<List<Id<Link>>> linkIds) {
-			this.commodity = commodity;
-			this.mode = mode;
-			this.isContainer = isContainer;
-			this.containsFerry = containsFerry;
-			this.linkIds = linkIds;
-		}
-
-		public Episode(TransportEpisode episode) {
-			this(episode.getCommodity(), episode.getMode(), episode.isContainer(), episode.containsFerry(),
-					episode.createLinkIds());
 		}
 
 		public boolean isCompatible(FreightVehicleAttributes attrs) {
@@ -179,13 +138,58 @@ public class Signature {
 		public boolean isCompatible(VehicleType type) {
 			return this.isCompatible(FreightVehicleAttributes.getFreightAttributes(type));
 		}
-
-		public boolean isCompatible(TransportEpisode episode) {
-			return (this.commodity == null || this.commodity.equals(episode.getCommodity()))
-					&& (this.mode == null || this.mode.equals(episode.getMode()))
-					&& (this.isContainer == null || this.isContainer.equals(episode.isContainer()))
-					&& (this.containsFerry == null || this.containsFerry.equals(episode.containsFerry()))
-					&& (this.linkIds == null || this.linkIds.equals(episode.createLinkIds()));
+		
+		@Override
+		List<Object> asList() {
+			return Arrays.asList(this.commodity, this.mode, this.isContainer, this.containsFerry, this.linkIds);
 		}
 	}
+
+//	@Deprecated
+//	public static class Episode extends ListRepresented {
+//
+//		public final SamgodsConstants.Commodity commodity;
+//		public final SamgodsConstants.TransportMode mode;
+//		public final Boolean isContainer;
+//		public final Boolean containsFerry;
+//		public final List<List<Id<Link>>> linkIds;
+//
+//		@Override
+//		List<Object> asList() {
+//			return Arrays.asList(this.commodity, this.mode, this.isContainer, this.containsFerry, this.linkIds);
+//		}
+//
+//		public Episode(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
+//				Boolean containsFerry, List<List<Id<Link>>> linkIds) {
+//			this.commodity = commodity;
+//			this.mode = mode;
+//			this.isContainer = isContainer;
+//			this.containsFerry = containsFerry;
+//			this.linkIds = linkIds;
+//		}
+//
+//		public Episode(TransportEpisode episode) {
+//			this(episode.getCommodity(), episode.getMode(), episode.isContainer(), episode.containsFerry(),
+//					episode.createLinkIds());
+//		}
+//
+//		public boolean isCompatible(FreightVehicleAttributes attrs) {
+//			return (this.commodity == null || attrs.isCompatible(this.commodity))
+//					&& (this.mode == null || this.mode.equals(attrs.mode))
+//					&& (this.isContainer == null || this.isContainer.equals(attrs.isContainer))
+//					&& (this.containsFerry == null || !this.containsFerry || attrs.isFerryCompatible());
+//		}
+//
+//		public boolean isCompatible(VehicleType type) {
+//			return this.isCompatible(FreightVehicleAttributes.getFreightAttributes(type));
+//		}
+//
+//		public boolean isCompatible(TransportEpisode episode) {
+//			return (this.commodity == null || this.commodity.equals(episode.getCommodity()))
+//					&& (this.mode == null || this.mode.equals(episode.getMode()))
+//					&& (this.isContainer == null || this.isContainer.equals(episode.isContainer()))
+//					&& (this.containsFerry == null || this.containsFerry.equals(episode.containsFerry()))
+//					&& (this.linkIds == null || this.linkIds.equals(episode.createLinkIds()));
+//		}
+//	}
 }

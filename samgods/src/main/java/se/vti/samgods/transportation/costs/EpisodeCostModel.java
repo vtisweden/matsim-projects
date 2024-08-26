@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.consolidation.road
+ * se.vti.samgods.transportation.consolidation
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,20 +17,26 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation.road;
+package se.vti.samgods.transportation.costs;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
+import java.util.Map;
+
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
+
+import se.vti.samgods.InsufficientDataException;
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface PerformanceMeasures {
+public interface EpisodeCostModel {
 
-	double getTotalArrivalDelay_h(Id<Node> nodeId);
+	DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException;
 
-	double getTotalDepartureDelay_h(Id<Node> nodeId);
-
+	void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost, SamgodsConstants.Commodity commodity,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network) throws InsufficientDataException;
 }
