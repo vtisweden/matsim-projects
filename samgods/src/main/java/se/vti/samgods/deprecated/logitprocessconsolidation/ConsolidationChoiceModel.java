@@ -25,7 +25,7 @@ import java.util.Random;
 
 import org.matsim.vehicles.Vehicle;
 
-import se.vti.samgods.transportation.consolidation.Shipment;
+import se.vti.samgods.deprecated.Shipment;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 
 /**

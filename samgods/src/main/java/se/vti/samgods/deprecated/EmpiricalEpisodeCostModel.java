@@ -153,17 +153,20 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	// -------------------- IMPLEMENTATION --------------------
 
 	public void add(ShipmentVehicleAssignment assignment) throws InsufficientDataException {
-		final TransportEpisode episode = assignment.getTransportEpisode();
-		final CumulativeDetailedData cumulativeCost = this.episode2data.computeIfAbsent(episode,
-				e -> new CumulativeDetailedData());
-
-		for (Map.Entry<Vehicle, Double> entry : assignment.getVehicle2payload_ton().entrySet()) {
-			final Vehicle vehicle = entry.getKey();
-			final double payload_ton = entry.getValue();
-			final DetailedTransportCost vehicleCost = this.consolidationCostModel
-					.computeEpisodeCost(FreightVehicleAttributes.getFreightAttributes(vehicle), payload_ton, episode, null);
-			cumulativeCost.add(vehicleCost);
-		}
+		
+		throw new UnsupportedOperationException();
+		
+//		final TransportEpisode episode = assignment.getTransportEpisode();
+//		final CumulativeDetailedData cumulativeCost = this.episode2data.computeIfAbsent(episode,
+//				e -> new CumulativeDetailedData());
+//
+//		for (Map.Entry<Vehicle, Double> entry : assignment.getVehicle2payload_ton().entrySet()) {
+//			final Vehicle vehicle = entry.getKey();
+//			final double payload_ton = entry.getValue();
+//			final DetailedTransportCost vehicleCost = this.consolidationCostModel.computeEpisodeCost(
+//					FreightVehicleAttributes.getFreightAttributes(vehicle), payload_ton, episode, null);
+//			cumulativeCost.add(vehicleCost);
+//		}
 	}
 
 	@Override
@@ -180,35 +183,38 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
 			Network network) throws InsufficientDataException {
-		final Signature.Episode signature = new Signature.Episode(commodity, mode, isContainer, null, null);
 
-		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>(network.getLinks().size());
-		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
-			final TransportEpisode episode = e2d.getKey();
-			if (signature.isCompatible(episode)) {
-				final CumulativeDetailedData episodeData = e2d.getValue();
-				for (TransportLeg leg : episode.getLegs()) {
-					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteIdsView());
-					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
-					if (routeLength_m > 1e-8) {
-						for (Link link : links) {
-							// Only complete cost data, do not override existing data:
-							if (!link2cost.containsKey(link)) {
-								// TODO Weight should rather be travel time dependent.
-								final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
-								link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
-										weight * episodeData.getMonetaryCostTimesTons_ton() / episodeData.tons,
-										weight * episodeData.getDurationTimesTons_hTon() / episodeData.tons,
-										episodeData.tons);
-							}
-						}
-					}
-				}
-			}
-		}
+		throw new UnsupportedOperationException();
 
-		for (Map.Entry<Link, CumulativeBasicData> l2d : link2data.entrySet()) {
-			link2cost.put(l2d.getKey(), l2d.getValue().createUnitData());
-		}
+//		final Signature.Episode signature = new Signature.Episode(commodity, mode, isContainer, null, null);
+//
+//		final Map<Link, CumulativeBasicData> link2data = new LinkedHashMap<>(network.getLinks().size());
+//		for (Map.Entry<TransportEpisode, CumulativeDetailedData> e2d : this.episode2data.entrySet()) {
+//			final TransportEpisode episode = e2d.getKey();
+//			if (signature.isCompatible(episode)) {
+//				final CumulativeDetailedData episodeData = e2d.getValue();
+//				for (TransportLeg leg : episode.getLegs()) {
+//					final List<Link> links = NetworkUtils.getLinks(network, leg.getRouteIdsView());
+//					final double routeLength_m = links.stream().mapToDouble(l -> l.getLength()).sum();
+//					if (routeLength_m > 1e-8) {
+//						for (Link link : links) {
+//							// Only complete cost data, do not override existing data:
+//							if (!link2cost.containsKey(link)) {
+//								// TODO Weight should rather be travel time dependent.
+//								final double weight = link.getLength() / Math.max(1e-8, routeLength_m);
+//								link2data.computeIfAbsent(link, l -> new CumulativeBasicData()).add(
+//										weight * episodeData.getMonetaryCostTimesTons_ton() / episodeData.tons,
+//										weight * episodeData.getDurationTimesTons_hTon() / episodeData.tons,
+//										episodeData.tons);
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//
+//		for (Map.Entry<Link, CumulativeBasicData> l2d : link2data.entrySet()) {
+//			link2cost.put(l2d.getKey(), l2d.getValue().createUnitData());
+//		}
 	}
 }

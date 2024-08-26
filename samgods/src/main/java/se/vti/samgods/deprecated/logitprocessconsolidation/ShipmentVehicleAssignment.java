@@ -27,8 +27,8 @@ import java.util.Map;
 import org.matsim.vehicles.Vehicle;
 
 import floetteroed.utilities.Tuple;
+import se.vti.samgods.deprecated.Shipment;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.transportation.consolidation.Shipment;
 
 /**
  * 

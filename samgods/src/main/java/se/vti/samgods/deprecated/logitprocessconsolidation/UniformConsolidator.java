@@ -38,7 +38,7 @@ import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.consolidation.Shipment;
+import se.vti.samgods.deprecated.Shipment;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
