@@ -47,18 +47,18 @@ public class TransportLeg {
 	private TransportEpisode parent;
 
 	// derived
-	private List<Id<Link>> routeIds = null;
-	private Double length_km = null;
-	private Boolean containsFerry = null;
+//	private List<Id<Link>> routeIds = null;
+//	private Double length_km = null;
+//	private Boolean containsFerry = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportLeg deepCopy() {
 		TransportLeg result = new TransportLeg(this.od);
 		result.setParent(this.parent);
-		result.routeIds = this.routeIds == null ? null : new ArrayList<>(this.routeIds);
-		result.length_km = this.length_km;
-		result.containsFerry = this.containsFerry;
+//		result.routeIds = this.routeIds == null ? null : new ArrayList<>(this.routeIds);
+//		result.length_km = this.length_km;
+//		result.containsFerry = this.containsFerry;
 		return result;
 	}
 
@@ -120,34 +120,34 @@ public class TransportLeg {
 		}
 	}
 
-	public Double getLength_km() {
-		return this.length_km;
-	}
-
-	public Boolean containsFerry() {
-		return this.containsFerry;
-	}
-
-	public void setRoute(final List<Link> route) {
-		if (route == null) {
-			this.routeIds = null;
-			this.length_km = null;
-			this.containsFerry = null;
-		} else {
-			this.routeIds = Collections
-					.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
-			this.length_km = Units.KM_PER_M * route.stream().mapToDouble(l -> l.getLength()).sum();
-			this.containsFerry = route.stream().anyMatch(l -> LinkAttributes.getMode(l).isFerry());
-		}
-	}
-
-	public List<Id<Link>> getRouteIdsView() {
-		return this.routeIds;
-	}
-
-	public boolean isRouted() {
-		return (this.routeIds != null);
-	}
+//	public Double getLength_km() {
+//		return this.length_km;
+//	}
+//
+//	public Boolean containsFerry() {
+//		return this.containsFerry;
+//	}
+//
+//	public void setRoute(final List<Link> route) {
+//		if (route == null) {
+//			this.routeIds = null;
+//			this.length_km = null;
+//			this.containsFerry = null;
+//		} else {
+//			this.routeIds = Collections
+//					.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
+//			this.length_km = Units.KM_PER_M * route.stream().mapToDouble(l -> l.getLength()).sum();
+//			this.containsFerry = route.stream().anyMatch(l -> LinkAttributes.getMode(l).isFerry());
+//		}
+//	}
+//
+//	public List<Id<Link>> getRouteIdsView() {
+//		return this.routeIds;
+//	}
+//
+//	public boolean isRouted() {
+//		return (this.routeIds != null);
+//	}
 
 	// -------------------- OVERRIDING OF Object --------------------
 

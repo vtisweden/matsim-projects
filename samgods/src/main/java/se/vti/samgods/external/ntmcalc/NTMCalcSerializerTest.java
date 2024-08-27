@@ -131,8 +131,11 @@ public class NTMCalcSerializerTest {
 					}
 
 					TransportLeg leg = new TransportLeg(routeNodes.getFirst().getId(), routeNodes.getLast().getId());
-					leg.setRoute(routeLinks);
-					episode.addLeg(leg);
+					
+					throw new RuntimeException("TODO");
+//					leg.setRoute(routeLinks);
+//					
+//					episode.addLeg(leg);
 				}
 
 				allEpisodes.add(new VehicleEpisode(veh,

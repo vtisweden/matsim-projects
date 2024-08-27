@@ -57,7 +57,8 @@ public class ChainAndShipmentChoiceStats {
 	public void add(SamgodsConstants.Commodity commodity, List<ChainAndShipmentSize> choices) {
 		for (ChainAndShipmentSize choice : choices) {
 			this.commodity2size2cnt.get(commodity).compute(choice.sizeClass, (s, c) -> c + 1);
-			this.commodity2lengths.get(commodity).add(choice.transportChain.computeLength_km());
+			// TODO
+			//			this.commodity2lengths.get(commodity).add(choice.transportChain.computeLength_km());
 		}
 	}
 
@@ -72,10 +73,11 @@ public class ChainAndShipmentChoiceStats {
 			final long totalCnt = this.commodity2size2cnt.get(commodity).values().stream().mapToLong(c -> c).sum();
 			if (totalCnt > 0) {
 
-				final double averageLength_km = this.commodity2lengths.get(commodity).stream().mapToDouble(l -> l)
-						.average().getAsDouble();
-				final double medianLength_km = new Median()
-						.evaluate(this.commodity2lengths.get(commodity).stream().mapToDouble(l -> l).toArray());
+				// TODO
+//				final double averageLength_km = this.commodity2lengths.get(commodity).stream().mapToDouble(l -> l)
+//						.average().getAsDouble();
+//				final double medianLength_km = new Median()
+//						.evaluate(this.commodity2lengths.get(commodity).stream().mapToDouble(l -> l).toArray());
 
 				final List<Map.Entry<SamgodsConstants.ShipmentSize, Long>> sortedSizeEntries = MiscUtils
 						.getSortedEntryList(this.commodity2size2cnt.get(commodity),
@@ -85,8 +87,8 @@ public class ChainAndShipmentChoiceStats {
 						.mapToDouble(e -> e.getKey().getRepresentativeValue_ton() * e.getValue()).sum() / totalCnt;
 
 				table.addRule();
-				table.addRow(commodity, averageLength_km, medianLength_km, avgSize,
-						sortedSizeEntries.stream().map(e -> e.getValue().toString()).collect(Collectors.joining(",")));
+//				table.addRow(commodity, averageLength_km, medianLength_km, avgSize,
+//						sortedSizeEntries.stream().map(e -> e.getValue().toString()).collect(Collectors.joining(",")));
 			}
 		}
 		table.addRule();

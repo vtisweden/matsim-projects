@@ -82,23 +82,24 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		gen.writeFieldName("links");
 		gen.writeStartArray();
 		for (TransportLeg leg : vehicleEpisode.getTransportEpisode().getLegs()) {
-			for (Id<Link> linkId : leg.getRouteIdsView()) {
-				final Link link = this.network.getLinks().get(linkId);
-				gen.writeStartObject();
-				gen.writeStringField("linkId", linkId.toString());
-				gen.writeNumberField("length_m", link.getLength());
-				gen.writeNumberField("maxSpeed_km_h", Math.round(LinkAttributes.getSpeed1_km_h(link)));
-				if (link.getAllowedModes().size() != 1) {
-					throw new RuntimeException(
-							"Link " + linkId + " has not exactly one mode: " + link.getAllowedModes());
-				}
-				final String samgodsMode = LinkAttributes.getMode(link).toString();
-				gen.writeStringField("mode", samgodsMode);
-				if (LinkAttributes.isFerry(link)) {
-					gen.writeNumberField("vesselDWT", 5678.9); // TODO!!!
-				}
-				gen.writeEndObject();
-			}
+			throw new RuntimeException("TODO");
+//			for (Id<Link> linkId : leg.getRouteIdsView()) {
+//				final Link link = this.network.getLinks().get(linkId);
+//				gen.writeStartObject();
+//				gen.writeStringField("linkId", linkId.toString());
+//				gen.writeNumberField("length_m", link.getLength());
+//				gen.writeNumberField("maxSpeed_km_h", Math.round(LinkAttributes.getSpeed1_km_h(link)));
+//				if (link.getAllowedModes().size() != 1) {
+//					throw new RuntimeException(
+//							"Link " + linkId + " has not exactly one mode: " + link.getAllowedModes());
+//				}
+//				final String samgodsMode = LinkAttributes.getMode(link).toString();
+//				gen.writeStringField("mode", samgodsMode);
+//				if (LinkAttributes.isFerry(link)) {
+//					gen.writeNumberField("vesselDWT", 5678.9); // TODO!!!
+//				}
+//				gen.writeEndObject();
+//			}
 		}
 		gen.writeEndArray();
 
@@ -120,29 +121,30 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		link2.setFreespeed(Units.M_S_PER_KM_H * 100.0);
 
 		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()));
-		leg.setRoute(Arrays.asList(link1, link2));
-
-		Vehicle veh = VehicleUtils.createVehicle(Id.createVehicleId("veh1"),
-				VehicleUtils.createVehicleType(Id.create("vehType", VehicleType.class)));
-
-		TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road);
-		episode.addLeg(leg);
-		
-		TransportChain chain = new TransportChain(SamgodsConstants.Commodity.AGRICULTURE, false);
-		chain.addEpisode(episode);
-
-		VehicleEpisode vehicleEpisode = new VehicleEpisode(veh, 123.45, episode);
-
-		List<VehicleEpisode> episodes = new ArrayList<>();
-		episodes.add(vehicleEpisode);
-		episodes.add(vehicleEpisode);
-
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.enable(SerializationFeature.INDENT_OUTPUT);
-		mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-
-		mapper.writeValue(new File("episode.json"), episodes);
-
-		System.out.println("... DONE");
+		throw new RuntimeException("TODO");
+		// leg.setRoute(Arrays.asList(link1, link2));
+//
+//		Vehicle veh = VehicleUtils.createVehicle(Id.createVehicleId("veh1"),
+//				VehicleUtils.createVehicleType(Id.create("vehType", VehicleType.class)));
+//
+//		TransportEpisode episode = new TransportEpisode(SamgodsConstants.TransportMode.Road);
+//		episode.addLeg(leg);
+//		
+//		TransportChain chain = new TransportChain(SamgodsConstants.Commodity.AGRICULTURE, false);
+//		chain.addEpisode(episode);
+//
+//		VehicleEpisode vehicleEpisode = new VehicleEpisode(veh, 123.45, episode);
+//
+//		List<VehicleEpisode> episodes = new ArrayList<>();
+//		episodes.add(vehicleEpisode);
+//		episodes.add(vehicleEpisode);
+//
+//		ObjectMapper mapper = new ObjectMapper();
+//		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+//		mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+//
+//		mapper.writeValue(new File("episode.json"), episodes);
+//
+//		System.out.println("... DONE");
 	}
 }

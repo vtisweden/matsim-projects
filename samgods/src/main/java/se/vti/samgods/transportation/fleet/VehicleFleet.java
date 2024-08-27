@@ -76,7 +76,7 @@ public class VehicleFleet {
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
 
 		final Signature.ConsolidationUnit signature = new Signature.ConsolidationUnit(commodity, mode, isContainer,
-				containsFerry, null, null);
+				containsFerry);
 		List<VehicleType> result = this.signature2compatibleTypes.get(signature);
 
 		if (result == null) {
@@ -100,7 +100,8 @@ public class VehicleFleet {
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
 			throws InsufficientDataException {
 
-		final Signature.ConsolidationUnit signature = new Signature.ConsolidationUnit(commodity, mode, isContainer, containsFerry, null, null);
+		final Signature.ConsolidationUnit signature = new Signature.ConsolidationUnit(commodity, mode, isContainer,
+				containsFerry);
 		VehicleType result = this.signature2representativeType.get(signature);
 
 		if (result == null) {

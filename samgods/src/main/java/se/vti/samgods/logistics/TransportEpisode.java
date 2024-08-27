@@ -19,20 +19,18 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.Signature;
+import se.vti.samgods.Signature.ConsolidationUnit;
 
 /**
  * 
@@ -57,16 +55,20 @@ public class TransportEpisode {
 		this.mode = mode;
 	}
 
-	public void computeSignatures(Network network) {
-		this.signatures = Signature.ConsolidationUnit.create(this, network);
+	public void setSignatures(List<Signature.ConsolidationUnit> signatures) {
+		this.signatures = signatures;
 	}
+
+//	public void computeSignatures(Network network) {
+//		this.signatures = Signature.ConsolidationUnit.create(this, network);
+//	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
 	public List<Signature.ConsolidationUnit> getSignatures() {
 		return this.signatures;
 	}
-	
+
 	public TransportChain getChain() {
 		return this.parent;
 	}
@@ -82,13 +84,14 @@ public class TransportEpisode {
 	public Boolean containsFerry() {
 		boolean episodeContainsFerry = false;
 		boolean episodeContainsNull = false;
-		for (TransportLeg leg : this.legs) {
-			final Boolean legContainsFerry = leg.containsFerry();
+		for (ConsolidationUnit signature : this.signatures) {
+			final Boolean legContainsFerry = signature.containsFerry;
 			if (legContainsFerry == null) {
 				episodeContainsNull = true;
 			} else {
 				episodeContainsFerry |= legContainsFerry;
 			}
+
 		}
 		if (episodeContainsFerry) {
 			return true;
@@ -181,28 +184,29 @@ public class TransportEpisode {
 	}
 
 	public Boolean isRouted() {
-		if (this.legs == null) {
-			return null;
-		} else {
-			for (TransportLeg leg : this.legs) {
-				if (!leg.isRouted()) {
-					return false;
-				}
-			}
-			return true;
-		}
+		return ((this.signatures != null) && (this.signatures.stream().allMatch(s -> s.linkIds != null)));
+//		if (this.legs == null) {
+//			return null;
+//		} else {
+//			for (TransportLeg leg : this.legs) {
+//				if (!leg.isRouted()) {
+//					return false;
+//				}
+//			}
+//			return true;
+//		}
 	}
 
-	public List<List<Id<Link>>> createLinkIds() {
-		assert (this.isRouted());
-		final List<List<Id<Link>>> result = new ArrayList<>(this.legs.size());
-		for (TransportLeg leg : this.legs) {
-			result.add(leg.getRouteIdsView());
-		}
-		return result;
-	}
+//	public List<List<Id<Link>>> createLinkIds() {
+//		assert (this.isRouted());
+//		final List<List<Id<Link>>> result = new ArrayList<>(this.legs.size());
+//		for (TransportLeg leg : this.legs) {
+//			result.add(leg.getRouteIdsView());
+//		}
+//		return result;
+//	}
 
-	public double computeLength_km() {
-		return this.legs.stream().mapToDouble(l -> l.getLength_km()).sum();
-	}
+//	public double computeLength_km() {
+//		return this.legs.stream().mapToDouble(l -> l.getLength_km()).sum();
+//	}
 }

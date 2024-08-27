@@ -148,9 +148,9 @@ public class TransportChain {
 		return result;
 	}
 	
-	public double computeLength_km() {
-		return this.episodes.stream().mapToDouble(e -> e.computeLength_km()).sum();
-	}
+//	public double computeLength_km() {
+//		return this.episodes.stream().mapToDouble(e -> e.computeLength_km()).sum();
+//	}
 
 	// -------------------- OVERRIDING OF Object --------------------
 

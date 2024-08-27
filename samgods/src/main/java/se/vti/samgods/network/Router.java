@@ -30,10 +30,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.router.AStarLandmarksFactory;
@@ -42,12 +42,10 @@ import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportLeg;
+import se.vti.samgods.Signature.ConsolidationUnit;
 
 /**
  * 
@@ -113,20 +111,22 @@ public class Router {
 	 *
 	 */
 	private class RoutingJob {
-		final OD od;
-		final boolean isContainer;
-		final SamgodsConstants.TransportMode mode;
-		final TransportLeg leg;
+//		final boolean isContainer;
+//		final SamgodsConstants.TransportMode mode;
+		final ConsolidationUnit consolidationUnit;
 
-		RoutingJob(TransportLeg leg) {
-			this.od = leg.getOD();
-			this.isContainer = leg.isContainer();
-			this.mode = leg.getMode();
-			this.leg = leg;
+		RoutingJob(ConsolidationUnit consolidationUnit) {
+//			this.isContainer = consolidationUnit.isContainer;
+//			this.mode = consolidationUnit.mode;
+			this.consolidationUnit = consolidationUnit;
 		}
-		
-		synchronized void setRoute(List link) {
-			this.leg.setRoute(link);
+
+		boolean isContainer() {
+			return this.consolidationUnit.isContainer;
+		}
+
+		TransportMode mode() {
+			return this.consolidationUnit.mode;
 		}
 	}
 
@@ -182,37 +182,51 @@ public class Router {
 		public void run() {
 			log.info("THREAD STARTED: " + this.name);
 			for (RoutingJob job : this.jobs) {
-				if (job.od.origin.equals(job.od.destination)) {
-					job.setRoute(new ArrayList<>(0));
-					if (logProgress) {
-						registerFoundRoute(this);
-					}
-				} else {
-					final LeastCostPathCalculator router = job.isContainer ? this.mode2containerRouter.get(job.mode)
-							: this.mode2noContainerRouter.get(job.mode);
-					final Map<Id<Node>, ? extends Node> nodes = this.mode2network.get(job.mode).getNodes();
-					final Node from = nodes.get(job.od.origin);
-					final Node to = nodes.get(job.od.destination);
-					if ((from != null) && (to != null) && (router != null)) {
-						job.setRoute(router.calcLeastCostPath(from, to, 0, null, null).links);
-						if (job.leg.getRouteIdsView() == null) {
-							if (logProgress) {
-								registerFailedRouteNoConnection(this);
-							}
-						} else if (logProgress) {
+
+				List<List<Link>> routes = new ArrayList<>(job.consolidationUnit.nodeIds.size() - 1);
+				for (int i = 0; i < job.consolidationUnit.nodeIds.size() - 1; i++) {
+					Id<Node> fromId = job.consolidationUnit.nodeIds.get(i);
+					Id<Node> toId = job.consolidationUnit.nodeIds.get(i + 1);
+
+					if (fromId.equals(toId)) {
+						routes.add(new ArrayList<>());
+						if (logProgress) {
 							registerFoundRoute(this);
 						}
 					} else {
-						if (logProgress) {
-							if (from == null || to == null) {
-								registerFailedRouteNoOD(this);
-							} else if (router == null) {
-								registerFailedRouteNoRouter(this);
-							} else {
-								throw new RuntimeException("impossible");
+						final LeastCostPathCalculator router = job.isContainer()
+								? this.mode2containerRouter.get(job.mode())
+								: this.mode2noContainerRouter.get(job.mode());
+						final Map<Id<Node>, ? extends Node> nodes = this.mode2network.get(job.mode()).getNodes();
+						final Node from = nodes.get(fromId);
+						final Node to = nodes.get(toId);
+						if ((from != null) && (to != null) && (router != null)) {
+							List<Link> links = router.calcLeastCostPath(from, to, 0, null, null).links; 
+							routes.add(links);
+							if (links == null) {
+								if (logProgress) {
+									registerFailedRouteNoConnection(this);
+								}
+							} else if (logProgress) {
+								registerFoundRoute(this);
+							}
+						} else {
+							routes.add(null);
+							if (logProgress) {
+								if (from == null || to == null) {
+									registerFailedRouteNoOD(this);
+								} else if (router == null) {
+									registerFailedRouteNoRouter(this);
+								} else {
+									throw new RuntimeException("impossible");
+								}
 							}
 						}
 					}
+
+				}
+				if (routes.stream().noneMatch(r -> r == null)) {
+					job.consolidationUnit.setRoutes(routes);
 				}
 			}
 			log.info("THREAD ENDED: " + this.name);
@@ -304,25 +318,8 @@ public class Router {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void route(Commodity commodity, Map<OD, List<TransportChain>> od2chainsSet) {
-		/*
-		 * Takes the chains out of the set and into a list before routing because
-		 * TransportChain.equals(..) and hashcode(..) react to the route being set or
-		 * not, meaning that routing must not take place will the chains are in a set.
-		 * 
-		 * TODO May no longer be necessary!
-		 */
-//		final Map<OD, List<TransportChain>> od2chainsList = od2chainsSet.entrySet().stream()
-//				.collect(Collectors.toMap(e -> e.getKey(), e -> new ArrayList<>(e.getValue())));
-//		od2chainsSet.clear();
-//		final Set<RoutingJob> allJobs = od2chainsList.values().stream().flatMap(l -> l.stream())
-//				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).map(l -> new RoutingJob(l))
-//				.collect(Collectors.toSet());
-//		this.routeInternally(commodity, allJobs);
-//		od2chainsList.entrySet().stream().forEach(e -> od2chainsSet.put(e.getKey(), new LinkedHashSet<>(e.getValue())));
-		final List<RoutingJob> allJobs = od2chainsSet.values().stream().flatMap(s -> s.stream())
-				.flatMap(c -> c.getEpisodes().stream()).flatMap(e -> e.getLegs().stream()).map(l -> new RoutingJob(l))
-				.collect(Collectors.toList());
+	public void route(Commodity commodity, List<ConsolidationUnit> consolidationUnits) {
+		final List<RoutingJob> allJobs = consolidationUnits.stream().map(c -> new RoutingJob(c)).toList();
 		this.routeInternally(commodity, allJobs);
 	}
 }

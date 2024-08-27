@@ -20,6 +20,7 @@
 package se.vti.samgods.models;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,10 +28,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -41,6 +45,13 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.vehicles.VehicleType;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+
 import floetteroed.utilities.math.BasicStatistics;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
@@ -48,6 +59,8 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.Signature;
+import se.vti.samgods.Signature.ConsolidationUnit;
+import se.vti.samgods.Signature.ConsolidationUnitDeserializer;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.NonTransportCost;
 import se.vti.samgods.logistics.NonTransportCostModel;
@@ -80,54 +93,15 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  */
 public class TestSamgods {
 
-	static class EfficiencyLogger {
-
-		final String file;
-
-		Double binSize = null;
-
-		EfficiencyLogger(String file) {
-			this.file = file;
-		}
-
-		void log(Collection<Double> efficiencies) {
-
-			double maxEff = efficiencies.stream().mapToDouble(e -> e).max().getAsDouble();
-
-			if (this.binSize == null) {
-				this.binSize = maxEff / 20;
-				try {
-					FileUtils.write(new File(this.file),
-							IntStream.range(0, 25).boxed().map(b -> Double.toString((0.5 + b) * this.binSize))
-									.collect(Collectors.joining("\t")) + "\n",
-							false);
-				} catch (IOException e1) {
-					throw new RuntimeException();
-				}
-			}
-
-			int[] cnt = new int[1 + (int) Math.ceil(maxEff / this.binSize)];
-			for (Double eff : efficiencies) {
-				cnt[(int) (eff / this.binSize)]++;
-			}
-
-			try {
-				FileUtils.write(new File(this.file),
-						Arrays.stream(cnt).boxed().map(c -> "" + c).collect(Collectors.joining("\t")) + "\n", true);
-			} catch (IOException e1) {
-				throw new RuntimeException();
-			}
-		}
-
-	}
-
 	static Logger log = Logger.getLogger(TestSamgods.class);
 
 	public static void main(String[] args) throws IOException {
 
 //		Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval = Arrays.stream(Commodity.values())
 //				.collect(Collectors.toMap(c -> c, c -> 1));
+
 		Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval = new LinkedHashMap<>();
+
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.AGRICULTURE, 7);
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.AIR, 7);
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.BASICMETALS, 7);
@@ -145,11 +119,29 @@ public class TestSamgods {
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 7);
 		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 7);
 
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.AGRICULTURE, 7);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.AIR, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.BASICMETALS, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.CHEMICALS, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.COAL, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.COKE, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.FOOD, 1);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.FURNITURE, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.MACHINERY, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.METAL, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.OTHERMINERAL, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.SECONDARYRAW, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.TEXTILES, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.TIMBER, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 14);
+//		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 14);
+
 		InsufficientDataException.setLogDuringRuntime(true);
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE,
+				Commodity.TIMBER);
 		double samplingRate = 0.01;
 		boolean upscale = false;
 //		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
@@ -160,15 +152,17 @@ public class TestSamgods {
 		boolean flexiblePeriod = true;
 		boolean skipUnusedIntervals = true;
 
-		double scale = 0.0001;
+		double scale = 1.0;
 		boolean enforceMaxShipmentSize = false;
-		int maxIterations = 20;
+		int maxIterations = 1;
 		double nonTransportCostFactor = 1.0;
 
-		boolean checkUnitCost = true;
+//		boolean checkUnitCost = true;
+//		boolean checkChainConsistency = false;
 
-		boolean routed = false;
-		boolean reroute = false;
+		boolean enforceReroute = false;
+//		boolean routed = false;
+//		boolean reroute = false;
 
 		log.info("STARTED ...");
 
@@ -201,28 +195,182 @@ public class TestSamgods {
 			log.info(commodity + ": avg number of chains per OD = " + chainCnt / odCnt);
 		}
 
-//		for (Commodity commodity : consideredCommodities) {
-//			for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity).values()) {
-//				for (TransportChain chain : chains) {
-//					for (TransportEpisode episode : chain.getEpisodes()) {
-//						assert (episode.getChain() == chain);
-//						for (TransportLeg leg : episode.getLegs()) {
-//							assert (leg.getEpisode() == episode);
-//							assert (leg.getChain() == chain);
+//		if (checkChainConsistency) {
+//			for (Commodity commodity : consideredCommodities) {
+//				for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
+//						.values()) {
+//					for (TransportChain chain : chains) {
+//						for (TransportEpisode episode : chain.getEpisodes()) {
+//							assert (episode.getChain() == chain);
+//							for (TransportLeg leg : episode.getLegs()) {
+//								assert (leg.getEpisode() == episode);
+//								assert (leg.getChain() == chain);
+//							}
 //						}
 //					}
 //				}
 //			}
 //		}
 
-		// ----------------------------------------------------------------------
-		// ------------------------------ ITERATIONS ----------------------------
-		// ----------------------------------------------------------------------
+		// ---------------------------------------------------------------------
+		// ------------------------------ ROUTING ------------------------------
+		// ---------------------------------------------------------------------
 
 		Map<TransportMode, Double> mode2efficiency = Arrays.stream(TransportMode.values())
 				.collect(Collectors.toMap(m -> m, m -> 0.7));
-
 		Map<Signature.ConsolidationUnit, Double> signature2efficiency = new LinkedHashMap<>();
+		PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
+			@Override
+			public double getTotalArrivalDelay_h(Id<Node> nodeId) {
+				return 0;
+			}
+
+			@Override
+			public double getTotalDepartureDelay_h(Id<Node> nodeId) {
+				return 0;
+			}
+		};
+
+//		final Set<ConsolidationUnit> allConsolidationUnits;
+
+		if (!enforceReroute && new File("consolidationUnits.json").exists()) {
+			try {
+				ObjectMapper mapper = new ObjectMapper();
+				SimpleModule module = new SimpleModule();
+				module.addDeserializer(ConsolidationUnit.class, new ConsolidationUnitDeserializer());
+				mapper.registerModule(module);
+
+				// Create an ObjectReader for reading a sequence of ConsolidationUnit instances
+				ObjectReader reader = mapper.readerFor(ConsolidationUnit.class);
+				JsonParser parser = mapper.getFactory().createParser(new File("consolidationUnits.json"));
+
+				// Create a list to hold the deserialized ConsolidationUnit objects
+				Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
+
+				// Read the sequence of ConsolidationUnit objects
+				while (parser.nextToken() != null) {
+					ConsolidationUnit unit = reader.readValue(parser);
+					allConsolidationUnits.add(unit);
+				}
+
+				// Close the parser
+				parser.close();
+
+//				final Set<ConsolidationUnit> allConsolidationUnits = mapper
+//						.readValue(new File("consolidationUnits.json"), new TypeReference<Set<ConsolidationUnit>>() {
+//						});
+
+				final Map<Commodity, Map<TransportMode, Map<Boolean, List<ConsolidationUnit>>>> commodity2mode2isContainer2consolidationUnits = new LinkedHashMap<>();
+				for (ConsolidationUnit unit : allConsolidationUnits) {
+					unit.updateNetworkData(network);
+					commodity2mode2isContainer2consolidationUnits
+							.computeIfAbsent(unit.commodity, c -> new LinkedHashMap<>())
+							.computeIfAbsent(unit.mode, m -> new LinkedHashMap<>())
+							.computeIfAbsent(unit.isContainer, ic -> new ArrayList<>()).add(unit);
+				}
+
+				for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+					Map<OD, List<TransportChain>> od2chains = transportDemand.commodity2od2transportChains
+							.get(commodity);
+					for (List<TransportChain> chains : od2chains.values()) {
+						for (TransportChain chain : chains) {
+							for (TransportEpisode episode : chain.getEpisodes()) {
+								List<ConsolidationUnit> episodeConsolidationUnits = Signature.ConsolidationUnit
+										.createUnrouted(episode);
+								List<ConsolidationUnit> recoveredConsolidationUnits = new ArrayList<>(
+										episodeConsolidationUnits.size());
+								for (ConsolidationUnit tmpEpisodeConsolidationUnits : episodeConsolidationUnits) {
+									List<ConsolidationUnit> matching = commodity2mode2isContainer2consolidationUnits
+											.get(tmpEpisodeConsolidationUnits.commodity)
+											.get(tmpEpisodeConsolidationUnits.mode)
+											.get(tmpEpisodeConsolidationUnits.isContainer);
+									Optional<ConsolidationUnit> match = matching.stream()
+											.filter(u -> u.nodeIds.equals(tmpEpisodeConsolidationUnits.nodeIds))
+											.findFirst();
+									if (match.isPresent()) {
+										recoveredConsolidationUnits.add(match.get());
+									} else {
+										// TODO only for testing
+										recoveredConsolidationUnits.add(null);
+									}
+								}
+								episode.setSignatures(recoveredConsolidationUnits);
+							}
+						}
+					}
+				}
+
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+
+			final Map<Commodity, List<ConsolidationUnit>> commodity2consolidationUnits = new LinkedHashMap<>();
+
+			// Extract consolidationUnits WITHOUT routeId, containsFerry
+			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+				Map<OD, List<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
+				for (List<TransportChain> chains : od2chains.values()) {
+					for (TransportChain chain : chains) {
+						for (TransportEpisode episode : chain.getEpisodes()) {
+							List<ConsolidationUnit> consolidationUnits = Signature.ConsolidationUnit
+									.createUnrouted(episode);
+							commodity2consolidationUnits.computeIfAbsent(episode.getCommodity(), c -> new ArrayList<>())
+									.addAll(consolidationUnits);
+							episode.setSignatures(consolidationUnits);
+						}
+					}
+				}
+			}
+
+			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
+			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel,
+					mode2efficiency, signature2efficiency);
+
+			for (Map.Entry<Commodity, List<ConsolidationUnit>> e : commodity2consolidationUnits.entrySet()) {
+				log.info("Routing " + e.getKey());
+				RoutingData routingData = new RoutingData(network, episodeCostModel);
+				Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
+				router.route(e.getKey(), e.getValue());
+			}
+
+			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+				long removedCnt = 0;
+				long totalCnt = 0;
+				for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains
+						.get(commodity).entrySet()) {
+					final int chainCnt = entry.getValue().size();
+					totalCnt += chainCnt;
+					entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toList()));
+					removedCnt += chainCnt - entry.getValue().size();
+				}
+				log.warn(commodity + ": Removed " + removedCnt + " out of " + totalCnt
+						+ " chains with incomplete routes. ");
+			}
+
+			final ObjectMapper mapper = new ObjectMapper();
+			mapper.enable(SerializationFeature.INDENT_OUTPUT);
+			mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, true);
+//			mapper.writeValue(new File("consolidationUnits.json"),
+//					commodity2consolidationUnits.values().stream().toList());
+			FileOutputStream fos = new FileOutputStream(new File("consolidationUnits.json"));
+			JsonGenerator gen = mapper.getFactory().createGenerator(fos);
+			for (List<ConsolidationUnit> consolidationUnits : commodity2consolidationUnits.values()) {
+				for (ConsolidationUnit consolidationUnit : consolidationUnits) {
+					if (consolidationUnit.isRouted()) {
+						mapper.writeValue(gen, consolidationUnit);
+					}
+				}
+			}
+			gen.close();
+			fos.flush();
+			fos.close();
+
+		}
+
+		// ----------------------------------------------------------------------
+		// ------------------------------ ITERATIONS ----------------------------
+		// ----------------------------------------------------------------------
 
 		for (int iteration = 0; iteration < maxIterations; iteration++) {
 
@@ -230,17 +378,17 @@ public class TestSamgods {
 
 			// CREATE COST CONTAINERS
 
-			PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
-				@Override
-				public double getTotalArrivalDelay_h(Id<Node> nodeId) {
-					return 0;
-				}
-
-				@Override
-				public double getTotalDepartureDelay_h(Id<Node> nodeId) {
-					return 0;
-				}
-			};
+//			PerformanceMeasures performanceMeasures = new PerformanceMeasures() {
+//				@Override
+//				public double getTotalArrivalDelay_h(Id<Node> nodeId) {
+//					return 0;
+//				}
+//
+//				@Override
+//				public double getTotalDepartureDelay_h(Id<Node> nodeId) {
+//					return 0;
+//				}
+//			};
 
 			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
 			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel,
@@ -248,6 +396,8 @@ public class TestSamgods {
 
 			NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 
+			/*- TODO TODO TODO
+			
 			if (!routed || reroute) {
 				// (RE) ROUTE CHAINS
 				RoutingData routingData = new RoutingData(network, episodeCostModel);
@@ -268,7 +418,7 @@ public class TestSamgods {
 						entry.setValue(
 								entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toList()));
 						removedCnt += chainCnt - entry.getValue().size();
-
+			
 						for (TransportChain chain : entry.getValue()) {
 							for (TransportEpisode episode : chain.getEpisodes()) {
 								episode.computeSignatures(network);
@@ -278,9 +428,11 @@ public class TestSamgods {
 					log.warn(commodity + ": Removed " + removedCnt + " out of " + totalCnt
 							+ " chains with incomplete routes. ");
 				}
-
+			
 				routed = true;
 			}
+			
+			*/
 
 			// RUN LOGISTICS MODEL
 
@@ -383,9 +535,9 @@ public class TestSamgods {
 			}
 			log.info(allChoices.stream().mapToLong(c -> c.transportChain.getEpisodes().size()).sum() + " episodes.");
 			log.info(signature2choices.size() + " episode signatures.");
-			log.info(allChoices.stream().flatMap(c -> c.transportChain.getEpisodes().stream())
-					.flatMap(e -> e.getLegs().stream())
-					.filter(l -> l.getRouteIdsView() != null && l.getRouteIdsView().size() > 0).count() + " legs.");
+//			log.info(allChoices.stream().flatMap(c -> c.transportChain.getEpisodes().stream())
+//					.flatMap(e -> e.getLegs().stream())
+//					.filter(l -> l.getRouteIdsView() != null && l.getRouteIdsView().size() > 0).count() + " legs.");
 			log.info(signature2choices.values().stream().flatMap(l -> l.stream())
 					.mapToDouble(c -> c.annualShipment.getTotalAmount_ton() / c.sizeClass.getRepresentativeValue_ton())
 					.sum() + " shipments.");
@@ -417,8 +569,7 @@ public class TestSamgods {
 			HalfLoopConsolidator consolidator = new HalfLoopConsolidator(fleet, consolidationCostModel,
 					commodity2serviceInterval, flexiblePeriod, skipUnusedIntervals);
 			long cnt = 0;
-			for (Map.Entry<Signature.ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices
-					.entrySet()) {
+			for (Map.Entry<Signature.ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
 				cnt++;
 				if (cnt % 1000 == 0) {
 					log.info("Consolidated " + cnt + " out of " + signature2choices.size() + " signatures.");
@@ -751,6 +902,47 @@ public class TestSamgods {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	static class EfficiencyLogger {
+
+		final String file;
+
+		Double binSize = null;
+
+		EfficiencyLogger(String file) {
+			this.file = file;
+		}
+
+		void log(Collection<Double> efficiencies) {
+
+			double maxEff = efficiencies.stream().mapToDouble(e -> e).max().getAsDouble();
+
+			if (this.binSize == null) {
+				this.binSize = maxEff / 20;
+				try {
+					FileUtils.write(new File(this.file),
+							IntStream.range(0, 25).boxed().map(b -> Double.toString((0.5 + b) * this.binSize))
+									.collect(Collectors.joining("\t")) + "\n",
+							false);
+				} catch (IOException e1) {
+					throw new RuntimeException();
+				}
+			}
+
+			int[] cnt = new int[1 + (int) Math.ceil(maxEff / this.binSize)];
+			for (Double eff : efficiencies) {
+				cnt[(int) (eff / this.binSize)]++;
+			}
+
+			try {
+				FileUtils.write(new File(this.file),
+						Arrays.stream(cnt).boxed().map(c -> "" + c).collect(Collectors.joining("\t")) + "\n", true);
+			} catch (IOException e1) {
+				throw new RuntimeException();
+			}
+		}
+
 	}
 
 }
