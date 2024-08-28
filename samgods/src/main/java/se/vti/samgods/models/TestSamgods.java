@@ -28,13 +28,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -140,13 +137,12 @@ public class TestSamgods {
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE,
-				Commodity.TIMBER);
-		double samplingRate = 0.01;
-		boolean upscale = false;
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-//		double samplingRate = 1.0;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+//		double samplingRate = 0.01;
 //		boolean upscale = false;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+		double samplingRate = 1.0;
+		boolean upscale = false;
 
 //		boolean disaggregateRail = true;
 		boolean flexiblePeriod = true;
@@ -231,70 +227,142 @@ public class TestSamgods {
 			}
 		};
 
-//		final Set<ConsolidationUnit> allConsolidationUnits;
+		if (enforceReroute || !(new File("consolidationUnits.json").exists())) {
 
-		if (!enforceReroute && new File("consolidationUnits.json").exists()) {
+			// Extract consolidationUnits WITHOUT routeId, containsFerry.
+			// Stored as set to avoid redundancy.
+//			final Map<Commodity, Map<TransportMode, Map<Boolean, Map<List<Id<Node>>, ConsolidationUnit>>>> commodity2mode2isContainer2nodes2consolidationUnit = new LinkedHashMap<>();
+			final Map<ConsolidationUnit, ConsolidationUnit> unitPattern2representativeUnit = new LinkedHashMap<>();
+
+//			Map<Commodity, Set<ConsolidationUnit>> commodity2unroutedConsolidationUnits = new LinkedHashMap<>();
+			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+				Map<OD, List<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
+				for (List<TransportChain> chains : od2chains.values()) {
+					for (TransportChain chain : chains) {
+						for (TransportEpisode episode : chain.getEpisodes()) {
+							episode.setSignatures(Signature.ConsolidationUnit.createUnrouted(episode));
+//							commodity2unroutedConsolidationUnits
+//									.computeIfAbsent(episode.getCommodity(), c -> new LinkedHashSet<>())
+//									.addAll(episode.getSignatures());
+							for (ConsolidationUnit unit : episode.getSignatures()) {
+								unitPattern2representativeUnit.put(unit.createRoutingEquivalentCopy(), unit);
+//								commodity2mode2isContainer2nodes2consolidationUnit
+//										.computeIfAbsent(episode.getCommodity(), c -> new LinkedHashMap<>())
+//										.computeIfAbsent(episode.getMode(), m -> new LinkedHashMap<>())
+//										.computeIfAbsent(episode.isContainer(), ic -> new LinkedHashMap<>())
+//										.put(unit.nodeIds, unit);
+							}
+						}
+					}
+				}
+			}
+
+			// Route (if possible) all consolidation units.
+			// Stored as list because routing changes hashcode and equals.
+//			final Map<Commodity, List<ConsolidationUnit>> commodity2routedConsolidationUnits = new LinkedHashMap<>();
+			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
+			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel,
+					mode2efficiency, signature2efficiency);
+			for (Commodity commodity : consideredCommodities) {
+				log.info(commodity + "Routing consolidation units.");
+				RoutingData routingData = new RoutingData(network, episodeCostModel);
+				Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
+//				commodity2routedConsolidationUnits.put(commodity,
+//						new ArrayList<>(commodity2unroutedConsolidationUnits.get(commodity)));
+				router.route(commodity, unitPattern2representativeUnit.entrySet().stream()
+						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
+			}
+//			commodity2unroutedConsolidationUnits = null; // Use from here on only routed versions.
+
+			long totalCnt = 0;
+			long routedCnt = 0;
+			final ObjectMapper mapper = new ObjectMapper();
+			mapper.enable(SerializationFeature.INDENT_OUTPUT);
+			mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, true);
+			FileOutputStream fos = new FileOutputStream(new File("consolidationUnits.json"));
+			JsonGenerator gen = mapper.getFactory().createGenerator(fos);
+			for (ConsolidationUnit consolidationUnit : unitPattern2representativeUnit.values()) {
+				totalCnt++;
+				if (consolidationUnit.isRouted()) {
+					mapper.writeValue(gen, consolidationUnit);
+					routedCnt++;
+				}
+			}
+			gen.flush();
+			gen.close();
+			fos.flush();
+			fos.close();
+			log.info("Wrote " + routedCnt + " (out of in total " + totalCnt + ") routed consolidation units.");
+
+			// Bend consolidation unit references to episodes
+			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+				for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
+						.values()) {
+					for (TransportChain chain : chains) {
+						for (TransportEpisode episode : chain.getEpisodes()) {
+							episode.setSignatures(episode.getSignatures().stream()
+									.map(s -> unitPattern2representativeUnit.get(s.createRoutingEquivalentCopy()))
+									.toList());
+						}
+					}
+				}
+			}
+
+		} else {
 			try {
+
+				log.info("Loading consolidation units.");
 				ObjectMapper mapper = new ObjectMapper();
 				SimpleModule module = new SimpleModule();
 				module.addDeserializer(ConsolidationUnit.class, new ConsolidationUnitDeserializer());
 				mapper.registerModule(module);
-
-				// Create an ObjectReader for reading a sequence of ConsolidationUnit instances
 				ObjectReader reader = mapper.readerFor(ConsolidationUnit.class);
 				JsonParser parser = mapper.getFactory().createParser(new File("consolidationUnits.json"));
-
-				// Create a list to hold the deserialized ConsolidationUnit objects
-				Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
-
-				// Read the sequence of ConsolidationUnit objects
+				long cnt = 0;
+				final Map<Commodity, Map<TransportMode, Map<Boolean, Map<List<Id<Node>>, ConsolidationUnit>>>> commodity2mode2isContainer2nodes2consolidationUnit = new LinkedHashMap<>();
 				while (parser.nextToken() != null) {
+					if (cnt++ % 10000 == 0) {
+						log.info("  loaded " + cnt + " consolidation units");
+					}
 					ConsolidationUnit unit = reader.readValue(parser);
-					allConsolidationUnits.add(unit);
-				}
-
-				// Close the parser
-				parser.close();
-
-//				final Set<ConsolidationUnit> allConsolidationUnits = mapper
-//						.readValue(new File("consolidationUnits.json"), new TypeReference<Set<ConsolidationUnit>>() {
-//						});
-
-				final Map<Commodity, Map<TransportMode, Map<Boolean, List<ConsolidationUnit>>>> commodity2mode2isContainer2consolidationUnits = new LinkedHashMap<>();
-				for (ConsolidationUnit unit : allConsolidationUnits) {
-					unit.updateNetworkData(network);
-					commodity2mode2isContainer2consolidationUnits
+					unit.updateNetworkReferences(network);
+					commodity2mode2isContainer2nodes2consolidationUnit
 							.computeIfAbsent(unit.commodity, c -> new LinkedHashMap<>())
 							.computeIfAbsent(unit.mode, m -> new LinkedHashMap<>())
-							.computeIfAbsent(unit.isContainer, ic -> new ArrayList<>()).add(unit);
+							.computeIfAbsent(unit.isContainer, ic -> new LinkedHashMap<>()).put(unit.nodeIds, unit);
 				}
+				parser.close();
 
+				log.info("Matching episodes and consolidation units");
+				cnt = 0;
 				for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-					Map<OD, List<TransportChain>> od2chains = transportDemand.commodity2od2transportChains
-							.get(commodity);
-					for (List<TransportChain> chains : od2chains.values()) {
+					log.info("  " + commodity);
+					for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
+							.values()) {
+//						if (cnt++ % 10000 == 0) {
+//							log.info("  processed " + cnt + " chains.");
+//						}
 						for (TransportChain chain : chains) {
 							for (TransportEpisode episode : chain.getEpisodes()) {
-								List<ConsolidationUnit> episodeConsolidationUnits = Signature.ConsolidationUnit
-										.createUnrouted(episode);
-								List<ConsolidationUnit> recoveredConsolidationUnits = new ArrayList<>(
-										episodeConsolidationUnits.size());
-								for (ConsolidationUnit tmpEpisodeConsolidationUnits : episodeConsolidationUnits) {
-									List<ConsolidationUnit> matching = commodity2mode2isContainer2consolidationUnits
-											.get(tmpEpisodeConsolidationUnits.commodity)
-											.get(tmpEpisodeConsolidationUnits.mode)
-											.get(tmpEpisodeConsolidationUnits.isContainer);
-									Optional<ConsolidationUnit> match = matching.stream()
-											.filter(u -> u.nodeIds.equals(tmpEpisodeConsolidationUnits.nodeIds))
-											.findFirst();
-									if (match.isPresent()) {
-										recoveredConsolidationUnits.add(match.get());
-									} else {
-										// TODO only for testing
-										recoveredConsolidationUnits.add(null);
+								List<ConsolidationUnit> tmpUnits = Signature.ConsolidationUnit.createUnrouted(episode);
+								List<ConsolidationUnit> recoveredUnits = new ArrayList<>(tmpUnits.size());
+								for (ConsolidationUnit tmpUnit : tmpUnits) {
+									ConsolidationUnit match;
+									try {
+										match = commodity2mode2isContainer2nodes2consolidationUnit
+												.get(tmpUnit.commodity).get(tmpUnit.mode).get(tmpUnit.isContainer)
+												.get(tmpUnit.nodeIds);
+									} catch (NullPointerException e) {
+										match = null;
+									}
+									if (match == null) {
+										recoveredUnits = null;
+										break;
+									} else if (recoveredUnits != null) {
+										recoveredUnits.add(match);
 									}
 								}
-								episode.setSignatures(recoveredConsolidationUnits);
+								episode.setSignatures(recoveredUnits);
 							}
 						}
 					}
@@ -303,69 +371,29 @@ public class TestSamgods {
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-		} else {
+		}
 
-			final Map<Commodity, List<ConsolidationUnit>> commodity2consolidationUnits = new LinkedHashMap<>();
-
-			// Extract consolidationUnits WITHOUT routeId, containsFerry
-			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-				Map<OD, List<TransportChain>> od2chains = transportDemand.commodity2od2transportChains.get(commodity);
-				for (List<TransportChain> chains : od2chains.values()) {
-					for (TransportChain chain : chains) {
-						for (TransportEpisode episode : chain.getEpisodes()) {
-							List<ConsolidationUnit> consolidationUnits = Signature.ConsolidationUnit
-									.createUnrouted(episode);
-							commodity2consolidationUnits.computeIfAbsent(episode.getCommodity(), c -> new ArrayList<>())
-									.addAll(consolidationUnits);
-							episode.setSignatures(consolidationUnits);
-						}
+		// Remove unrouted transport chains.
+		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
+			long removedChainCnt = 0;
+			long totalChainCnt = 0;
+			for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity)
+					.entrySet()) {
+				final int chainCnt = entry.getValue().size();
+				totalChainCnt += chainCnt;
+				List<TransportChain> routed = new ArrayList<>();
+				for (TransportChain chain : entry.getValue()) {
+					if (chain.isRouted()) {
+						routed.add(chain);
+					} else {
+						System.currentTimeMillis();
 					}
 				}
+				entry.setValue(routed);
+				removedChainCnt += chainCnt - entry.getValue().size();
 			}
-
-			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(performanceMeasures, network);
-			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel,
-					mode2efficiency, signature2efficiency);
-
-			for (Map.Entry<Commodity, List<ConsolidationUnit>> e : commodity2consolidationUnits.entrySet()) {
-				log.info("Routing " + e.getKey());
-				RoutingData routingData = new RoutingData(network, episodeCostModel);
-				Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
-				router.route(e.getKey(), e.getValue());
-			}
-
-			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-				long removedCnt = 0;
-				long totalCnt = 0;
-				for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains
-						.get(commodity).entrySet()) {
-					final int chainCnt = entry.getValue().size();
-					totalCnt += chainCnt;
-					entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).collect(Collectors.toList()));
-					removedCnt += chainCnt - entry.getValue().size();
-				}
-				log.warn(commodity + ": Removed " + removedCnt + " out of " + totalCnt
-						+ " chains with incomplete routes. ");
-			}
-
-			final ObjectMapper mapper = new ObjectMapper();
-			mapper.enable(SerializationFeature.INDENT_OUTPUT);
-			mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, true);
-//			mapper.writeValue(new File("consolidationUnits.json"),
-//					commodity2consolidationUnits.values().stream().toList());
-			FileOutputStream fos = new FileOutputStream(new File("consolidationUnits.json"));
-			JsonGenerator gen = mapper.getFactory().createGenerator(fos);
-			for (List<ConsolidationUnit> consolidationUnits : commodity2consolidationUnits.values()) {
-				for (ConsolidationUnit consolidationUnit : consolidationUnits) {
-					if (consolidationUnit.isRouted()) {
-						mapper.writeValue(gen, consolidationUnit);
-					}
-				}
-			}
-			gen.close();
-			fos.flush();
-			fos.close();
-
+			log.warn(commodity + ": Removed " + removedChainCnt + " out of " + totalChainCnt
+					+ " chains with incomplete routes.");
 		}
 
 		// ----------------------------------------------------------------------

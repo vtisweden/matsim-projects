@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.checkerframework.checker.units.qual.s;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
@@ -55,15 +56,31 @@ public class TransportEpisode {
 		this.mode = mode;
 	}
 
+	void setParent(TransportChain parent) {
+		this.parent = parent;
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public boolean hasSignatures() {
+		return (this.signatures != null);
+	}
+
+	public boolean isRouted() {
+		return (this.hasSignatures() && (this.signatures.stream().allMatch(s -> s.isRouted())));
+	}
+
+	public boolean hasNetworkReferences() {
+		return (this.hasSignatures() && (this.signatures.stream().allMatch(s -> s.hasNetworkReferences())));
+	}
+	
+	public boolean containsFerry() {
+		return (this.hasNetworkReferences() && this.signatures.stream().anyMatch(s -> s.containsFerry));
+	}
+
 	public void setSignatures(List<Signature.ConsolidationUnit> signatures) {
 		this.signatures = signatures;
 	}
-
-//	public void computeSignatures(Network network) {
-//		this.signatures = Signature.ConsolidationUnit.create(this, network);
-//	}
-
-	// -------------------- IMPLEMENTATION --------------------
 
 	public List<Signature.ConsolidationUnit> getSignatures() {
 		return this.signatures;
@@ -73,33 +90,8 @@ public class TransportEpisode {
 		return this.parent;
 	}
 
-	void setParent(TransportChain parent) {
-		this.parent = parent;
-	}
-
 	public OD getOD() {
 		return new OD(this.getLoadingNode(), this.getUnloadingNode());
-	}
-
-	public Boolean containsFerry() {
-		boolean episodeContainsFerry = false;
-		boolean episodeContainsNull = false;
-		for (ConsolidationUnit signature : this.signatures) {
-			final Boolean legContainsFerry = signature.containsFerry;
-			if (legContainsFerry == null) {
-				episodeContainsNull = true;
-			} else {
-				episodeContainsFerry |= legContainsFerry;
-			}
-
-		}
-		if (episodeContainsFerry) {
-			return true;
-		} else if (episodeContainsNull) {
-			return null;
-		} else {
-			return false;
-		}
 	}
 
 	public void addLeg(final TransportLeg leg) {
@@ -182,31 +174,4 @@ public class TransportEpisode {
 	public List<Id<Node>> createLoadingTransferUnloadingNodeList() {
 		return this.createNodeList(false);
 	}
-
-	public Boolean isRouted() {
-		return ((this.signatures != null) && (this.signatures.stream().allMatch(s -> s.linkIds != null)));
-//		if (this.legs == null) {
-//			return null;
-//		} else {
-//			for (TransportLeg leg : this.legs) {
-//				if (!leg.isRouted()) {
-//					return false;
-//				}
-//			}
-//			return true;
-//		}
-	}
-
-//	public List<List<Id<Link>>> createLinkIds() {
-//		assert (this.isRouted());
-//		final List<List<Id<Link>>> result = new ArrayList<>(this.legs.size());
-//		for (TransportLeg leg : this.legs) {
-//			result.add(leg.getRouteIdsView());
-//		}
-//		return result;
-//	}
-
-//	public double computeLength_km() {
-//		return this.legs.stream().mapToDouble(l -> l.getLength_km()).sum();
-//	}
 }
