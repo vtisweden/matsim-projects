@@ -75,14 +75,14 @@ public class TransportEpisode {
 	}
 	
 	public boolean containsFerry() {
-		return (this.hasNetworkReferences() && this.signatures.stream().anyMatch(s -> s.containsFerry));
+		return (this.hasNetworkReferences() && this.signatures.stream().anyMatch(s -> s.containsFerry()));
 	}
 
-	public void setSignatures(List<Signature.ConsolidationUnit> signatures) {
+	public void setConsolidationUnits(List<Signature.ConsolidationUnit> signatures) {
 		this.signatures = signatures;
 	}
 
-	public List<Signature.ConsolidationUnit> getSignatures() {
+	public List<Signature.ConsolidationUnit> getConsolidationUnits() {
 		return this.signatures;
 	}
 

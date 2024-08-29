@@ -48,31 +48,28 @@ public class ConsolidationCostModel {
 
 	private final PerformanceMeasures performanceMeasures;
 
-	private final Network network;
-
 	// -------------------- CONSTRUCTION --------------------
 
-	public ConsolidationCostModel(PerformanceMeasures performanceMeasures, Network network) {
+	public ConsolidationCostModel(PerformanceMeasures performanceMeasures) {
 		this.performanceMeasures = performanceMeasures;
-		this.network = network;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
 	public DetailedTransportCost computeSignatureCost(FreightVehicleAttributes vehicleAttrs, double payload_ton,
-			Signature.ConsolidationUnit signature, boolean loadAtStart, boolean unloadAtEnd)
+			Signature.ConsolidationUnit consolidationUnit, boolean loadAtStart, boolean unloadAtEnd)
 			throws InsufficientDataException {
 
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
 
-		if (signature.links.size() > 0) {
+		if (consolidationUnit.links.size() > 0) {
 
-			final List<Link> firstLinks = signature.links.get(0);
-			final List<Link> lastLinks = signature.links.get(signature.links.size() - 1);
+			final List<Link> firstLinks = consolidationUnit.links.get(0);
+			final List<Link> lastLinks = consolidationUnit.links.get(consolidationUnit.links.size() - 1);
 
-			for (List<Link> links : signature.links) {
+			for (List<Link> links : consolidationUnit.links) {
 
 				if (links.size() > 0) {
 
@@ -81,34 +78,41 @@ public class ConsolidationCostModel {
 					final Id<Node> lastNodeId = links.get(links.size() - 1).getToNode().getId();
 
 					if (loadAtStart && (links == firstLinks)) {
-						builder.addLoadingDuration_h(vehicleAttrs.loadTime_h.get(signature.commodity));
+						builder.addLoadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
 						builder.addLoadingDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(firstNodeId));
-						builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(signature.commodity)
+						builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
 								* Math.max(minTransferredAmount_ton, payload_ton));
 					} else {
-						builder.addTransferDuration_h(0.5 * vehicleAttrs.transferTime_h.get(signature.commodity));
+						builder.addTransferDuration_h(
+								0.5 * vehicleAttrs.transferTime_h.get(consolidationUnit.commodity));
 						builder.addTransferDuration_h(this.performanceMeasures.getTotalDepartureDelay_h(firstNodeId));
-						builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(signature.commodity)
+						builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(consolidationUnit.commodity)
 								* Math.max(minTransferredAmount_ton, payload_ton));
 					}
 
 					if (unloadAtEnd && (links == lastLinks)) {
 						builder.addUnloadingDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(lastNodeId));
-						builder.addUnloadingDuration_h(vehicleAttrs.loadTime_h.get(signature.commodity));
-						builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(signature.commodity)
+						builder.addUnloadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
+						builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
 								* Math.max(minTransferredAmount_ton, payload_ton));
 					} else {
 						builder.addTransferDuration_h(this.performanceMeasures.getTotalArrivalDelay_h(lastNodeId));
-						builder.addTransferDuration_h(0.5 * vehicleAttrs.transferTime_h.get(signature.commodity));
-						builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(signature.commodity)
+						builder.addTransferDuration_h(
+								0.5 * vehicleAttrs.transferTime_h.get(consolidationUnit.commodity));
+						builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(consolidationUnit.commodity)
 								* Math.max(minTransferredAmount_ton, payload_ton));
 					}
 
 					for (Link link : links) {
-						double length_km = Units.KM_H_PER_M_S * link.getLength();
-						double tt_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
+						final double length_km = Units.KM_H_PER_M_S * link.getLength();
+						final double speed_km_h = (vehicleAttrs.speed_km_h == null)
+								? Units.KM_H_PER_M_S * link.getFreespeed()
+								: Math.min(vehicleAttrs.speed_km_h, Units.KM_H_PER_M_S * link.getFreespeed());
+						final double tt_h = length_km / Math.max(1e-8, speed_km_h);
+						// Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
 						builder.addMoveDuration_h(tt_h);
-						if (LinkAttributes.isFerry(link)) {
+						// if (consolidationUnit.containsFerry && LinkAttributes.isFerry(link)) {
+						if (consolidationUnit.isFerry(link.getId())) {
 							builder.addMoveCost(tt_h * vehicleAttrs.onFerryCost_1_h);
 							builder.addMoveCost(length_km * vehicleAttrs.onFerryCost_1_km);
 						} else {

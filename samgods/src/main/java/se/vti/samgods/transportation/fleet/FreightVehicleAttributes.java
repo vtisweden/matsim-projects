@@ -97,16 +97,16 @@ public class FreightVehicleAttributes {
 
 	// -------------------- IMPLEMENTATION, thread safe --------------------
 
-	public synchronized boolean isFerryCompatible() {
+	public boolean isFerryCompatible() {
 		return (this.onFerryCost_1_km != null) && (this.onFerryCost_1_h != null);
 	}
 
-	public synchronized boolean isCompatible(SamgodsConstants.Commodity commodity) {
+	public boolean isCompatible(SamgodsConstants.Commodity commodity) {
 		return this.loadCost_1_ton.containsKey(commodity) && this.loadTime_h.containsKey(commodity)
 				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
 
-	public synchronized double speedOnLink_m_s(Link link) throws InsufficientDataException {
+	private double speedOnLink_m_s(Link link) throws InsufficientDataException {
 		if (this.speed_km_h != null) {
 			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
 		} else if (Double.isFinite(link.getFreespeed())) {
@@ -117,10 +117,10 @@ public class FreightVehicleAttributes {
 		}
 	}
 
-	public synchronized double travelTimeOnLink_s(Link link) throws InsufficientDataException {
+	public double travelTimeOnLink_s(Link link) throws InsufficientDataException {
 		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
 	}
-
+	
 	// -------------------- STATIC IMPLEMENTATION --------------------
 	
 	public static FreightVehicleAttributes getFreightAttributes(VehicleType vehicleType) {

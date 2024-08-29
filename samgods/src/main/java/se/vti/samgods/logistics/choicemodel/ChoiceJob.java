@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.consolidation.road
+ * se.vti.samgods.logistics.choicemodel
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,33 +17,30 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation;
+package se.vti.samgods.logistics.choicemodel;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Node;
+import java.util.List;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface PerformanceMeasures {
+import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportDemand;
 
-	double getTotalArrivalDelay_h(Id<Node> nodeId);
+public class ChoiceJob {
 
-	double getTotalDepartureDelay_h(Id<Node> nodeId);
+	public static final ChoiceJob TERMINATE = new ChoiceJob(null, null, null, null) {
+	};
 
-	static PerformanceMeasures createAllZero() {
-		return new PerformanceMeasures() {
-			@Override
-			public double getTotalArrivalDelay_h(Id<Node> nodeId) {
-				return 0;
-			}
+	public final Commodity commodity;
+	public final OD od;
+	public final List<TransportChain> transportChains;
+	public final List<TransportDemand.AnnualShipment> annualShipments;
 
-			@Override
-			public double getTotalDepartureDelay_h(Id<Node> nodeId) {
-				return 0;
-			}
-		};
+	public ChoiceJob(Commodity commodity, OD od, List<TransportChain> transportChains,
+			List<TransportDemand.AnnualShipment> annualShipments) {
+		this.commodity = commodity;
+		this.od = od;
+		this.transportChains = transportChains;
+		this.annualShipments = annualShipments;
 	}
 }

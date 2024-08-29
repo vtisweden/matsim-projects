@@ -1,7 +1,7 @@
 /**
- * se.vti.samgods
+ * se.vti.samgods.logistics.choicemodel
  * 
- * Copyright (C) 2023 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.ShipmentSize;
@@ -39,33 +39,42 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.utils.ChoiceModelUtils;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public class ChainAndShipmentSizeChoiceModel {
-
-	// -------------------- MEMBERS --------------------
+public class ChoiceSimulator implements Runnable {
 
 	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 	private final double scale;
-
 	private final EpisodeCostModel episodeCostModel;
-
 	private final NonTransportCostModel nonTransportCostModel;
-
 	private final ChainAndShipmentSizeUtilityFunction utilityFunction;
 
-	// -------------------- CONSTRUCTION --------------------
+	private final BlockingQueue<ChoiceJob> jobQueue;
+	private final List<ChainAndShipmentSize> allChoices;
 
-	public ChainAndShipmentSizeChoiceModel(final double scale, EpisodeCostModel episodeCostModel,
-			NonTransportCostModel nonTransportCostModel, final ChainAndShipmentSizeUtilityFunction utilityFunction) {
+	public ChoiceSimulator(double scale, EpisodeCostModel episodeCostModel, NonTransportCostModel nonTransportCostModel,
+			ChainAndShipmentSizeUtilityFunction utilityFunction, BlockingQueue<ChoiceJob> jobQueue,
+			List<ChainAndShipmentSize> allChoices) {
 		this.scale = scale;
 		this.episodeCostModel = episodeCostModel;
 		this.nonTransportCostModel = nonTransportCostModel;
 		this.utilityFunction = utilityFunction;
+		this.jobQueue = jobQueue;
+		this.allChoices = allChoices;
+	}
+
+	@Override
+	public void run() {
+		try {
+			while (true) {
+				ChoiceJob job = this.jobQueue.take(); // Blocking call, waits if the queue is empty
+				if (job == ChoiceJob.TERMINATE) { // Special signal to stop the thread
+					break;
+				}
+				this.process(job);
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt(); // Handle thread interruption
+		}
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -97,10 +106,8 @@ public class ChainAndShipmentSizeChoiceModel {
 		return chain2transportUnitCost;
 	}
 
-	private List<ChainAndShipmentSize> computeChoices(Commodity commodity,
-			List<TransportDemand.AnnualShipment> annualShipments,
+	private void computeChoices(Commodity commodity, List<TransportDemand.AnnualShipment> annualShipments,
 			Map<TransportChain, DetailedTransportCost> chain2transportUnitCost) {
-		final List<ChainAndShipmentSize> choices = new ArrayList<>(annualShipments.size());
 		for (AnnualShipment annualShipment : annualShipments) {
 			List<ChainAndShipmentSize> alternatives = new ArrayList<>();
 			for (Map.Entry<TransportChain, DetailedTransportCost> e : chain2transportUnitCost.entrySet()) {
@@ -121,24 +128,20 @@ public class ChainAndShipmentSizeChoiceModel {
 			for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
 				final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> this.scale * a.utility);
 				assert (choice != null);
-				choices.add(choice);
+				this.allChoices.add(choice);
 			}
 		}
-		return choices;
 	}
 
-	// -------------------- IMPLEMENTATION --------------------
-
-	public List<ChainAndShipmentSize> choose(SamgodsConstants.Commodity commodity, OD od,
-			List<TransportChain> transportChains, List<TransportDemand.AnnualShipment> annualShipments) {
+	private void process(ChoiceJob job) {
 		final Map<TransportChain, DetailedTransportCost> chain2transportUnitCost = this
-				.computeChain2transportUnitCost(transportChains);
+				.computeChain2transportUnitCost(job.transportChains);
 		if (chain2transportUnitCost.size() > 0) {
-			return this.computeChoices(commodity, annualShipments, chain2transportUnitCost);
+			this.computeChoices(job.commodity, job.annualShipments, chain2transportUnitCost);
 		} else {
 			new InsufficientDataException(this.getClass(), "No transport chains with transport cost available.",
-					commodity, od, null, null, null);
-			return new ArrayList<>(0);
+					job.commodity, job.od, null, null, null);
 		}
 	}
+
 }

@@ -19,9 +19,11 @@
  */
 package se.vti.samgods.transportation.costs;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -49,60 +51,38 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	private final VehicleFleet fleet;
 	private final ConsolidationCostModel consolidationCostModel;
 
-//	private double capacityUsageFactor = 0.7;
 	private final Map<TransportMode, Double> mode2efficiency;
-	private final Map<Signature.ConsolidationUnit, Double> signature2efficiency;
+	private final Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<TransportMode, Double> mode2capacityUsage,
-			Map<Signature.ConsolidationUnit, Double> episode2efficiency) {
+			Map<TransportMode, Double> mode2efficiency,
+			Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
-		this.mode2efficiency = new LinkedHashMap<>(mode2capacityUsage);
+		this.mode2efficiency = new LinkedHashMap<>(mode2efficiency);
 
-		double fallbackCapacityUsage = mode2capacityUsage.values().stream().mapToDouble(e -> e).average().getAsDouble();
+		double fallbackCapacityUsage = mode2efficiency.values().stream().mapToDouble(e -> e).average().getAsDouble();
 		for (TransportMode mode : TransportMode.values()) {
 			if (!this.mode2efficiency.containsKey(mode)) {
 				this.mode2efficiency.put(mode, fallbackCapacityUsage);
 			}
 		}
-		this.signature2efficiency = new LinkedHashMap<>(episode2efficiency);
+		this.consolidationUnit2efficiency = new LinkedHashMap<>(consolidationUnit2efficiency);
 	}
 
-//	public FallbackEpisodeCostModel setCapacityUsageFactor(double factor) {
-//		this.capacityUsageFactor = factor;
-//		return this;
-//	}
+	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
+			double meanEfficiency) {
+		this(fleet, consolidationCostModel,
+				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> meanEfficiency)),
+				new LinkedHashMap<>());
+	}
 
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
 
 	private double efficiency(Signature.ConsolidationUnit signature) {
-		return this.signature2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
-	}
-
-	@Override
-	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
-		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
-		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
-				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
-				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
-		final List<Signature.ConsolidationUnit> signatures = episode.getSignatures();
-		for (Signature.ConsolidationUnit signature : signatures) {
-			final DetailedTransportCost signatureCost = this.consolidationCostModel
-					.computeSignatureCost(vehicleAttributes,
-							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
-							signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature)
-					.computeUnitCost();
-			builder.addLoadingDuration_h(signatureCost.loadingDuration_h)
-					.addTransferDuration_h(signatureCost.transferDuration_h)
-					.addUnloadingDuration_h(signatureCost.unloadingDuration_h)
-					.addMoveDuration_h(signatureCost.moveDuration_h).addLoadingCost(signatureCost.loadingCost)
-					.addTransferCost(signatureCost.transferCost).addUnloadingCost(signatureCost.unloadingCost)
-					.addMoveCost(signatureCost.moveCost);
-		}
-		return builder.build();
+		return this.consolidationUnit2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
 
 	@Override
@@ -141,5 +121,33 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 				}
 			}
 		}
+	}
+
+	private final Object lock = new Object();
+
+	@Override
+	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
+		final FreightVehicleAttributes vehicleAttributes;
+		synchronized (this.lock) {
+			vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
+		}
+		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
+				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
+				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
+		final List<Signature.ConsolidationUnit> signatures = episode.getConsolidationUnits();
+		for (Signature.ConsolidationUnit signature : signatures) {
+			final DetailedTransportCost signatureCost = this.consolidationCostModel
+					.computeSignatureCost(vehicleAttributes,
+							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
+							signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature)
+					.computeUnitCost();
+			builder.addLoadingDuration_h(signatureCost.loadingDuration_h)
+					.addTransferDuration_h(signatureCost.transferDuration_h)
+					.addUnloadingDuration_h(signatureCost.unloadingDuration_h)
+					.addMoveDuration_h(signatureCost.moveDuration_h).addLoadingCost(signatureCost.loadingCost)
+					.addTransferCost(signatureCost.transferCost).addUnloadingCost(signatureCost.unloadingCost)
+					.addMoveCost(signatureCost.moveCost);
+		}
+		return builder.build();
 	}
 }

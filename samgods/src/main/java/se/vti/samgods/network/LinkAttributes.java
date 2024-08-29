@@ -68,5 +68,5 @@ public class LinkAttributes {
 
 	public static Double getSpeed2_km_h(Link link) {
 		return getAttrs(link).speed2_km_h;
-	}
+	}	
 }

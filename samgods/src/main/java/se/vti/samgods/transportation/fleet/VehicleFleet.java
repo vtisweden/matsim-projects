@@ -67,7 +67,7 @@ public class VehicleFleet {
 	public Vehicles getVehicles() {
 		return this.vehicles;
 	}
-
+	
 	// -------------------- COMPATIBLE VEHICLE TYPES --------------------
 
 	private final Map<Signature.ConsolidationUnit, List<VehicleType>> signature2compatibleTypes = new LinkedHashMap<>();

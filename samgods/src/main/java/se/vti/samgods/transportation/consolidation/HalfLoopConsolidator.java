@@ -21,7 +21,6 @@ package se.vti.samgods.transportation.consolidation;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.matsim.vehicles.VehicleType;
 
@@ -48,18 +47,14 @@ public class HalfLoopConsolidator {
 	private final ConsolidationCostModel consolidationCostModel;
 
 	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days;
-	private final Map<SamgodsConstants.Commodity, Double> commodity2numberOfServiceIntervals;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidator(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days, boolean flexiblePeriod,
-			boolean skipUnusedIntervals) {
+			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.commodity2serviceInterval_days = commodity2serviceInterval_days;
-		this.commodity2numberOfServiceIntervals = commodity2serviceInterval_days.entrySet().stream()
-				.collect(Collectors.toMap(e -> e.getKey(), e -> 365.0 / e.getValue()));
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -222,10 +217,10 @@ public class HalfLoopConsolidator {
 		// <<<
 
 		final List<VehicleType> compatibleVehicleTypes = this.fleet.getCompatibleVehicleTypes(signature.commodity,
-				signature.mode, signature.isContainer, signature.containsFerry);
+				signature.mode, signature.isContainer, signature.containsFerry());
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
 			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.",
-					signature.commodity, null, signature.mode, signature.isContainer, signature.containsFerry);
+					signature.commodity, null, signature.mode, signature.isContainer, signature.containsFerry());
 		}
 
 		FleetAssignment overallBestAssignment = null;

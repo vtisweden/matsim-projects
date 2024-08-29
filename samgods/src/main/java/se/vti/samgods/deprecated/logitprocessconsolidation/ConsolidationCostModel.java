@@ -41,7 +41,7 @@ public class ConsolidationCostModel extends se.vti.samgods.transportation.consol
 	// -------------------- CONSTRUCTION --------------------
 
 	public ConsolidationCostModel(PerformanceMeasures performanceMeasures, Network network) {
-		super(performanceMeasures, network);
+		super(performanceMeasures);
 	}
 
 	public BasicTransportCost computeInVehicleShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,

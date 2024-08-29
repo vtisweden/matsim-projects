@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -99,18 +100,16 @@ public class Signature {
 
 		public List<List<Id<Link>>> linkIds = null;
 		public List<List<Link>> links = null;
-		public Boolean containsFerry = null;
+		private Set<Id<Link>> ferryLinkIds = null;
 
 		// CONSTRUCTION
 
 		public ConsolidationUnit(List<Id<Node>> nodes, SamgodsConstants.Commodity commodity,
-				SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry,
-				List<List<Id<Link>>> linkIds) {
+				SamgodsConstants.TransportMode mode, Boolean isContainer, List<List<Id<Link>>> linkIds) {
 			this.nodeIds = nodes;
 			this.commodity = commodity;
 			this.mode = mode;
 			this.isContainer = isContainer;
-			this.containsFerry = containsFerry;
 			this.linkIds = linkIds;
 		}
 
@@ -121,25 +120,34 @@ public class Signature {
 				if (episode.getMode().equals(TransportMode.Rail) && episode.getLegs().size() > 1) {
 					return episode.getLegs().stream().map(leg -> Arrays.asList(leg))
 							.map(legs -> new ConsolidationUnit(extractNodes(legs), episode.getCommodity(),
-									episode.getMode(), episode.isContainer(), null, null))
+									episode.getMode(), episode.isContainer(), null))
 							.collect(Collectors.toList());
 				} else {
 					return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getLegs()), episode.getCommodity(),
-							episode.getMode(), episode.isContainer(), null, null));
+							episode.getMode(), episode.isContainer(), null));
 				}
 			}
 		}
 
-		public synchronized static ConsolidationUnit createVehicleCompatibilityTemplate(SamgodsConstants.Commodity commodity,
-				SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-			return new ConsolidationUnit(null, commodity, mode, isContainer, containsFerry, null);
+		public synchronized static ConsolidationUnit createVehicleCompatibilityTemplate(
+				SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
+				Boolean containsFerry) {
+			return new ConsolidationUnit(null, commodity, mode, isContainer, null);
 		}
 
 		public synchronized ConsolidationUnit createRoutingEquivalentCopy() {
-			return new ConsolidationUnit(this.nodeIds, this.commodity, this.mode, this.isContainer, null, null);
+			return new ConsolidationUnit(this.nodeIds, this.commodity, this.mode, this.isContainer, null);
 		}
 
 		// IMPLEMENTATION
+
+		public synchronized Double computeLength_m() {
+			if (this.hasNetworkReferences()) {
+				return this.links.stream().flatMap(ll -> ll.stream()).mapToDouble(l -> l.getLength()).sum();
+			} else {
+				return null;
+			}
+		}
 
 		public synchronized boolean isRouted() {
 			return this.linkIds != null;
@@ -156,8 +164,8 @@ public class Signature {
 				this.linkIds.add(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
 				this.links.add(route);
 			}
-			this.containsFerry = this.links.stream().flatMap(list -> list.stream())
-					.anyMatch(l -> LinkAttributes.isFerry(l));
+			this.ferryLinkIds = Collections.synchronizedSet(this.links.stream().flatMap(list -> list.stream())
+					.filter(l -> LinkAttributes.isFerry(l)).map(l -> l.getId()).collect(Collectors.toSet()));
 		}
 
 		public synchronized void updateNetworkReferences(Network network) {
@@ -167,8 +175,8 @@ public class Signature {
 						.collect(Collectors.toList());
 				this.links.add(routeRefs);
 			}
-			this.containsFerry = this.links.stream().flatMap(list -> list.stream())
-					.anyMatch(l -> LinkAttributes.isFerry(l));
+			this.ferryLinkIds = Collections.synchronizedSet(this.links.stream().flatMap(list -> list.stream())
+					.filter(l -> LinkAttributes.isFerry(l)).map(l -> l.getId()).collect(Collectors.toSet()));
 		}
 
 		private synchronized static List<Id<Node>> extractNodes(List<TransportLeg> legs) {
@@ -182,11 +190,27 @@ public class Signature {
 			return this.links;
 		}
 
+		public synchronized Boolean isFerry(Id<Link> linkId) {
+			if (this.ferryLinkIds == null) {
+				return null;
+			} else {
+				return this.ferryLinkIds.contains(linkId);
+			}
+		}
+
+		public synchronized Boolean containsFerry() {
+			if (this.ferryLinkIds == null) {
+				return null;
+			} else {
+				return (this.ferryLinkIds.size() > 0);
+			}
+		}
+
 		public synchronized boolean isCompatible(FreightVehicleAttributes attrs) {
 			return (this.commodity == null || attrs.isCompatible(this.commodity))
 					&& (this.mode == null || this.mode.equals(attrs.mode))
 					&& (this.isContainer == null || this.isContainer.equals(attrs.isContainer))
-					&& (this.containsFerry == null || !this.containsFerry || attrs.isFerryCompatible());
+					&& (this.containsFerry() == null || !this.containsFerry() || attrs.isFerryCompatible());
 		}
 
 		public synchronized boolean isCompatible(VehicleType type) {
@@ -195,7 +219,7 @@ public class Signature {
 
 		@Override
 		synchronized List<Object> asList() {
-			return Arrays.asList(this.nodeIds, this.commodity, this.mode, this.isContainer, this.containsFerry,
+			return Arrays.asList(this.nodeIds, this.commodity, this.mode, this.isContainer, this.containsFerry(),
 					this.linkIds);
 		}
 	}
@@ -222,7 +246,7 @@ public class Signature {
 			gen.writeStringField("commodity", consolidationUnit.commodity.toString());
 			gen.writeStringField("mode", consolidationUnit.mode.toString());
 			gen.writeStringField("isContainer", consolidationUnit.isContainer.toString());
-			gen.writeStringField("containsFerry", consolidationUnit.containsFerry.toString());
+			gen.writeStringField("containsFerry", consolidationUnit.containsFerry().toString());
 			gen.writeFieldName("routes");
 			gen.writeStartArray();
 			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
@@ -292,7 +316,7 @@ public class Signature {
 //				}
 //			}
 
-			return new ConsolidationUnit(nodes, commodity, mode, isContainer, containsFerry, routes);
+			return new ConsolidationUnit(nodes, commodity, mode, isContainer, routes);
 		}
 	}
 }
