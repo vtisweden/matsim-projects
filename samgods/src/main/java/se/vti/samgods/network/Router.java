@@ -40,10 +40,10 @@ import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.router.AStarLandmarksFactory;
 import org.matsim.core.router.util.LeastCostPathCalculator;
 
+import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.Signature.ConsolidationUnit;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**

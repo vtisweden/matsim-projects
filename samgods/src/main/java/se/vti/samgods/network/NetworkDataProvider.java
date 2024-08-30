@@ -122,10 +122,11 @@ public class NetworkDataProvider {
 		assert (Double.isFinite(duration_h));
 		if (LinkAttributes.isFerry(link)) {
 			return new BasicTransportCost(1.0,
-					duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km, duration_h);
+					duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km, duration_h,
+					length_km);
 		} else {
 			return new BasicTransportCost(1.0, duration_h * vehicleAttrs.cost_1_h + length_km * vehicleAttrs.cost_1_km,
-					duration_h);
+					duration_h, length_km);
 		}
 	}
 

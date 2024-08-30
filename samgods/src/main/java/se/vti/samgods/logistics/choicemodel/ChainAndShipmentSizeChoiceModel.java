@@ -86,7 +86,8 @@ public class ChainAndShipmentSizeChoiceModel {
 							.addTransferCost(episodeUnitCost.transferCost)
 							.addTransferDuration_h(episodeUnitCost.transferDuration_h)
 							.addUnloadingCost(episodeUnitCost.unloadingCost)
-							.addUnloadingDuration_h(episodeUnitCost.unloadingDuration_h);
+							.addUnloadingDuration_h(episodeUnitCost.unloadingDuration_h)
+							.addDistance_km(null); // TODO
 				}
 				chain2transportUnitCost.put(transportChain, chainCostBuilder.build());
 			} catch (InsufficientDataException e) {

@@ -59,7 +59,7 @@ public class ChainAndShipmentChoiceStats {
 		this.commodity2lengths.get(choice.annualShipment.getCommodity())
 				.add(Units.KM_PER_M
 						* choice.transportChain.getEpisodes().stream().flatMap(e -> e.getConsolidationUnits().stream())
-								.mapToDouble(cu -> cu.computeLength_m()).sum());
+								.mapToDouble(cu -> cu.length_m).sum());
 	}
 
 //	public void add(SamgodsConstants.Commodity commodity, List<ChainAndShipmentSize> choices) {

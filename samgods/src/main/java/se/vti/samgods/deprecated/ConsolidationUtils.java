@@ -20,17 +20,10 @@
 package se.vti.samgods.deprecated;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.Signature;
-import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
-import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 

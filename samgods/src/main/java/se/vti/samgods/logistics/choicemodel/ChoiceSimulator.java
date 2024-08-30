@@ -95,7 +95,8 @@ public class ChoiceSimulator implements Runnable {
 							.addTransferCost(episodeUnitCost.transferCost)
 							.addTransferDuration_h(episodeUnitCost.transferDuration_h)
 							.addUnloadingCost(episodeUnitCost.unloadingCost)
-							.addUnloadingDuration_h(episodeUnitCost.unloadingDuration_h);
+							.addUnloadingDuration_h(episodeUnitCost.unloadingDuration_h)
+							.addDistance_km(episodeUnitCost.length_km);
 				}
 				chain2transportUnitCost.put(transportChain, chainCostBuilder.build());
 			} catch (InsufficientDataException e) {

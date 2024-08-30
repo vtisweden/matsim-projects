@@ -29,14 +29,16 @@ public class BasicTransportCost {
 	public final double amount_ton;
 	public final double monetaryCost;
 	public final double duration_h;
+	public final double length_km;
 
-	public BasicTransportCost(double amount_ton, double cost, double duration_h) {
+	public BasicTransportCost(double amount_ton, double cost, double duration_h, double length_km) {
 		this.amount_ton = amount_ton;
 		this.monetaryCost = cost;
 		this.duration_h = duration_h;
+		this.length_km = length_km;
 	}
 
 	public BasicTransportCost computeUnitCost() {
-		return new BasicTransportCost(1.0, this.monetaryCost / this.amount_ton, this.duration_h);
+		return new BasicTransportCost(1.0, this.monetaryCost / this.amount_ton, this.duration_h, this.length_km);
 	}
 }

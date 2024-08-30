@@ -40,10 +40,10 @@ public class DetailedTransportCost extends BasicTransportCost {
 
 	private DetailedTransportCost(double amount_ton, double loadingCost, double unloadingCost, double transferCost,
 			double moveCost, double loadingDuration_h, double unloadingDuration_h, double transferDuration_h,
-			double moveDuration_h) {
+			double moveDuration_h, double distance_km) {
 
 		super(amount_ton, loadingCost + unloadingCost + transferCost + moveCost,
-				loadingDuration_h + unloadingDuration_h + transferDuration_h + moveDuration_h);
+				loadingDuration_h + unloadingDuration_h + transferDuration_h + moveDuration_h, distance_km);
 
 		this.loadingCost = loadingCost;
 		this.unloadingCost = unloadingCost;
@@ -60,7 +60,7 @@ public class DetailedTransportCost extends BasicTransportCost {
 	public DetailedTransportCost computeUnitCost() {
 		return new DetailedTransportCost(1.0, this.loadingCost / this.amount_ton, this.unloadingCost / this.amount_ton,
 				this.transferCost / this.amount_ton, this.moveCost / this.amount_ton, this.loadingDuration_h,
-				this.unloadingDuration_h, this.transferDuration_h, this.moveDuration_h);
+				this.unloadingDuration_h, this.transferDuration_h, this.moveDuration_h, this.length_km);
 	}
 
 	// -------------------- BUILDER --------------------
@@ -77,6 +77,8 @@ public class DetailedTransportCost extends BasicTransportCost {
 		private Double unloadingDuration_h;
 		private Double transferDuration_h;
 		private Double moveDuration_h;
+		
+		private Double distance_km;
 
 		public Builder() {
 		}
@@ -133,13 +135,18 @@ public class DetailedTransportCost extends BasicTransportCost {
 			this.moveDuration_h = this.sum(this.moveDuration_h, moveDuration_h);
 			return this;
 		}
+		
+		public Builder addDistance_km(Double distance_km) {
+			this.distance_km = this.sum(this.distance_km, distance_km);
+			return this;
+		}
 
 		public DetailedTransportCost build() throws InsufficientDataException {
 			try {
 				// Null values raise exception when cast to primitive double.
 				return new DetailedTransportCost(this.amount_ton, this.loadingCost, this.unloadingCost,
 						this.transferCost, this.moveCost, this.loadingDuration_h, this.unloadingDuration_h,
-						this.transferDuration_h, this.moveDuration_h);
+						this.transferDuration_h, this.moveDuration_h, this.distance_km);
 			} catch (Exception e) {
 				throw new InsufficientDataException(this.getClass(),
 						"Insufficent data to build detailed transport cost.");

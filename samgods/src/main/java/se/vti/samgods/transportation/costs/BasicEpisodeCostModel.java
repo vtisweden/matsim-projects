@@ -25,9 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import floetteroed.utilities.Units;
+import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
@@ -47,15 +48,15 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	private final ConsolidationCostModel consolidationCostModel;
 
 	private final Map<TransportMode, Double> mode2efficiency;
-	private final Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency;
+	private final Map<ConsolidationUnit, Double> consolidationUnit2efficiency;
 
 	private final NetworkData networkData;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<TransportMode, Double> mode2efficiency,
-			Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency, NetworkData networkData) {
+			Map<TransportMode, Double> mode2efficiency, Map<ConsolidationUnit, Double> consolidationUnit2efficiency,
+			NetworkData networkData) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.mode2efficiency = new LinkedHashMap<>(mode2efficiency);
@@ -80,7 +81,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
 
-	private double efficiency(Signature.ConsolidationUnit signature) {
+	private double efficiency(ConsolidationUnit signature) {
 		return this.consolidationUnit2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
 
@@ -94,9 +95,9 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 		}
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
-				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
-		final List<Signature.ConsolidationUnit> signatures = episode.getConsolidationUnits();
-		for (Signature.ConsolidationUnit signature : signatures) {
+				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0).addDistance_km(0.0);
+		final List<ConsolidationUnit> signatures = episode.getConsolidationUnits();
+		for (ConsolidationUnit signature : signatures) {
 			final DetailedTransportCost signatureCost = this.consolidationCostModel.computeSignatureCost(
 					vehicleAttributes, this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
 					signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature,
@@ -108,7 +109,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 					.addUnloadingDuration_h(signatureCost.unloadingDuration_h)
 					.addMoveDuration_h(signatureCost.moveDuration_h).addLoadingCost(signatureCost.loadingCost)
 					.addTransferCost(signatureCost.transferCost).addUnloadingCost(signatureCost.unloadingCost)
-					.addMoveCost(signatureCost.moveCost);
+					.addMoveCost(signatureCost.moveCost).addDistance_km(Units.KM_PER_M * signature.length_m);
 		}
 		return builder.build();
 	}

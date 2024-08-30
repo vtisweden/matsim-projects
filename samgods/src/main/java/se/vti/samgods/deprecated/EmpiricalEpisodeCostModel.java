@@ -66,17 +66,20 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 			this.monetaryCostTimesTons_ton = monetaryCost;
 			this.durationTimesTons_hTon = durationTimesTons_hTon;
 			this.tons = tons;
+			throw new UnsupportedOperationException("does not handle distance");
 		}
 
 		void add(double monetaryCost, double duration_h, double tons) {
 			this.monetaryCostTimesTons_ton += monetaryCost * tons;
 			this.durationTimesTons_hTon += duration_h * tons;
 			this.tons += tons;
+			throw new UnsupportedOperationException("does not handle distance");
 		}
 
 		BasicTransportCost createUnitData() {
-			return new BasicTransportCost(1.0, this.monetaryCostTimesTons_ton / this.tons,
-					this.durationTimesTons_hTon / this.tons);
+			throw new UnsupportedOperationException("does not handle distance");
+//			return new BasicTransportCost(1.0, this.monetaryCostTimesTons_ton / this.tons,
+//					this.durationTimesTons_hTon / this.tons);
 		}
 	}
 
@@ -119,16 +122,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		}
 
 		DetailedTransportCost createUnitCost() throws InsufficientDataException {
-			assert (this.tons > 1e-8);
-			return new DetailedTransportCost.Builder().addAmount_ton(1.0)
-					.addLoadingCost(this.loadingCostTimesTons_ton / this.tons)
-					.addUnloadingCost(this.unloadingCostTimesTons_ton / this.tons)
-					.addTransferCost(this.transferCostTimesTons_ton / this.tons)
-					.addMoveCost(this.moveCostTimesTons_ton / this.tons)
-					.addLoadingDuration_h(this.loadingDurationTimesTons_hTon / this.tons)
-					.addUnloadingDuration_h(this.unloadingDurationTimesTons_hTon / this.tons)
-					.addTransferDuration_h(this.transferDurationTimesTons_hTon / this.tons)
-					.addMoveDuration_h(this.moveDurationTimesTons_hTon / this.tons).build();
+			throw new RuntimeException();
 		}
 	}
 

@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.consolidation.road
+ * se.vti.samgods
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,17 +17,32 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation;
+package se.vti.samgods.utils;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface PerformanceMeasures {
+import java.util.List;
 
-	static PerformanceMeasures createAllZero() {
-		return new PerformanceMeasures() {
-		};
+public abstract class ListRepresented {
+
+	protected abstract List<Object> asList();
+
+	@Override
+	public int hashCode() {
+		return this.asList().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (this == other) {
+			return true;
+		} else if (other instanceof ListRepresented) {
+			return this.asList().equals(((ListRepresented) other).asList());
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public String toString() {
+		return this.asList().toString();
 	}
 }

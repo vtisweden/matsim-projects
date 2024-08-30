@@ -25,9 +25,9 @@ import java.util.Map;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
@@ -157,7 +157,7 @@ public class HalfLoopConsolidator {
 //		}
 	}
 
-	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, Signature.ConsolidationUnit signature,
+	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, ConsolidationUnit signature,
 			double serviceDemand_ton, double serviceProba, double length_km) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 
@@ -186,12 +186,11 @@ public class HalfLoopConsolidator {
 		return result;
 	}
 
-	public FleetAssignment computeOptimalFleetAssignment(Signature.ConsolidationUnit signature,
+	public FleetAssignment computeOptimalFleetAssignment(ConsolidationUnit signature,
 			List<ChainAndShipmentSize> choices) throws InsufficientDataException {
 
 		final double totalDemand_ton = choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
-		final double length_km = Units.KM_PER_M
-				* signature.links.stream().flatMap(l -> l.stream()).mapToDouble(l -> l.getLength()).sum();
+		final double length_km = Units.KM_PER_M * signature.length_m;
 		final double intervalLength_days = this.commodity2serviceInterval_days.get(signature.commodity);
 
 		// >>>
@@ -227,10 +226,10 @@ public class HalfLoopConsolidator {
 		// <<<
 
 		final List<VehicleType> compatibleVehicleTypes = this.fleet.getCompatibleVehicleTypes(signature.commodity,
-				signature.mode, signature.isContainer, signature.containsFerry());
+				signature.mode, signature.isContainer, signature.containsFerry);
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
 			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.",
-					signature.commodity, null, signature.mode, signature.isContainer, signature.containsFerry());
+					signature.commodity, null, signature.mode, signature.isContainer, signature.containsFerry);
 		}
 
 		FleetAssignment overallBestAssignment = null;

@@ -68,25 +68,25 @@ public class TransportChain {
 		return this.commodity;
 	}
 
-	public Boolean containsFerry() {
-		boolean chainContainsFerry = false;
-		boolean chainContainsNull = false;
-		for (TransportEpisode episode : this.episodes) {
-			final Boolean episodeContainsFerry = episode.containsFerry();
-			if (episodeContainsFerry == null) {
-				chainContainsNull = true;
-			} else {
-				chainContainsFerry |= episodeContainsFerry;
-			}
-		}
-		if (chainContainsFerry) {
-			return true;
-		} else if (chainContainsNull) {
-			return null;
-		} else {
-			return false;
-		}
-	}
+//	public Boolean containsFerry() {
+//		boolean chainContainsFerry = false;
+//		boolean chainContainsNull = false;
+//		for (TransportEpisode episode : this.episodes) {
+//			final Boolean episodeContainsFerry = episode.containsFerry();
+//			if (episodeContainsFerry == null) {
+//				chainContainsNull = true;
+//			} else {
+//				chainContainsFerry |= episodeContainsFerry;
+//			}
+//		}
+//		if (chainContainsFerry) {
+//			return true;
+//		} else if (chainContainsNull) {
+//			return null;
+//		} else {
+//			return false;
+//		}
+//	}
 
 	public OD getOD() {
 		if (this.episodes.size() == 0) {

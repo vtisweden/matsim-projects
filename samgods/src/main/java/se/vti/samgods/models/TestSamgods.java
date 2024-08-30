@@ -50,14 +50,12 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import floetteroed.utilities.math.BasicStatistics;
+import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.Signature;
-import se.vti.samgods.Signature.ConsolidationUnit;
-import se.vti.samgods.Signature.ConsolidationUnitDeserializer;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.NonTransportCost;
 import se.vti.samgods.logistics.NonTransportCostModel;
@@ -71,10 +69,9 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceSimulator;
-import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
-import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidator;
 import se.vti.samgods.transportation.consolidation.PerformanceMeasures;
@@ -153,7 +150,7 @@ public class TestSamgods {
 		boolean upscale = false;
 
 		double scale = 1.0;
-		int maxIterations = 2;
+		int maxIterations = 10;
 		double nonTransportCostFactor = 1.0;
 		boolean enforceReroute = false;
 
@@ -214,7 +211,7 @@ public class TestSamgods {
 						.values()) {
 					for (TransportChain chain : chains) {
 						for (TransportEpisode episode : chain.getEpisodes()) {
-							episode.setConsolidationUnits(Signature.ConsolidationUnit.createUnrouted(episode));
+							episode.setConsolidationUnits(ConsolidationUnit.createUnrouted(episode));
 							for (ConsolidationUnit consolidationUnit : episode.getConsolidationUnits()) {
 								consolidationUnitPattern2representativeUnit
 										.put(consolidationUnit.createRoutingEquivalentCopy(), consolidationUnit);
@@ -285,15 +282,17 @@ public class TestSamgods {
 				 */
 				log.info("Loading consolidation units from file " + consolidationUnitsFileName);
 				ObjectMapper mapper = new ObjectMapper();
+				// TODO >>> can do without this? >>>
 				SimpleModule module = (new SimpleModule()).addDeserializer(ConsolidationUnit.class,
-						new ConsolidationUnitDeserializer());
+						new ConsolidationUnit.Deserializer());
 				mapper.registerModule(module);
+				// TODO <<< can do without this? <<<
 				ObjectReader reader = mapper.readerFor(ConsolidationUnit.class);
 				JsonParser parser = mapper.getFactory().createParser(new File(consolidationUnitsFileName));
 				Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 				while (parser.nextToken() != null) {
 					ConsolidationUnit unit = reader.readValue(parser);
-					unit.updateNetworkReferences(network);
+					unit.addNetworkCharacteristics(network);
 					consolidationUnitPattern2representativeUnit.put(unit.createRoutingEquivalentCopy(), unit);
 				}
 				parser.close();
@@ -308,7 +307,7 @@ public class TestSamgods {
 							.values()) {
 						for (TransportChain chain : chains) {
 							for (TransportEpisode episode : chain.getEpisodes()) {
-								List<ConsolidationUnit> tmpUnits = Signature.ConsolidationUnit.createUnrouted(episode);
+								List<ConsolidationUnit> tmpUnits = ConsolidationUnit.createUnrouted(episode);
 								List<ConsolidationUnit> recoveredUnits = new ArrayList<>(tmpUnits.size());
 								for (ConsolidationUnit tmpUnit : tmpUnits) {
 									ConsolidationUnit match = consolidationUnitPattern2representativeUnit
@@ -352,7 +351,7 @@ public class TestSamgods {
 		 * ITERATIONS
 		 */
 
-		Map<Signature.ConsolidationUnit, Double> signature2efficiency = new LinkedHashMap<>();
+		Map<ConsolidationUnit, Double> signature2efficiency = new LinkedHashMap<>();
 		Map<TransportMode, Double> mode2efficiency = Arrays.stream(TransportMode.values())
 				.collect(Collectors.toMap(m -> m, m -> 0.7));
 
@@ -436,11 +435,11 @@ public class TestSamgods {
 			 * 
 			 */
 
-			Map<Signature.ConsolidationUnit, List<ChainAndShipmentSize>> signature2choices = new LinkedHashMap<>();
+			Map<ConsolidationUnit, List<ChainAndShipmentSize>> signature2choices = new LinkedHashMap<>();
 			for (ChainAndShipmentSize choice : allChoices) {
 				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
-					List<Signature.ConsolidationUnit> signatures = episode.getConsolidationUnits();
-					for (Signature.ConsolidationUnit signature : signatures) {
+					List<ConsolidationUnit> signatures = episode.getConsolidationUnits();
+					for (ConsolidationUnit signature : signatures) {
 						signature2choices.computeIfAbsent(signature, s -> new LinkedList<>()).add(choice);
 					}
 				}
@@ -481,7 +480,7 @@ public class TestSamgods {
 			HalfLoopConsolidator consolidator = new HalfLoopConsolidator(fleet, consolidationCostModel,
 					commodity2serviceInterval, routingData.createNetworkData());
 			long cnt = 0;
-			for (Map.Entry<Signature.ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
+			for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
 				cnt++;
 				if (cnt % 1000 == 0) {
 					log.info("Consolidated " + cnt + " out of " + signature2choices.size() + " signatures.");
@@ -489,7 +488,7 @@ public class TestSamgods {
 				try {
 //					TransportEpisode episode = episodeSignature2episodes.get(e.getKey()).get(0);
 
-					Signature.ConsolidationUnit signature = e.getKey();
+					ConsolidationUnit signature = e.getKey();
 //					log.info("CONSOLIDATING signature: " + signature);
 
 					List<ChainAndShipmentSize> shipments = e.getValue();
@@ -497,9 +496,9 @@ public class TestSamgods {
 							.sum();
 
 					if (signature.linkIds == null || signature.linkIds.stream().mapToInt(l -> l.size()).sum() == 0) {
-						log.warn("Skipping episode without links");
+						// log.warn("Skipping episode without links");
 					} else if (totalDemand_ton < 0.001) {
-						log.warn("Skipping episode with too small total demand of " + totalDemand_ton + "ton");
+						// log.warn("Skipping episode with too small total demand of " + totalDemand_ton + "ton");
 					} else {
 
 //						final List<TransportLeg> legs;
@@ -579,7 +578,7 @@ public class TestSamgods {
 			log.info("efficiency computed for " + signature2efficiency.size() + " signatures.");
 			BasicStatistics containerStats = new BasicStatistics();
 			BasicStatistics bulkStats = new BasicStatistics();
-			for (Map.Entry<Signature.ConsolidationUnit, Double> e : signature2efficiency.entrySet()) {
+			for (Map.Entry<ConsolidationUnit, Double> e : signature2efficiency.entrySet()) {
 				if (e.getKey().isContainer) {
 					containerStats.add(e.getValue());
 				} else {
@@ -761,11 +760,10 @@ public class TestSamgods {
 
 		Map<SamgodsConstants.TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
 		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-
-//			mode2types.put(mode, fleet.getCompatibleVehicleTypes(null, mode, null, null));
-			System.err.println("fix log fleet");
-			System.exit(1);
-
+			mode2types.put(mode,
+					fleet.getVehicles().getVehicleTypes().values().stream()
+							.filter(t -> mode.equals(FreightVehicleAttributes.getFreightAttributes(t).mode))
+							.collect(Collectors.toList()));
 			Collections.sort(mode2types.get(mode), new Comparator<VehicleType>() {
 				@Override
 				public int compare(VehicleType o1, VehicleType o2) {

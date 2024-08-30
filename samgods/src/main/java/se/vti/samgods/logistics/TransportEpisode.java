@@ -23,15 +23,13 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.checkerframework.checker.units.qual.s;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
+import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.Signature;
-import se.vti.samgods.Signature.ConsolidationUnit;
 
 /**
  * 
@@ -48,7 +46,7 @@ public class TransportEpisode {
 
 	private TransportChain parent;
 
-	private List<Signature.ConsolidationUnit> signatures = null;
+	private List<ConsolidationUnit> signatures = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -70,19 +68,11 @@ public class TransportEpisode {
 		return (this.hasSignatures() && (this.signatures.stream().allMatch(s -> s.isRouted())));
 	}
 
-	public boolean hasNetworkReferences() {
-		return (this.hasSignatures() && (this.signatures.stream().allMatch(s -> s.hasNetworkReferences())));
-	}
-	
-	public boolean containsFerry() {
-		return (this.hasNetworkReferences() && this.signatures.stream().anyMatch(s -> s.containsFerry()));
-	}
-
-	public void setConsolidationUnits(List<Signature.ConsolidationUnit> signatures) {
+	public void setConsolidationUnits(List<ConsolidationUnit> signatures) {
 		this.signatures = signatures;
 	}
 
-	public List<Signature.ConsolidationUnit> getConsolidationUnits() {
+	public List<ConsolidationUnit> getConsolidationUnits() {
 		return this.signatures;
 	}
 

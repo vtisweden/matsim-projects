@@ -88,12 +88,11 @@ public class InsufficientDataException extends Exception {
 	}
 
 	private static synchronized String context(TransportEpisode episode) {
-		return context(episode.getCommodity(), episode.getOD(), episode.getMode(), episode.isContainer(),
-				episode.containsFerry());
+		return context(episode.getCommodity(), episode.getOD(), episode.getMode(), episode.isContainer(), null);
 	}
 
 	private static synchronized String context(TransportChain chain) {
-		return context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), chain.containsFerry());
+		return context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), null);
 	}
 
 	// -------------------- MEMBERS --------------------

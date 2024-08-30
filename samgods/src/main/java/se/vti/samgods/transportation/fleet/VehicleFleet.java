@@ -20,10 +20,7 @@
 package se.vti.samgods.transportation.fleet;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
@@ -34,7 +31,6 @@ import org.matsim.vehicles.Vehicles;
 import de.vandermeer.asciitable.AsciiTable;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
 
 /**
@@ -121,7 +117,7 @@ public class VehicleFleet {
 	public FreightVehicleAttributes getRepresentativeVehicleAttributes(TransportEpisode episode)
 			throws InsufficientDataException {
 		return this.getRepresentativeVehicleAttributes(episode.getCommodity(), episode.getMode(), episode.isContainer(),
-				episode.containsFerry());
+				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
 	}
 
 	// -------------------- SUMMARY TABLES --------------------

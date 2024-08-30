@@ -47,8 +47,8 @@ public class NetworkData {
 
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, List<VehicleType>>>> commodity2transportMode2isContainer2representativeVehicleTypes = new LinkedHashMap<>();
 
-	private final Map<VehicleType, Network> vehicleType2unimodalNetwork = new LinkedHashMap<>();
-
+	private final Map<TransportMode, Map<Boolean, Network>> mode2containsFerry2network = new LinkedHashMap<>();
+	
 	private final Map<Commodity, Map<VehicleType, Map<Id<Link>, BasicTransportCost>>> commodity2vehicleType2linkId2cost = new LinkedHashMap<>();
 
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, TravelDisutility>>> commodity2mode2isContainer2travelDisutility = new LinkedHashMap<>();
@@ -89,14 +89,18 @@ public class NetworkData {
 		return result;
 	}
 
-	public Network getUnimodalNetwork(VehicleType vehicleType) {
-		Network result = this.vehicleType2unimodalNetwork.get(vehicleType);
+	public Network getUnimodalNetwork(TransportMode mode, boolean containsFerry) {
+		Network result = this.mode2containsFerry2network.computeIfAbsent(mode, m -> new LinkedHashMap<>()).get(containsFerry);
 		if (result == null) {
-			FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
-			result = dataProvider.createNetwork(attrs.mode, attrs.isFerryCompatible());
-			this.vehicleType2unimodalNetwork.put(vehicleType, result);
+			result = dataProvider.createNetwork(mode, containsFerry);
+			this.mode2containsFerry2network.get(mode).put(containsFerry, result);
 		}
 		return result;
+	}
+
+	public Network getUnimodalNetwork(VehicleType vehicleType) {
+		FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);		
+		return this.getUnimodalNetwork(attrs.mode, attrs.isFerryCompatible());
 	}
 
 	public Map<Id<Link>, BasicTransportCost> getLinkId2cost(Commodity commodity, VehicleType vehicleType)
