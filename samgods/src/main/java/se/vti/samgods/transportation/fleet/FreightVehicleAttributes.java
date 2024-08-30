@@ -35,7 +35,6 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
- * Used in parallel routing, hence synchronized throughout.
  * 
  * @author GunnarF
  *
@@ -105,7 +104,7 @@ public class FreightVehicleAttributes {
 		return this.loadCost_1_ton.containsKey(commodity) && this.loadTime_h.containsKey(commodity)
 				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
-
+	
 	private double speedOnLink_m_s(Link link) throws InsufficientDataException {
 		if (this.speed_km_h != null) {
 			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());

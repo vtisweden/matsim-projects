@@ -27,14 +27,15 @@ import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -85,43 +86,45 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 		return this.consolidationUnit2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
 
-	@Override
-	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
-			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
-			Network network) throws InsufficientDataException {
-
-		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity,
-				mode, isContainer, null);
-
-		FreightVehicleAttributes ferryCompatibleVehicleAttributes;
-		try {
-			ferryCompatibleVehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity, mode,
-					isContainer, true);
-		} catch (InsufficientDataException e) {
-			ferryCompatibleVehicleAttributes = vehicleAttributes;
-		}
-
-		for (Link link : network.getLinks().values()) {
-			if (!link2cost.containsKey(link)) {
-				final double length_km = Units.KM_PER_M * link.getLength();
-				final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
-				assert (Double.isFinite(length_km));
-				assert (Double.isFinite(duration_h));
-				if (LinkAttributes.isFerry(link)) {
-					link2cost.put(link,
-							new BasicTransportCost(1.0,
-									duration_h * ferryCompatibleVehicleAttributes.onFerryCost_1_h
-											+ length_km * ferryCompatibleVehicleAttributes.onFerryCost_1_km,
-									duration_h));
-				} else {
-					link2cost.put(link,
-							new BasicTransportCost(1.0,
-									duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km,
-									duration_h));
-				}
-			}
-		}
-	}
+//	@Override
+//	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
+//			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
+//			Network network, VehicleType vehicleType) throws InsufficientDataException {
+//
+//		throw new RuntimeException("TODO");
+//		
+//		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity,
+//				mode, isContainer, null);
+//
+//		FreightVehicleAttributes ferryCompatibleVehicleAttributes;
+//		try {
+//			ferryCompatibleVehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity, mode,
+//					isContainer, true);
+//		} catch (InsufficientDataException e) {
+//			ferryCompatibleVehicleAttributes = vehicleAttributes;
+//		}
+//
+//		for (Link link : network.getLinks().values()) {
+//			if (!link2cost.containsKey(link)) {
+//				final double length_km = Units.KM_PER_M * link.getLength();
+//				final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
+//				assert (Double.isFinite(length_km));
+//				assert (Double.isFinite(duration_h));
+//				if (LinkAttributes.isFerry(link)) {
+//					link2cost.put(link,
+//							new BasicTransportCost(1.0,
+//									duration_h * ferryCompatibleVehicleAttributes.onFerryCost_1_h
+//											+ length_km * ferryCompatibleVehicleAttributes.onFerryCost_1_km,
+//									duration_h));
+//				} else {
+//					link2cost.put(link,
+//							new BasicTransportCost(1.0,
+//									duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km,
+//									duration_h));
+//				}
+//			}
+//		}
+//	}
 
 	private final Object lock = new Object();
 
@@ -150,4 +153,5 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 		}
 		return builder.build();
 	}
+
 }

@@ -129,11 +129,11 @@ public class Signature {
 			}
 		}
 
-		public synchronized static ConsolidationUnit createVehicleCompatibilityTemplate(
-				SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
-				Boolean containsFerry) {
-			return new ConsolidationUnit(null, commodity, mode, isContainer, null);
-		}
+//		public synchronized static ConsolidationUnit createVehicleCompatibilityTemplate(
+//				SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
+//				Boolean containsFerry) {
+//			return new ConsolidationUnit(null, commodity, mode, isContainer, null);
+//		}
 
 		public synchronized ConsolidationUnit createRoutingEquivalentCopy() {
 			return new ConsolidationUnit(this.nodeIds, this.commodity, this.mode, this.isContainer, null);

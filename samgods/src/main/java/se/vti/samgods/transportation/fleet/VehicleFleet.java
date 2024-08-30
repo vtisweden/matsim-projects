@@ -20,6 +20,7 @@
 package se.vti.samgods.transportation.fleet;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,67 +68,46 @@ public class VehicleFleet {
 	public Vehicles getVehicles() {
 		return this.vehicles;
 	}
-	
+
 	// -------------------- COMPATIBLE VEHICLE TYPES --------------------
 
-	private final Map<Signature.ConsolidationUnit, List<VehicleType>> signature2compatibleTypes = new LinkedHashMap<>();
-
 	public List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-
-		final Signature.ConsolidationUnit signature = Signature.ConsolidationUnit
-				.createVehicleCompatibilityTemplate(commodity, mode, isContainer, containsFerry);
-		List<VehicleType> result = this.signature2compatibleTypes.get(signature);
-
-		if (result == null) {
-			result = new ArrayList<>();
-			for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-				if (signature.isCompatible(type)) {
-					result.add(type);
-				}
+			SamgodsConstants.TransportMode mode, boolean isContainer, boolean containsFerry) {
+		final List<VehicleType> result = new ArrayList<>(this.vehicles.getVehicleTypes().size());
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+			FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(type);
+			if (attrs.mode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
+					&& (!containsFerry || attrs.isFerryCompatible())) {
+				result.add(type);
 			}
-			this.signature2compatibleTypes.put(signature, result);
 		}
-
 		return result;
 	}
 
 	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
-	private final Map<Signature.ConsolidationUnit, VehicleType> signature2representativeType = new LinkedHashMap<>();
-
 	public VehicleType getRepresentativeVehicleType(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
 			throws InsufficientDataException {
-
-		final Signature.ConsolidationUnit signature = Signature.ConsolidationUnit
-				.createVehicleCompatibilityTemplate(commodity, mode, isContainer, containsFerry);
-		VehicleType result = this.signature2representativeType.get(signature);
-
-		if (result == null) {
-
-			final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
-					containsFerry);
-
-			if (compatibleTypes.size() > 0) {
-				final double meanCapacity_ton = compatibleTypes.stream()
-						.mapToDouble(t -> FreightVehicleAttributes.getCapacity_ton(t)).average().getAsDouble();
-				double resultDeviation_ton = Double.POSITIVE_INFINITY;
-				for (VehicleType candidate : compatibleTypes) {
-					final double candidateDeviation_ton = Math
-							.abs(FreightVehicleAttributes.getCapacity_ton(candidate) - meanCapacity_ton);
-					if (candidateDeviation_ton < resultDeviation_ton) {
-						result = candidate;
-						resultDeviation_ton = candidateDeviation_ton;
-					}
+		VehicleType result = null;
+		final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
+				containsFerry);
+		if (compatibleTypes.size() > 0) {
+			final double meanCapacity_ton = compatibleTypes.stream()
+					.mapToDouble(t -> FreightVehicleAttributes.getCapacity_ton(t)).average().getAsDouble();
+			double resultDeviation_ton = Double.POSITIVE_INFINITY;
+			for (VehicleType candidate : compatibleTypes) {
+				final double candidateDeviation_ton = Math
+						.abs(FreightVehicleAttributes.getCapacity_ton(candidate) - meanCapacity_ton);
+				if (candidateDeviation_ton < resultDeviation_ton) {
+					result = candidate;
+					resultDeviation_ton = candidateDeviation_ton;
 				}
-				this.signature2representativeType.put(signature, result);
-			} else {
-				throw new InsufficientDataException(this.getClass(), "No representative vehicle type.", commodity, null,
-						mode, isContainer, containsFerry);
 			}
+		} else {
+			throw new InsufficientDataException(this.getClass(), "No representative vehicle type.", commodity, null,
+					mode, isContainer, containsFerry);
 		}
-
 		return result;
 	}
 

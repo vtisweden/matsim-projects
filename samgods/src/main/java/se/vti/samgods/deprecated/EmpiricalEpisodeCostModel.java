@@ -20,26 +20,20 @@
 package se.vti.samgods.deprecated;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.core.network.NetworkUtils;
-import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.Signature;
 import se.vti.samgods.deprecated.logitprocessconsolidation.ShipmentVehicleAssignment;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
-import se.vti.samgods.transportation.costs.DetailedTransportCost.Builder;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**
  * TODO This is now about all commodities, which are defining members of
@@ -179,10 +173,9 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 		}
 	}
 
-	@Override
 	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
-			Network network) throws InsufficientDataException {
+			Network network, VehicleType vehicleType) throws InsufficientDataException {
 
 		throw new UnsupportedOperationException();
 

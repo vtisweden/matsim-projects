@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
@@ -74,23 +75,23 @@ public class EpisodeCostModels implements EpisodeCostModel {
 				episode);
 	}
 
-	@Override
 	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
-			Network network) throws InsufficientDataException {
-		final Iterator<EpisodeCostModel> modelIt = this.models.iterator();
-		while (modelIt.hasNext() && (link2cost.size() < network.getLinks().size())) {
-			try {
-				modelIt.next().populateLink2transportCost(link2cost, commodity, mode, isContainer, network);
-			} catch (InsufficientDataException e) {
-			}
-		}
-		if (link2cost.size() < network.getLinks().size()) {
-			throw new InsufficientDataException(this.getClass(),
-					"No model available to compute link transport cost for "
-							+ (network.getLinks().size() - link2cost.size()) + " out of " + network.getLinks().size()
-							+ " network links.",
-					commodity, null, mode, isContainer, null);
-		}
+			Network network, VehicleType vehicleType) throws InsufficientDataException {
+		throw new UnsupportedOperationException();
+//		final Iterator<EpisodeCostModel> modelIt = this.models.iterator();
+//		while (modelIt.hasNext() && (link2cost.size() < network.getLinks().size())) {
+//			try {
+//				modelIt.next().populateLink2transportCost(link2cost, commodity, mode, isContainer, network, vehicleType);
+//			} catch (InsufficientDataException e) {
+//			}
+//		}
+//		if (link2cost.size() < network.getLinks().size()) {
+//			throw new InsufficientDataException(this.getClass(),
+//					"No model available to compute link transport cost for "
+//							+ (network.getLinks().size() - link2cost.size()) + " out of " + network.getLinks().size()
+//							+ " network links.",
+//					commodity, null, mode, isContainer, null);
+//		}
 	}
 }

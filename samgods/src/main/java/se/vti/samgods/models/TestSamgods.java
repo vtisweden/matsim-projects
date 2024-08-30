@@ -140,16 +140,16 @@ public class TestSamgods {
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 14);
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 14);
 
-		InsufficientDataException.setLogDuringRuntime(false);
+		InsufficientDataException.setLogDuringRuntime(true);
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
-//		double samplingRate = 0.01;
-//		boolean upscale = false;
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+		double samplingRate = 0.01;
 		boolean upscale = false;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+//		double samplingRate = 1.0;
+//		boolean upscale = false;
 
 		double scale = 1.0;
 		int maxIterations = 2;
@@ -231,11 +231,11 @@ public class TestSamgods {
 			 */
 			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(
 					PerformanceMeasures.createAllZero());
-			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel, 0.7);
+//			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel, 0.7);
 			for (Commodity commodity : consideredCommodities) {
 				log.info(commodity + ": Routing consolidation units.");
-				RoutingData routingData = new RoutingData(network, episodeCostModel);
-				Router router = new Router(routingData).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
+				RoutingData routingData = new RoutingData(network);
+				Router router = new Router(routingData, fleet).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
 				router.route(commodity, consolidationUnitPattern2representativeUnit.entrySet().stream()
 						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
 			}
@@ -785,7 +785,12 @@ public class TestSamgods {
 
 		Map<SamgodsConstants.TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
 		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			mode2types.put(mode, fleet.getCompatibleVehicleTypes(null, mode, null, null));
+
+
+//			mode2types.put(mode, fleet.getCompatibleVehicleTypes(null, mode, null, null));
+			System.err.println("fix log fleet");
+			System.exit(1);
+			
 			Collections.sort(mode2types.get(mode), new Comparator<VehicleType>() {
 				@Override
 				public int compare(VehicleType o1, VehicleType o2) {
