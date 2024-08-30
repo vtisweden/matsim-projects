@@ -31,17 +31,4 @@ public interface EpisodeCostModel {
 
 	DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException;
 
-//	BasicTransportCost computeUnitCost(Link link, SamgodsConstants.Commodity commodity,
-//			FreightVehicleAttributes vehicleAttrs) throws InsufficientDataException;
-//
-//	Map<Link, BasicTransportCost> computeUnitCosts(Network network, SamgodsConstants.Commodity commodity,
-//			FreightVehicleAttributes vehicleAttrs) throws InsufficientDataException;
-//
-//	Map<VehicleType, Map<Link, BasicTransportCost>> NetworkRoutingData(Network network,
-//			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, List<VehicleType> vehicleTypes)
-//			throws InsufficientDataException;
-
-//	void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost, SamgodsConstants.Commodity commodity,
-//			SamgodsConstants.TransportMode mode, Boolean isContainer, Network network, VehicleType vehicleType)
-//			throws InsufficientDataException;
 }

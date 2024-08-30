@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
@@ -41,7 +42,6 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
@@ -50,102 +50,51 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  * @author GunnarF
  *
  */
-public class RoutingData {
+public class NetworkDataProvider {
 
 	// -------------------- MEMBERS --------------------
 
 	private final Network multimodalNetwork;
 
-//	private final EpisodeCostModel episodeCostModel;
-
-//	private TravelDisutility mostRecentlyCreatedTravelDisutility = null;
-//	private TravelTime mostRecentyCreatedTravelTime = null;
-
+	private final VehicleFleet fleet;
+	
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoutingData(Network multimodalNetwork) {
+	public NetworkDataProvider(Network multimodalNetwork, VehicleFleet fleet) {
 		this.multimodalNetwork = multimodalNetwork;
+		this.fleet = fleet;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public Network getMultimodalNetwork() {
-		return this.multimodalNetwork;
+	public CachedNetworkData createNetworkData() {
+		return new CachedNetworkData(this, this.fleet);
 	}
 
-//	public Network createNetwork(SamgodsConstants.TransportMode mode) {
-//		final Network unimodalNetwork = NetworkUtils.createNetwork();
-//		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, mode.matsimModes);
-//		return unimodalNetwork;
-//	}
+	// -------------------- PACKAGE PRIVATE SYNCHRONIZED --------------------
 
-	public Network createNetwork(SamgodsConstants.TransportMode mode, boolean containsFerry) {
+	synchronized Network createNetwork(SamgodsConstants.TransportMode mode, boolean containsFerry) {
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, mode.matsimModes);
 		if (!containsFerry) {
-			for (Link ferryLink : this.createFerryLinkSet(unimodalNetwork)) {
-				unimodalNetwork.removeLink(ferryLink.getId());
+			for (Id<Link> ferryLinkId : this.createFerryLinkIdSet(unimodalNetwork)) {
+				unimodalNetwork.removeLink(ferryLinkId);
 			}
 		}
 		new NetworkCleaner().run(unimodalNetwork);
 		return unimodalNetwork;
 	}
 
-//	public TravelDisutility getAndClearDisutility() {
-//		final TravelDisutility result = this.mostRecentlyCreatedTravelDisutility;
-//		this.mostRecentlyCreatedTravelDisutility = null;
-//		return result;
-//	}
-//
-//	public TravelTime getAndClearTravelTime() {
-//		final TravelTime result = this.mostRecentyCreatedTravelTime;
-//		this.mostRecentyCreatedTravelTime = null;
-//		return result;
-//	}
-//
-//	public void createNetworkData(SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode,
-//			Network network, boolean isContainer, boolean isFerry, VehicleFleet fleet)
-//			throws InsufficientDataException {
-//
-//		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>(network.getLinks().size());
-//		this.episodeCostModel.populateLink2transportCost(link2cost, commodity, mode, isContainer, network,
-//				fleet.getRepresentativeVehicleType(commodity, mode, isContainer, isFerry));
-//
-//		final Map<Link, Double> link2disutility = link2cost.entrySet().stream()
-//				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().monetaryCost));
-//		this.mostRecentlyCreatedTravelDisutility = new TravelDisutility() {
-//			@Override
-//			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-//				assert (person == null);
-//				assert (vehicle == null);
-//				return this.getLinkMinimumTravelDisutility(link);
-//			}
-//
-//			@Override
-//			public double getLinkMinimumTravelDisutility(Link link) {
-//				return link2disutility.get(link);
-//			}
-//		};
-//
-//		final Map<Link, Double> link2tt = link2cost.entrySet().stream()
-//				.collect(Collectors.toMap(e -> e.getKey(), e -> Units.S_PER_H * e.getValue().duration_h));
-//		this.mostRecentyCreatedTravelTime = new TravelTime() {
-//			@Override
-//			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
-//				assert (person == null);
-//				assert (vehicle == null);
-//				return link2tt.get(link);
-//			}
-//		};
-//	}
-
-	// >>>>>>>>>> EXPERIMENTAL >>>>>>>>>>
-
-	public Set<Link> createFerryLinkSet(Network network) {
-		return network.getLinks().values().stream().filter(l -> LinkAttributes.isFerry(l)).collect(Collectors.toSet());
+	synchronized Set<Id<Link>> createFerryLinkIdSet(Network network) {
+		return network.getLinks().values().stream().filter(l -> LinkAttributes.isFerry(l)).map(l -> l.getId())
+				.collect(Collectors.toSet());
 	}
 
-	public BasicTransportCost computeUnitCost(Link link, Commodity commodity, FreightVehicleAttributes vehicleAttrs)
+	synchronized Set<Id<Link>> createFerryLinkIdSet() {
+		return this.createFerryLinkIdSet(this.multimodalNetwork);
+	}
+
+	synchronized BasicTransportCost computeUnitCost(Link link, Commodity commodity, FreightVehicleAttributes vehicleAttrs)
 			throws InsufficientDataException {
 		final double length_km = Units.KM_PER_M * link.getLength();
 		final double duration_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
@@ -160,28 +109,30 @@ public class RoutingData {
 		}
 	}
 
-	public Map<Link, BasicTransportCost> computeUnitCosts(Network network, SamgodsConstants.Commodity commodity,
+	synchronized Map<Id<Link>, BasicTransportCost> computeUnitCosts(Network network, SamgodsConstants.Commodity commodity,
 			FreightVehicleAttributes vehicleAttrs) throws InsufficientDataException {
-		final Map<Link, BasicTransportCost> link2cost = new LinkedHashMap<>(network.getLinks().size());
+		final Map<Id<Link>, BasicTransportCost> linkId2cost = new LinkedHashMap<>(network.getLinks().size());
 		for (Link link : network.getLinks().values()) {
-			link2cost.put(link, this.computeUnitCost(link, commodity, vehicleAttrs));
+			linkId2cost.put(link.getId(), this.computeUnitCost(link, commodity, vehicleAttrs));
 		}
-		return link2cost;
+		return linkId2cost;
 	}
 
-	public Map<VehicleType, Map<Link, BasicTransportCost>> NetworkRoutingData(Network network,
+	synchronized Map<VehicleType, Map<Id<Link>, BasicTransportCost>> NetworkRoutingData(Network network,
 			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, List<VehicleType> vehicleTypes)
 			throws InsufficientDataException {
-		final Map<VehicleType, Map<Link, BasicTransportCost>> vehicleType2link2cost = new LinkedHashMap<>(
+		final Map<VehicleType, Map<Id<Link>, BasicTransportCost>> vehicleType2linkId2cost = new LinkedHashMap<>(
 				vehicleTypes.size());
 		for (VehicleType vehicleType : vehicleTypes) {
 			FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
-			vehicleType2link2cost.put(vehicleType, this.computeUnitCosts(network, commodity, vehicleAttrs));
+			vehicleType2linkId2cost.put(vehicleType, this.computeUnitCosts(network, commodity, vehicleAttrs));
 		}
-		return vehicleType2link2cost;
+		return vehicleType2linkId2cost;
 	}
 
-	public TravelDisutility createTravelDisutility(Map<Link, BasicTransportCost> link2cost) {
+	// TODO move below to cached data
+	
+	synchronized TravelDisutility createTravelDisutility(Map<Id<Link>, BasicTransportCost> linkId2cost) {
 		return new TravelDisutility() {
 			@Override
 			public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
@@ -192,18 +143,18 @@ public class RoutingData {
 
 			@Override
 			public double getLinkMinimumTravelDisutility(Link link) {
-				return link2cost.get(link).monetaryCost;
+				return linkId2cost.get(link.getId()).monetaryCost;
 			}
 		};
 	}
 
-	public TravelTime createTravelTime(Map<Link, BasicTransportCost> link2cost) {
+	synchronized TravelTime createTravelTime(Map<Id<Link>, BasicTransportCost> linkId2cost) {
 		return new TravelTime() {
 			@Override
 			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
 				assert (person == null);
 				assert (vehicle == null);
-				return Units.S_PER_H * link2cost.get(link).duration_h;
+				return Units.S_PER_H * linkId2cost.get(link.getId()).duration_h;
 			}
 		};
 	}

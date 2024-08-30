@@ -71,9 +71,10 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceSimulator;
+import se.vti.samgods.network.CachedNetworkData;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
-import se.vti.samgods.network.RoutingData;
+import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidator;
 import se.vti.samgods.transportation.consolidation.PerformanceMeasures;
@@ -229,13 +230,13 @@ public class TestSamgods {
 			 * Routing changes the behavior of hashcode(..) / equals(..) in
 			 * ConsolidationUnit, hence we store (to be) routed units in a List.
 			 */
-			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(
-					PerformanceMeasures.createAllZero());
+//			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(
+//					PerformanceMeasures.createAllZero());
 //			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel, 0.7);
 			for (Commodity commodity : consideredCommodities) {
 				log.info(commodity + ": Routing consolidation units.");
-				RoutingData routingData = new RoutingData(network);
-				Router router = new Router(routingData, fleet).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
+//				NetworkDataProvider routingData = new NetworkDataProvider(network, fleet);
+				Router router = new Router(network, fleet).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
 				router.route(commodity, consolidationUnitPattern2representativeUnit.entrySet().stream()
 						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
 			}
@@ -374,11 +375,12 @@ public class TestSamgods {
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
 
+					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network, fleet);
 					for (int i = 0; i < threadCnt; i++) {
 						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(
 								PerformanceMeasures.createAllZero());
 						EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel,
-								mode2efficiency, signature2efficiency);
+								mode2efficiency, signature2efficiency, networkDataProvider.createNetworkData());
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
 							@Override
@@ -500,10 +502,11 @@ public class TestSamgods {
 				commodity2mode2weightSum.put(commodity, new LinkedHashMap<>());
 			}
 
+			NetworkDataProvider routingData = new NetworkDataProvider(network, fleet);
 			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(
 					PerformanceMeasures.createAllZero());
 			HalfLoopConsolidator consolidator = new HalfLoopConsolidator(fleet, consolidationCostModel,
-					commodity2serviceInterval);
+					commodity2serviceInterval, routingData.createNetworkData());
 			long cnt = 0;
 			for (Map.Entry<Signature.ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
 				cnt++;
@@ -786,11 +789,10 @@ public class TestSamgods {
 		Map<SamgodsConstants.TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
 		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 
-
 //			mode2types.put(mode, fleet.getCompatibleVehicleTypes(null, mode, null, null));
 			System.err.println("fix log fleet");
 			System.exit(1);
-			
+
 			Collections.sort(mode2types.get(mode), new Comparator<VehicleType>() {
 				@Override
 				public int compare(VehicleType o1, VehicleType o2) {

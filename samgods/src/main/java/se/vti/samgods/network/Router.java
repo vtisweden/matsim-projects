@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -146,50 +147,89 @@ public class Router {
 
 		private final String name;
 
+		private final Commodity commodity;
+		
 		private final Iterable<RoutingJob> jobs;
 
-		private final Map<TransportMode, Network> mode2containerNetwork;
-		private final Map<TransportMode, Network> mode2noContainerNetwork;
+		private final CachedNetworkData networkData;
+
+//		private final Map<TransportMode, Network> mode2containerNetwork;
+//		private final Map<TransportMode, Network> mode2noContainerNetwork;
 
 		private final Map<TransportMode, LeastCostPathCalculator> mode2containerRouter;
 		private final Map<TransportMode, LeastCostPathCalculator> mode2noContainerRouter;
 
-		RoutingThread(String name, final Iterable<RoutingJob> jobs,
-				final Map<TransportMode, Network> mode2containerNetwork,
-				final Map<TransportMode, Network> mode2noContainerNetwork,
-				final Map<TransportMode, TravelDisutility> mode2containerDisutility,
-				final Map<TransportMode, TravelDisutility> mode2noContainerDisutility,
-				final Map<TransportMode, TravelTime> mode2containerTravelTime,
-				final Map<TransportMode, TravelTime> mode2noContainerTravelTime) {
+		RoutingThread(String name, Commodity commodity, List<RoutingJob> jobs, CachedNetworkData networkData) {
+//				final Map<TransportMode, Network> mode2containerNetwork,
+//				final Map<TransportMode, Network> mode2noContainerNetwork,
+//				final Map<TransportMode, TravelDisutility> mode2containerDisutility,
+//				final Map<TransportMode, TravelDisutility> mode2noContainerDisutility,
+//				final Map<TransportMode, TravelTime> mode2containerTravelTime,
+//				final Map<TransportMode, TravelTime> mode2noContainerTravelTime) {
 
 			this.name = name;
+			this.commodity = commodity;
 
 			// Contents of this datastructure are iterated over and modified (routes added).
 			this.jobs = jobs;
 
+			this.networkData = networkData;
+
 			// Local copies of datastructures used in parallel routing.
-			this.mode2containerNetwork = mode2containerNetwork;
-			this.mode2noContainerNetwork = mode2noContainerNetwork;
-			this.mode2containerRouter = new LinkedHashMap<>(mode2containerNetwork.size());
-			this.mode2noContainerRouter = new LinkedHashMap<>(mode2noContainerNetwork.size());
+//			this.mode2containerNetwork = mode2containerNetwork;
+//			this.mode2noContainerNetwork = mode2noContainerNetwork;
+			this.mode2containerRouter = new LinkedHashMap<>();
+			this.mode2noContainerRouter = new LinkedHashMap<>();
+
+			final Set<TransportMode> allContainerModes = jobs.stream().filter(j -> j.isContainer()).map(j -> j.mode())
+					.collect(Collectors.toSet());
+			final Set<TransportMode> allNoContainerModes = jobs.stream().filter(j -> !j.isContainer())
+					.map(j -> j.mode()).collect(Collectors.toSet());
 
 			final AStarLandmarksFactory factory = new AStarLandmarksFactory(4); // TODO
-			for (Map.Entry<SamgodsConstants.TransportMode, Network> e : mode2containerNetwork.entrySet()) {
-				final TransportMode mode = e.getKey();
-				final Network unimodalNetwork = e.getValue();
-				if (mode2containerDisutility.containsKey(mode) && mode2containerTravelTime.containsKey(mode)) {
-					this.mode2containerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
-							mode2containerDisutility.get(mode), mode2containerTravelTime.get(mode)));
+
+			for (TransportMode mode : allContainerModes) {
+				try {
+					this.mode2containerRouter.put(mode,
+							factory.createPathCalculator(
+									networkData.getUnimodalNetwork(
+											networkData.getRepresentativeVehicleType(commodity, mode, true)),
+									networkData.getTravelDisutility(commodity, mode, true),
+									networkData.getTravelTime(commodity, mode, true)));
+				} catch (InsufficientDataException e) {
+					e.log(this.getClass(), "Could not create router", commodity, null, mode, true, null);
 				}
 			}
-			for (Map.Entry<SamgodsConstants.TransportMode, Network> e : mode2noContainerNetwork.entrySet()) {
-				final TransportMode mode = e.getKey();
-				final Network unimodalNetwork = e.getValue();
-				if (mode2noContainerDisutility.containsKey(mode) && mode2noContainerTravelTime.containsKey(mode)) {
-					this.mode2noContainerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
-							mode2noContainerDisutility.get(mode), mode2noContainerTravelTime.get(mode)));
+
+			for (TransportMode mode : allNoContainerModes) {
+				try {
+					this.mode2noContainerRouter.put(mode,
+							factory.createPathCalculator(
+									networkData.getUnimodalNetwork(
+											networkData.getRepresentativeVehicleType(commodity, mode, false)),
+									networkData.getTravelDisutility(commodity, mode, false),
+									networkData.getTravelTime(commodity, mode, false)));
+				} catch (InsufficientDataException e) {
+					e.log(this.getClass(), "Could not create router", commodity, null, mode, false, null);
 				}
 			}
+
+//			for (Map.Entry<SamgodsConstants.TransportMode, Network> e : mode2containerNetwork.entrySet()) {
+//				final TransportMode mode = e.getKey();
+//				final Network unimodalNetwork = e.getValue();
+//				if (mode2containerDisutility.containsKey(mode) && mode2containerTravelTime.containsKey(mode)) {
+//					this.mode2containerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
+//							mode2containerDisutility.get(mode), mode2containerTravelTime.get(mode)));
+//				}
+//			}
+//			for (Map.Entry<SamgodsConstants.TransportMode, Network> e : mode2noContainerNetwork.entrySet()) {
+//				final TransportMode mode = e.getKey();
+//				final Network unimodalNetwork = e.getValue();
+//				if (mode2noContainerDisutility.containsKey(mode) && mode2noContainerTravelTime.containsKey(mode)) {
+//					this.mode2noContainerRouter.put(mode, factory.createPathCalculator(unimodalNetwork,
+//							mode2noContainerDisutility.get(mode), mode2noContainerTravelTime.get(mode)));
+//				}
+//			}
 		}
 
 		@Override
@@ -197,6 +237,15 @@ public class Router {
 			log.info("THREAD STARTED: " + this.name);
 			for (RoutingJob job : this.jobs) {
 
+				Network network;
+				try {
+				network = this.networkData.getUnimodalNetwork(this.networkData.getRepresentativeVehicleType(
+						commodity, job.mode(), job.isContainer()));
+				} catch (InsufficientDataException e) {
+					e.log(this.getClass(), "no routing network found", commodity, null, job.mode(), job.isContainer(), null);
+					break;
+				}
+				
 				List<List<Link>> routes = new ArrayList<>(job.consolidationUnit.nodeIds.size() - 1);
 				for (int i = 0; i < job.consolidationUnit.nodeIds.size() - 1; i++) {
 					Id<Node> fromId = job.consolidationUnit.nodeIds.get(i);
@@ -211,9 +260,11 @@ public class Router {
 						final LeastCostPathCalculator router = job.isContainer()
 								? this.mode2containerRouter.get(job.mode())
 								: this.mode2noContainerRouter.get(job.mode());
-						final Map<Id<Node>, ? extends Node> nodes = job.isContainer()
-								? this.mode2containerNetwork.get(job.mode()).getNodes()
-								: this.mode2noContainerNetwork.get(job.mode()).getNodes();
+//						final Map<Id<Node>, ? extends Node> nodes = job.isContainer()
+//								? this.mode2containerNetwork.get(job.mode()).getNodes()
+//								: this.mode2noContainerNetwork.get(job.mode()).getNodes();
+						final Map<Id<Node>, ? extends Node> nodes = network.getNodes();
+
 						final Node from = nodes.get(fromId);
 						final Node to = nodes.get(toId);
 						if ((from != null) && (to != null) && (router != null)) {
@@ -251,7 +302,7 @@ public class Router {
 
 	// -------------------- CONSTANTS AND MEMBERS --------------------
 
-	private final RoutingData routingData;
+	private final Network multimodalNetwork;
 
 	private final VehicleFleet fleet;
 
@@ -261,8 +312,8 @@ public class Router {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Router(RoutingData routingData, VehicleFleet fleet) {
-		this.routingData = routingData;
+	public Router(Network multimodalNetwork, VehicleFleet fleet) {
+		this.multimodalNetwork = multimodalNetwork;
 		this.fleet = fleet;
 	}
 
@@ -286,6 +337,8 @@ public class Router {
 		final ExecutorService threadPool = Executors.newFixedThreadPool(threadCnt);
 		final Iterator<RoutingJob> jobIterator = allJobs.iterator();
 
+		final NetworkDataProvider networkDataProvider = new NetworkDataProvider(this.multimodalNetwork, this.fleet);
+
 		for (int thread = 0; thread < threadCnt; thread++) {
 
 			final List<RoutingJob> jobs = new LinkedList<>();
@@ -293,54 +346,48 @@ public class Router {
 				jobs.add(jobIterator.next());
 			}
 
-			final Map<TransportMode, Network> mode2containerNetwork = new LinkedHashMap<>();
-			final Map<TransportMode, Network> mode2noContainerNetwork = new LinkedHashMap<>();
+			final CachedNetworkData networkData = networkDataProvider.createNetworkData();
 
-			final Map<TransportMode, TravelDisutility> mode2containerDisutility = new LinkedHashMap<>();
-			final Map<TransportMode, TravelDisutility> mode2noContainerDisutility = new LinkedHashMap<>();
-			final Map<TransportMode, TravelTime> mode2containerTravelTime = new LinkedHashMap<>();
-			final Map<TransportMode, TravelTime> mode2noContainerTravelTime = new LinkedHashMap<>();
-			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				if (!mode.isFerry()) {
-					try {
-						VehicleType vehicleType;
-						try {
-							vehicleType = this.fleet.getRepresentativeVehicleType(commodity, mode, true, true);
-							mode2containerNetwork.put(mode, this.routingData.createNetwork(mode, true));
-						} catch (InsufficientDataException e0) {
-							vehicleType = this.fleet.getRepresentativeVehicleType(commodity, mode, true, false);
-							mode2containerNetwork.put(mode, this.routingData.createNetwork(mode, false));
-						}
-						final Map<Link, BasicTransportCost> link2cost = this.routingData.computeUnitCosts(
-								mode2containerNetwork.get(mode), commodity,
-								FreightVehicleAttributes.getFreightAttributes(vehicleType));
-						mode2containerDisutility.put(mode, this.routingData.createTravelDisutility(link2cost));
-						mode2containerTravelTime.put(mode, this.routingData.createTravelTime(link2cost));
-					} catch (InsufficientDataException e1) {
-						e1.log(this.getClass(), "No travel disutility.", commodity, null, mode, false, null);
-					}
-					try {
-						VehicleType vehicleType;
-						try {
-							vehicleType = this.fleet.getRepresentativeVehicleType(commodity, mode, false, true);
-							mode2noContainerNetwork.put(mode, this.routingData.createNetwork(mode, true));
-						} catch (InsufficientDataException e0) {
-							vehicleType = this.fleet.getRepresentativeVehicleType(commodity, mode, false, false);
-							mode2noContainerNetwork.put(mode, this.routingData.createNetwork(mode, false));
-						}
-						final Map<Link, BasicTransportCost> link2cost = this.routingData.computeUnitCosts(
-								mode2noContainerNetwork.get(mode), commodity,
-								FreightVehicleAttributes.getFreightAttributes(vehicleType));
-						mode2noContainerDisutility.put(mode, this.routingData.createTravelDisutility(link2cost));
-						mode2noContainerTravelTime.put(mode, this.routingData.createTravelTime(link2cost));
-					} catch (InsufficientDataException e1) {
-						e1.log(this.getClass(), "No travel disutility.", commodity, null, mode, true, null);
-					}
-				}
-			}
+//			final Map<TransportMode, Network> mode2containerNetwork = new LinkedHashMap<>();
+//			final Map<TransportMode, Network> mode2noContainerNetwork = new LinkedHashMap<>();
+//
+//			final Map<TransportMode, TravelDisutility> mode2containerDisutility = new LinkedHashMap<>();
+//			final Map<TransportMode, TravelDisutility> mode2noContainerDisutility = new LinkedHashMap<>();
+//			final Map<TransportMode, TravelTime> mode2containerTravelTime = new LinkedHashMap<>();
+//			final Map<TransportMode, TravelTime> mode2noContainerTravelTime = new LinkedHashMap<>();
+//			for (TransportMode mode : SamgodsConstants.TransportMode.values()) {
+//				if (!mode.isFerry()) {
+//					try {
+//						final VehicleType vehicleType = networkData.getRepresentativeVehicleType(commodity, mode, true);
+//						FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes
+//								.getFreightAttributes(vehicleType);
+//						mode2containerNetwork.put(mode, networkData.getUnimodalNetwork(vehicleType));
+//						final Map<Id<Link>, BasicTransportCost> linkId2cost = networkData
+//								.getLinkId2representativeCost(commodity, mode, vehicleAttrs.isContainer);
+//						mode2containerDisutility.put(mode, networkDataProvider.createTravelDisutility(linkId2cost));
+//						mode2containerTravelTime.put(mode, networkDataProvider.createTravelTime(linkId2cost));
+//					} catch (InsufficientDataException e1) {
+//						e1.log(this.getClass(), "No travel disutility.", commodity, null, mode, false, null);
+//					}
+//					try {
+//						final VehicleType vehicleType = networkData.getRepresentativeVehicleType(commodity, mode,
+//								false);
+//						FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes
+//								.getFreightAttributes(vehicleType);
+//						mode2containerNetwork.put(mode, networkData.getUnimodalNetwork(vehicleType));
+//						final Map<Id<Link>, BasicTransportCost> linkId2cost = networkData
+//								.getLinkId2representativeCost(commodity, mode, vehicleAttrs.isContainer);
+//						mode2noContainerDisutility.put(mode, networkDataProvider.createTravelDisutility(linkId2cost));
+//						mode2noContainerTravelTime.put(mode, networkDataProvider.createTravelTime(linkId2cost));
+//					} catch (InsufficientDataException e1) {
+//						e1.log(this.getClass(), "No travel disutility.", commodity, null, mode, true, null);
+//					}
+//				}
+//			}
 			final RoutingThread routingThread = new RoutingThread(commodity + "_" + thread + "_" + jobs.size() + "jobs",
-					jobs, mode2containerNetwork, mode2noContainerNetwork, mode2containerDisutility,
-					mode2noContainerDisutility, mode2containerTravelTime, mode2noContainerTravelTime);
+					commodity, jobs, networkData);
+//					mode2containerNetwork, mode2noContainerNetwork, mode2containerDisutility,
+//					mode2noContainerDisutility, mode2containerTravelTime, mode2noContainerTravelTime);
 			threadPool.execute(routingThread);
 		}
 

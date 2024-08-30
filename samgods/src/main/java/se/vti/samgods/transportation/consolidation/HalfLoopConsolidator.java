@@ -29,6 +29,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
+import se.vti.samgods.network.CachedNetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -48,13 +49,16 @@ public class HalfLoopConsolidator {
 
 	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days;
 
+	private final CachedNetworkData networkData;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidator(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days) {
+			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days, CachedNetworkData networkData) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.commodity2serviceInterval_days = commodity2serviceInterval_days;
+		this.networkData = networkData;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -159,14 +163,20 @@ public class HalfLoopConsolidator {
 
 		FleetAssignment result = new FleetAssignment(vehicleType,
 				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
-						signature, true, true),
+						signature, true, true,
+						this.networkData.getLinkId2representativeCost(signature.commodity, signature.mode,
+								signature.isContainer),
+						this.networkData.getFerryLinkIds()),
 				serviceDemand_ton, Units.H_PER_D * this.commodity2serviceInterval_days.get(signature.commodity),
 				serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
 			FleetAssignment newResult = new FleetAssignment(vehicleType,
 					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton, signature, true,
-							true),
+							true,
+							this.networkData.getLinkId2representativeCost(signature.commodity, signature.mode,
+									signature.isContainer),
+							this.networkData.getFerryLinkIds()),
 					serviceDemand_ton, Units.H_PER_D * this.commodity2serviceInterval_days.get(signature.commodity),
 					serviceProba, length_km);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;

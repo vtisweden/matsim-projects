@@ -25,17 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Network;
-import org.matsim.vehicles.VehicleType;
-
-import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.network.CachedNetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -55,11 +49,13 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	private final Map<TransportMode, Double> mode2efficiency;
 	private final Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency;
 
+	private final CachedNetworkData networkData;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
 			Map<TransportMode, Double> mode2efficiency,
-			Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency) {
+			Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency, CachedNetworkData networkData) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.mode2efficiency = new LinkedHashMap<>(mode2efficiency);
@@ -71,13 +67,15 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 			}
 		}
 		this.consolidationUnit2efficiency = new LinkedHashMap<>(consolidationUnit2efficiency);
+
+		this.networkData = networkData;
 	}
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			double meanEfficiency) {
+			double meanEfficiency, CachedNetworkData networkData) {
 		this(fleet, consolidationCostModel,
 				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> meanEfficiency)),
-				new LinkedHashMap<>());
+				new LinkedHashMap<>(), networkData);
 	}
 
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
@@ -85,46 +83,6 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	private double efficiency(Signature.ConsolidationUnit signature) {
 		return this.consolidationUnit2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
-
-//	@Override
-//	public void populateLink2transportCost(Map<Link, BasicTransportCost> link2cost,
-//			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, Boolean isContainer,
-//			Network network, VehicleType vehicleType) throws InsufficientDataException {
-//
-//		throw new RuntimeException("TODO");
-//		
-//		final FreightVehicleAttributes vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity,
-//				mode, isContainer, null);
-//
-//		FreightVehicleAttributes ferryCompatibleVehicleAttributes;
-//		try {
-//			ferryCompatibleVehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(commodity, mode,
-//					isContainer, true);
-//		} catch (InsufficientDataException e) {
-//			ferryCompatibleVehicleAttributes = vehicleAttributes;
-//		}
-//
-//		for (Link link : network.getLinks().values()) {
-//			if (!link2cost.containsKey(link)) {
-//				final double length_km = Units.KM_PER_M * link.getLength();
-//				final double duration_h = Units.H_PER_S * vehicleAttributes.travelTimeOnLink_s(link);
-//				assert (Double.isFinite(length_km));
-//				assert (Double.isFinite(duration_h));
-//				if (LinkAttributes.isFerry(link)) {
-//					link2cost.put(link,
-//							new BasicTransportCost(1.0,
-//									duration_h * ferryCompatibleVehicleAttributes.onFerryCost_1_h
-//											+ length_km * ferryCompatibleVehicleAttributes.onFerryCost_1_km,
-//									duration_h));
-//				} else {
-//					link2cost.put(link,
-//							new BasicTransportCost(1.0,
-//									duration_h * vehicleAttributes.cost_1_h + length_km * vehicleAttributes.cost_1_km,
-//									duration_h));
-//				}
-//			}
-//		}
-//	}
 
 	private final Object lock = new Object();
 
@@ -139,11 +97,12 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0);
 		final List<Signature.ConsolidationUnit> signatures = episode.getConsolidationUnits();
 		for (Signature.ConsolidationUnit signature : signatures) {
-			final DetailedTransportCost signatureCost = this.consolidationCostModel
-					.computeSignatureCost(vehicleAttributes,
-							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
-							signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature)
-					.computeUnitCost();
+			final DetailedTransportCost signatureCost = this.consolidationCostModel.computeSignatureCost(
+					vehicleAttributes, this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
+					signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature,
+					this.networkData.getLinkId2representativeCost(episode.getCommodity(), episode.getMode(),
+							episode.isContainer()),
+					this.networkData.getFerryLinkIds()).computeUnitCost();
 			builder.addLoadingDuration_h(signatureCost.loadingDuration_h)
 					.addTransferDuration_h(signatureCost.transferDuration_h)
 					.addUnloadingDuration_h(signatureCost.unloadingDuration_h)
