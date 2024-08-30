@@ -29,7 +29,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.CachedNetworkData;
+import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -49,13 +49,13 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	private final Map<TransportMode, Double> mode2efficiency;
 	private final Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency;
 
-	private final CachedNetworkData networkData;
+	private final NetworkData networkData;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
 			Map<TransportMode, Double> mode2efficiency,
-			Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency, CachedNetworkData networkData) {
+			Map<Signature.ConsolidationUnit, Double> consolidationUnit2efficiency, NetworkData networkData) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.mode2efficiency = new LinkedHashMap<>(mode2efficiency);
@@ -72,7 +72,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			double meanEfficiency, CachedNetworkData networkData) {
+			double meanEfficiency, NetworkData networkData) {
 		this(fleet, consolidationCostModel,
 				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> meanEfficiency)),
 				new LinkedHashMap<>(), networkData);

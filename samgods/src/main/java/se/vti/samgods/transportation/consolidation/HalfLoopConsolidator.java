@@ -29,7 +29,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.Signature;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
-import se.vti.samgods.network.CachedNetworkData;
+import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -49,12 +49,12 @@ public class HalfLoopConsolidator {
 
 	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days;
 
-	private final CachedNetworkData networkData;
+	private final NetworkData networkData;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidator(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days, CachedNetworkData networkData) {
+			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days, NetworkData networkData) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.commodity2serviceInterval_days = commodity2serviceInterval_days;

@@ -71,7 +71,7 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceSimulator;
-import se.vti.samgods.network.CachedNetworkData;
+import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
 import se.vti.samgods.network.NetworkDataProvider;
@@ -141,16 +141,16 @@ public class TestSamgods {
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 14);
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 14);
 
-		InsufficientDataException.setLogDuringRuntime(true);
+		InsufficientDataException.setLogDuringRuntime(false);
 
 		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
-		double samplingRate = 0.01;
-		boolean upscale = false;
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
-//		double samplingRate = 1.0;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AGRICULTURE);
+//		double samplingRate = 0.01;
 //		boolean upscale = false;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.values());
+		double samplingRate = 1.0;
+		boolean upscale = false;
 
 		double scale = 1.0;
 		int maxIterations = 2;
@@ -230,12 +230,8 @@ public class TestSamgods {
 			 * Routing changes the behavior of hashcode(..) / equals(..) in
 			 * ConsolidationUnit, hence we store (to be) routed units in a List.
 			 */
-//			ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel(
-//					PerformanceMeasures.createAllZero());
-//			EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel, 0.7);
 			for (Commodity commodity : consideredCommodities) {
 				log.info(commodity + ": Routing consolidation units.");
-//				NetworkDataProvider routingData = new NetworkDataProvider(network, fleet);
 				Router router = new Router(network, fleet).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
 				router.route(commodity, consolidationUnitPattern2representativeUnit.entrySet().stream()
 						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
@@ -441,39 +437,16 @@ public class TestSamgods {
 			 */
 
 			Map<Signature.ConsolidationUnit, List<ChainAndShipmentSize>> signature2choices = new LinkedHashMap<>();
-//			Map<TransportEpisode, List<Signature.ConsolidationEpisode>> episode2signatures = new LinkedHashMap<>();
-//			Map<Signature.ConsolidEpisode, List<TransportEpisode>> episodeSignature2episodes = new LinkedHashMap<>();
 			for (ChainAndShipmentSize choice : allChoices) {
-//				cnt++;
-//				log.info("OD " + choice.transportChain.getEpisodes().get(0).getOD() + " extracting consolidation episodes.");
 				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
 					List<Signature.ConsolidationUnit> signatures = episode.getConsolidationUnits();
-//							Signature.ConsolidationEpisode.create(episode,
-//							network);
-//					if (signatures.size() > 1) {
-//						System.out.println(
-//								episode.getCommodity() + ", " + episode.getMode() + ", " + episode.isContainer() + ", "
-//										+ episode.containsFerry() + ", " + episode.createLinkIds());
-//						System.out.println(signatures);
-//						System.out.println();
-//					}
 					for (Signature.ConsolidationUnit signature : signatures) {
-//						if (signature2choices.containsKey(signature)) {
-//							signature2choices.get(signature).add(choice);
-//						} else {
-//							signature2choices.put(signature, new LinkedList<>());
-//							signature2choices.get(signature).add(choice);
-//						}						
 						signature2choices.computeIfAbsent(signature, s -> new LinkedList<>()).add(choice);
 					}
-//					episode2signatures.put(episode, signatures);
 				}
 			}
 			log.info(allChoices.stream().mapToLong(c -> c.transportChain.getEpisodes().size()).sum() + " episodes.");
 			log.info(signature2choices.size() + " episode signatures.");
-//			log.info(allChoices.stream().flatMap(c -> c.transportChain.getEpisodes().stream())
-//					.flatMap(e -> e.getLegs().stream())
-//					.filter(l -> l.getRouteIdsView() != null && l.getRouteIdsView().size() > 0).count() + " legs.");
 			log.info(signature2choices.values().stream().flatMap(l -> l.stream())
 					.mapToDouble(c -> c.annualShipment.getTotalAmount_ton() / c.sizeClass.getRepresentativeValue_ton())
 					.sum() + " shipments.");

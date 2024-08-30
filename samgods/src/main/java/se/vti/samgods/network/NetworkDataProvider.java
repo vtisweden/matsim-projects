@@ -41,6 +41,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -57,7 +58,7 @@ public class NetworkDataProvider {
 	private final Network multimodalNetwork;
 
 	private final VehicleFleet fleet;
-	
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public NetworkDataProvider(Network multimodalNetwork, VehicleFleet fleet) {
@@ -67,11 +68,30 @@ public class NetworkDataProvider {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public CachedNetworkData createNetworkData() {
-		return new CachedNetworkData(this, this.fleet);
+	public NetworkData createNetworkData() {
+		return new NetworkData(this);
 	}
 
 	// -------------------- PACKAGE PRIVATE SYNCHRONIZED --------------------
+
+	synchronized VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode,
+			boolean isContainer) throws InsufficientDataException {
+		try {
+			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, true);
+		} catch (InsufficientDataException e0) {
+			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, false);
+		}
+	}
+
+	synchronized List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode,
+			boolean isContainer) {
+		List<VehicleType> resultWithFerry = this.fleet.getCompatibleVehicleTypes(commodity, mode, isContainer, true);
+		if (resultWithFerry.size() > 0) {
+			return resultWithFerry;
+		} else {
+			return this.fleet.getCompatibleVehicleTypes(commodity, mode, isContainer, false);
+		}
+	}
 
 	synchronized Network createNetwork(SamgodsConstants.TransportMode mode, boolean containsFerry) {
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
@@ -94,8 +114,8 @@ public class NetworkDataProvider {
 		return this.createFerryLinkIdSet(this.multimodalNetwork);
 	}
 
-	synchronized BasicTransportCost computeUnitCost(Link link, Commodity commodity, FreightVehicleAttributes vehicleAttrs)
-			throws InsufficientDataException {
+	synchronized BasicTransportCost computeUnitCost(Link link, Commodity commodity,
+			FreightVehicleAttributes vehicleAttrs) throws InsufficientDataException {
 		final double length_km = Units.KM_PER_M * link.getLength();
 		final double duration_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
 		assert (Double.isFinite(length_km));
@@ -109,8 +129,9 @@ public class NetworkDataProvider {
 		}
 	}
 
-	synchronized Map<Id<Link>, BasicTransportCost> computeUnitCosts(Network network, SamgodsConstants.Commodity commodity,
-			FreightVehicleAttributes vehicleAttrs) throws InsufficientDataException {
+	synchronized Map<Id<Link>, BasicTransportCost> computeUnitCosts(Network network,
+			SamgodsConstants.Commodity commodity, FreightVehicleAttributes vehicleAttrs)
+			throws InsufficientDataException {
 		final Map<Id<Link>, BasicTransportCost> linkId2cost = new LinkedHashMap<>(network.getLinks().size());
 		for (Link link : network.getLinks().values()) {
 			linkId2cost.put(link.getId(), this.computeUnitCost(link, commodity, vehicleAttrs));
@@ -118,20 +139,6 @@ public class NetworkDataProvider {
 		return linkId2cost;
 	}
 
-	synchronized Map<VehicleType, Map<Id<Link>, BasicTransportCost>> NetworkRoutingData(Network network,
-			SamgodsConstants.Commodity commodity, SamgodsConstants.TransportMode mode, List<VehicleType> vehicleTypes)
-			throws InsufficientDataException {
-		final Map<VehicleType, Map<Id<Link>, BasicTransportCost>> vehicleType2linkId2cost = new LinkedHashMap<>(
-				vehicleTypes.size());
-		for (VehicleType vehicleType : vehicleTypes) {
-			FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
-			vehicleType2linkId2cost.put(vehicleType, this.computeUnitCosts(network, commodity, vehicleAttrs));
-		}
-		return vehicleType2linkId2cost;
-	}
-
-	// TODO move below to cached data
-	
 	synchronized TravelDisutility createTravelDisutility(Map<Id<Link>, BasicTransportCost> linkId2cost) {
 		return new TravelDisutility() {
 			@Override
