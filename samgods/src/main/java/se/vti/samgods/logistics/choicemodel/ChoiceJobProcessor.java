@@ -39,7 +39,7 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.utils.ChoiceModelUtils;
 
-public class ChoiceSimulator implements Runnable {
+public class ChoiceJobProcessor implements Runnable {
 
 	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
@@ -51,9 +51,9 @@ public class ChoiceSimulator implements Runnable {
 	private final BlockingQueue<ChoiceJob> jobQueue;
 	private final List<ChainAndShipmentSize> allChoices;
 
-	public ChoiceSimulator(double scale, EpisodeCostModel episodeCostModel, NonTransportCostModel nonTransportCostModel,
-			ChainAndShipmentSizeUtilityFunction utilityFunction, BlockingQueue<ChoiceJob> jobQueue,
-			List<ChainAndShipmentSize> allChoices) {
+	public ChoiceJobProcessor(double scale, EpisodeCostModel episodeCostModel,
+			NonTransportCostModel nonTransportCostModel, ChainAndShipmentSizeUtilityFunction utilityFunction,
+			BlockingQueue<ChoiceJob> jobQueue, List<ChainAndShipmentSize> allChoices) {
 		this.scale = scale;
 		this.episodeCostModel = episodeCostModel;
 		this.nonTransportCostModel = nonTransportCostModel;
@@ -62,18 +62,20 @@ public class ChoiceSimulator implements Runnable {
 		this.allChoices = allChoices;
 	}
 
+	// -------------------- IMPLEMENTATION OF Runnable --------------------
+
 	@Override
 	public void run() {
 		try {
 			while (true) {
-				ChoiceJob job = this.jobQueue.take(); // Blocking call, waits if the queue is empty
-				if (job == ChoiceJob.TERMINATE) { // Special signal to stop the thread
+				ChoiceJob job = this.jobQueue.take();
+				if (job == ChoiceJob.TERMINATE) {
 					break;
 				}
 				this.process(job);
 			}
 		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt(); // Handle thread interruption
+			Thread.currentThread().interrupt();
 		}
 	}
 

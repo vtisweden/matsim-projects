@@ -20,45 +20,70 @@
 package se.vti.samgods.transportation.consolidation;
 
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class HalfLoopConsolidator {
+public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final VehicleFleet fleet;
-
 	private final ConsolidationCostModel consolidationCostModel;
-
-	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days;
-
 	private final NetworkData networkData;
+
+	private final BlockingQueue<ConsolidationJob> jobQueue;
+	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidator(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days, NetworkData networkData) {
-		this.fleet = fleet;
+	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData networkData,
+			BlockingQueue<ConsolidationJob> jobQueue,
+			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.consolidationCostModel = consolidationCostModel;
-		this.commodity2serviceInterval_days = commodity2serviceInterval_days;
 		this.networkData = networkData;
+		this.jobQueue = jobQueue;
+		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
+	}
+
+	// -------------------- IMPLEMENTATION OF Runnable --------------------
+
+	@Override
+	public void run() {
+		try {
+			while (true) {
+				ConsolidationJob job = this.jobQueue.take();
+				if (job == ConsolidationJob.TERMINATE) {
+					break;
+				}
+				FleetAssignment fleetAssignment = null;
+				try {
+					fleetAssignment = this.computeOptimalFleetAssignment(job);
+				} catch (InsufficientDataException e) {
+					e.log(this.getClass(), "Consolidation data missing", job.consolidationUnit.commodity, null,
+							job.consolidationUnit.mode, job.consolidationUnit.isContainer,
+							job.consolidationUnit.containsFerry);
+				}
+				if (fleetAssignment != null) {
+					this.consolidationUnit2fleetAssignment.put(job.consolidationUnit, fleetAssignment);
+				}
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt(); // Handle thread interruption
+		}
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -157,28 +182,24 @@ public class HalfLoopConsolidator {
 //		}
 	}
 
-	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, ConsolidationUnit signature,
+	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, ConsolidationJob job,
 			double serviceDemand_ton, double serviceProba, double length_km) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 
 		FleetAssignment result = new FleetAssignment(vehicleType,
 				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
-						signature, true, true,
-						this.networkData.getLinkId2representativeCost(signature.commodity, signature.mode,
-								signature.isContainer),
+						job.consolidationUnit, true, true,
+						this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity, vehicleType),
 						this.networkData.getFerryLinkIds()),
-				serviceDemand_ton, Units.H_PER_D * this.commodity2serviceInterval_days.get(signature.commodity),
-				serviceProba, length_km);
+				serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
 			FleetAssignment newResult = new FleetAssignment(vehicleType,
-					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton, signature, true,
-							true,
-							this.networkData.getLinkId2representativeCost(signature.commodity, signature.mode,
-									signature.isContainer),
+					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton,
+							job.consolidationUnit, true, true,
+							this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity, vehicleType),
 							this.networkData.getFerryLinkIds()),
-					serviceDemand_ton, Units.H_PER_D * this.commodity2serviceInterval_days.get(signature.commodity),
-					serviceProba, length_km);
+					serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;
 			done = (dev < 1e-8);
 			result = newResult;
@@ -186,56 +207,37 @@ public class HalfLoopConsolidator {
 		return result;
 	}
 
-	public FleetAssignment computeOptimalFleetAssignment(ConsolidationUnit signature,
-			List<ChainAndShipmentSize> choices) throws InsufficientDataException {
-
-		final double totalDemand_ton = choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
-		final double length_km = Units.KM_PER_M * signature.length_m;
-		final double intervalLength_days = this.commodity2serviceInterval_days.get(signature.commodity);
-
-		// >>>
+	public FleetAssignment computeOptimalFleetAssignment(ConsolidationJob job) throws InsufficientDataException {
 
 		final double serviceIntervalActiveProba;
 		{
 			double probaSingleServiceIntervalInactive = 1.0;
-			for (ChainAndShipmentSize choice : choices) {
+			for (ChainAndShipmentSize choice : job.choices) {
 				final double meanShipmentsPerYear = Math.max(1.0,
 						choice.annualShipment.getTotalAmount_ton() / choice.sizeClass.upperValue_ton);
-				final double meanShipmentsPerServiceInterval = meanShipmentsPerYear * intervalLength_days / 365.0;
+				final double meanShipmentsPerServiceInterval = meanShipmentsPerYear * job.serviceInterval_days / 365.0;
 				probaSingleServiceIntervalInactive *= Math.exp(-meanShipmentsPerServiceInterval);
 			}
 			serviceIntervalActiveProba = 1.0 - probaSingleServiceIntervalInactive;
 		}
-
 		final double demandExpectationPerActiveServiceInterval_ton = (1.0 / serviceIntervalActiveProba)
-				* (intervalLength_days / 365.0) * totalDemand_ton;
-//		for (ChainAndShipmentSize choice : choices) {
-//			final double meanShipmentsPerYear = Math.max(1.0,
-//					choice.annualShipment.getTotalAmount_ton() / choice.sizeClass.upperValue_ton);
-//			final double meanShipmentSize_ton = choice.annualShipment.getTotalAmount_ton() / meanShipmentsPerYear;
-//			final double meanShipmentsPerServiceInterval = meanShipmentsPerYear
-//					* this.commodity2serviceInterval_days.get(signature.commodity) / 365.0;
-//
-//			final double expectedNumberOfShipmentsPerActiveServiceInterval = meanShipmentsPerServiceInterval
-//					/ (1.0 - Math.exp(-meanShipmentsPerServiceInterval));
-//			demandExpectationPerActiveServiceInterval_ton +=
-//
-//					meanShipmentSize_ton * expectedNumberOfShipmentsPerActiveServiceInterval;
-//		}
+				* (job.serviceInterval_days / 365.0)
+				* job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
 
-		// <<<
+		final List<VehicleType> compatibleVehicleTypes = this.networkData.getCompatibleVehicleTypes(
+				job.consolidationUnit.commodity, job.consolidationUnit.mode, job.consolidationUnit.isContainer);
 
-		final List<VehicleType> compatibleVehicleTypes = this.fleet.getCompatibleVehicleTypes(signature.commodity,
-				signature.mode, signature.isContainer, signature.containsFerry);
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
 			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.",
-					signature.commodity, null, signature.mode, signature.isContainer, signature.containsFerry);
+					job.consolidationUnit.commodity, null, job.consolidationUnit.mode,
+					job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry);
 		}
 
 		FleetAssignment overallBestAssignment = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, signature,
-					demandExpectationPerActiveServiceInterval_ton, serviceIntervalActiveProba, length_km);
+			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, job,
+					demandExpectationPerActiveServiceInterval_ton, serviceIntervalActiveProba,
+					Units.KM_PER_M * job.consolidationUnit.length_m);
 			if ((overallBestAssignment == null)
 					|| (bestAssignmentForVehicleType.unitCost_1_tonKm < overallBestAssignment.unitCost_1_tonKm)) {
 				overallBestAssignment = bestAssignmentForVehicleType;

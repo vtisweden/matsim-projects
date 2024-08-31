@@ -45,12 +45,12 @@ public class ConsolidationCostModel {
 
 	// -------------------- MEMBERS --------------------
 
-	private final PerformanceMeasures performanceMeasures;
+//	private final PerformanceMeasures performanceMeasures;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public ConsolidationCostModel(PerformanceMeasures performanceMeasures) {
-		this.performanceMeasures = performanceMeasures;
+//		this.performanceMeasures = performanceMeasures;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -130,7 +130,7 @@ public class ConsolidationCostModel {
 
 	public DetailedTransportCost computeSignatureCost(FreightVehicleAttributes vehicleAttrs, double payload_ton,
 			ConsolidationUnit consolidationUnit, boolean loadAtStart, boolean unloadAtEnd,
-			Map<Id<Link>, BasicTransportCost> link2cost, Set<Id<Link>> ferryLinks) throws InsufficientDataException {
+			Map<Id<Link>, BasicTransportCost> link2unitCost, Set<Id<Link>> ferryLinks) throws InsufficientDataException {
 
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
@@ -138,14 +138,14 @@ public class ConsolidationCostModel {
 
 		if (consolidationUnit.linkIds.size() > 0) {
 
-			final List<Id<Link>> firstLinks = consolidationUnit.linkIds.get(0);
-			final List<Id<Link>> lastLinks = consolidationUnit.linkIds.get(consolidationUnit.linkIds.size() - 1);
+			final List<Id<Link>> firstLinkIds = consolidationUnit.linkIds.get(0);
+			final List<Id<Link>> lastLinkIds = consolidationUnit.linkIds.get(consolidationUnit.linkIds.size() - 1);
 
-			for (List<Id<Link>> links : consolidationUnit.linkIds) {
+			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
 
-				if (links.size() > 0) {
+				if (linkIds.size() > 0) {
 
-					if (loadAtStart && (links == firstLinks)) {
+					if (loadAtStart && (linkIds == firstLinkIds)) {
 						builder.addLoadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
 						builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
 								* Math.max(minTransferredAmount_ton, payload_ton));
@@ -156,7 +156,7 @@ public class ConsolidationCostModel {
 								* Math.max(minTransferredAmount_ton, payload_ton));
 					}
 
-					if (unloadAtEnd && (links == lastLinks)) {
+					if (unloadAtEnd && (linkIds == lastLinkIds)) {
 						builder.addUnloadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
 						builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
 								* Math.max(minTransferredAmount_ton, payload_ton));
@@ -167,15 +167,15 @@ public class ConsolidationCostModel {
 								* Math.max(minTransferredAmount_ton, payload_ton));
 					}
 
-					for (Id<Link> linkId : links) {
-						BasicTransportCost cost = link2cost.get(linkId);
-						builder.addMoveDuration_h(cost.duration_h);
+					for (Id<Link> linkId : linkIds) {
+						BasicTransportCost unitCost = link2unitCost.get(linkId);
+						builder.addMoveDuration_h(unitCost.duration_h);
 						if (ferryLinks.contains(linkId)) {
-							builder.addMoveCost(cost.duration_h * vehicleAttrs.onFerryCost_1_h);
-							builder.addMoveCost(cost.length_km * vehicleAttrs.onFerryCost_1_km);
+							builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
+							builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
 						} else {
-							builder.addMoveCost(cost.duration_h * vehicleAttrs.cost_1_h);
-							builder.addMoveCost(cost.length_km * vehicleAttrs.cost_1_km);
+							builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
+							builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
 						}
 					}
 				}

@@ -76,10 +76,8 @@ public class ConsolidationUnit extends ListRepresented {
 		this.mode = mode;
 		this.isContainer = isContainer;
 		this.linkIds = linkIds;
-		this.length_m = length_m;
-		this.containsFerry = containsFerry;
 	}
-
+	
 	public synchronized static List<ConsolidationUnit> createUnrouted(TransportEpisode episode) {
 		if (episode.getLegs() == null) {
 			return Collections.emptyList();

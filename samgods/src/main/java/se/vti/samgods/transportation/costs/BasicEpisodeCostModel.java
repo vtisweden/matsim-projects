@@ -101,7 +101,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 			final DetailedTransportCost signatureCost = this.consolidationCostModel.computeSignatureCost(
 					vehicleAttributes, this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
 					signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature,
-					this.networkData.getLinkId2representativeCost(episode.getCommodity(), episode.getMode(),
+					this.networkData.getLinkId2representativeUnitCost(episode.getCommodity(), episode.getMode(),
 							episode.isContainer()),
 					this.networkData.getFerryLinkIds()).computeUnitCost();
 			builder.addLoadingDuration_h(signatureCost.loadingDuration_h)

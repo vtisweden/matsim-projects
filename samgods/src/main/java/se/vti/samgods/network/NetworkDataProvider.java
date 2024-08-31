@@ -93,6 +93,13 @@ public class NetworkDataProvider {
 		}
 	}
 
+	synchronized Network createMultimodalNetwork() {
+		final Network result = NetworkUtils.createNetwork();
+		// TODO Inefficient. Doing this because I cannot find a deep network copy facility.
+		new TransportModeNetworkFilter(this.multimodalNetwork).filter(result, TransportMode.allMatsimModes());
+		return result;
+	}
+
 	synchronized Network createNetwork(SamgodsConstants.TransportMode mode, boolean containsFerry) {
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, mode.matsimModes);

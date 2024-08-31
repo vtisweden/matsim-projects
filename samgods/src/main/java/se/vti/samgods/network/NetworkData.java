@@ -43,13 +43,15 @@ public class NetworkData {
 
 	private final Set<Id<Link>> ferryLinkIds;
 
+//	private Network multimodalNetwork = null;
+
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, VehicleType>>> commodity2transportMode2isContainer2representativeVehicleType = new LinkedHashMap<>();
 
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, List<VehicleType>>>> commodity2transportMode2isContainer2representativeVehicleTypes = new LinkedHashMap<>();
 
 	private final Map<TransportMode, Map<Boolean, Network>> mode2containsFerry2network = new LinkedHashMap<>();
-	
-	private final Map<Commodity, Map<VehicleType, Map<Id<Link>, BasicTransportCost>>> commodity2vehicleType2linkId2cost = new LinkedHashMap<>();
+
+	private final Map<Commodity, Map<VehicleType, Map<Id<Link>, BasicTransportCost>>> commodity2vehicleType2linkId2unitCost = new LinkedHashMap<>();
 
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, TravelDisutility>>> commodity2mode2isContainer2travelDisutility = new LinkedHashMap<>();
 
@@ -90,7 +92,8 @@ public class NetworkData {
 	}
 
 	public Network getUnimodalNetwork(TransportMode mode, boolean containsFerry) {
-		Network result = this.mode2containsFerry2network.computeIfAbsent(mode, m -> new LinkedHashMap<>()).get(containsFerry);
+		Network result = this.mode2containsFerry2network.computeIfAbsent(mode, m -> new LinkedHashMap<>())
+				.get(containsFerry);
 		if (result == null) {
 			result = dataProvider.createNetwork(mode, containsFerry);
 			this.mode2containsFerry2network.get(mode).put(containsFerry, result);
@@ -98,26 +101,33 @@ public class NetworkData {
 		return result;
 	}
 
+//	public Network getMultimodalNetwork() {
+//		if (this.multimodalNetwork == null) {
+//			this.multimodalNetwork = this.dataProvider.createMultimodalNetwork();
+//		}
+//		return this.multimodalNetwork;
+//	}
+
 	public Network getUnimodalNetwork(VehicleType vehicleType) {
-		FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);		
+		FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
 		return this.getUnimodalNetwork(attrs.mode, attrs.isFerryCompatible());
 	}
 
-	public Map<Id<Link>, BasicTransportCost> getLinkId2cost(Commodity commodity, VehicleType vehicleType)
+	public Map<Id<Link>, BasicTransportCost> getLinkId2unitCost(Commodity commodity, VehicleType vehicleType)
 			throws InsufficientDataException {
-		Map<Id<Link>, BasicTransportCost> result = this.commodity2vehicleType2linkId2cost
+		Map<Id<Link>, BasicTransportCost> result = this.commodity2vehicleType2linkId2unitCost
 				.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).get(vehicleType);
 		if (result == null) {
 			result = this.dataProvider.computeUnitCosts(this.getUnimodalNetwork(vehicleType), commodity,
 					FreightVehicleAttributes.getFreightAttributes(vehicleType));
-			this.commodity2vehicleType2linkId2cost.get(commodity).put(vehicleType, result);
+			this.commodity2vehicleType2linkId2unitCost.get(commodity).put(vehicleType, result);
 		}
 		return result;
 	}
 
-	public Map<Id<Link>, BasicTransportCost> getLinkId2representativeCost(Commodity commodity, TransportMode mode,
+	public Map<Id<Link>, BasicTransportCost> getLinkId2representativeUnitCost(Commodity commodity, TransportMode mode,
 			boolean isContainer) throws InsufficientDataException {
-		return this.getLinkId2cost(commodity, this.getRepresentativeVehicleType(commodity, mode, isContainer));
+		return this.getLinkId2unitCost(commodity, this.getRepresentativeVehicleType(commodity, mode, isContainer));
 	}
 
 	public TravelDisutility getTravelDisutility(Commodity commodity, TransportMode mode, boolean isContainer)
@@ -127,7 +137,7 @@ public class NetworkData {
 				.computeIfAbsent(mode, m -> new LinkedHashMap<>()).get(isContainer);
 		if (result == null) {
 			result = this.dataProvider
-					.createTravelDisutility(this.getLinkId2representativeCost(commodity, mode, isContainer));
+					.createTravelDisutility(this.getLinkId2representativeUnitCost(commodity, mode, isContainer));
 			this.commodity2mode2isContainer2travelDisutility.get(commodity).get(mode).put(isContainer, result);
 		}
 		return result;
@@ -140,7 +150,7 @@ public class NetworkData {
 				.computeIfAbsent(mode, m -> new LinkedHashMap<>()).get(isContainer);
 		if (result == null) {
 			result = this.dataProvider
-					.createTravelTime(this.getLinkId2representativeCost(commodity, mode, isContainer));
+					.createTravelTime(this.getLinkId2representativeUnitCost(commodity, mode, isContainer));
 			this.commodity2mode2isContainer2travelTime.get(commodity).get(mode).put(isContainer, result);
 		}
 		return result;

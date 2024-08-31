@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 
@@ -51,6 +52,10 @@ public class SamgodsConstants {
 
 		private TransportMode(String... matsimModes) {
 			this.matsimModes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(matsimModes)));
+		}
+		
+		public static Set<String> allMatsimModes() {
+			return Arrays.stream(TransportMode.values()).map(m -> m.matsimModes).flatMap(s -> s.stream()).collect(Collectors.toSet());
 		}
 
 	}
