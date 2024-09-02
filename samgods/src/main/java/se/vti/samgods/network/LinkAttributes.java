@@ -58,7 +58,7 @@ public class LinkAttributes {
 		return getAttrs(link).mode;
 	}
 
-	public static synchronized boolean isFerry(Link link) {
+	public static synchronized boolean isFerrySynchronized(Link link) {
 		return getAttrs(link).mode.isFerry();
 	}
 

@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
-import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
@@ -122,30 +121,30 @@ public class FreightVehicleAttributes {
 	
 	// -------------------- STATIC IMPLEMENTATION --------------------
 	
-	public static FreightVehicleAttributes getFreightAttributes(VehicleType vehicleType) {
+	public synchronized static FreightVehicleAttributes getFreightAttributesSynchronized(VehicleType vehicleType) {
 		return (FreightVehicleAttributes) vehicleType.getAttributes()
 				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
 	}
 
-	public static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
-		return getFreightAttributes(vehicle.getType());
-	}
+//	public synchronized static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
+//		return getFreightAttributes(vehicle.getType());
+//	}
 
-	public static TransportMode getMode(VehicleType vehicleType) {
-		return getFreightAttributes(vehicleType).mode;
-	}
+//	public static TransportMode getMode(VehicleType vehicleType) {
+//		return getFreightAttributesSynchronized(vehicleType).mode;
+//	}
 
-	public static TransportMode getMode(Vehicle vehicle) {
-		return getFreightAttributes(vehicle).mode;
-	}
+//	public static TransportMode getMode(Vehicle vehicle) {
+//		return getFreightAttributes(vehicle).mode;
+//	}
 
-	public static double getCapacity_ton(VehicleType vehicleType) {
-		return getFreightAttributes(vehicleType).capacity_ton;
-	}
+//	public static double getCapacity_ton(VehicleType vehicleType) {
+//		return getFreightAttributesSynchronized(vehicleType).capacity_ton;
+//	}
 
-	public static double getCapacity_ton(Vehicle vehicle) {
-		return getFreightAttributes(vehicle).capacity_ton;
-	}
+//	public static double getCapacity_ton(Vehicle vehicle) {
+//		return getFreightAttributes(vehicle).capacity_ton;
+//	}
 	
 	// -------------------- BUILDER --------------------
 

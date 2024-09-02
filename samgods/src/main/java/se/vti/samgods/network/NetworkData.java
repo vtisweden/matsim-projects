@@ -109,7 +109,7 @@ public class NetworkData {
 //	}
 
 	public Network getUnimodalNetwork(VehicleType vehicleType) {
-		FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
+		FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType);
 		return this.getUnimodalNetwork(attrs.mode, attrs.isFerryCompatible());
 	}
 
@@ -119,7 +119,7 @@ public class NetworkData {
 				.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).get(vehicleType);
 		if (result == null) {
 			result = this.dataProvider.computeUnitCosts(this.getUnimodalNetwork(vehicleType), commodity,
-					FreightVehicleAttributes.getFreightAttributes(vehicleType));
+					FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType));
 			this.commodity2vehicleType2linkId2unitCost.get(commodity).put(vehicleType, result);
 		}
 		return result;

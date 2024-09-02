@@ -38,7 +38,7 @@ public class BasicTransportCost {
 		this.length_km = length_km;
 	}
 
-	public BasicTransportCost computeUnitCost() {
-		return new BasicTransportCost(1.0, this.monetaryCost / this.amount_ton, this.duration_h, this.length_km);
-	}
+//	public BasicTransportCost computeUnitCost_1_ton() {
+//		return new BasicTransportCost(1.0, this.monetaryCost / this.amount_ton, this.duration_h, this.length_km);
+//	}
 }

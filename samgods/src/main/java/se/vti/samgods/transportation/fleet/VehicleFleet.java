@@ -31,7 +31,6 @@ import org.matsim.vehicles.Vehicles;
 import de.vandermeer.asciitable.AsciiTable;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.TransportEpisode;
 
 /**
  * 
@@ -67,11 +66,11 @@ public class VehicleFleet {
 
 	// -------------------- COMPATIBLE VEHICLE TYPES --------------------
 
-	public List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
+	public synchronized List<VehicleType> getCompatibleVehicleTypesSynchronized(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, boolean isContainer, boolean containsFerry) {
 		final List<VehicleType> result = new ArrayList<>(this.vehicles.getVehicleTypes().size());
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(type);
+			FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
 			if (attrs.mode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
 					&& (!containsFerry || attrs.isFerryCompatible())) {
 				result.add(type);
@@ -82,19 +81,21 @@ public class VehicleFleet {
 
 	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
-	public VehicleType getRepresentativeVehicleType(SamgodsConstants.Commodity commodity,
+	public synchronized VehicleType getRepresentativeVehicleTypeSynchronized(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
 			throws InsufficientDataException {
 		VehicleType result = null;
-		final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
+		final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypesSynchronized(commodity, mode, isContainer,
 				containsFerry);
 		if (compatibleTypes.size() > 0) {
 			final double meanCapacity_ton = compatibleTypes.stream()
-					.mapToDouble(t -> FreightVehicleAttributes.getCapacity_ton(t)).average().getAsDouble();
+					.mapToDouble(t -> FreightVehicleAttributes.getFreightAttributesSynchronized(t).capacity_ton)
+					.average().getAsDouble();
 			double resultDeviation_ton = Double.POSITIVE_INFINITY;
 			for (VehicleType candidate : compatibleTypes) {
 				final double candidateDeviation_ton = Math
-						.abs(FreightVehicleAttributes.getCapacity_ton(candidate) - meanCapacity_ton);
+						.abs(FreightVehicleAttributes.getFreightAttributesSynchronized(candidate).capacity_ton
+								- meanCapacity_ton);
 				if (candidateDeviation_ton < resultDeviation_ton) {
 					result = candidate;
 					resultDeviation_ton = candidateDeviation_ton;
@@ -107,18 +108,21 @@ public class VehicleFleet {
 		return result;
 	}
 
-	public FreightVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
-			throws InsufficientDataException {
-		return FreightVehicleAttributes
-				.getFreightAttributes(this.getRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
-	}
+//	public FreightVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.Commodity commodity,
+//			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
+//			throws InsufficientDataException {
+//		return FreightVehicleAttributes
+//				.getFreightAttributesSynchronized(this.getRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
+//	}
 
-	public FreightVehicleAttributes getRepresentativeVehicleAttributes(TransportEpisode episode)
-			throws InsufficientDataException {
-		return this.getRepresentativeVehicleAttributes(episode.getCommodity(), episode.getMode(), episode.isContainer(),
-				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
-	}
+//	public FreightVehicleAttributes getRepresentativeVehicleAttributes(TransportEpisode episode)
+//			throws InsufficientDataException {
+//		
+//		FreightVehicleAttributes.getFreightAttributesSynchronized(assignedVehicle.getType()).capacity_ton
+//		
+//		return this.getRepresentativeVehicleAttributes(episode.getCommodity(), episode.getMode(), episode.isContainer(),
+//				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
+//	}
 
 	// -------------------- SUMMARY TABLES --------------------
 
@@ -136,7 +140,7 @@ public class VehicleFleet {
 		table.addRow("Vehicle", "Description", "Mode", "Cost[1/km]", "Cost[1/h]", "Capacity[ton]", "FerryCost[1/km]",
 				"FerryCost[1/h]", "MaxSpeed[km/h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(type);
+			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
 			if (mode.equals(attrs.mode)) {
 				table.addRule();
 				table.addRow(attrs.id, type.getDescription(), attrs.mode, attrs.cost_1_km, attrs.cost_1_h,
@@ -154,7 +158,7 @@ public class VehicleFleet {
 		table.addRow("Vehicle", "Commodity", "LoadCost[1/ton]", "LoadTime[h]", "TransferCost[1/ton]",
 				"TransferTime[h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(type);
+			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
 			if (mode.equals(attrs.mode)) {
 				for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 					if (attrs.isCompatible(commodity)) {

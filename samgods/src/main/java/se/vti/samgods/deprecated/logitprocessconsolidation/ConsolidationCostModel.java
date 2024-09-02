@@ -41,28 +41,28 @@ public class ConsolidationCostModel extends se.vti.samgods.transportation.consol
 	// -------------------- CONSTRUCTION --------------------
 
 	public ConsolidationCostModel(PerformanceMeasures performanceMeasures, Network network) {
-		super(performanceMeasures);
+		super();
 	}
 
 	public BasicTransportCost computeInVehicleShipmentCost(Vehicle vehicle, double maxAddedAmount_ton,
 			ShipmentVehicleAssignment assignment) throws InsufficientDataException {
 
-		final double vehicleCapacity_ton = FreightVehicleAttributes.getCapacity_ton(vehicle);
-		final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
-		assert (availableCapacity_ton >= 0);
-		final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
-		final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton); // TODO
+//		final double vehicleCapacity_ton = FreightVehicleAttributes.getCapacity_ton(vehicle);
+//		final double availableCapacity_ton = vehicleCapacity_ton - assignment.getPayload_ton(vehicle);
+//		assert (availableCapacity_ton >= 0);
+//		final double assignedWeight_ton = Math.min(maxAddedAmount_ton, availableCapacity_ton);
+//		final boolean feasible = assignedWeight_ton >= 0.01 * Math.max(maxAddedAmount_ton, vehicleCapacity_ton); // TODO
 
-		if (feasible) {
+//		if (feasible) {
 			throw new UnsupportedOperationException("TODO");
 //			final DetailedTransportCost vehicleCost = computeEpisodeCost(
 //					FreightVehicleAttributes.getFreightAttributes(vehicle),
 //					assignment.getPayload_ton(vehicle) + assignedWeight_ton, assignment.getTransportEpisode());
 //			final double share = assignedWeight_ton / (assignedWeight_ton + assignment.getPayload_ton(vehicle));
 //			return new BasicTransportCost(assignedWeight_ton, share * vehicleCost.monetaryCost, vehicleCost.duration_h);
-		} else {
-			return null;
-		}
+//		} else {
+//			return null;
+//		}
 	}
 
 }

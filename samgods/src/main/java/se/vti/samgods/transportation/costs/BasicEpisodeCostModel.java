@@ -85,31 +85,30 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 		return this.consolidationUnit2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
 
-	private final Object lock = new Object();
-
 	@Override
-	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
+	public DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes;
-		synchronized (this.lock) {
-			vehicleAttributes = this.fleet.getRepresentativeVehicleAttributes(episode);
-		}
+		vehicleAttributes = FreightVehicleAttributes.getFreightAttributesSynchronized(
+				this.fleet.getRepresentativeVehicleTypeSynchronized(episode.getCommodity(), episode.getMode(),
+						episode.isContainer(),
+						episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry)));
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0).addDistance_km(0.0);
 		final List<ConsolidationUnit> signatures = episode.getConsolidationUnits();
 		for (ConsolidationUnit signature : signatures) {
-			final DetailedTransportCost signatureCost = this.consolidationCostModel.computeSignatureCost(
+			final DetailedTransportCost signatureUnitCost = this.consolidationCostModel.computeSignatureCost(
 					vehicleAttributes, this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
 					signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature,
 					this.networkData.getLinkId2representativeUnitCost(episode.getCommodity(), episode.getMode(),
 							episode.isContainer()),
-					this.networkData.getFerryLinkIds()).computeUnitCost();
-			builder.addLoadingDuration_h(signatureCost.loadingDuration_h)
-					.addTransferDuration_h(signatureCost.transferDuration_h)
-					.addUnloadingDuration_h(signatureCost.unloadingDuration_h)
-					.addMoveDuration_h(signatureCost.moveDuration_h).addLoadingCost(signatureCost.loadingCost)
-					.addTransferCost(signatureCost.transferCost).addUnloadingCost(signatureCost.unloadingCost)
-					.addMoveCost(signatureCost.moveCost).addDistance_km(Units.KM_PER_M * signature.length_m);
+					this.networkData.getFerryLinkIds()).computeUnitCost_1_ton();
+			builder.addLoadingDuration_h(signatureUnitCost.loadingDuration_h)
+					.addTransferDuration_h(signatureUnitCost.transferDuration_h)
+					.addUnloadingDuration_h(signatureUnitCost.unloadingDuration_h)
+					.addMoveDuration_h(signatureUnitCost.moveDuration_h).addLoadingCost(signatureUnitCost.loadingCost)
+					.addTransferCost(signatureUnitCost.transferCost).addUnloadingCost(signatureUnitCost.unloadingCost)
+					.addMoveCost(signatureUnitCost.moveCost).addDistance_km(signatureUnitCost.length_km);
 		}
 		return builder.build();
 	}

@@ -29,6 +29,6 @@ import se.vti.samgods.logistics.TransportEpisode;
  */
 public interface EpisodeCostModel {
 
-	DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException;
+	DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException;
 
 }

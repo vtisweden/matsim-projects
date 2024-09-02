@@ -131,7 +131,7 @@ public class NTMCalcSerializerTest {
 					}
 
 					TransportLeg leg = new TransportLeg(routeNodes.getFirst().getId(), routeNodes.getLast().getId());
-					
+
 					throw new RuntimeException("TODO");
 //					leg.setRoute(routeLinks);
 //					
@@ -139,7 +139,9 @@ public class NTMCalcSerializerTest {
 				}
 
 				allEpisodes.add(new VehicleEpisode(veh,
-						rnd.nextDouble() * FreightVehicleAttributes.getCapacity_ton(vehType), episode));
+						rnd.nextDouble()
+								* FreightVehicleAttributes.getFreightAttributesSynchronized(vehType).capacity_ton,
+						episode));
 			}
 		}
 

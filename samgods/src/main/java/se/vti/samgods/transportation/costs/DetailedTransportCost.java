@@ -56,8 +56,7 @@ public class DetailedTransportCost extends BasicTransportCost {
 		this.moveDuration_h = moveDuration_h;
 	}
 
-	@Override
-	public DetailedTransportCost computeUnitCost() {
+	public DetailedTransportCost computeUnitCost_1_ton() {
 		return new DetailedTransportCost(1.0, this.loadingCost / this.amount_ton, this.unloadingCost / this.amount_ton,
 				this.transferCost / this.amount_ton, this.moveCost / this.amount_ton, this.loadingDuration_h,
 				this.unloadingDuration_h, this.transferDuration_h, this.moveDuration_h, this.length_km);
@@ -77,12 +76,12 @@ public class DetailedTransportCost extends BasicTransportCost {
 		private Double unloadingDuration_h;
 		private Double transferDuration_h;
 		private Double moveDuration_h;
-		
+
 		private Double distance_km;
 
 		public Builder() {
 		}
-		
+
 		private double sum(Double sum, double addend) {
 			if (sum == null) {
 				return addend;
@@ -135,7 +134,7 @@ public class DetailedTransportCost extends BasicTransportCost {
 			this.moveDuration_h = this.sum(this.moveDuration_h, moveDuration_h);
 			return this;
 		}
-		
+
 		public Builder addDistance_km(Double distance_km) {
 			this.distance_km = this.sum(this.distance_km, distance_km);
 			return this;

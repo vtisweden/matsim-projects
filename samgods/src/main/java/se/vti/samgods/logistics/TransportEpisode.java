@@ -65,7 +65,7 @@ public class TransportEpisode {
 	}
 
 	public boolean isRouted() {
-		return (this.hasSignatures() && (this.signatures.stream().allMatch(s -> s.isRouted())));
+		return (this.hasSignatures() && (this.signatures.stream().allMatch(s -> (s != null) && (s.linkIds != null))));
 	}
 
 	public void setConsolidationUnits(List<ConsolidationUnit> signatures) {

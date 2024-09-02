@@ -30,7 +30,6 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
-import org.matsim.vehicles.VehicleType;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -51,41 +50,72 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.LinkAttributes;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
-import se.vti.samgods.utils.ListRepresented;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
 @JsonDeserialize(using = ConsolidationUnit.Deserializer.class)
-public class ConsolidationUnit extends ListRepresented {
+public class ConsolidationUnit {
 
+	// -------------------- MEMBERS --------------------
+
+	// TODO synchronize
 	public final List<Id<Node>> nodeIds;
 	public final SamgodsConstants.Commodity commodity;
 	public final SamgodsConstants.TransportMode mode;
 	public final Boolean isContainer;
 
+	// TODO synchronize
 	public List<List<Id<Link>>> linkIds = null;
 	public Double length_m = null;
 	public Boolean containsFerry = null;
 
-	// CONSTRUCTION
+//	public synchronized List<Id<Node>> getNodesCopy() {
+//		return this.nodeIds.stream().toList();
+//	}
+//
+//	public synchronized boolean isRouted() {
+//		return (this.linkIds != null);
+//	}
+//
+//	public synchronized List<List<Id<Link>>> getRoutesCopy() {
+//		List<List<Id<Link>>> result = new ArrayList<>(this.linkIds.size());
+//		for (List<Id<Link>> route : this.linkIds) {
+//			result.add(route.stream().toList());
+//		}
+//		return result;
+//	}
 
-	public ConsolidationUnit(List<Id<Node>> nodes, SamgodsConstants.Commodity commodity,
+	// --------------------CONSTRUCTION --------------------
+
+	private ConsolidationUnit(List<Id<Node>> nodes, SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, List<List<Id<Link>>> linkIds) {
 		this.nodeIds = nodes;
+//		if (nodes == null) {
+//			this.nodeIds = null;
+//		} else {
+//			this.nodeIds = Collections.synchronizedList(nodes);
+//		}
 		this.commodity = commodity;
 		this.mode = mode;
 		this.isContainer = isContainer;
 		this.linkIds = linkIds;
+//		if (linkIds == null) {
+//			this.linkIds = null;
+//		} else {
+//			this.linkIds = Collections.synchronizedList(new ArrayList<>(linkIds.size()));
+//			for (List<Id<Link>> linkIdSegment : linkIds) {
+//				this.linkIds.add(Collections.synchronizedList(linkIdSegment));
+//			}
+//		}
 	}
-	
+
 	public synchronized static List<ConsolidationUnit> createUnrouted(TransportEpisode episode) {
 		if (episode.getLegs() == null) {
 			return Collections.emptyList();
 		} else {
-			if (episode.getMode().equals(TransportMode.Rail) && episode.getLegs().size() > 1) {
-				return episode.getLegs().stream().map(leg -> Arrays.asList(leg))
-						.map(legs -> new ConsolidationUnit(extractNodes(legs), episode.getCommodity(),
-								episode.getMode(), episode.isContainer(), null))
+			if (episode.getMode().equals(TransportMode.Rail) && (episode.getLegs().size() > 1)) {
+				return episode
+						.getLegs().stream().map(leg -> new ConsolidationUnit(extractNodes(Arrays.asList(leg)),
+								episode.getCommodity(), episode.getMode(), episode.isContainer(), null))
 						.collect(Collectors.toList());
 			} else {
 				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getLegs()), episode.getCommodity(),
@@ -94,33 +124,11 @@ public class ConsolidationUnit extends ListRepresented {
 		}
 	}
 
-	public synchronized ConsolidationUnit createRoutingEquivalentCopy() {
+	public synchronized ConsolidationUnit createRoutingEquivalentTemplate() {
 		return new ConsolidationUnit(this.nodeIds, this.commodity, this.mode, this.isContainer, null);
 	}
 
-	// IMPLEMENTATION
-
-	public synchronized boolean isRouted() {
-		return this.linkIds != null;
-	}
-
-	public synchronized void setRoutes(List<List<Link>> routes) {
-		this.linkIds = new ArrayList<>(routes.size());
-		this.length_m = 0.0;
-		this.containsFerry = false;
-		for (List<Link> route : routes) {
-			this.linkIds.add(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
-			this.length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
-			this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> LinkAttributes.isFerry(l));
-		}
-	}
-
-	public synchronized void addNetworkCharacteristics(Network network) {
-		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
-				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
-		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
-				.anyMatch(l -> LinkAttributes.isFerry(network.getLinks().get(l)));
-	}
+	// -------------------- INTERNALS --------------------
 
 	private synchronized static List<Id<Node>> extractNodes(List<TransportLeg> legs) {
 		final ArrayList<Id<Node>> nodes = new ArrayList<>(legs.size() + 1);
@@ -129,20 +137,70 @@ public class ConsolidationUnit extends ListRepresented {
 		return nodes;
 	}
 
-	public synchronized boolean isCompatible(FreightVehicleAttributes attrs) {
-		return (this.commodity == null || attrs.isCompatible(this.commodity))
-				&& (this.mode == null || this.mode.equals(attrs.mode))
-				&& (this.isContainer == null || this.isContainer.equals(attrs.isContainer));
+	private synchronized List<Object> createAsList() {
+		return Arrays.asList(this.nodeIds, this.commodity, this.mode, this.isContainer, this.linkIds);
 	}
 
-	public synchronized boolean isCompatible(VehicleType type) {
-		return this.isCompatible(FreightVehicleAttributes.getFreightAttributes(type));
+	// -------------------- OVERRIDING Object --------------------
+
+	@Override
+	public synchronized int hashCode() {
+		return this.createAsList().hashCode();
 	}
 
 	@Override
-	protected synchronized List<Object> asList() {
-		return Arrays.asList(this.nodeIds, this.commodity, this.mode, this.isContainer, this.linkIds);
+	public synchronized boolean equals(Object other) {
+		if (this == other) {
+			return true;
+		} else if (other instanceof ConsolidationUnit) {
+			return this.createAsList().equals(((ConsolidationUnit) other).createAsList());
+		} else {
+			return false;
+		}
 	}
+
+	@Override
+	public synchronized String toString() {
+		return this.createAsList().toString();
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public synchronized void setRoutes(List<List<Link>> routes) {
+		if (routes == null) {
+			this.linkIds = null;
+			this.length_m = null;
+			this.containsFerry = null;
+		} else {
+			this.linkIds = new ArrayList<>(routes.size());
+			this.length_m = 0.0;
+			this.containsFerry = false;
+			for (List<Link> route : routes) {
+				this.linkIds.add(route.stream().map(l -> l.getId()).toList());
+				this.length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
+				this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> LinkAttributes.isFerrySynchronized(l));
+			}
+		}
+	}
+
+	public synchronized void computeNetworkCharacteristics(Network network) {
+		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
+				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
+		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
+				.anyMatch(l -> LinkAttributes.isFerrySynchronized(network.getLinks().get(l)));
+	}
+
+//	public synchronized boolean isCompatible(FreightVehicleAttributes attrs) {
+//		return (this.commodity == null || attrs.isCompatible(this.commodity))
+//				&& (this.mode == null || this.mode.equals(attrs.mode))
+//				&& (this.isContainer == null || this.isContainer.equals(attrs.isContainer));
+//	}
+//
+//	public synchronized boolean isCompatible(VehicleType type) {
+//		return this.isCompatible(FreightVehicleAttributes.getFreightAttributes(type));
+//	}
+
+	// -------------------- Json Serializer --------------------
 
 	public static class Serializer extends JsonSerializer<ConsolidationUnit> {
 
@@ -183,6 +241,8 @@ public class ConsolidationUnit extends ListRepresented {
 		}
 
 	}
+
+	// -------------------- Json Deserializer --------------------
 
 	public static class Deserializer extends JsonDeserializer<ConsolidationUnit> {
 

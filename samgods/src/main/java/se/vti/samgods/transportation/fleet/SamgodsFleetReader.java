@@ -141,7 +141,7 @@ public class SamgodsFleetReader {
 			try {
 				VehicleType vehicleType = builder.buildVehicleType();
 
-				FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
+				FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType);
 				if (attrs.onFerryCost_1_h == null) {
 					log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
 				}

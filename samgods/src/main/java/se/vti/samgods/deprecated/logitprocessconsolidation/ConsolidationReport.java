@@ -53,29 +53,30 @@ public class ConsolidationReport {
 
 	public ConsolidationReport(List<ShipmentVehicleAssignment> assignments) {
 
-		final Set<SamgodsConstants.Commodity> allCommodities = new LinkedHashSet<>();
-		final Set<VehicleType> allVehicleTypes = new LinkedHashSet<>();
-		for (ShipmentVehicleAssignment assignment : assignments) {
-			allCommodities.addAll(assignment.getShipment2vehicles().keySet().stream().map(s -> s.getCommodity())
-					.collect(Collectors.toSet()));
-			allVehicleTypes.addAll(assignment.getVehicle2shipments().keySet().stream().map(v -> v.getType())
-					.collect(Collectors.toSet()));
-		}
-		this.allCommodities = new ArrayList<>(allCommodities);
-		Collections.sort(this.allCommodities);
-		this.allVehicleTypes = new ArrayList<>(allVehicleTypes);
-		Collections.sort(this.allVehicleTypes, new Comparator<VehicleType>() {
-			@Override
-			public int compare(VehicleType type1, VehicleType type2) {
-				return Double.compare(FreightVehicleAttributes.getCapacity_ton(type1),
-						FreightVehicleAttributes.getCapacity_ton(type2));
-			}
-		});
-
-		this.vehicleCommodityMatrixOverDays = new ArrayList<>(assignments.size());
-		for (ShipmentVehicleAssignment assignment : assignments) {
-			this.vehicleCommodityMatrixOverDays.add(this.createVehicleCommodityMatrix(assignment));
-		}
+//		final Set<SamgodsConstants.Commodity> allCommodities = new LinkedHashSet<>();
+//		final Set<VehicleType> allVehicleTypes = new LinkedHashSet<>();
+//		for (ShipmentVehicleAssignment assignment : assignments) {
+//			allCommodities.addAll(assignment.getShipment2vehicles().keySet().stream().map(s -> s.getCommodity())
+//					.collect(Collectors.toSet()));
+//			allVehicleTypes.addAll(assignment.getVehicle2shipments().keySet().stream().map(v -> v.getType())
+//					.collect(Collectors.toSet()));
+//		}
+//		this.allCommodities = new ArrayList<>(allCommodities);
+//		Collections.sort(this.allCommodities);
+//		this.allVehicleTypes = new ArrayList<>(allVehicleTypes);
+//		Collections.sort(this.allVehicleTypes, new Comparator<VehicleType>() {
+//			@Override
+//			public int compare(VehicleType type1, VehicleType type2) {
+//				return Double.compare(FreightVehicleAttributes.getCapacity_ton(type1),
+//						FreightVehicleAttributes.getCapacity_ton(type2));
+//			}
+//		});
+//
+//		this.vehicleCommodityMatrixOverDays = new ArrayList<>(assignments.size());
+//		for (ShipmentVehicleAssignment assignment : assignments) {
+//			this.vehicleCommodityMatrixOverDays.add(this.createVehicleCommodityMatrix(assignment));
+//		}
+		throw new UnsupportedOperationException();
 	}
 
 	// -------------------- INTERNALS --------------------

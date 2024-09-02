@@ -158,7 +158,7 @@ public class EmpiricalEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	@Override
-	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
+	public DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 		final CumulativeDetailedData data = this.episode2data.get(episode);
 		if (data == null) {
 			throw new InsufficientDataException(this.getClass(), "No empirical data for transport episode.", episode);

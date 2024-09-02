@@ -77,19 +77,19 @@ public class NetworkDataProvider {
 	synchronized VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode,
 			boolean isContainer) throws InsufficientDataException {
 		try {
-			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, true);
+			return this.fleet.getRepresentativeVehicleTypeSynchronized(commodity, mode, isContainer, true);
 		} catch (InsufficientDataException e0) {
-			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, false);
+			return this.fleet.getRepresentativeVehicleTypeSynchronized(commodity, mode, isContainer, false);
 		}
 	}
 
 	synchronized List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode,
 			boolean isContainer) {
-		List<VehicleType> resultWithFerry = this.fleet.getCompatibleVehicleTypes(commodity, mode, isContainer, true);
+		List<VehicleType> resultWithFerry = this.fleet.getCompatibleVehicleTypesSynchronized(commodity, mode, isContainer, true);
 		if (resultWithFerry.size() > 0) {
 			return resultWithFerry;
 		} else {
-			return this.fleet.getCompatibleVehicleTypes(commodity, mode, isContainer, false);
+			return this.fleet.getCompatibleVehicleTypesSynchronized(commodity, mode, isContainer, false);
 		}
 	}
 
@@ -113,7 +113,7 @@ public class NetworkDataProvider {
 	}
 
 	synchronized Set<Id<Link>> createFerryLinkIdSet(Network network) {
-		return network.getLinks().values().stream().filter(l -> LinkAttributes.isFerry(l)).map(l -> l.getId())
+		return network.getLinks().values().stream().filter(l -> LinkAttributes.isFerrySynchronized(l)).map(l -> l.getId())
 				.collect(Collectors.toSet());
 	}
 
@@ -127,7 +127,7 @@ public class NetworkDataProvider {
 		final double duration_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
 		assert (Double.isFinite(length_km));
 		assert (Double.isFinite(duration_h));
-		if (LinkAttributes.isFerry(link)) {
+		if (LinkAttributes.isFerrySynchronized(link)) {
 			return new BasicTransportCost(1.0,
 					duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km, duration_h,
 					length_km);

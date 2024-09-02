@@ -168,7 +168,7 @@ public class Consolidator {
 
 			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
 			final double assigned_ton = Math.min(remaining_ton,
-					FreightVehicleAttributes.getCapacity_ton(assignedVehicle) - assignment.getPayload_ton(assignedVehicle));
+					FreightVehicleAttributes.getFreightAttributesSynchronized(assignedVehicle.getType()).capacity_ton - assignment.getPayload_ton(assignedVehicle));
 			assignment.assign(shipment, assignedVehicle, assigned_ton);
 			remaining_ton -= assigned_ton;
 
@@ -177,7 +177,7 @@ public class Consolidator {
 			 * or it is not not full because the shipment is completely assigned. In either
 			 * case, it will no longer be considered.
 			 */
-			assert (Math.abs(FreightVehicleAttributes.getCapacity_ton(assignedVehicle)
+			assert (Math.abs(FreightVehicleAttributes.getFreightAttributesSynchronized(assignedVehicle.getType()).capacity_ton
 					- assignment.getPayload_ton(assignedVehicle)) <= 1e-8 || remaining_ton <= 1e-8);
 			vehicle2costOverDays.get(slot.day).remove(assignedVehicle);
 		}

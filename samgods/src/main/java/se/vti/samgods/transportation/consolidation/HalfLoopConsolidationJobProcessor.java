@@ -104,11 +104,9 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		public final double serviceIntervalActiveProba;
 
-		public FleetAssignment(VehicleType vehicleType, DetailedTransportCost cost,
-				double serviceDemandPerActiveServiceInterval_ton, double serviceInterval_h,
+		public FleetAssignment(VehicleType vehicleType, FreightVehicleAttributes vehicleAttrs,
+				DetailedTransportCost cost, double serviceDemandPerActiveServiceInterval_ton, double serviceInterval_h,
 				double serviceIntervalActiveProba, double length_km) {
-
-			final double vehCap_ton = FreightVehicleAttributes.getCapacity_ton(vehicleType);
 
 			this.vehicleType = vehicleType;
 			this.serviceInterval_h = serviceInterval_h;
@@ -119,7 +117,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 			// n is fleet size
 			// f is circulation frequency, per service interval
-			final double nf = Math.max(1.0, serviceDemandPerActiveServiceInterval_ton / vehCap_ton);
+			final double nf = Math.max(1.0, serviceDemandPerActiveServiceInterval_ton / vehicleAttrs.capacity_ton);
 
 			final double fMin = 1.0; // desirable: complete at least one loop
 			final double fMax = serviceInterval_h / this.minLoopDuration_h; // hard physical constraint
@@ -149,12 +147,12 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			this.unitCost_1_tonKm = cost.monetaryCost / this.payload_ton / (0.5 * this.loopLength_km);
 
 			final double supplyPerActiveServiceInterval_ton = this.fleetSizeDuringActiveServiceInterval
-					* this.loopsPerActiveServiceInterval * FreightVehicleAttributes.getCapacity_ton(vehicleType);
+					* this.loopsPerActiveServiceInterval * vehicleAttrs.capacity_ton;
 			assert (serviceDemandPerActiveServiceInterval_ton <= 1e-8 + supplyPerActiveServiceInterval_ton);
 		}
 
 		public double vehicleCapacity_ton() {
-			return FreightVehicleAttributes.getCapacity_ton(this.vehicleType);
+			return FreightVehicleAttributes.getFreightAttributesSynchronized(this.vehicleType).capacity_ton;
 		}
 
 		public double snapshotVehicleCnt() {
@@ -171,7 +169,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 
 		public double transportEfficiency() {
-			return this.payload_ton / FreightVehicleAttributes.getCapacity_ton(this.vehicleType);
+			return this.payload_ton
+					/ FreightVehicleAttributes.getFreightAttributesSynchronized(this.vehicleType).capacity_ton;
 		}
 
 //		@Override
@@ -182,11 +181,10 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 //		}
 	}
 
-	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, ConsolidationJob job,
-			double serviceDemand_ton, double serviceProba, double length_km) throws InsufficientDataException {
-		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes.getFreightAttributes(vehicleType);
-
-		FleetAssignment result = new FleetAssignment(vehicleType,
+	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, FreightVehicleAttributes vehicleAttrs,
+			ConsolidationJob job, double serviceDemand_ton, double serviceProba, double length_km)
+			throws InsufficientDataException {
+		FleetAssignment result = new FleetAssignment(vehicleType, vehicleAttrs,
 				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
 						job.consolidationUnit, true, true,
 						this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity, vehicleType),
@@ -194,7 +192,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
-			FleetAssignment newResult = new FleetAssignment(vehicleType,
+			FleetAssignment newResult = new FleetAssignment(vehicleType, vehicleAttrs,
 					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton,
 							job.consolidationUnit, true, true,
 							this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity, vehicleType),
@@ -235,7 +233,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		FleetAssignment overallBestAssignment = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, job,
+			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType,
+					FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType), job,
 					demandExpectationPerActiveServiceInterval_ton, serviceIntervalActiveProba,
 					Units.KM_PER_M * job.consolidationUnit.length_m);
 			if ((overallBestAssignment == null)

@@ -64,10 +64,10 @@ public class EpisodeCostModels implements EpisodeCostModel {
 	}
 
 	@Override
-	public DetailedTransportCost computeUnitCost(TransportEpisode episode) throws InsufficientDataException {
+	public DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 		for (EpisodeCostModel model : this.models) {
 			try {
-				return model.computeUnitCost(episode);
+				return model.computeUnitCost_1_ton(episode);
 			} catch (InsufficientDataException e) {
 			}
 		}

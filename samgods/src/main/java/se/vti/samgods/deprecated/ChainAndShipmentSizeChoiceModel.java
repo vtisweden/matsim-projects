@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics.choicemodel;
+package se.vti.samgods.deprecated;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,6 +35,8 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
+import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.utils.ChoiceModelUtils;
@@ -79,7 +81,7 @@ public class ChainAndShipmentSizeChoiceModel {
 				final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder()
 						.addAmount_ton(1.0);
 				for (TransportEpisode episode : transportChain.getEpisodes()) {
-					final DetailedTransportCost episodeUnitCost = this.episodeCostModel.computeUnitCost(episode);
+					final DetailedTransportCost episodeUnitCost = this.episodeCostModel.computeUnitCost_1_ton(episode);
 					chainCostBuilder.addLoadingCost(episodeUnitCost.loadingCost)
 							.addLoadingDuration_h(episodeUnitCost.loadingDuration_h)
 							.addMoveCost(episodeUnitCost.moveCost).addMoveDuration_h(episodeUnitCost.moveDuration_h)
@@ -87,7 +89,7 @@ public class ChainAndShipmentSizeChoiceModel {
 							.addTransferDuration_h(episodeUnitCost.transferDuration_h)
 							.addUnloadingCost(episodeUnitCost.unloadingCost)
 							.addUnloadingDuration_h(episodeUnitCost.unloadingDuration_h)
-							.addDistance_km(null); // TODO
+							.addDistance_km(episodeUnitCost.length_km);
 				}
 				chain2transportUnitCost.put(transportChain, chainCostBuilder.build());
 			} catch (InsufficientDataException e) {

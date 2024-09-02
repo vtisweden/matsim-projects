@@ -73,46 +73,49 @@ public class UniformConsolidator {
 	// CONSTRUCTION
 
 	public UniformConsolidator(VehicleFleet fleet, int numberOfDays, double transportEfficiency) {
-		this.fleet = fleet;
-		this.numberOfDays = numberOfDays;
-		this.transportEfficiency = transportEfficiency;
 
-		this.vehTypesDescendingCapacity = fleet.getVehicles().getVehicleTypes().values().stream()
-				.collect(Collectors.toList());
-		Collections.sort(this.vehTypesDescendingCapacity, new Comparator<VehicleType>() {
-			@Override
-			public int compare(VehicleType t1, VehicleType t2) {
-				return -Double.compare(FreightVehicleAttributes.getCapacity_ton(t1),
-						FreightVehicleAttributes.getCapacity_ton(t2));
-			}
-		});
-		this.vehCaps = this.vehTypesDescendingCapacity.stream()
-				.mapToDouble(t -> FreightVehicleAttributes.getCapacity_ton(t)).toArray();
-
-		{
-			this.vehFreq = new double[this.vehTypesDescendingCapacity.size()];
-			double sum = 0.0;
-			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
-				this.vehFreq[i] = 1.0
-						/ FreightVehicleAttributes.getCapacity_ton(this.vehTypesDescendingCapacity.get(i));
-				sum += this.vehFreq[i];
-			}
-			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
-				this.vehFreq[i] /= sum;
-			}
-		}
-		{
-			this.vehTonFreq = new double[this.vehTypesDescendingCapacity.size()];
-			double sum = 0.0;
-			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
-				this.vehTonFreq[i] = this.vehFreq[i]
-						* FreightVehicleAttributes.getCapacity_ton(this.vehTypesDescendingCapacity.get(i));
-				sum += this.vehTonFreq[i];
-			}
-			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
-				this.vehTonFreq[i] /= sum;
-			}
-		}
+		throw new UnsupportedOperationException();
+		
+//		this.fleet = fleet;
+//		this.numberOfDays = numberOfDays;
+//		this.transportEfficiency = transportEfficiency;
+//
+//		this.vehTypesDescendingCapacity = fleet.getVehicles().getVehicleTypes().values().stream()
+//				.collect(Collectors.toList());
+//		Collections.sort(this.vehTypesDescendingCapacity, new Comparator<VehicleType>() {
+//			@Override
+//			public int compare(VehicleType t1, VehicleType t2) {
+//				return -Double.compare(FreightVehicleAttributes.getCapacity_ton(t1),
+//						FreightVehicleAttributes.getCapacity_ton(t2));
+//			}
+//		});
+//		this.vehCaps = this.vehTypesDescendingCapacity.stream()
+//				.mapToDouble(t -> FreightVehicleAttributes.getCapacity_ton(t)).toArray();
+//
+//		{
+//			this.vehFreq = new double[this.vehTypesDescendingCapacity.size()];
+//			double sum = 0.0;
+//			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
+//				this.vehFreq[i] = 1.0
+//						/ FreightVehicleAttributes.getCapacity_ton(this.vehTypesDescendingCapacity.get(i));
+//				sum += this.vehFreq[i];
+//			}
+//			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
+//				this.vehFreq[i] /= sum;
+//			}
+//		}
+//		{
+//			this.vehTonFreq = new double[this.vehTypesDescendingCapacity.size()];
+//			double sum = 0.0;
+//			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
+//				this.vehTonFreq[i] = this.vehFreq[i]
+//						* FreightVehicleAttributes.getCapacity_ton(this.vehTypesDescendingCapacity.get(i));
+//				sum += this.vehTonFreq[i];
+//			}
+//			for (int i = 0; i < this.vehTypesDescendingCapacity.size(); i++) {
+//				this.vehTonFreq[i] /= sum;
+//			}
+//		}
 	}
 
 	// REMOVE STOCHASTICITY
@@ -286,45 +289,45 @@ public class UniformConsolidator {
 
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
 
-	public static void main(String[] args) throws InsufficientDataException, IOException {
-		VehicleFleet fleet = new VehicleFleet();
-		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
-		fleetReader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
-				SamgodsConstants.TransportMode.Road);
-
-		Random rnd = new Random();
-		UniformConsolidator uc = new UniformConsolidator(fleet, 7, 0.7);
-
-		int shipmentCnt = 1000;
-		List<Shipment> shipments = new ArrayList<>(shipmentCnt);
-		for (int i = 0; i < shipmentCnt; i++) {
-			double tons = 20.0 * rnd.nextExponential();
-			double proba = rnd.nextDouble();
-			shipments.add(new Shipment(null, tons, proba));
-		}
-
-		shipments = UniformConsolidator.createProbabilityScaledShipments(shipments);
-		List<List<Shipment>> shipmentsOverDay = uc.distributeShipmentsOverDays(shipments);
-		List<List<Vehicle>> vehiclesOverDays = uc.createVehiclesOverDays(shipmentsOverDay);
-
-		Map<Id<VehicleType>, Long> type2cnt = new LinkedHashMap<>();
-		for (List<Vehicle> vehicles : vehiclesOverDays) {
-			for (Vehicle vehicle : vehicles) {
-				type2cnt.compute(vehicle.getType().getId(), (id, cnt) -> cnt == null ? 1 : cnt + 1);
-			}
-		}
-		double totalTons = type2cnt.entrySet().stream().mapToDouble(
-				e -> FreightVehicleAttributes.getCapacity_ton(fleet.getVehicles().getVehicleTypes().get(e.getKey()))
-						* e.getValue())
-				.sum();
-
-		for (VehicleType type : fleet.getVehicles().getVehicleTypes().values()) {
-			System.out.print(type2cnt.getOrDefault(type.getId(), 0l) * FreightVehicleAttributes.getCapacity_ton(type)
-					/ totalTons);
-			System.out.print("\t");
-		}
-		System.out.println();
-
-	}
+//	public static void main(String[] args) throws InsufficientDataException, IOException {
+//		VehicleFleet fleet = new VehicleFleet();
+//		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
+//		fleetReader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
+//				SamgodsConstants.TransportMode.Road);
+//
+//		Random rnd = new Random();
+//		UniformConsolidator uc = new UniformConsolidator(fleet, 7, 0.7);
+//
+//		int shipmentCnt = 1000;
+//		List<Shipment> shipments = new ArrayList<>(shipmentCnt);
+//		for (int i = 0; i < shipmentCnt; i++) {
+//			double tons = 20.0 * rnd.nextExponential();
+//			double proba = rnd.nextDouble();
+//			shipments.add(new Shipment(null, tons, proba));
+//		}
+//
+//		shipments = UniformConsolidator.createProbabilityScaledShipments(shipments);
+//		List<List<Shipment>> shipmentsOverDay = uc.distributeShipmentsOverDays(shipments);
+//		List<List<Vehicle>> vehiclesOverDays = uc.createVehiclesOverDays(shipmentsOverDay);
+//
+//		Map<Id<VehicleType>, Long> type2cnt = new LinkedHashMap<>();
+//		for (List<Vehicle> vehicles : vehiclesOverDays) {
+//			for (Vehicle vehicle : vehicles) {
+//				type2cnt.compute(vehicle.getType().getId(), (id, cnt) -> cnt == null ? 1 : cnt + 1);
+//			}
+//		}
+//		double totalTons = type2cnt.entrySet().stream().mapToDouble(
+//				e -> FreightVehicleAttributes.getCapacity_ton(fleet.getVehicles().getVehicleTypes().get(e.getKey()))
+//						* e.getValue())
+//				.sum();
+//
+//		for (VehicleType type : fleet.getVehicles().getVehicleTypes().values()) {
+//			System.out.print(type2cnt.getOrDefault(type.getId(), 0l) * FreightVehicleAttributes.getCapacity_ton(type)
+//					/ totalTons);
+//			System.out.print("\t");
+//		}
+//		System.out.println();
+//
+//	}
 
 }
