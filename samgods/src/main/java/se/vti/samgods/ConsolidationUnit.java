@@ -183,22 +183,12 @@ public class ConsolidationUnit {
 		}
 	}
 
-	public synchronized void computeNetworkCharacteristics(Network network) {
+	public void computeNetworkCharacteristics(Network network) {
 		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
 		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.anyMatch(l -> LinkAttributes.isFerrySynchronized(network.getLinks().get(l)));
 	}
-
-//	public synchronized boolean isCompatible(FreightVehicleAttributes attrs) {
-//		return (this.commodity == null || attrs.isCompatible(this.commodity))
-//				&& (this.mode == null || this.mode.equals(attrs.mode))
-//				&& (this.isContainer == null || this.isContainer.equals(attrs.isContainer));
-//	}
-//
-//	public synchronized boolean isCompatible(VehicleType type) {
-//		return this.isCompatible(FreightVehicleAttributes.getFreightAttributes(type));
-//	}
 
 	// -------------------- Json Serializer --------------------
 

@@ -34,9 +34,9 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 
-import de.vandermeer.asciitable.AsciiTable;
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.utils.ParseNumberUtils;
 
 /**
@@ -65,15 +65,57 @@ public class NetworkReader {
 	private static final String LINK_MODE = "GENERAL_MO";
 	private static final String LINK_CAPACITY_TRAINS_DAY = "ORIGCAP";
 
+	// -------------------- MEMBERS --------------------
+
+	private double minSpeed_km_h;
+
+	private double minCapacity_veh_h;
+
+	private final Map<TransportMode, Double> mode2fallbackSpeed_km_h = new LinkedHashMap<>();
+
 	// -------------------- CONSTRUCTION --------------------
 
-	private NetworkReader() {
-		// Do not instantiate.
+	public NetworkReader() {
+		this.setMinSpeed_km_h(1.0);
+		this.setMinCapacity_veh_h(1.0 / 24.0);
+		this.setFallbackSpeed_km_h(TransportMode.Air, 800.0);
+		this.setFallbackSpeed_km_h(TransportMode.Ferry, 5.0);
+		this.setFallbackSpeed_km_h(TransportMode.Rail, 100.0);
+		this.setFallbackSpeed_km_h(TransportMode.Road, 70.0);
+		this.setFallbackSpeed_km_h(TransportMode.Sea, 15.0);
+	}
+
+	public NetworkReader setMinSpeed_km_h(double minSpeed_km_h) {
+		log.info("Setting minimal link speed to " + minSpeed_km_h + "km/h, links below that are not loaded.");
+		this.minSpeed_km_h = minSpeed_km_h;
+		return this;
+	}
+
+	public NetworkReader setMinCapacity_veh_h(double minCapacity_veh_h) {
+		log.info("Setting minimal link capacity to " + minCapacity_veh_h + "veh/h, links below that are not loaded.");
+		this.minCapacity_veh_h = minCapacity_veh_h;
+		return this;
+	}
+
+	public NetworkReader setFallbackSpeed_km_h(TransportMode mode, double speed_km_h) {
+		log.info("Setting fallback speed for mode " + mode + " to " + speed_km_h + "km/h");
+		this.mode2fallbackSpeed_km_h.put(mode, speed_km_h);
+		return this;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public static Network load(final String nodesFile, final String linksFile) throws IOException {
+	/**
+	 * Link lengths may be zero. Link lengths are adjusted to be at least as large
+	 * as the Euclidean distance of their start- and endnode.
+	 * 
+	 * Link speeds are bounded from below by minimum value and set to fallback
+	 * values if not defined in file.
+	 * 
+	 * Link capacities are bounded from below by minimum value and set to infinity
+	 * if not defined in file.
+	 */
+	public Network load(final String nodesFile, final String linksFile) throws IOException {
 
 		final Network network = NetworkUtils.createNetwork();
 		network.setCapacityPeriod(3600.0);
@@ -86,7 +128,7 @@ public class NetworkReader {
 			assert (!network.getNodes().containsKey(id));
 			final double x = Double.parseDouble(record.get(NODE_X));
 			final double y = Double.parseDouble(record.get(NODE_Y));
-			Node node = NetworkUtils.createAndAddNode(network, id, new Coord(x, y));
+			final Node node = NetworkUtils.createAndAddNode(network, id, new Coord(x, y));
 			nodeCounter2node.put(Long.parseLong(record.get(NODE_COUNTER)), node);
 		}
 
@@ -97,17 +139,25 @@ public class NetworkReader {
 			final Node toNode = nodeCounter2node.get(Long.parseLong(record.get(LINK_TO_NODE_COUNTER)));
 			assert (fromNode != null);
 			assert (toNode != null);
+			final double nodeDist_m = NetworkUtils.getEuclideanDistance(fromNode.getCoord(), toNode.getCoord());
 
-			final double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
 			final SamgodsConstants.TransportMode mode = SamgodsConstants.TransportMode.valueOf(record.get(LINK_MODE));
+			double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
+			if (length_m < nodeDist_m) {
+				// do not log mm-deviations
+				if (length_m < nodeDist_m - 1e-3) {
+					log.warn("Increasing link " + id + "'s length from " + length_m + "m to node distance " + nodeDist_m
+							+ "m.");
+				}
+				length_m = nodeDist_m;
+			}
 
 			final Double speed1_km_h = ParseNumberUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
 			final Double speed2_km_h = ParseNumberUtils.parseDoubleOrNull(record.get(LINK_SPEED_2));
 			double speed_km_h;
 			if (speed1_km_h != null) {
 				if (speed2_km_h != null) {
-					// TODO revisit.
 					speed_km_h = Math.max(speed1_km_h, speed2_km_h);
 				} else {
 					speed_km_h = speed1_km_h;
@@ -116,29 +166,27 @@ public class NetworkReader {
 				if (speed2_km_h != null) {
 					speed_km_h = speed2_km_h;
 				} else {
-					speed_km_h = Double.POSITIVE_INFINITY;
-//					if (!mode.isRail()) {
-//						new InsufficientDataException(NetworkReader.class,
-//								"Non-rail link " + id + " has undefined (set to infinite) speed.").log();
-//					}
+					speed_km_h = this.mode2fallbackSpeed_km_h.get(mode);
 				}
 			}
+			assert (Double.isFinite(speed_km_h));
 
-			if (speed_km_h < 1e-8) {
+			if (speed_km_h < this.minSpeed_km_h) {
 				Logger.getLogger(NetworkReader.class)
 						.warn("Skipping link " + id + " because of too low speed: " + speed_km_h + " km/h.");
 			} else {
 				final double capacity_veh_h = ParseNumberUtils
 						.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY), Double.POSITIVE_INFINITY) / 24.0;
-//				if (Double.isInfinite(capacity_veh_h) && mode.isRail()) {
-//					new InsufficientDataException(NetworkReader.class,
-//							"Rail link " + id + " has undefined (set to infinite) capacity.").log();
-//				}
-				final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
-						Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
-				link.setAllowedModes(mode.matsimModes);
-				link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
-						new LinkAttributes(mode, speed1_km_h, speed2_km_h));
+				if (capacity_veh_h < this.minCapacity_veh_h) {
+					Logger.getLogger(NetworkReader.class).warn(
+							"Skipping link " + id + " because of too low capacity: " + capacity_veh_h + " veh/h.");
+				} else {
+					final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
+							Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
+					link.setAllowedModes(mode.matsimModes);
+					link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
+							new LinkAttributes(mode, speed1_km_h, speed2_km_h));
+				}
 			}
 		}
 
@@ -148,84 +196,15 @@ public class NetworkReader {
 		return network;
 	}
 
-	public static String createNetworkStatsTable(Network network) {
-
-		StringBuffer result = new StringBuffer();
-
-		Map<String, Integer> mode2cnt = new LinkedHashMap<>();
-		Map<String, Integer> mode2speed1cnt = new LinkedHashMap<>();
-		Map<String, Integer> mode2speed2cnt = new LinkedHashMap<>();
-
-		Map<String, Double> mode2speedSum = new LinkedHashMap<>();
-		Map<String, Double> mode2speed1Sum = new LinkedHashMap<>();
-		Map<String, Double> mode2speed2Sum = new LinkedHashMap<>();
-		Map<String, Double> mode2lengthSum = new LinkedHashMap<>();
-		Map<String, Double> mode2lanesSum = new LinkedHashMap<>();
-
-		for (Link link : network.getLinks().values()) {
-			String mode = LinkAttributes.getMode(link).toString();
-			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
-			mode2lengthSum.compute(mode, (m, l) -> l == null ? link.getLength() : l + link.getLength());
-			mode2lanesSum.compute(mode, (m, l) -> l == null ? link.getNumberOfLanes() : l + link.getNumberOfLanes());
-			mode2speedSum.compute(mode, (m, s) -> s == null ? link.getFreespeed() : s + link.getFreespeed());
-
-			LinkAttributes attr = LinkAttributes.getAttrs(link);
-			if (attr.speed1_km_h != null && attr.speed1_km_h >= 1e-8) {
-				mode2speed1Sum.compute(mode, (m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
-				mode2speed1cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
-			}
-			if (attr.speed2_km_h != null && attr.speed2_km_h >= 1e-8) {
-				mode2speed2Sum.compute(mode, (m, s) -> s == null ? attr.speed2_km_h : s + attr.speed2_km_h);
-				mode2speed2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
-			}
-		}
-
-		final AsciiTable table = new AsciiTable();
-		table.addRule();
-		table.addRow("Mode", "Links", "Avg. length [km]", "Avg. no. of lanes", "Avg. speed [km/h]",
-				"Avg. speed1 [km/h] if >0", "#links with speed1>0", "Avg. speed2 [km/h] if >0", "#links with speed2>0");
-		table.addRule();
-		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
-			final String mode = e.getKey();
-			final int cnt = e.getValue();
-			table.addRow(mode, cnt, divideOrEmpty(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
-					divideOrEmpty(mode2lanesSum.get(mode), cnt),
-					divideOrEmpty(Units.KM_H_PER_M_S * mode2speedSum.get(mode), cnt),
-					divideOrEmpty(mode2speed1Sum.get(mode), mode2speed1cnt.get(mode)),
-					null2zero(mode2speed1cnt.get(mode)),
-					divideOrEmpty(mode2speed2Sum.get(mode), mode2speed2cnt.get(mode)),
-					null2zero(mode2speed2cnt.get(mode)));
-			table.addRule();
-		}
-		result.append(table.render());
-
-		return result.toString();
-	}
-
-	private static String null2zero(Integer val) {
-		if (val == null) {
-			return "0";
-		} else {
-			return val.toString();
-		}
-	}
-
-	private static String divideOrEmpty(Double num, Integer den) {
-		if (num == null || den == null || den == 0) {
-			return "";
-		} else {
-			return "" + (num / den);
-		}
-	}
-
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) throws IOException {
 
-		Network network = NetworkReader.load("./input_2024/node_parameters.csv", "./input_2024/link_parameters.csv");
+		Network network = new NetworkReader().setMinSpeed_km_h(1.0).load("./input_2024/node_parameters.csv",
+				"./input_2024/link_parameters.csv");
 		NetworkUtils.writeNetwork(network, "./input_2024/matsim-network.xml");
 
 		System.out.println();
-		System.out.println(NetworkReader.createNetworkStatsTable(network));
+		System.out.println(NetworkStatsTable.create(network));
 	}
 }
