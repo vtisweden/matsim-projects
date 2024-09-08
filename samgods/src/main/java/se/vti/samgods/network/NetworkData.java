@@ -43,8 +43,6 @@ public class NetworkData {
 
 	private final Set<Id<Link>> ferryLinkIds;
 
-//	private Network multimodalNetwork = null;
-
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, VehicleType>>> commodity2transportMode2isContainer2representativeVehicleType = new LinkedHashMap<>();
 
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, List<VehicleType>>>> commodity2transportMode2isContainer2representativeVehicleTypes = new LinkedHashMap<>();

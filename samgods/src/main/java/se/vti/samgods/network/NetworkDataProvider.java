@@ -77,25 +77,27 @@ public class NetworkDataProvider {
 	synchronized VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode,
 			boolean isContainer) throws InsufficientDataException {
 		try {
-			return this.fleet.getRepresentativeVehicleTypeSynchronized(commodity, mode, isContainer, true);
-		} catch (InsufficientDataException e0) {
-			return this.fleet.getRepresentativeVehicleTypeSynchronized(commodity, mode, isContainer, false);
+			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, true);
+		} catch (InsufficientDataException e) {
+			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, false);
 		}
 	}
 
 	synchronized List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode,
 			boolean isContainer) {
-		List<VehicleType> resultWithFerry = this.fleet.getCompatibleVehicleTypesSynchronized(commodity, mode, isContainer, true);
+		List<VehicleType> resultWithFerry = this.fleet.getCompatibleVehicleTypes(commodity, mode,
+				isContainer, true);
 		if (resultWithFerry.size() > 0) {
 			return resultWithFerry;
 		} else {
-			return this.fleet.getCompatibleVehicleTypesSynchronized(commodity, mode, isContainer, false);
+			return this.fleet.getCompatibleVehicleTypes(commodity, mode, isContainer, false);
 		}
 	}
 
 	synchronized Network createMultimodalNetwork() {
 		final Network result = NetworkUtils.createNetwork();
-		// TODO Inefficient. Doing this because I cannot find a deep network copy facility.
+		// TODO Inefficient. Doing this because I cannot find a deep network copy
+		// facility.
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(result, TransportMode.allMatsimModes());
 		return result;
 	}
@@ -113,8 +115,9 @@ public class NetworkDataProvider {
 	}
 
 	synchronized Set<Id<Link>> createFerryLinkIdSet(Network network) {
-		return network.getLinks().values().stream().filter(l -> LinkAttributes.isFerrySynchronized(l)).map(l -> l.getId())
-				.collect(Collectors.toSet());
+		return network.getLinks().values().stream().filter(
+				l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode.isFerry())
+				.map(l -> l.getId()).collect(Collectors.toSet());
 	}
 
 	synchronized Set<Id<Link>> createFerryLinkIdSet() {
@@ -127,7 +130,7 @@ public class NetworkDataProvider {
 		final double duration_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
 		assert (Double.isFinite(length_km));
 		assert (Double.isFinite(duration_h));
-		if (LinkAttributes.isFerrySynchronized(link)) {
+		if (((LinkAttributes) link.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode.isFerry()) {
 			return new BasicTransportCost(1.0,
 					duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km, duration_h,
 					length_km);

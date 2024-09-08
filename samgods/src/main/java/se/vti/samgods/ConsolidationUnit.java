@@ -178,7 +178,9 @@ public class ConsolidationUnit {
 			for (List<Link> route : routes) {
 				this.linkIds.add(route.stream().map(l -> l.getId()).toList());
 				this.length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
-				this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> LinkAttributes.isFerrySynchronized(l));
+				this.containsFerry = this.containsFerry || route.stream().anyMatch(
+						l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode
+								.isFerry());
 			}
 		}
 	}
@@ -186,8 +188,8 @@ public class ConsolidationUnit {
 	public void computeNetworkCharacteristics(Network network) {
 		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
-		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
-				.anyMatch(l -> LinkAttributes.isFerrySynchronized(network.getLinks().get(l)));
+		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream()).anyMatch(l -> ((LinkAttributes) network
+				.getLinks().get(l).getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode.isFerry());
 	}
 
 	// -------------------- Json Serializer --------------------

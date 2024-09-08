@@ -27,6 +27,7 @@ import org.matsim.api.core.v01.network.Network;
 
 import de.vandermeer.asciitable.AsciiTable;
 import floetteroed.utilities.Units;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
@@ -39,26 +40,27 @@ public class NetworkStatsTable {
 	}
 
 	public static String create(Network network) {
-		final Map<String, Integer> mode2cnt = new LinkedHashMap<>();
-		final Map<String, Integer> mode2speed1cnt = new LinkedHashMap<>();
-		final Map<String, Integer> mode2speed2cnt = new LinkedHashMap<>();
+		final Map<TransportMode, Integer> mode2cnt = new LinkedHashMap<>();
+		final Map<TransportMode, Integer> mode2speed1cnt = new LinkedHashMap<>();
+		final Map<TransportMode, Integer> mode2speed2cnt = new LinkedHashMap<>();
 
-		final Map<String, Double> mode2speedSum = new LinkedHashMap<>();
-		final Map<String, Double> mode2speed1Sum = new LinkedHashMap<>();
-		final Map<String, Double> mode2speed2Sum = new LinkedHashMap<>();
-		final Map<String, Double> mode2lengthSum = new LinkedHashMap<>();
-		final Map<String, Double> mode2lanesSum = new LinkedHashMap<>();
+		final Map<TransportMode, Double> mode2speedSum = new LinkedHashMap<>();
+		final Map<TransportMode, Double> mode2speed1Sum = new LinkedHashMap<>();
+		final Map<TransportMode, Double> mode2speed2Sum = new LinkedHashMap<>();
+		final Map<TransportMode, Double> mode2lengthSum = new LinkedHashMap<>();
+		final Map<TransportMode, Double> mode2lanesSum = new LinkedHashMap<>();
 
-		final Map<String, Integer> mode2capCnt = new LinkedHashMap<>();
-		final Map<String, Double> mode2capSum = new LinkedHashMap<>();
+		final Map<TransportMode, Integer> mode2capCnt = new LinkedHashMap<>();
+		final Map<TransportMode, Double> mode2capSum = new LinkedHashMap<>();
 
 		for (Link link : network.getLinks().values()) {
-			String mode = LinkAttributes.getMode(link).toString();
+			final LinkAttributes attr = (LinkAttributes) link.getAttributes()
+					.getAttribute(LinkAttributes.ATTRIBUTE_NAME);
+			final TransportMode mode = attr.mode;
 			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			mode2lengthSum.compute(mode, (m, s) -> s == null ? link.getLength() : s + link.getLength());
 			mode2lanesSum.compute(mode, (m, s) -> s == null ? link.getNumberOfLanes() : s + link.getNumberOfLanes());
 			mode2speedSum.compute(mode, (m, s) -> s == null ? link.getFreespeed() : s + link.getFreespeed());
-			final LinkAttributes attr = LinkAttributes.getAttrs(link);
 			if (attr.speed1_km_h != null) {
 				mode2speed1cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 				mode2speed1Sum.compute(mode, (m, s) -> s == null ? attr.speed1_km_h : s + attr.speed1_km_h);
@@ -79,8 +81,8 @@ public class NetworkStatsTable {
 				"Avg. speed1 [km/h] if >0", "# with speed1>0", "Avg. speed2 [km/h] if >0", "# with speed2>0",
 				"Avg. capacity [veh/h] if <oo", "# with cap<00");
 		table.addRule();
-		for (Map.Entry<String, Integer> e : mode2cnt.entrySet()) {
-			final String mode = e.getKey();
+		for (Map.Entry<TransportMode, Integer> e : mode2cnt.entrySet()) {
+			final TransportMode mode = e.getKey();
 			final int cnt = e.getValue();
 			table.addRow(mode, cnt, divideOrEmpty(Units.KM_PER_M * mode2lengthSum.get(e.getKey()), cnt),
 					divideOrEmpty(mode2lanesSum.get(mode), cnt),

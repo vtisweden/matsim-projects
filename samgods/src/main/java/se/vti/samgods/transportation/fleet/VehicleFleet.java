@@ -66,7 +66,7 @@ public class VehicleFleet {
 
 	// -------------------- COMPATIBLE VEHICLE TYPES --------------------
 
-	public synchronized List<VehicleType> getCompatibleVehicleTypesSynchronized(SamgodsConstants.Commodity commodity,
+	public synchronized List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, boolean isContainer, boolean containsFerry) {
 		final List<VehicleType> result = new ArrayList<>(this.vehicles.getVehicleTypes().size());
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
@@ -81,11 +81,11 @@ public class VehicleFleet {
 
 	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
-	public synchronized VehicleType getRepresentativeVehicleTypeSynchronized(SamgodsConstants.Commodity commodity,
+	public synchronized VehicleType getRepresentativeVehicleType(SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
 			throws InsufficientDataException {
 		VehicleType result = null;
-		final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypesSynchronized(commodity, mode, isContainer,
+		final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
 				containsFerry);
 		if (compatibleTypes.size() > 0) {
 			final double meanCapacity_ton = compatibleTypes.stream()

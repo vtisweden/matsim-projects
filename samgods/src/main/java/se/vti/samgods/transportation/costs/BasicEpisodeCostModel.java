@@ -89,7 +89,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	public DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes;
 		vehicleAttributes = FreightVehicleAttributes.getFreightAttributesSynchronized(
-				this.fleet.getRepresentativeVehicleTypeSynchronized(episode.getCommodity(), episode.getMode(),
+				this.fleet.getRepresentativeVehicleType(episode.getCommodity(), episode.getMode(),
 						episode.isContainer(),
 						episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry)));
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)

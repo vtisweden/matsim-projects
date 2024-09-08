@@ -47,26 +47,4 @@ public class LinkAttributes {
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
 	}
-
-	// -------------------- (STATIC) IMPLEMENTATION --------------------
-
-	public static LinkAttributes getAttrs(Link link) {
-		return (LinkAttributes) link.getAttributes().getAttribute(ATTRIBUTE_NAME);
-	}
-
-	public static SamgodsConstants.TransportMode getMode(Link link) {
-		return getAttrs(link).mode;
-	}
-
-	public static synchronized boolean isFerrySynchronized(Link link) {
-		return getAttrs(link).mode.isFerry();
-	}
-
-	public static Double getSpeed1_km_h(Link link) {
-		return getAttrs(link).speed1_km_h;
-	}
-
-	public static Double getSpeed2_km_h(Link link) {
-		return getAttrs(link).speed2_km_h;
-	}	
 }
