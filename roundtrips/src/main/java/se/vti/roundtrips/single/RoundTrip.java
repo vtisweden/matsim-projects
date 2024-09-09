@@ -29,8 +29,13 @@ import java.util.stream.Collectors;
  * @author GunnarF
  *
  * @param <L> the location type
+ * 
  */
 public class RoundTrip<L> {
+
+	// -------------------- CONSTANTS --------------------
+
+	private final Object attributes;
 
 	// -------------------- MEMBERS --------------------
 
@@ -43,11 +48,16 @@ public class RoundTrip<L> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTrip(List<L> locations, List<Integer> departures) {
+	public RoundTrip(List<L> locations, List<Integer> departures, Object attributes) {
 		this.locations = locations;
 		this.departures = departures;
+		this.attributes = attributes;
 	}
-	
+
+	public RoundTrip(List<L> locations, List<Integer> departures) {
+		this(locations, departures, null);
+	}
+
 	// -------------------- INTERNALS --------------------
 
 	public int predecessorIndex(int i) {
@@ -67,6 +77,10 @@ public class RoundTrip<L> {
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
+
+	public Object getAttributes() {
+		return this.attributes;
+	}
 
 	public int locationCnt() {
 		return this.locations.size();
@@ -143,7 +157,9 @@ public class RoundTrip<L> {
 
 	@Override
 	public RoundTrip<L> clone() {
-		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures());
+		// TODO for this to work, attributes have to be immutable, as they are shared by
+		// round trips
+		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures(), this.attributes);
 	}
 
 	@Override
