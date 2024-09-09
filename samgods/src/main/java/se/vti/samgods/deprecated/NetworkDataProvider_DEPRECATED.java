@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.network;
+package se.vti.samgods.deprecated;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,6 +42,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.network.LinkAttributes;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -51,7 +52,7 @@ import se.vti.samgods.transportation.fleet.VehicleFleet;
  * @author GunnarF
  *
  */
-public class NetworkDataProvider {
+public class NetworkDataProvider_DEPRECATED {
 
 	// -------------------- MEMBERS --------------------
 
@@ -61,15 +62,15 @@ public class NetworkDataProvider {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public NetworkDataProvider(Network multimodalNetwork, VehicleFleet fleet) {
+	public NetworkDataProvider_DEPRECATED(Network multimodalNetwork, VehicleFleet fleet) {
 		this.multimodalNetwork = multimodalNetwork;
 		this.fleet = fleet;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public NetworkData createNetworkData() {
-		return new NetworkData(this);
+	public NetworkData_DEPRECATED createNetworkData() {
+		return new NetworkData_DEPRECATED(this);
 	}
 
 	// -------------------- PACKAGE PRIVATE SYNCHRONIZED --------------------

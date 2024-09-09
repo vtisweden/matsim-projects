@@ -72,8 +72,8 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceJobProcessor;
-import se.vti.samgods.network.NetworkData;
-import se.vti.samgods.network.NetworkDataProvider;
+import se.vti.samgods.network.NetworkData2;
+import se.vti.samgods.network.NetworkDataProvider2;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
@@ -148,16 +148,16 @@ public class TestSamgods {
 
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(SamgodsConstants.Commodity.AIR);
-//		double samplingRate = 0.1;
-//		boolean upscale = false;
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
-				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE, Commodity.TIMBER);
+		double samplingRate = 0.01;
 		boolean upscale = false;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
+//				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
+//		double samplingRate = 1.0;
+//		boolean upscale = false;
 
 		double scale = 1.0;
-		int maxIterations = 10;
+		int maxIterations = 5;
 		double nonTransportCostFactor = 1.0;
 		boolean enforceReroute = false;
 		int maxThreads = Integer.MAX_VALUE;
@@ -397,7 +397,7 @@ public class TestSamgods {
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
 
-					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network, fleet);
+					NetworkDataProvider2 networkDataProvider = new NetworkDataProvider2(network, fleet);
 					for (int i = 0; i < threadCnt; i++) {
 						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
 						EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel,
@@ -482,11 +482,11 @@ public class TestSamgods {
 
 				try {
 
-					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network, fleet);
+					NetworkDataProvider2 networkDataProvider = new NetworkDataProvider2(network, fleet);
 
 					log.info("Starting " + threadCnt + " consolidation threads.");
 					for (int i = 0; i < threadCnt; i++) {
-						NetworkData networkData = networkDataProvider.createNetworkData();
+						NetworkData2 networkData = networkDataProvider.createNetworkData();
 						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
 								consolidationCostModel, networkData, jobQueue, consolidationUnit2assignment);
@@ -565,7 +565,7 @@ public class TestSamgods {
 				Map<TransportMode, Double> mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
 				Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
 				ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
-				NetworkData networkData = new NetworkDataProvider(network, fleet).createNetworkData();
+				NetworkData2 networkData = new NetworkDataProvider2(network, fleet).createNetworkData();
 				for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
 					ConsolidationUnit signature = e.getKey();
 					FleetAssignment fleetAssignment = consolidationUnit2assignment.get(signature);

@@ -29,7 +29,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
-import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.network.NetworkData2;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
@@ -43,14 +43,14 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	// -------------------- CONSTANTS --------------------
 
 	private final ConsolidationCostModel consolidationCostModel;
-	private final NetworkData networkData;
+	private final NetworkData2 networkData;
 
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData networkData,
+	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData2 networkData,
 			BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.consolidationCostModel = consolidationCostModel;
@@ -223,7 +223,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				* job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
 
 		final List<VehicleType> compatibleVehicleTypes = this.networkData.getCompatibleVehicleTypes(
-				job.consolidationUnit.commodity, job.consolidationUnit.mode, job.consolidationUnit.isContainer);
+				job.consolidationUnit.commodity, job.consolidationUnit.mode, job.consolidationUnit.isContainer,
+				job.consolidationUnit.containsFerry);
 
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
 			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.",

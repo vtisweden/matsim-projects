@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -44,6 +43,7 @@ import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
@@ -141,12 +141,26 @@ public class Router {
 
 		private final Iterable<RoutingJob> jobs;
 
-		private final NetworkData networkData;
+		private final NetworkData2 networkData;
 
-		private final Map<TransportMode, LeastCostPathCalculator> mode2containerRouter;
-		private final Map<TransportMode, LeastCostPathCalculator> mode2noContainerRouter;
+		private final AStarLandmarksFactory routerFactory = new AStarLandmarksFactory(4);
 
-		RoutingThread(String name, Commodity commodity, List<RoutingJob> jobs, NetworkData networkData) {
+//		private final Map<TransportMode, LeastCostPathCalculator> mode2containerRouter;
+//		private final Map<TransportMode, LeastCostPathCalculator> mode2noContainerRouter;
+		private final Map<TransportMode, Map<Boolean, Map<Boolean, LeastCostPathCalculator>>> mode2isContainer2containsFerry2router = new LinkedHashMap<>();
+
+		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
+				throws InsufficientDataException {
+			return this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
+					.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>())
+					.put(containsFerry, this.routerFactory.createPathCalculator(
+							this.networkData.getUnimodalNetwork(this.networkData.getRepresentativeVehicleType(commodity,
+									mode, isContainer, containsFerry)),
+							this.networkData.getTravelDisutility(this.commodity, mode, isContainer, containsFerry),
+							this.networkData.getTravelTime(this.commodity, mode, isContainer, containsFerry)));
+		}
+
+		RoutingThread(String name, Commodity commodity, List<RoutingJob> jobs, NetworkData2 networkData) {
 
 			this.name = name;
 			this.commodity = commodity;
@@ -156,37 +170,83 @@ public class Router {
 
 			this.networkData = networkData;
 
-			this.mode2containerRouter = new LinkedHashMap<>();
-			this.mode2noContainerRouter = new LinkedHashMap<>();
-			final Set<TransportMode> allContainerModes = jobs.stream().filter(j -> j.isContainer()).map(j -> j.mode())
-					.collect(Collectors.toSet());
-			final Set<TransportMode> allNoContainerModes = jobs.stream().filter(j -> !j.isContainer())
-					.map(j -> j.mode()).collect(Collectors.toSet());
-			final AStarLandmarksFactory factory = new AStarLandmarksFactory(4); // TODO
-			for (TransportMode mode : allContainerModes) {
-				try {
-					this.mode2containerRouter.put(mode,
-							factory.createPathCalculator(
-									networkData.getUnimodalNetwork(
-											networkData.getRepresentativeVehicleType(commodity, mode, true)),
-									networkData.getTravelDisutility(commodity, mode, true),
-									networkData.getTravelTime(commodity, mode, true)));
-				} catch (InsufficientDataException e) {
-					e.log(this.getClass(), "Could not create router", commodity, null, mode, true, null);
-				}
+//			this.mode2containerRouter = new LinkedHashMap<>();
+//			this.mode2noContainerRouter = new LinkedHashMap<>();
+//			this.mode2isContainer2containsFerry2router = new LinkedHashMap<>();
+//			final Set<TransportMode> allModes = jobs.stream().map(j -> j.mode()).collect(Collectors.toSet());
+//			final AStarLandmarksFactory factory = new AStarLandmarksFactory(4);
+//			for (TransportMode mode : allModes) {
+//				for (boolean isContainer : Arrays.asList(true, false)) {
+//					for (boolean containsFerry : Arrays.asList(true, false)) {
+//						try {
+//							this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
+//									.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>())
+//									.put(containsFerry, factory.createPathCalculator(
+//											networkData.getUnimodalNetwork(networkData.getRepresentativeVehicleType(
+//													commodity, mode, isContainer, containsFerry)),
+//											networkData.getTravelDisutility(commodity, mode, isContainer,
+//													containsFerry),
+//											networkData.getTravelTime(commodity, mode, isContainer, containsFerry)));
+//						} catch (InsufficientDataException e) {
+//							e.log(this.getClass(), "Could not create router", commodity, null, mode, true, null);
+//						}
+//					}
+//				}
+//			}
+		}
+
+		private List<List<Link>> computeRoutes(RoutingJob job, boolean containsFerry) {
+			final LeastCostPathCalculator router;
+			try {
+				router = this.getRouter(job.mode(), job.isContainer(), containsFerry);
+			} catch (InsufficientDataException e) {
+				return null;
 			}
 
-			for (TransportMode mode : allNoContainerModes) {
-				try {
-					this.mode2noContainerRouter.put(mode,
-							factory.createPathCalculator(
-									networkData.getUnimodalNetwork(
-											networkData.getRepresentativeVehicleType(commodity, mode, false)),
-									networkData.getTravelDisutility(commodity, mode, false),
-									networkData.getTravelTime(commodity, mode, false)));
-				} catch (InsufficientDataException e) {
-					e.log(this.getClass(), "Could not create router", commodity, null, mode, false, null);
+			final Network network = this.networkData.getUnimodalNetwork(this.networkData
+					.getRepresentativeVehicleType(commodity, job.mode(), job.isContainer(), containsFerry));
+			List<List<Link>> routes = new ArrayList<>(job.consolidationUnit.nodeIds.size() - 1);
+			for (int i = 0; i < job.consolidationUnit.nodeIds.size() - 1; i++) {
+				Id<Node> fromId = job.consolidationUnit.nodeIds.get(i);
+				Id<Node> toId = job.consolidationUnit.nodeIds.get(i + 1);
+
+				if (fromId.equals(toId)) {
+					routes.add(new ArrayList<>());
+					if (logProgress) {
+						registerFoundRoute(this);
+					}
+				} else {
+					final Node from = network.getNodes().get(fromId);
+					final Node to = network.getNodes().get(toId);
+					if ((from != null) && (to != null) && (router != null)) {
+						List<Link> links = router.calcLeastCostPath(from, to, 0, null, null).links;
+						routes.add(links);
+						if (links == null) {
+							if (logProgress) {
+								registerFailedRouteNoConnection(this);
+							}
+						} else if (logProgress) {
+							registerFoundRoute(this);
+						}
+					} else {
+						routes.add(null);
+						if (logProgress) {
+							if (from == null || to == null) {
+								registerFailedRouteNoOD(this);
+							} else if (router == null) {
+								registerFailedRouteNoRouter(this);
+							} else {
+								throw new RuntimeException("impossible");
+							}
+						}
+					}
 				}
+			}
+			if (routes.stream().noneMatch(r -> r == null)) {
+				return routes;
+			} else {
+				// "all or nothing"
+				return null;
 			}
 		}
 
@@ -195,61 +255,50 @@ public class Router {
 			log.info("THREAD STARTED: " + this.name);
 			for (RoutingJob job : this.jobs) {
 
-				Network network;
-				try {
-					network = this.networkData.getUnimodalNetwork(
-							this.networkData.getRepresentativeVehicleType(commodity, job.mode(), job.isContainer()));
-				} catch (InsufficientDataException e) {
-					e.log(this.getClass(), "no routing network found", commodity, null, job.mode(), job.isContainer(),
-							null);
-					break;
+				final List<List<Link>> withFerryRoutes = this.computeRoutes(job, true);
+				final Double withFerryCost;
+				final Boolean withFerryContainsFerry;
+				if (withFerryRoutes != null) {
+					final Map<Id<Link>, BasicTransportCost> linkId2withFerryCost = this.networkData
+							.getLinkId2representativeUnitCost(this.commodity, job.mode(), job.isContainer(), true);
+					withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
+							.mapToDouble(l -> linkId2withFerryCost.get(l.getId()).monetaryCost).sum();
+					withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
+							.anyMatch(l -> this.networkData.getFerryLinkIds().contains(l.getId()));
+				} else {
+					withFerryCost = null;
+					withFerryContainsFerry = null;
 				}
 
-				List<List<Link>> routes = new ArrayList<>(job.consolidationUnit.nodeIds.size() - 1);
-				for (int i = 0; i < job.consolidationUnit.nodeIds.size() - 1; i++) {
-					Id<Node> fromId = job.consolidationUnit.nodeIds.get(i);
-					Id<Node> toId = job.consolidationUnit.nodeIds.get(i + 1);
+				if ((withFerryRoutes != null) && !withFerryContainsFerry) {
+					// Allowing for ferry yields a route that does not contain ferry.
+					job.consolidationUnit.setRoutes(withFerryRoutes);
+				} else {
 
-					if (fromId.equals(toId)) {
-						routes.add(new ArrayList<>());
-						if (logProgress) {
-							registerFoundRoute(this);
-						}
+					final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
+					final Double withoutFerryCost;
+					if (withoutFerryRoutes != null) {
+						Map<Id<Link>, BasicTransportCost> link2withoutFerryCost = this.networkData
+								.getLinkId2representativeUnitCost(this.commodity, job.mode(), job.isContainer(), false);
+						withoutFerryCost = withoutFerryRoutes.stream().flatMap(list -> list.stream())
+								.mapToDouble(l -> link2withoutFerryCost.get(l.getId()).monetaryCost).sum();
 					} else {
-						final LeastCostPathCalculator router = job.isContainer()
-								? this.mode2containerRouter.get(job.mode())
-								: this.mode2noContainerRouter.get(job.mode());
-						final Map<Id<Node>, ? extends Node> nodes = network.getNodes();
-
-						final Node from = nodes.get(fromId);
-						final Node to = nodes.get(toId);
-						if ((from != null) && (to != null) && (router != null)) {
-							List<Link> links = router.calcLeastCostPath(from, to, 0, null, null).links;
-							routes.add(links);
-							if (links == null) {
-								if (logProgress) {
-									registerFailedRouteNoConnection(this);
-								}
-							} else if (logProgress) {
-								registerFoundRoute(this);
-							}
-						} else {
-							routes.add(null);
-							if (logProgress) {
-								if (from == null || to == null) {
-									registerFailedRouteNoOD(this);
-								} else if (router == null) {
-									registerFailedRouteNoRouter(this);
-								} else {
-									throw new RuntimeException("impossible");
-								}
-							}
-						}
+						withoutFerryCost = null;
 					}
 
-				}
-				if (routes.stream().noneMatch(r -> r == null)) {
-					job.consolidationUnit.setRoutes(routes);
+					if (withFerryRoutes != null) {
+						if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
+							job.consolidationUnit.setRoutes(withoutFerryRoutes);
+						} else {
+							job.consolidationUnit.setRoutes(withFerryRoutes);
+						}
+					} else {
+						if (withoutFerryRoutes != null) {
+							job.consolidationUnit.setRoutes(withoutFerryRoutes);
+						} else {
+							job.consolidationUnit.setRoutes(null);
+						}
+					}
 				}
 			}
 			log.info("THREAD ENDED: " + this.name);
@@ -293,7 +342,7 @@ public class Router {
 		final ExecutorService threadPool = Executors.newFixedThreadPool(threadCnt);
 		final Iterator<RoutingJob> jobIterator = allJobs.iterator();
 
-		final NetworkDataProvider networkDataProvider = new NetworkDataProvider(this.multimodalNetwork, this.fleet);
+		final NetworkDataProvider2 networkDataProvider = new NetworkDataProvider2(this.multimodalNetwork, this.fleet);
 
 		for (int thread = 0; thread < threadCnt; thread++) {
 			final List<RoutingJob> jobs = new LinkedList<>();

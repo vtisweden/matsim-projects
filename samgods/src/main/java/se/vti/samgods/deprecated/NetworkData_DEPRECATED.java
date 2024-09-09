@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.network;
+package se.vti.samgods.deprecated;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,9 +37,9 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
-public class NetworkData {
+public class NetworkData_DEPRECATED {
 
-	private final NetworkDataProvider dataProvider;
+	private final NetworkDataProvider_DEPRECATED dataProvider;
 
 	private final Set<Id<Link>> ferryLinkIds;
 
@@ -55,7 +55,7 @@ public class NetworkData {
 
 	private final Map<Commodity, Map<TransportMode, Map<Boolean, TravelTime>>> commodity2mode2isContainer2travelTime = new LinkedHashMap<>();
 
-	NetworkData(NetworkDataProvider routingData) {
+	NetworkData_DEPRECATED(NetworkDataProvider_DEPRECATED routingData) {
 		this.dataProvider = routingData;
 		this.ferryLinkIds = routingData.createFerryLinkIdSet();
 	}

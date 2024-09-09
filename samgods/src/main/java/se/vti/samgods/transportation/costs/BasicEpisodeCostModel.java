@@ -25,12 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.network.NetworkData2;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -50,13 +49,13 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	private final Map<TransportMode, Double> mode2efficiency;
 	private final Map<ConsolidationUnit, Double> consolidationUnit2efficiency;
 
-	private final NetworkData networkData;
+	private final NetworkData2 networkData;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
 			Map<TransportMode, Double> mode2efficiency, Map<ConsolidationUnit, Double> consolidationUnit2efficiency,
-			NetworkData networkData) {
+			NetworkData2 networkData) {
 		this.fleet = fleet;
 		this.consolidationCostModel = consolidationCostModel;
 		this.mode2efficiency = new LinkedHashMap<>(mode2efficiency);
@@ -73,7 +72,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	}
 
 	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			double meanEfficiency, NetworkData networkData) {
+			double meanEfficiency, NetworkData2 networkData) {
 		this(fleet, consolidationCostModel,
 				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> meanEfficiency)),
 				new LinkedHashMap<>(), networkData);
@@ -88,21 +87,22 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 	@Override
 	public DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 		final FreightVehicleAttributes vehicleAttributes;
-		vehicleAttributes = FreightVehicleAttributes.getFreightAttributesSynchronized(
-				this.fleet.getRepresentativeVehicleType(episode.getCommodity(), episode.getMode(),
-						episode.isContainer(),
+		vehicleAttributes = FreightVehicleAttributes.getFreightAttributesSynchronized(this.fleet
+				.getRepresentativeVehicleType(episode.getCommodity(), episode.getMode(), episode.isContainer(),
 						episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry)));
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0).addDistance_km(0.0);
 		final List<ConsolidationUnit> signatures = episode.getConsolidationUnits();
 		for (ConsolidationUnit signature : signatures) {
-			final DetailedTransportCost signatureUnitCost = this.consolidationCostModel.computeSignatureCost(
-					vehicleAttributes, this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
-					signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature,
-					this.networkData.getLinkId2representativeUnitCost(episode.getCommodity(), episode.getMode(),
-							episode.isContainer()),
-					this.networkData.getFerryLinkIds()).computeUnitCost_1_ton();
+			final DetailedTransportCost signatureUnitCost = this.consolidationCostModel
+					.computeSignatureCost(vehicleAttributes,
+							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
+							signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature,
+							this.networkData.getLinkId2representativeUnitCost(episode.getCommodity(), episode.getMode(),
+									episode.isContainer(), signature.containsFerry),
+							this.networkData.getFerryLinkIds())
+					.computeUnitCost_1_ton();
 			builder.addLoadingDuration_h(signatureUnitCost.loadingDuration_h)
 					.addTransferDuration_h(signatureUnitCost.transferDuration_h)
 					.addUnloadingDuration_h(signatureUnitCost.unloadingDuration_h)

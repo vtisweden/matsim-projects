@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -59,7 +60,7 @@ public class NetworkDataProvider2 {
 
 	// -------------------- SHARED, SYNCHRONIZED MEMBERS --------------------
 
-	private final Set<Id<Link>> ferryLinkIds;
+	private final CopyOnWriteArraySet<Id<Link>> ferryLinkIds;
 
 	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, VehicleType>>> commodity2transportMode2isContainer2representativeVehicleType = new ConcurrentHashMap<>();
 
@@ -72,9 +73,13 @@ public class NetworkDataProvider2 {
 	public NetworkDataProvider2(Network multimodalNetwork, VehicleFleet fleet) {
 		this.multimodalNetwork = multimodalNetwork;
 		this.fleet = fleet;
-		this.ferryLinkIds = Collections.unmodifiableSet(multimodalNetwork.getLinks().values().stream().filter(
+		this.ferryLinkIds = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values().stream().filter(
 				l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode.isFerry())
 				.map(l -> l.getId()).collect(Collectors.toSet()));
+	}
+
+	public NetworkData2 createNetworkData() {
+		return new NetworkData2(this);
 	}
 
 	// --------------- SYNCHRONIZED POPULATION OF DATA STRUCTURES ---------------
@@ -130,10 +135,6 @@ public class NetworkDataProvider2 {
 	}
 
 	// --------------- (DELIBERATELY PACKAGE PRIVATE) IMPLEMENTATION ---------------
-
-	NetworkData2 createNetworkData() {
-		return new NetworkData2(this);
-	}
 
 	Set<Id<Link>> getFerryLinkIds() {
 		return this.ferryLinkIds;
