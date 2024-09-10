@@ -104,7 +104,7 @@ public class NetworkData2 {
 
 			@Override
 			public double getLinkMinimumTravelDisutility(Link link) {
-				return linkId2cost.get(link.getId()).monetaryCost;
+				return Math.max(1e-3, linkId2cost.get(link.getId()).monetaryCost);
 			}
 		};
 	}
@@ -123,13 +123,12 @@ public class NetworkData2 {
 			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
 				assert (person == null);
 				assert (vehicle == null);
-				return Units.S_PER_H * linkId2cost.get(link.getId()).duration_h;
+				return Math.max(1e-3, Units.S_PER_H * linkId2cost.get(link.getId()).duration_h);
 			}
 		};
 	}
 
-	public TravelTime getTravelTime(Commodity commodity, TransportMode mode, boolean isContainer, boolean containsFerry)
-			throws InsufficientDataException {
+	public TravelTime getTravelTime(Commodity commodity, TransportMode mode, boolean isContainer, boolean containsFerry) {
 		return this.commodity2mode2isContainer2travelTime.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
 				.computeIfAbsent(mode, m -> new LinkedHashMap<>())
 				.computeIfAbsent(isContainer, c -> this.createTravelTime(

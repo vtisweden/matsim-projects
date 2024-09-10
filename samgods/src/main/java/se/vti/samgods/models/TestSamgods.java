@@ -144,23 +144,24 @@ public class TestSamgods {
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 14);
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 14);
 
-		InsufficientDataException.setLogDuringRuntime(false);
+		InsufficientDataException.setLogDuringRuntime(true);
 
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE, Commodity.TIMBER);
-		double samplingRate = 0.01;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
+		double samplingRate = 0.0001;
 		boolean upscale = false;
 //		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
 //				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
 //		double samplingRate = 1.0;
 //		boolean upscale = false;
 
+		int maxThreads = 1;
+
 		double scale = 1.0;
-		int maxIterations = 5;
+		int maxIterations = 0;
 		double nonTransportCostFactor = 1.0;
 		boolean enforceReroute = false;
-		int maxThreads = Integer.MAX_VALUE;
 
 		log.info("STARTED ...");
 
@@ -238,7 +239,7 @@ public class TestSamgods {
 			 */
 			for (Commodity commodity : consideredCommodities) {
 				log.info(commodity + ": Routing consolidation units.");
-				Router router = new Router(network, fleet).setLogProgress(true).setMaxThreads(Integer.MAX_VALUE);
+				Router router = new Router(network, fleet).setLogProgress(true).setMaxThreads(maxThreads);
 				router.route(commodity, consolidationUnitPattern2representativeUnit.entrySet().stream()
 						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
 			}

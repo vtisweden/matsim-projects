@@ -38,6 +38,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.router.AStarLandmarksFactory;
 import org.matsim.core.router.util.LeastCostPathCalculator;
+import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
@@ -149,17 +150,6 @@ public class Router {
 //		private final Map<TransportMode, LeastCostPathCalculator> mode2noContainerRouter;
 		private final Map<TransportMode, Map<Boolean, Map<Boolean, LeastCostPathCalculator>>> mode2isContainer2containsFerry2router = new LinkedHashMap<>();
 
-		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
-				throws InsufficientDataException {
-			return this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
-					.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>())
-					.put(containsFerry, this.routerFactory.createPathCalculator(
-							this.networkData.getUnimodalNetwork(this.networkData.getRepresentativeVehicleType(commodity,
-									mode, isContainer, containsFerry)),
-							this.networkData.getTravelDisutility(this.commodity, mode, isContainer, containsFerry),
-							this.networkData.getTravelTime(this.commodity, mode, isContainer, containsFerry)));
-		}
-
 		RoutingThread(String name, Commodity commodity, List<RoutingJob> jobs, NetworkData2 networkData) {
 
 			this.name = name;
@@ -194,6 +184,24 @@ public class Router {
 //				}
 //			}
 		}
+
+		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
+				throws InsufficientDataException {
+			final VehicleType representativeVehicleType = this.networkData.getRepresentativeVehicleType(commodity, mode,
+					isContainer, containsFerry);
+			if (representativeVehicleType != null) {
+				return this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
+						.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>())
+						.computeIfAbsent(containsFerry, cf -> this.routerFactory.createPathCalculator(
+								this.networkData.getUnimodalNetwork(representativeVehicleType),
+								this.networkData.getTravelDisutility(this.commodity, mode, isContainer, containsFerry),
+								this.networkData.getTravelTime(this.commodity, mode, isContainer, containsFerry)));
+			} else {
+				throw new InsufficientDataException(this.getClass(), "no representative vehicle type available",
+						this.commodity, null, mode, isContainer, containsFerry);
+			}
+		}
+
 
 		private List<List<Link>> computeRoutes(RoutingJob job, boolean containsFerry) {
 			final LeastCostPathCalculator router;
@@ -272,9 +280,9 @@ public class Router {
 
 				if ((withFerryRoutes != null) && !withFerryContainsFerry) {
 					// Allowing for ferry yields a route that does not contain ferry.
+					// No need to look further.
 					job.consolidationUnit.setRoutes(withFerryRoutes);
 				} else {
-
 					final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
 					final Double withoutFerryCost;
 					if (withoutFerryRoutes != null) {
