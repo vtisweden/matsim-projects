@@ -20,6 +20,8 @@
 package se.vti.samgods.network;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -193,7 +195,7 @@ public class Router {
 				return this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
 						.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>())
 						.computeIfAbsent(containsFerry, cf -> this.routerFactory.createPathCalculator(
-								this.networkData.getUnimodalNetwork(representativeVehicleType),
+								this.networkData.getUnimodalNetwork(mode, containsFerry),
 								this.networkData.getTravelDisutility(this.commodity, mode, isContainer, containsFerry),
 								this.networkData.getTravelTime(this.commodity, mode, isContainer, containsFerry)));
 			} else {
@@ -211,8 +213,7 @@ public class Router {
 				return null;
 			}
 
-			final Network network = this.networkData.getUnimodalNetwork(this.networkData
-					.getRepresentativeVehicleType(commodity, job.mode(), job.isContainer(), containsFerry));
+			final Network network = this.networkData.getUnimodalNetwork(job.consolidationUnit.mode, containsFerry);
 			List<List<Link>> routes = new ArrayList<>(job.consolidationUnit.nodeIds.size() - 1);
 			for (int i = 0; i < job.consolidationUnit.nodeIds.size() - 1; i++) {
 				Id<Node> fromId = job.consolidationUnit.nodeIds.get(i);
@@ -251,26 +252,33 @@ public class Router {
 				}
 			}
 			if (routes.stream().noneMatch(r -> r == null)) {
+//				System.out.println("  FOUND!");
 				return routes;
 			} else {
 				// "all or nothing"
+//				System.out.println("  FAILED: " + routes);
 				return null;
 			}
 		}
 
 		@Override
 		public void run() {
+			
+			long failedAtFerryCheckpoint = 0;
+			long jobCnt = 0;
+			
 			log.info("THREAD STARTED: " + this.name);
 			for (RoutingJob job : this.jobs) {
-
+				jobCnt++;
+					
 				final List<List<Link>> withFerryRoutes = this.computeRoutes(job, true);
 				final Double withFerryCost;
 				final Boolean withFerryContainsFerry;
 				if (withFerryRoutes != null) {
-					final Map<Id<Link>, BasicTransportCost> linkId2withFerryCost = this.networkData
+					final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
 							.getLinkId2representativeUnitCost(this.commodity, job.mode(), job.isContainer(), true);
 					withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
-							.mapToDouble(l -> linkId2withFerryCost.get(l.getId()).monetaryCost).sum();
+							.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
 					withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
 							.anyMatch(l -> this.networkData.getFerryLinkIds().contains(l.getId()));
 				} else {
@@ -286,10 +294,10 @@ public class Router {
 					final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
 					final Double withoutFerryCost;
 					if (withoutFerryRoutes != null) {
-						Map<Id<Link>, BasicTransportCost> link2withoutFerryCost = this.networkData
+						Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this.networkData
 								.getLinkId2representativeUnitCost(this.commodity, job.mode(), job.isContainer(), false);
 						withoutFerryCost = withoutFerryRoutes.stream().flatMap(list -> list.stream())
-								.mapToDouble(l -> link2withoutFerryCost.get(l.getId()).monetaryCost).sum();
+								.mapToDouble(l -> link2withoutFerryUnitCost.get(l.getId()).monetaryCost).sum();
 					} else {
 						withoutFerryCost = null;
 					}
@@ -305,11 +313,12 @@ public class Router {
 							job.consolidationUnit.setRoutes(withoutFerryRoutes);
 						} else {
 							job.consolidationUnit.setRoutes(null);
+							failedAtFerryCheckpoint++;
 						}
 					}
 				}
 			}
-			log.info("THREAD ENDED: " + this.name);
+			log.info("THREAD ENDED: " + this.name + ". Failed at ferry checkpoint: " + failedAtFerryCheckpoint + " out of " + jobCnt);
 		}
 	}
 
@@ -374,7 +383,18 @@ public class Router {
 	// -------------------- IMPLEMENTATION --------------------
 
 	public void route(Commodity commodity, List<ConsolidationUnit> consolidationUnits) {
-		final List<RoutingJob> allJobs = consolidationUnits.stream().map(c -> new RoutingJob(c)).toList();
+		final List<RoutingJob> allJobs = new ArrayList<>(consolidationUnits.stream().map(c -> new RoutingJob(c)).toList());
+		Collections.sort(allJobs, new Comparator<>() {
+			@Override
+			public int compare(RoutingJob job1, RoutingJob job2) {
+				int cmp = (job1.mode().compareTo(job2.mode()));
+				if (cmp != 0) {
+					return cmp;
+				} else {
+					return Boolean.compare(job1.isContainer(), job2.isContainer());
+				}
+			}
+		});
 		this.routeInternally(commodity, allJobs);
 	}
 }

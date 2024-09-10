@@ -28,10 +28,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -149,14 +151,14 @@ public class TestSamgods {
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
-		double samplingRate = 0.0001;
+		double samplingRate = 0.01;
 		boolean upscale = false;
 //		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
 //				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
 //		double samplingRate = 1.0;
 //		boolean upscale = false;
 
-		int maxThreads = 1;
+		int maxThreads = Integer.MAX_VALUE;
 
 		double scale = 1.0;
 		int maxIterations = 0;
@@ -268,32 +270,25 @@ public class TestSamgods {
 
 			/*
 			 * Attach representative consolidation units to the episodes. This means that
-			 * episodes from now on share consolidation units.
+			 * episodes from now on share consolidation units. TransortChain.isRouted only
+			 * produces meaningful behavior after this operation is complete.
 			 * 
-			 * TODO This requires that there are no redundancies in the consolidation unit
-			 * file!
+			 * TODO Assert that there are no redundancies in the consolidation unit file!
 			 */
 			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 				for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
 						.values()) {
 					for (TransportChain chain : chains) {
-						if (chain.isRouted()) {
-							for (TransportEpisode episode : chain.getEpisodes()) {
-								List<ConsolidationUnit> templates = new ArrayList<>(
-										episode.getConsolidationUnits().size());
-								for (ConsolidationUnit tmpUnit : episode.getConsolidationUnits()) {
-									ConsolidationUnit routingEquivalent = tmpUnit.createRoutingEquivalentTemplate();
-									ConsolidationUnit template = consolidationUnitPattern2representativeUnit
-											.get(routingEquivalent);
-									if (template == null) {
-										templates = null;
-										break;
-									} else {
-										templates.add(template);
-									}
-									episode.setConsolidationUnits(templates);
-								}
+						for (TransportEpisode episode : chain.getEpisodes()) {
+							List<ConsolidationUnit> templates = new ArrayList<>(episode.getConsolidationUnits().size());
+							for (ConsolidationUnit tmpUnit : episode.getConsolidationUnits()) {
+								ConsolidationUnit routingEquivalent = tmpUnit.createRoutingEquivalentTemplate();
+								ConsolidationUnit template = consolidationUnitPattern2representativeUnit
+										.get(routingEquivalent);
+								assert (template != null);
+								templates.add(template);
 							}
+							episode.setConsolidationUnits(templates);
 						}
 					}
 				}
@@ -358,11 +353,29 @@ public class TestSamgods {
 		/*
 		 * REMOVE UNROUTED TRANSPORT CHAINS
 		 */
+//		Set<ConsolidationUnit> unroutedUnits = new LinkedHashSet<>();
+
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			long removedChainCnt = 0;
 			long totalChainCnt = 0;
+
 			for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity)
 					.entrySet()) {
+
+//				for (TransportChain chain : entry.getValue()) {
+//					if (!chain.isRouted()) {
+//						for (TransportEpisode episode : chain.getEpisodes()) {
+//							for (ConsolidationUnit consolidationUnit : episode.getConsolidationUnits()) {
+//								System.out.println(consolidationUnit == null ? "consolidationUnit is null" : "consolidationUnit has links: " + consolidationUnit.linkIds);
+//								if (consolidationUnit.linkIds == null) {
+//									unroutedUnits.add(consolidationUnit.createRoutingEquivalentTemplate());
+//								}
+//							}
+//						}
+//					}
+//					System.out.println();
+//				}
+
 				final int chainCnt = entry.getValue().size();
 				totalChainCnt += chainCnt;
 				entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).toList());
@@ -370,6 +383,13 @@ public class TestSamgods {
 			}
 			log.warn(commodity + ": Removed " + removedChainCnt + " out of " + totalChainCnt
 					+ " chains with incomplete routes.");
+
+//			System.out.println("UNROUTED CONSOLIDATION UNIT TEMPLATES: ");
+//			int i = 0;
+//			for (ConsolidationUnit cu : unroutedUnits) {
+//				System.out.println(++i + "\t" + cu);
+//			}
+
 		}
 
 		/*
@@ -574,8 +594,8 @@ public class TestSamgods {
 						FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes
 								.getFreightAttributesSynchronized(fleetAssignment.vehicleType);
 						try {
-							Map<Id<Link>, BasicTransportCost> linkId2unitCost = networkData
-									.getLinkId2unitCost(signature.commodity, fleetAssignment.vehicleType);
+							Map<Id<Link>, BasicTransportCost> linkId2unitCost = networkData.getLinkId2unitCost(
+									signature.commodity, vehicleAttrs.isFerryCompatible(), fleetAssignment.vehicleType);
 							double costSum = 0.0;
 							double tonSum = 0.0;
 							for (ChainAndShipmentSize choice : e.getValue()) {

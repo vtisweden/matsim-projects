@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.network;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +150,7 @@ public class NetworkDataProvider2 {
 	}
 
 	List<VehicleType> getCompatibleVehicleTypes(final Commodity commodity, final TransportMode mode,
-			final boolean isContainer, final boolean isFerry) throws InsufficientDataException {
+			final boolean isContainer, final boolean isFerry) {
 		return this.commodity2transportMode2isContainer2isFerry2representativeVehicleTypes
 				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())

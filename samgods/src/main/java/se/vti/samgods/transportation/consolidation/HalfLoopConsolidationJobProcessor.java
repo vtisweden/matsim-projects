@@ -187,7 +187,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		FleetAssignment result = new FleetAssignment(vehicleType, vehicleAttrs,
 				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
 						job.consolidationUnit, true, true,
-						this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity, vehicleType),
+						this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity,
+								vehicleAttrs.isFerryCompatible(), vehicleType),
 						this.networkData.getFerryLinkIds()),
 				serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 		boolean done = false;
@@ -195,7 +196,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			FleetAssignment newResult = new FleetAssignment(vehicleType, vehicleAttrs,
 					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton,
 							job.consolidationUnit, true, true,
-							this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity, vehicleType),
+							this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity,
+									vehicleAttrs.isFerryCompatible(), vehicleType),
 							this.networkData.getFerryLinkIds()),
 					serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;
