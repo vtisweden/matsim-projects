@@ -25,14 +25,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.matsim.vehicles.VehicleType;
+
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.NetworkData2;
+import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
+import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
 
 /**
  * 
@@ -43,20 +45,19 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- MEMBERS --------------------
 
-	private final VehicleFleet fleet;
 	private final ConsolidationCostModel consolidationCostModel;
 
 	private final Map<TransportMode, Double> mode2efficiency;
 	private final Map<ConsolidationUnit, Double> consolidationUnit2efficiency;
 
-	private final NetworkData2 networkData;
+	private final NetworkData networkData;
+	private final FleetData fleetData;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
+	public BasicEpisodeCostModel(ConsolidationCostModel consolidationCostModel,
 			Map<TransportMode, Double> mode2efficiency, Map<ConsolidationUnit, Double> consolidationUnit2efficiency,
-			NetworkData2 networkData) {
-		this.fleet = fleet;
+			NetworkData networkData, FleetData fleetData) {
 		this.consolidationCostModel = consolidationCostModel;
 		this.mode2efficiency = new LinkedHashMap<>(mode2efficiency);
 
@@ -69,13 +70,14 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 		this.consolidationUnit2efficiency = new LinkedHashMap<>(consolidationUnit2efficiency);
 
 		this.networkData = networkData;
+		this.fleetData = fleetData;
 	}
 
-	public BasicEpisodeCostModel(VehicleFleet fleet, ConsolidationCostModel consolidationCostModel,
-			double meanEfficiency, NetworkData2 networkData) {
-		this(fleet, consolidationCostModel,
+	public BasicEpisodeCostModel(ConsolidationCostModel consolidationCostModel, double meanEfficiency,
+			NetworkData networkData, FleetData fleetData) {
+		this(consolidationCostModel,
 				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> meanEfficiency)),
-				new LinkedHashMap<>(), networkData);
+				new LinkedHashMap<>(), networkData, fleetData);
 	}
 
 	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
@@ -86,10 +88,12 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 
 	@Override
 	public DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
-		final FreightVehicleAttributes vehicleAttributes;
-		vehicleAttributes = FreightVehicleAttributes.getFreightAttributesSynchronized(this.fleet
-				.getRepresentativeVehicleType(episode.getCommodity(), episode.getMode(), episode.isContainer(),
-						episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry)));
+
+		final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),
+				episode.getMode(), episode.isContainer(),
+				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
+		final FreightVehicleAttributes vehicleAttributes = (FreightVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0).addDistance_km(0.0);
@@ -99,9 +103,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 					.computeSignatureCost(vehicleAttributes,
 							this.efficiency(signature) * vehicleAttributes.capacity_ton, signature,
 							signatures.get(0) == signature, signatures.get(signatures.size() - 1) == signature,
-							this.networkData.getLinkId2representativeUnitCost(episode.getCommodity(), episode.getMode(),
-									episode.isContainer(), signature.containsFerry),
-							this.networkData.getFerryLinkIds())
+							this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds())
 					.computeUnitCost_1_ton();
 			builder.addLoadingDuration_h(signatureUnitCost.loadingDuration_h)
 					.addTransferDuration_h(signatureUnitCost.transferDuration_h)

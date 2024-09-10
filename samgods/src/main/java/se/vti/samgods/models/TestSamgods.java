@@ -28,12 +28,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -74,8 +72,8 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceJobProcessor;
-import se.vti.samgods.network.NetworkData2;
-import se.vti.samgods.network.NetworkDataProvider2;
+import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
@@ -86,6 +84,8 @@ import se.vti.samgods.transportation.costs.BasicEpisodeCostModel;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
+import se.vti.samgods.transportation.fleet.FleetData;
+import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
 import se.vti.samgods.transportation.fleet.VehicleFleet;
@@ -146,17 +146,17 @@ public class TestSamgods {
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.TRANSPORT, 14);
 //		commodity2serviceInterval.put(SamgodsConstants.Commodity.WOOD, 14);
 
-		InsufficientDataException.setLogDuringRuntime(true);
+		InsufficientDataException.setLogDuringRuntime(false);
 
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
-		double samplingRate = 0.01;
-		boolean upscale = false;
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
-//				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
-//		double samplingRate = 1.0;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
+//		double samplingRate = 0.01;
 //		boolean upscale = false;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
+				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
+		double samplingRate = 1.0;
+		boolean upscale = false;
 
 		int maxThreads = Integer.MAX_VALUE;
 
@@ -418,11 +418,13 @@ public class TestSamgods {
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
 
-					NetworkDataProvider2 networkDataProvider = new NetworkDataProvider2(network, fleet);
+					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network);
+					FleetDataProvider fleetDataProvider = new FleetDataProvider(fleet);
 					for (int i = 0; i < threadCnt; i++) {
 						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
-						EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(fleet, consolidationCostModel,
-								mode2efficiency, signature2efficiency, networkDataProvider.createNetworkData());
+						EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(consolidationCostModel,
+								mode2efficiency, signature2efficiency, networkDataProvider.createNetworkData(),
+								fleetDataProvider.createFleetData());
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
 							@Override
@@ -503,14 +505,16 @@ public class TestSamgods {
 
 				try {
 
-					NetworkDataProvider2 networkDataProvider = new NetworkDataProvider2(network, fleet);
+					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network);
+					FleetDataProvider fleetDataProvider = new FleetDataProvider(fleet);
 
 					log.info("Starting " + threadCnt + " consolidation threads.");
 					for (int i = 0; i < threadCnt; i++) {
-						NetworkData2 networkData = networkDataProvider.createNetworkData();
+						NetworkData networkData = networkDataProvider.createNetworkData();
+						FleetData fleetData = fleetDataProvider.createFleetData();
 						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								consolidationCostModel, networkData, jobQueue, consolidationUnit2assignment);
+								consolidationCostModel, networkData, fleetData, jobQueue, consolidationUnit2assignment);
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
 						choiceThread.start();
@@ -586,7 +590,7 @@ public class TestSamgods {
 				Map<TransportMode, Double> mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
 				Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
 				ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
-				NetworkData2 networkData = new NetworkDataProvider2(network, fleet).createNetworkData();
+				NetworkData networkData = new NetworkDataProvider(network).createNetworkData();
 				for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
 					ConsolidationUnit signature = e.getKey();
 					FleetAssignment fleetAssignment = consolidationUnit2assignment.get(signature);
@@ -594,8 +598,8 @@ public class TestSamgods {
 						FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes
 								.getFreightAttributesSynchronized(fleetAssignment.vehicleType);
 						try {
-							Map<Id<Link>, BasicTransportCost> linkId2unitCost = networkData.getLinkId2unitCost(
-									signature.commodity, vehicleAttrs.isFerryCompatible(), fleetAssignment.vehicleType);
+							Map<Id<Link>, BasicTransportCost> linkId2unitCost = networkData
+									.getLinkId2unitCost(fleetAssignment.vehicleType);
 							double costSum = 0.0;
 							double tonSum = 0.0;
 							for (ChainAndShipmentSize choice : e.getValue()) {

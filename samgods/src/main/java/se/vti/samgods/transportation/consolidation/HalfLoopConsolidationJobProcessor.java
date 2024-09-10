@@ -29,8 +29,9 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
-import se.vti.samgods.network.NetworkData2;
+import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
+import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 
 /**
@@ -43,18 +44,20 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	// -------------------- CONSTANTS --------------------
 
 	private final ConsolidationCostModel consolidationCostModel;
-	private final NetworkData2 networkData;
-
+	private final NetworkData networkData;
+	private final FleetData fleetData;
+	
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData2 networkData,
+	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData networkData, FleetData fleetData,
 			BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.consolidationCostModel = consolidationCostModel;
 		this.networkData = networkData;
+		this.fleetData = fleetData;
 		this.jobQueue = jobQueue;
 		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
 	}
@@ -186,18 +189,14 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			throws InsufficientDataException {
 		FleetAssignment result = new FleetAssignment(vehicleType, vehicleAttrs,
 				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
-						job.consolidationUnit, true, true,
-						this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity,
-								vehicleAttrs.isFerryCompatible(), vehicleType),
+						job.consolidationUnit, true, true, this.networkData.getLinkId2unitCost(vehicleType),
 						this.networkData.getFerryLinkIds()),
 				serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
 			FleetAssignment newResult = new FleetAssignment(vehicleType, vehicleAttrs,
 					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton,
-							job.consolidationUnit, true, true,
-							this.networkData.getLinkId2unitCost(job.consolidationUnit.commodity,
-									vehicleAttrs.isFerryCompatible(), vehicleType),
+							job.consolidationUnit, true, true, this.networkData.getLinkId2unitCost(vehicleType),
 							this.networkData.getFerryLinkIds()),
 					serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;
@@ -224,7 +223,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				* (job.serviceInterval_days / 365.0)
 				* job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
 
-		final List<VehicleType> compatibleVehicleTypes = this.networkData.getCompatibleVehicleTypes(
+		final List<VehicleType> compatibleVehicleTypes = this.fleetData.getCompatibleVehicleTypes(
 				job.consolidationUnit.commodity, job.consolidationUnit.mode, job.consolidationUnit.isContainer,
 				job.consolidationUnit.containsFerry);
 

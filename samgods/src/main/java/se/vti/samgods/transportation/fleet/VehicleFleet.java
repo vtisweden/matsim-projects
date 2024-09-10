@@ -19,9 +19,6 @@
  */
 package se.vti.samgods.transportation.fleet;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
@@ -29,7 +26,6 @@ import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
 import de.vandermeer.asciitable.AsciiTable;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 
 /**
@@ -66,47 +62,46 @@ public class VehicleFleet {
 
 	// -------------------- COMPATIBLE VEHICLE TYPES --------------------
 
-	public synchronized List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, boolean isContainer, boolean containsFerry) {
-		final List<VehicleType> result = new ArrayList<>(this.vehicles.getVehicleTypes().size());
-		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
-			if (attrs.mode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
-					&& (!containsFerry || attrs.isFerryCompatible())) {
-				result.add(type);
-			}
-		}
-		return result;
-	}
+//	public synchronized List<VehicleType> getCompatibleVehicleTypes(SamgodsConstants.Commodity commodity,
+//			SamgodsConstants.TransportMode mode, boolean isContainer, boolean containsFerry) {
+//		final List<VehicleType> result = new ArrayList<>(this.vehicles.getVehicleTypes().size());
+//		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+//			FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
+//			if (attrs.mode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
+//					&& (!containsFerry || attrs.isFerryCompatible())) {
+//				result.add(type);
+//			}
+//		}
+//		return result;
+//	}
 
 	// -------------------- REPRESENTATIVE VEHICLE TYPES --------------------
 
-	public synchronized VehicleType getRepresentativeVehicleType(SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)
-			throws InsufficientDataException {
-		VehicleType result = null;
-		final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
-				containsFerry);
-		if (compatibleTypes.size() > 0) {
-			final double meanCapacity_ton = compatibleTypes.stream()
-					.mapToDouble(t -> FreightVehicleAttributes.getFreightAttributesSynchronized(t).capacity_ton)
-					.average().getAsDouble();
-			double resultDeviation_ton = Double.POSITIVE_INFINITY;
-			for (VehicleType candidate : compatibleTypes) {
-				final double candidateDeviation_ton = Math
-						.abs(FreightVehicleAttributes.getFreightAttributesSynchronized(candidate).capacity_ton
-								- meanCapacity_ton);
-				if (candidateDeviation_ton < resultDeviation_ton) {
-					result = candidate;
-					resultDeviation_ton = candidateDeviation_ton;
-				}
-			}
-		} else {
-			throw new InsufficientDataException(this.getClass(), "No representative vehicle type.", commodity, null,
-					mode, isContainer, containsFerry);
-		}
-		return result;
-	}
+//	public static synchronized VehicleType getRepresentativeVehicleType(List<VehicleType> compatibleTypes)
+//			throws InsufficientDataException {
+//		VehicleType result = null;
+////		final List<VehicleType> compatibleTypes = this.getCompatibleVehicleTypes(commodity, mode, isContainer,
+////				containsFerry);
+//		if (compatibleTypes.size() > 0) {
+//			final double meanCapacity_ton = compatibleTypes.stream()
+//					.mapToDouble(t -> FreightVehicleAttributes.getFreightAttributesSynchronized(t).capacity_ton)
+//					.average().getAsDouble();
+//			double resultDeviation_ton = Double.POSITIVE_INFINITY;
+//			for (VehicleType candidate : compatibleTypes) {
+//				final double candidateDeviation_ton = Math
+//						.abs(FreightVehicleAttributes.getFreightAttributesSynchronized(candidate).capacity_ton
+//								- meanCapacity_ton);
+//				if (candidateDeviation_ton < resultDeviation_ton) {
+//					result = candidate;
+//					resultDeviation_ton = candidateDeviation_ton;
+//				}
+//			}
+//		} else {
+//			throw new InsufficientDataException(null, "No representative vehicle type.", null, null,
+//					null, null, null);
+//		}
+//		return result;
+//	}
 
 //	public FreightVehicleAttributes getRepresentativeVehicleAttributes(SamgodsConstants.Commodity commodity,
 //			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry)

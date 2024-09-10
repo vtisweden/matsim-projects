@@ -77,23 +77,25 @@ public class NetworkDataProvider_DEPRECATED {
 
 	synchronized VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode,
 			boolean isContainer) throws InsufficientDataException {
-		try {
-			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, true);
-		} catch (InsufficientDataException e) {
-			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, false);
-		}
+//		try {
+//			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, true);
+//		} catch (InsufficientDataException e) {
+//			return this.fleet.getRepresentativeVehicleType(commodity, mode, isContainer, false);
+//		}
+		throw new UnsupportedOperationException();
 	}
 
 	synchronized List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode,
 			boolean isContainer) {
-		List<VehicleType> resultWithFerry = this.fleet.getCompatibleVehicleTypes(commodity, mode,
-				isContainer, true);
-		if (resultWithFerry.size() > 0) {
-			return resultWithFerry;
-		} else {
-			return this.fleet.getCompatibleVehicleTypes(commodity, mode, isContainer, false);
-		}
-	}
+//		List<VehicleType> resultWithFerry = this.fleet.getCompatibleVehicleTypes(commodity, mode,
+//				isContainer, true);
+//		if (resultWithFerry.size() > 0) {
+//			return resultWithFerry;
+//		} else {
+//			return this.fleet.getCompatibleVehicleTypes(commodity, mode, isContainer, false);
+//		}
+		throw new UnsupportedOperationException();
+}
 
 	synchronized Network createMultimodalNetwork() {
 		final Network result = NetworkUtils.createNetwork();
