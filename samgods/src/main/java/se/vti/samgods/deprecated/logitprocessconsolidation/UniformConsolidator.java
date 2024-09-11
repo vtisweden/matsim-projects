@@ -39,9 +39,9 @@ import org.matsim.vehicles.VehicleType;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.deprecated.Shipment;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -60,7 +60,7 @@ public class UniformConsolidator {
 	 * 
 	 */
 
-	private final VehicleFleet fleet;
+	private final SamgodsVehicles fleet;
 
 	private final int numberOfDays;
 	private final double transportEfficiency;
@@ -72,7 +72,7 @@ public class UniformConsolidator {
 
 	// CONSTRUCTION
 
-	public UniformConsolidator(VehicleFleet fleet, int numberOfDays, double transportEfficiency) {
+	public UniformConsolidator(SamgodsVehicles fleet, int numberOfDays, double transportEfficiency) {
 
 		throw new UnsupportedOperationException();
 		

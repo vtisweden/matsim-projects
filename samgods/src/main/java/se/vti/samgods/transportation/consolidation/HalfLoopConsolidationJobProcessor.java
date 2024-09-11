@@ -32,7 +32,7 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -46,14 +46,14 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	private final ConsolidationCostModel consolidationCostModel;
 	private final NetworkData networkData;
 	private final FleetData fleetData;
-	
+
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData networkData, FleetData fleetData,
-			BlockingQueue<ConsolidationJob> jobQueue,
+	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData networkData,
+			FleetData fleetData, BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.consolidationCostModel = consolidationCostModel;
 		this.networkData = networkData;
@@ -107,7 +107,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		public final double serviceIntervalActiveProba;
 
-		public FleetAssignment(VehicleType vehicleType, FreightVehicleAttributes vehicleAttrs,
+		public FleetAssignment(VehicleType vehicleType, SamgodsVehicleAttributes vehicleAttrs,
 				DetailedTransportCost cost, double serviceDemandPerActiveServiceInterval_ton, double serviceInterval_h,
 				double serviceIntervalActiveProba, double length_km) {
 
@@ -155,7 +155,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 
 		public double vehicleCapacity_ton() {
-			return FreightVehicleAttributes.getFreightAttributesSynchronized(this.vehicleType).capacity_ton;
+			return ((SamgodsVehicleAttributes) this.vehicleType.getAttributes()
+					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton;
 		}
 
 		public double snapshotVehicleCnt() {
@@ -172,8 +173,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 
 		public double transportEfficiency() {
-			return this.payload_ton
-					/ FreightVehicleAttributes.getFreightAttributesSynchronized(this.vehicleType).capacity_ton;
+			return this.payload_ton / this.vehicleCapacity_ton();
 		}
 
 //		@Override
@@ -184,7 +184,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 //		}
 	}
 
-	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, FreightVehicleAttributes vehicleAttrs,
+	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, SamgodsVehicleAttributes vehicleAttrs,
 			ConsolidationJob job, double serviceDemand_ton, double serviceProba, double length_km)
 			throws InsufficientDataException {
 		FleetAssignment result = new FleetAssignment(vehicleType, vehicleAttrs,
@@ -236,7 +236,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		FleetAssignment overallBestAssignment = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
 			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType,
-					FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType), job,
+					this.fleetData.getVehicleType2attributes().get(vehicleType), job,
 					demandExpectationPerActiveServiceInterval_ton, serviceIntervalActiveProba,
 					Units.KM_PER_M * job.consolidationUnit.length_m);
 			if ((overallBestAssignment == null)

@@ -33,7 +33,7 @@ import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Tuple;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 

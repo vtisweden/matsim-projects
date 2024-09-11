@@ -35,8 +35,8 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.deprecated.Shipment;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -51,7 +51,7 @@ public class Consolidator {
 
 	private final TransportEpisode transportEpisode;
 
-	private final VehicleFleet fleet;
+	private final SamgodsVehicles fleet;
 
 	private final int shipmentPeriod_day;
 
@@ -75,7 +75,7 @@ public class Consolidator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Consolidator(Random rnd, TransportEpisode transportEpisode, VehicleFleet fleet, int shipmentPeriod_day,
+	public Consolidator(Random rnd, TransportEpisode transportEpisode, SamgodsVehicles fleet, int shipmentPeriod_day,
 			ConsolidationCostModel costModel, ConsolidationChoiceModel choiceModel) {
 		this.rnd = rnd;
 		this.transportEpisode = transportEpisode;
@@ -166,20 +166,22 @@ public class Consolidator {
 				assignedVehicle = slot.vehicle;
 			}
 
-			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
-			final double assigned_ton = Math.min(remaining_ton,
-					FreightVehicleAttributes.getFreightAttributesSynchronized(assignedVehicle.getType()).capacity_ton - assignment.getPayload_ton(assignedVehicle));
-			assignment.assign(shipment, assignedVehicle, assigned_ton);
-			remaining_ton -= assigned_ton;
+//			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
+//			final double assigned_ton = Math.min(remaining_ton,
+//					SamgodsVehicleAttributes.getFreightAttributesSynchronized(assignedVehicle.getType()).capacity_ton - assignment.getPayload_ton(assignedVehicle));
+//			assignment.assign(shipment, assignedVehicle, assigned_ton);
+//			remaining_ton -= assigned_ton;
+//
+//			/*
+//			 * Either the vehicle is full and and more useful for the considered shipment,
+//			 * or it is not not full because the shipment is completely assigned. In either
+//			 * case, it will no longer be considered.
+//			 */
+//			assert (Math.abs(SamgodsVehicleAttributes.getFreightAttributesSynchronized(assignedVehicle.getType()).capacity_ton
+//					- assignment.getPayload_ton(assignedVehicle)) <= 1e-8 || remaining_ton <= 1e-8);
+//			vehicle2costOverDays.get(slot.day).remove(assignedVehicle);
 
-			/*
-			 * Either the vehicle is full and and more useful for the considered shipment,
-			 * or it is not not full because the shipment is completely assigned. In either
-			 * case, it will no longer be considered.
-			 */
-			assert (Math.abs(FreightVehicleAttributes.getFreightAttributesSynchronized(assignedVehicle.getType()).capacity_ton
-					- assignment.getPayload_ton(assignedVehicle)) <= 1e-8 || remaining_ton <= 1e-8);
-			vehicle2costOverDays.get(slot.day).remove(assignedVehicle);
+			throw new UnsupportedOperationException();
 		}
 	}
 

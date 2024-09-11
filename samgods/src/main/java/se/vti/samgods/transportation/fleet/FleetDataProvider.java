@@ -40,7 +40,11 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 public class FleetDataProvider {
 
 	// populated upon construction
-	private final ConcurrentMap<VehicleType, FreightVehicleAttributes> vehicleType2attributes;
+	private final ConcurrentMap<VehicleType, SamgodsVehicleAttributes> vehicleType2attributes;
+
+	Map<VehicleType, SamgodsVehicleAttributes> getVehicleType2attributes() {
+		return this.vehicleType2attributes;
+	}
 
 	// lazily populated
 	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, VehicleType>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleType = new ConcurrentHashMap<>();
@@ -48,25 +52,23 @@ public class FleetDataProvider {
 	// lazily populated
 	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, List<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleTypes = new ConcurrentHashMap<>();
 
-
-	public FleetDataProvider(VehicleFleet fleet) {
+	public FleetDataProvider(SamgodsVehicles fleet) {
 		this.vehicleType2attributes = new ConcurrentHashMap<>(fleet.getVehicles().getVehicleTypes().values().stream()
-				.collect(Collectors.toMap(t -> t, t -> (FreightVehicleAttributes) t.getAttributes()
-						.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME))));
+				.collect(Collectors.toMap(t -> t, t -> (SamgodsVehicleAttributes) t.getAttributes()
+						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))));
 	}
-	
 
 	public FleetData createFleetData() {
 		return new FleetData(this);
 	}
-	
+
 	private synchronized List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode,
 			boolean isContainer, boolean containsFerry) {
 
 		final List<VehicleType> result = new ArrayList<>(this.vehicleType2attributes.size());
-		for (Map.Entry<VehicleType, FreightVehicleAttributes> e : this.vehicleType2attributes.entrySet()) {
+		for (Map.Entry<VehicleType, SamgodsVehicleAttributes> e : this.vehicleType2attributes.entrySet()) {
 			VehicleType type = e.getKey();
-			FreightVehicleAttributes attrs = e.getValue();
+			SamgodsVehicleAttributes attrs = e.getValue();
 			if (attrs.samgodsMode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
 					&& (!containsFerry || attrs.isFerryCompatible())) {
 				result.add(type);
@@ -74,7 +76,7 @@ public class FleetDataProvider {
 		}
 		return result;
 	}
-	
+
 	private synchronized VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode,
 			boolean isContainer, boolean containsFerry) {
 		final List<VehicleType> compatibleTypes = this.createCompatibleVehicleTypes(commodity, mode, isContainer,
@@ -82,13 +84,11 @@ public class FleetDataProvider {
 		if (compatibleTypes.size() > 0) {
 			VehicleType result = null;
 			final double meanCapacity_ton = compatibleTypes.stream()
-					.mapToDouble(t -> FreightVehicleAttributes.getFreightAttributesSynchronized(t).capacity_ton)
-					.average().getAsDouble();
+					.mapToDouble(t -> this.getVehicleType2attributes().get(t).capacity_ton).average().getAsDouble();
 			double resultDeviation_ton = Double.POSITIVE_INFINITY;
 			for (VehicleType candidate : compatibleTypes) {
 				final double candidateDeviation_ton = Math
-						.abs(FreightVehicleAttributes.getFreightAttributesSynchronized(candidate).capacity_ton
-								- meanCapacity_ton);
+						.abs(this.getVehicleType2attributes().get(candidate).capacity_ton - meanCapacity_ton);
 				if (candidateDeviation_ton < resultDeviation_ton) {
 					result = candidate;
 					resultDeviation_ton = candidateDeviation_ton;
@@ -118,7 +118,5 @@ public class FleetDataProvider {
 				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>())
 				.computeIfAbsent(isFerry, f -> this.createCompatibleVehicleTypes(commodity, mode, isContainer, f));
 	}
-
-
 
 }

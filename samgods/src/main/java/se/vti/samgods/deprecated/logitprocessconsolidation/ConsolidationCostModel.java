@@ -25,7 +25,7 @@ import org.matsim.vehicles.Vehicle;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.transportation.consolidation.PerformanceMeasures;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 

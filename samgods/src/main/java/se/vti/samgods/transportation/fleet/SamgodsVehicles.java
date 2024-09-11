@@ -33,7 +33,7 @@ import se.vti.samgods.SamgodsConstants;
  * @author GunnarF
  *
  */
-public class VehicleFleet {
+public class SamgodsVehicles {
 
 	// -------------------- MEMBERS --------------------
 
@@ -43,7 +43,7 @@ public class VehicleFleet {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public VehicleFleet() {
+	public SamgodsVehicles() {
 		this.vehicles = VehicleUtils.createVehiclesContainer();
 	}
 
@@ -119,53 +119,4 @@ public class VehicleFleet {
 //				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
 //	}
 
-	// -------------------- SUMMARY TABLES --------------------
-
-	private String null2notAvail(Object c) {
-		if (c == null) {
-			return "N/A";
-		} else {
-			return c.toString();
-		}
-	}
-
-	public String createVehicleTypeTable(SamgodsConstants.TransportMode mode) {
-		final AsciiTable table = new AsciiTable();
-		table.addRule();
-		table.addRow("Vehicle", "Description", "Mode", "Cost[1/km]", "Cost[1/h]", "Capacity[ton]", "FerryCost[1/km]",
-				"FerryCost[1/h]", "MaxSpeed[km/h]");
-		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
-			if (mode.equals(attrs.samgodsMode)) {
-				table.addRule();
-				table.addRow(attrs.id, type.getDescription(), attrs.samgodsMode, attrs.cost_1_km, attrs.cost_1_h,
-						attrs.capacity_ton, this.null2notAvail(attrs.onFerryCost_1_km),
-						this.null2notAvail(attrs.onFerryCost_1_h), this.null2notAvail(attrs.speed_km_h));
-			}
-		}
-		table.addRule();
-		return table.render();
-	}
-
-	public String createVehicleTransferCostTable(SamgodsConstants.TransportMode mode) {
-		final AsciiTable table = new AsciiTable();
-		table.addRule();
-		table.addRow("Vehicle", "Commodity", "LoadCost[1/ton]", "LoadTime[h]", "TransferCost[1/ton]",
-				"TransferTime[h]");
-		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
-			if (mode.equals(attrs.samgodsMode)) {
-				for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-					if (attrs.isCompatible(commodity)) {
-						table.addRule();
-						table.addRow(attrs.id, commodity, attrs.loadCost_1_ton.get(commodity),
-								attrs.loadTime_h.get(commodity), attrs.transferCost_1_ton.get(commodity),
-								attrs.transferTime_h.get(commodity));
-					}
-				}
-			}
-		}
-		table.addRule();
-		return table.render();
-	}
 }

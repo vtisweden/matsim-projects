@@ -35,7 +35,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 public class NetworkData_DEPRECATED {
 
@@ -107,20 +107,22 @@ public class NetworkData_DEPRECATED {
 //	}
 
 	public Network getUnimodalNetwork(VehicleType vehicleType) {
-		FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType);
-		return this.getUnimodalNetwork(attrs.samgodsMode, attrs.isFerryCompatible());
+//		SamgodsVehicleAttributes attrs = SamgodsVehicleAttributes.getFreightAttributesSynchronized(vehicleType);
+//		return this.getUnimodalNetwork(attrs.samgodsMode, attrs.isFerryCompatible());
+		throw new UnsupportedOperationException();
 	}
 
 	public Map<Id<Link>, BasicTransportCost> getLinkId2unitCost(Commodity commodity, VehicleType vehicleType)
 			throws InsufficientDataException {
-		Map<Id<Link>, BasicTransportCost> result = this.commodity2vehicleType2linkId2unitCost
-				.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).get(vehicleType);
-		if (result == null) {
-			result = this.dataProvider.computeUnitCosts(this.getUnimodalNetwork(vehicleType), commodity,
-					FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType));
-			this.commodity2vehicleType2linkId2unitCost.get(commodity).put(vehicleType, result);
-		}
-		return result;
+//		Map<Id<Link>, BasicTransportCost> result = this.commodity2vehicleType2linkId2unitCost
+//				.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).get(vehicleType);
+//		if (result == null) {
+//			result = this.dataProvider.computeUnitCosts(this.getUnimodalNetwork(vehicleType), commodity,
+//					SamgodsVehicleAttributes.getFreightAttributesSynchronized(vehicleType));
+//			this.commodity2vehicleType2linkId2unitCost.get(commodity).put(vehicleType, result);
+//		}
+//		return result;
+		throw new UnsupportedOperationException();
 	}
 
 	public Map<Id<Link>, BasicTransportCost> getLinkId2representativeUnitCost(Commodity commodity, TransportMode mode,

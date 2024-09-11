@@ -20,6 +20,7 @@
 package se.vti.samgods.transportation.fleet;
 
 import java.util.List;
+import java.util.Map;
 
 import org.matsim.vehicles.VehicleType;
 
@@ -35,11 +36,15 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 public class FleetData {
 
 	private final FleetDataProvider dataProvider;
-	
+
 	public FleetData(FleetDataProvider dataProvider) {
 		this.dataProvider = dataProvider;
 	}
-	
+
+	public Map<VehicleType, SamgodsVehicleAttributes> getVehicleType2attributes() {
+		return this.dataProvider.getVehicleType2attributes();
+	}
+
 	public VehicleType getRepresentativeVehicleType(Commodity commodity, TransportMode mode, boolean isContainer,
 			boolean containsFerry) throws InsufficientDataException {
 		return this.dataProvider.getRepresentativeVehicleType(commodity, mode, isContainer, containsFerry);
@@ -49,6 +54,5 @@ public class FleetData {
 			boolean containsFerry) {
 		return this.dataProvider.getCompatibleVehicleTypes(commodity, mode, isContainer, containsFerry);
 	}
-
 
 }

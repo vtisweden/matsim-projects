@@ -86,9 +86,9 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -171,7 +171,7 @@ public class TestSamgods {
 		 * LOAD FLEET
 		 */
 
-		VehicleFleet fleet = new VehicleFleet();
+		SamgodsVehicles fleet = new SamgodsVehicles();
 		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
 //		fleetReader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
 //				SamgodsConstants.TransportMode.Air);
@@ -595,8 +595,8 @@ public class TestSamgods {
 					ConsolidationUnit signature = e.getKey();
 					FleetAssignment fleetAssignment = consolidationUnit2assignment.get(signature);
 					if (fleetAssignment != null) {
-						FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes
-								.getFreightAttributesSynchronized(fleetAssignment.vehicleType);
+						SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) fleetAssignment.vehicleType
+								.getAttributes().getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 						try {
 							Map<Id<Link>, BasicTransportCost> linkId2unitCost = networkData
 									.getLinkId2unitCost(fleetAssignment.vehicleType);
@@ -886,19 +886,23 @@ public class TestSamgods {
 		}
 	}
 
-	static void logFleet(Map<VehicleType, Double> vehType2cnt, int iteration, VehicleFleet fleet) {
+	static void logFleet(Map<VehicleType, Double> vehType2cnt, int iteration, SamgodsVehicles fleet) {
 
 		Map<SamgodsConstants.TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
 		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 			mode2types.put(mode,
 					fleet.getVehicles().getVehicleTypes().values().stream()
-							.filter(t -> mode.equals(FreightVehicleAttributes.getFreightAttributesSynchronized(t).samgodsMode))
+							.filter(t -> mode.equals(((SamgodsVehicleAttributes) t.getAttributes()
+									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).samgodsMode))
 							.collect(Collectors.toList()));
 			Collections.sort(mode2types.get(mode), new Comparator<VehicleType>() {
 				@Override
-				public int compare(VehicleType o1, VehicleType o2) {
-					return Double.compare(FreightVehicleAttributes.getFreightAttributesSynchronized(o1).capacity_ton,
-							FreightVehicleAttributes.getFreightAttributesSynchronized(o2).capacity_ton);
+				public int compare(VehicleType t1, VehicleType t2) {
+					return Double.compare(
+							((SamgodsVehicleAttributes) t1.getAttributes()
+									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton,
+							((SamgodsVehicleAttributes) t2.getAttributes()
+									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton);
 				}
 			});
 		}
@@ -920,7 +924,9 @@ public class TestSamgods {
 			headerLine = "";
 			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 				for (VehicleType type : mode2types.get(mode)) {
-					headerLine += FreightVehicleAttributes.getFreightAttributesSynchronized(type).capacity_ton + "\t";
+					headerLine += ((SamgodsVehicleAttributes) type.getAttributes()
+									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))
+							.capacity_ton + "\t";
 				}
 				headerLine += "\t";
 			}

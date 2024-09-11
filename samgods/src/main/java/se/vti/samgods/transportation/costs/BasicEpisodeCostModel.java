@@ -34,7 +34,7 @@ import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -92,8 +92,8 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 		final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),
 				episode.getMode(), episode.isContainer(),
 				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
-		final FreightVehicleAttributes vehicleAttributes = (FreightVehicleAttributes) vehicleType.getAttributes()
-				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
+		final SamgodsVehicleAttributes vehicleAttributes = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0).addDistance_km(0.0);

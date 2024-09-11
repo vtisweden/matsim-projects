@@ -46,10 +46,10 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.network.LinkAttributes;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -62,7 +62,7 @@ public class NTMCalcSerializerTest {
 
 		System.out.println("STARTED ...");
 
-		VehicleFleet fleet = new VehicleFleet();
+		SamgodsVehicles fleet = new SamgodsVehicles();
 		SamgodsFleetReader reader = new SamgodsFleetReader(fleet);
 		reader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
 				SamgodsConstants.TransportMode.Road);
@@ -118,12 +118,14 @@ public class NTMCalcSerializerTest {
 									Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, 1 + rnd.nextInt(1), "", "");
 							if (rnd.nextDouble() < 0.9) {
 								double speed1_km_h = Arrays.asList(30, 50, 70, 90, 110).get(rnd.nextInt(5));
-								link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
-										new LinkAttributes(SamgodsConstants.TransportMode.Road, speed1_km_h, null));
+								link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
+										new SamgodsLinkAttributes(SamgodsConstants.TransportMode.Road, speed1_km_h,
+												null));
 							} else {
 								double speed1_km_h = Arrays.asList(5, 10, 15, 20, 25).get(rnd.nextInt(5));
-								link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
-										new LinkAttributes(SamgodsConstants.TransportMode.Ferry, speed1_km_h, null));
+								link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
+										new SamgodsLinkAttributes(SamgodsConstants.TransportMode.Ferry, speed1_km_h,
+												null));
 							}
 
 						}
@@ -138,10 +140,8 @@ public class NTMCalcSerializerTest {
 //					episode.addLeg(leg);
 				}
 
-				allEpisodes.add(new VehicleEpisode(veh,
-						rnd.nextDouble()
-								* FreightVehicleAttributes.getFreightAttributesSynchronized(vehType).capacity_ton,
-						episode));
+				allEpisodes.add(new VehicleEpisode(veh, rnd.nextDouble() * ((SamgodsVehicleAttributes) vehType
+						.getAttributes().getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton, episode));
 			}
 		}
 

@@ -37,7 +37,7 @@ import org.matsim.vehicles.VehicleType;
 import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -80,8 +80,8 @@ public class NetworkDataProvider {
 
 	private synchronized Map<Id<Link>, BasicTransportCost> createLinkId2unitCost(VehicleType vehicleType) {
 		final ConcurrentHashMap<Id<Link>, BasicTransportCost> result = new ConcurrentHashMap<>(this.allLinks.size());
-		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes
-				.getFreightAttributesSynchronized(vehicleType);
+		final SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 		for (Link link : this.allLinks) {
 			final SamgodsLinkAttributes linkAttrs = ((SamgodsLinkAttributes) link.getAttributes()
 					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME));
@@ -121,9 +121,9 @@ public class NetworkDataProvider {
 	public NetworkDataProvider(final Network multimodalNetwork) {
 		this.multimodalNetwork = multimodalNetwork;
 		this.allLinks = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values());
-		this.ferryLinkIds = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values().stream().filter(
-				l -> ((SamgodsLinkAttributes) l.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode
-						.isFerry())
+		this.ferryLinkIds = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values().stream()
+				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
+						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
 				.map(l -> l.getId()).collect(Collectors.toSet()));
 	}
 

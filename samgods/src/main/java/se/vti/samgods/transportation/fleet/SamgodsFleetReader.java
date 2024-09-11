@@ -87,11 +87,11 @@ public class SamgodsFleetReader {
 
 	// -------------------- MEMBERS --------------------
 
-	private final VehicleFleet fleet;
+	private final SamgodsVehicles fleet;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public SamgodsFleetReader(VehicleFleet fleet) {
+	public SamgodsFleetReader(SamgodsVehicles fleet) {
 		this.fleet = fleet;
 	}
 
@@ -99,11 +99,11 @@ public class SamgodsFleetReader {
 
 	public void load_v12(String vehicleTypeFile, String costFile, SamgodsConstants.TransportMode transportMode)
 			throws IOException {
-		final Map<String, FreightVehicleAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
+		final Map<String, SamgodsVehicleAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(vehicleTypeFile))) {
 			for (boolean container : new boolean[] { false, true }) {
-				final FreightVehicleAttributes.Builder builder = new FreightVehicleAttributes.Builder(
+				final SamgodsVehicleAttributes.Builder builder = new SamgodsVehicleAttributes.Builder(
 						record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""));
 				vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
 				builder.setDescription(record.get(VEH_DESCRIPTION)).setMode(transportMode)
@@ -137,11 +137,12 @@ public class SamgodsFleetReader {
 							ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_TIME_H)));
 		}
 
-		for (FreightVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
+		for (SamgodsVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
 			try {
 				VehicleType vehicleType = builder.buildVehicleType();
 
-				FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType);
+				SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 				if (attrs.onFerryCost_1_h == null) {
 					log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
 				}
@@ -192,7 +193,7 @@ public class SamgodsFleetReader {
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) throws Exception {
-		VehicleFleet fleet = new VehicleFleet();
+		SamgodsVehicles fleet = new SamgodsVehicles();
 		SamgodsFleetReader reader = new SamgodsFleetReader(fleet);
 		reader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
 				SamgodsConstants.TransportMode.Air);
@@ -203,17 +204,19 @@ public class SamgodsFleetReader {
 		reader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 				SamgodsConstants.TransportMode.Sea);
 
-		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Air));
-		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Air));
+		FleetStatsTable table = new FleetStatsTable(reader.fleet);
 
-		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail));
-		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail));
+		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Air));
+		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Air));
 
-		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Road));
-		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Road));
+		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail));
+		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail));
 
-		System.out.println(fleet.createVehicleTypeTable(SamgodsConstants.TransportMode.Sea));
-		System.out.println(fleet.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Sea));
+		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Road));
+		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Road));
+
+		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Sea));
+		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Sea));
 
 	}
 

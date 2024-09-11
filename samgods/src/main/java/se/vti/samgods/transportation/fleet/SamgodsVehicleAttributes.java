@@ -24,21 +24,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class FreightVehicleAttributes {
+public class SamgodsVehicleAttributes {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -72,7 +69,7 @@ public class FreightVehicleAttributes {
 
 	// -------------------- CONSTRUCTION (private, use builder) --------------------
 
-	private FreightVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode mode, double cost_1_km,
+	private SamgodsVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode mode, double cost_1_km,
 			double cost_1_h, double capacity_ton, Double onFerryCost_1_km, Double onFerryCost_1_h, Double speed_km_h,
 			boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> loadTime_h,
@@ -104,27 +101,27 @@ public class FreightVehicleAttributes {
 				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
 	
-	private double speedOnLink_m_s(Link link) throws InsufficientDataException {
-		if (this.speed_km_h != null) {
-			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
-		} else if (Double.isFinite(link.getFreespeed())) {
-			return link.getFreespeed();
-		} else {
-			throw new InsufficientDataException(this.getClass(), "Neither vehicle type " + this.id + " nor link "
-					+ link.getId() + " contains (finite) speed information.");
-		}
-	}
+//	private double speedOnLink_m_s(Link link) throws InsufficientDataException {
+//		if (this.speed_km_h != null) {
+//			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
+//		} else if (Double.isFinite(link.getFreespeed())) {
+//			return link.getFreespeed();
+//		} else {
+//			throw new InsufficientDataException(this.getClass(), "Neither vehicle type " + this.id + " nor link "
+//					+ link.getId() + " contains (finite) speed information.");
+//		}
+//	}
 
-	public double travelTimeOnLink_s(Link link) throws InsufficientDataException {
-		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
-	}
+//	public double travelTimeOnLink_s(Link link) throws InsufficientDataException {
+//		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
+//	}
 	
 	// -------------------- STATIC IMPLEMENTATION --------------------
 	
-	public synchronized static FreightVehicleAttributes getFreightAttributesSynchronized(VehicleType vehicleType) {
-		return (FreightVehicleAttributes) vehicleType.getAttributes()
-				.getAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME);
-	}
+//	public synchronized static SamgodsVehicleAttributes getFreightAttributesSynchronized(VehicleType vehicleType) {
+//		return (SamgodsVehicleAttributes) vehicleType.getAttributes()
+//				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+//	}
 
 //	public synchronized static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
 //		return getFreightAttributes(vehicle.getType());
@@ -182,9 +179,9 @@ public class FreightVehicleAttributes {
 			this.id = Id.create(name, VehicleType.class);
 		}
 
-		private FreightVehicleAttributes buildVehicleAttributes() throws InsufficientDataException {
+		private SamgodsVehicleAttributes buildVehicleAttributes() throws InsufficientDataException {
 			try {
-				return new FreightVehicleAttributes(this.id, this.mode, this.cost_1_km, this.cost_1_h,
+				return new SamgodsVehicleAttributes(this.id, this.mode, this.cost_1_km, this.cost_1_h,
 						this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
 						this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 			} catch (Exception e /* Arises when assigning null Double object to primitive double. */) {
@@ -196,7 +193,7 @@ public class FreightVehicleAttributes {
 		public VehicleType buildVehicleType() throws InsufficientDataException {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
 			type.setDescription(this.description);
-			type.getAttributes().putAttribute(FreightVehicleAttributes.ATTRIBUTE_NAME, this.buildVehicleAttributes());
+			type.getAttributes().putAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME, this.buildVehicleAttributes());
 			return type;
 		}
 

@@ -51,7 +51,7 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -322,7 +322,7 @@ public class Router {
 
 	private final Network multimodalNetwork;
 
-	private final VehicleFleet fleet;
+	private final SamgodsVehicles fleet;
 
 	private boolean logProgress = false;
 
@@ -330,7 +330,7 @@ public class Router {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Router(Network multimodalNetwork, VehicleFleet fleet) {
+	public Router(Network multimodalNetwork, SamgodsVehicles fleet) {
 		this.multimodalNetwork = multimodalNetwork;
 		this.fleet = fleet;
 	}

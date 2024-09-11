@@ -42,10 +42,10 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.network.LinkAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
-import se.vti.samgods.transportation.fleet.VehicleFleet;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -58,11 +58,11 @@ public class NetworkDataProvider_DEPRECATED {
 
 	private final Network multimodalNetwork;
 
-	private final VehicleFleet fleet;
+	private final SamgodsVehicles fleet;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public NetworkDataProvider_DEPRECATED(Network multimodalNetwork, VehicleFleet fleet) {
+	public NetworkDataProvider_DEPRECATED(Network multimodalNetwork, SamgodsVehicles fleet) {
 		this.multimodalNetwork = multimodalNetwork;
 		this.fleet = fleet;
 	}
@@ -119,7 +119,7 @@ public class NetworkDataProvider_DEPRECATED {
 
 	synchronized Set<Id<Link>> createFerryLinkIdSet(Network network) {
 		return network.getLinks().values().stream().filter(
-				l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
+				l -> ((SamgodsLinkAttributes) l.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
 				.map(l -> l.getId()).collect(Collectors.toSet());
 	}
 
@@ -128,23 +128,24 @@ public class NetworkDataProvider_DEPRECATED {
 	}
 
 	synchronized BasicTransportCost computeUnitCost(Link link, Commodity commodity,
-			FreightVehicleAttributes vehicleAttrs) throws InsufficientDataException {
-		final double length_km = Units.KM_PER_M * link.getLength();
-		final double duration_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
-		assert (Double.isFinite(length_km));
-		assert (Double.isFinite(duration_h));
-		if (((LinkAttributes) link.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry()) {
-			return new BasicTransportCost(1.0,
-					duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km, duration_h,
-					length_km);
-		} else {
-			return new BasicTransportCost(1.0, duration_h * vehicleAttrs.cost_1_h + length_km * vehicleAttrs.cost_1_km,
-					duration_h, length_km);
-		}
+			SamgodsVehicleAttributes vehicleAttrs) throws InsufficientDataException {
+//		final double length_km = Units.KM_PER_M * link.getLength();
+//		final double duration_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
+//		assert (Double.isFinite(length_km));
+//		assert (Double.isFinite(duration_h));
+//		if (((SamgodsLinkAttributes) link.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry()) {
+//			return new BasicTransportCost(1.0,
+//					duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km, duration_h,
+//					length_km);
+//		} else {
+//			return new BasicTransportCost(1.0, duration_h * vehicleAttrs.cost_1_h + length_km * vehicleAttrs.cost_1_km,
+//					duration_h, length_km);
+//		}
+		throw new UnsupportedOperationException();
 	}
 
 	synchronized Map<Id<Link>, BasicTransportCost> computeUnitCosts(Network network,
-			SamgodsConstants.Commodity commodity, FreightVehicleAttributes vehicleAttrs)
+			SamgodsConstants.Commodity commodity, SamgodsVehicleAttributes vehicleAttrs)
 			throws InsufficientDataException {
 		final Map<Id<Link>, BasicTransportCost> linkId2cost = new LinkedHashMap<>(network.getLinks().size());
 		for (Link link : network.getLinks().values()) {

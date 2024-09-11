@@ -30,7 +30,7 @@ import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.fleet.FreightVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -50,7 +50,7 @@ public class ConsolidationCostModel {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public DetailedTransportCost computeSignatureCost(FreightVehicleAttributes vehicleAttrs, double payload_ton,
+	public DetailedTransportCost computeSignatureCost(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
 			ConsolidationUnit consolidationUnit, boolean loadAtStart, boolean unloadAtEnd,
 			Map<Id<Link>, BasicTransportCost> link2unitCost, Set<Id<Link>> ferryLinks) throws InsufficientDataException {
 

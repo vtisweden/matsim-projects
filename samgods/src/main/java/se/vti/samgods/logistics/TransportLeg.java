@@ -31,7 +31,7 @@ import org.matsim.api.core.v01.network.Node;
 import floetteroed.utilities.Units;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.network.LinkAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 
 /**
  * 

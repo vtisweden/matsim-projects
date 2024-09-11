@@ -50,7 +50,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.network.LinkAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 
 /**
  * 

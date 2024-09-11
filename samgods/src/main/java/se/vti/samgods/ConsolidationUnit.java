@@ -49,7 +49,7 @@ import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.network.LinkAttributes;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
 @JsonDeserialize(using = ConsolidationUnit.Deserializer.class)
@@ -179,7 +179,7 @@ public class ConsolidationUnit {
 				this.linkIds.add(route.stream().map(l -> l.getId()).toList());
 				this.length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
 				this.containsFerry = this.containsFerry || route.stream().anyMatch(
-						l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode
+						l -> ((SamgodsLinkAttributes) l.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode
 								.isFerry());
 			}
 		}
@@ -188,8 +188,8 @@ public class ConsolidationUnit {
 	public void computeNetworkCharacteristics(Network network) {
 		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
-		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream()).anyMatch(l -> ((LinkAttributes) network
-				.getLinks().get(l).getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
+		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream()).anyMatch(l -> ((SamgodsLinkAttributes) network
+				.getLinks().get(l).getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
 	}
 
 	// -------------------- Json Serializer --------------------
