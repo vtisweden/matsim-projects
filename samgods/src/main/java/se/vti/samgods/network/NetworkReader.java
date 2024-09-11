@@ -184,8 +184,8 @@ public class NetworkReader {
 					final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
 							Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
 					link.setAllowedModes(mode.matsimModes);
-					link.getAttributes().putAttribute(LinkAttributes.ATTRIBUTE_NAME,
-							new LinkAttributes(mode, speed1_km_h, speed2_km_h));
+					link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
+							new SamgodsLinkAttributes(mode, speed1_km_h, speed2_km_h));
 				}
 			}
 		}

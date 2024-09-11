@@ -83,8 +83,8 @@ public class NetworkDataProvider {
 		final FreightVehicleAttributes vehicleAttrs = FreightVehicleAttributes
 				.getFreightAttributesSynchronized(vehicleType);
 		for (Link link : this.allLinks) {
-			final LinkAttributes linkAttrs = ((LinkAttributes) link.getAttributes()
-					.getAttribute(LinkAttributes.ATTRIBUTE_NAME));
+			final SamgodsLinkAttributes linkAttrs = ((SamgodsLinkAttributes) link.getAttributes()
+					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME));
 			if (linkAttrs.samgodsMode.equals(vehicleAttrs.samgodsMode)
 					|| (linkAttrs.samgodsMode.isFerry() && vehicleAttrs.isFerryCompatible())) {
 				final double speed_km_h;
@@ -122,7 +122,7 @@ public class NetworkDataProvider {
 		this.multimodalNetwork = multimodalNetwork;
 		this.allLinks = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values());
 		this.ferryLinkIds = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values().stream().filter(
-				l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode
+				l -> ((SamgodsLinkAttributes) l.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode
 						.isFerry())
 				.map(l -> l.getId()).collect(Collectors.toSet()));
 	}

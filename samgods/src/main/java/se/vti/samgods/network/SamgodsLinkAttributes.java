@@ -26,7 +26,7 @@ import se.vti.samgods.SamgodsConstants;
  * @author GunnarF
  *
  */
-public class LinkAttributes {
+public class SamgodsLinkAttributes {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -40,7 +40,7 @@ public class LinkAttributes {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public LinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
+	public SamgodsLinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
 		this.samgodsMode = samgodsMode;
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;

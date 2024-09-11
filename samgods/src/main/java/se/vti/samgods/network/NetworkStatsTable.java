@@ -55,8 +55,8 @@ public class NetworkStatsTable {
 		final Map<TransportMode, Double> mode2capSum = new LinkedHashMap<>();
 
 		for (Link link : network.getLinks().values()) {
-			final LinkAttributes attr = (LinkAttributes) link.getAttributes()
-					.getAttribute(LinkAttributes.ATTRIBUTE_NAME);
+			final SamgodsLinkAttributes attr = (SamgodsLinkAttributes) link.getAttributes()
+					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
 			final TransportMode mode = attr.samgodsMode;
 			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			mode2lengthSum.compute(mode, (m, s) -> s == null ? link.getLength() : s + link.getLength());
