@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -39,28 +40,17 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
  */
 public class FleetDataProvider {
 
-	// populated upon construction
+	// ---------- THREAD-SAFE LOCALLY CACHED SamgodsVehicleAttributes ----------
+
 	private final ConcurrentMap<VehicleType, SamgodsVehicleAttributes> vehicleType2attributes;
 
 	Map<VehicleType, SamgodsVehicleAttributes> getVehicleType2attributes() {
 		return this.vehicleType2attributes;
 	}
 
-	// lazily populated
-	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, VehicleType>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleType = new ConcurrentHashMap<>();
+	// ---------- THREAD-SAFE LOCALLY CACHED COMPATIBLE VEHICLE TYPES ----------
 
-	// lazily populated
 	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, List<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleTypes = new ConcurrentHashMap<>();
-
-	public FleetDataProvider(SamgodsVehicles fleet) {
-		this.vehicleType2attributes = new ConcurrentHashMap<>(fleet.getVehicles().getVehicleTypes().values().stream()
-				.collect(Collectors.toMap(t -> t, t -> (SamgodsVehicleAttributes) t.getAttributes()
-						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))));
-	}
-
-	public FleetData createFleetData() {
-		return new FleetData(this);
-	}
 
 	private synchronized List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode,
 			boolean isContainer, boolean containsFerry) {
@@ -76,6 +66,19 @@ public class FleetDataProvider {
 		}
 		return result;
 	}
+	
+	List<VehicleType> getCompatibleVehicleTypes(final Commodity commodity, final TransportMode mode,
+			final boolean isContainer, final boolean isFerry) {
+		return this.commodity2transportMode2isContainer2isFerry2representativeVehicleTypes
+				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
+				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
+				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>())
+				.computeIfAbsent(isFerry, f -> this.createCompatibleVehicleTypes(commodity, mode, isContainer, f));
+	}
+
+	// ---------- THREAD-SAFE LOCALLY CACHED REPRESENTATIVE VEHICLE TYPES ----------
+
+	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, VehicleType>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleType = new ConcurrentHashMap<>();
 
 	private synchronized VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode,
 			boolean isContainer, boolean containsFerry) {
@@ -100,7 +103,7 @@ public class FleetDataProvider {
 		}
 	}
 
-	// may be null!
+	// may be null
 	VehicleType getRepresentativeVehicleType(final Commodity commodity, final TransportMode mode,
 			final boolean isContainer, final boolean containsFerry) throws InsufficientDataException {
 		return this.commodity2transportMode2isContainer2isFerry2representativeVehicleType
@@ -110,13 +113,15 @@ public class FleetDataProvider {
 						cf -> this.createRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
 	}
 
-	List<VehicleType> getCompatibleVehicleTypes(final Commodity commodity, final TransportMode mode,
-			final boolean isContainer, final boolean isFerry) {
-		return this.commodity2transportMode2isContainer2isFerry2representativeVehicleTypes
-				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
-				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
-				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>())
-				.computeIfAbsent(isFerry, f -> this.createCompatibleVehicleTypes(commodity, mode, isContainer, f));
+	// -------------------- CONSTRUCTION --------------------
+	
+	public FleetDataProvider(Vehicles vehicles) {
+		this.vehicleType2attributes = new ConcurrentHashMap<>(vehicles.getVehicleTypes().values().stream()
+				.collect(Collectors.toMap(t -> t, t -> (SamgodsVehicleAttributes) t.getAttributes()
+						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))));
 	}
 
+	public FleetData createFleetData() {
+		return new FleetData(this);
+	}
 }

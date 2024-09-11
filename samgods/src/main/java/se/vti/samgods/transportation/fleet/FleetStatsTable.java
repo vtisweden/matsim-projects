@@ -20,6 +20,7 @@
 package se.vti.samgods.transportation.fleet;
 
 import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.Vehicles;
 
 import de.vandermeer.asciitable.AsciiTable;
 import se.vti.samgods.SamgodsConstants;
@@ -31,10 +32,10 @@ import se.vti.samgods.SamgodsConstants;
  */
 public class FleetStatsTable {
 
-	private final SamgodsVehicles fleet;
+	private final Vehicles vehicles;
 
-	public FleetStatsTable(SamgodsVehicles fleet) {
-		this.fleet = fleet;
+	public FleetStatsTable(Vehicles vehicles) {
+		this.vehicles = vehicles;
 	}
 
 	private String null2notAvail(Object c) {
@@ -50,7 +51,7 @@ public class FleetStatsTable {
 		table.addRule();
 		table.addRow("Vehicle", "Description", "Mode", "Cost[1/km]", "Cost[1/h]", "Capacity[ton]", "FerryCost[1/km]",
 				"FerryCost[1/h]", "MaxSpeed[km/h]");
-		for (VehicleType type : this.fleet.getVehicles().getVehicleTypes().values()) {
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
 			final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) type.getAttributes()
 					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 			if (mode.equals(attrs.samgodsMode)) {
@@ -69,7 +70,7 @@ public class FleetStatsTable {
 		table.addRule();
 		table.addRow("Vehicle", "Commodity", "LoadCost[1/ton]", "LoadTime[h]", "TransferCost[1/ton]",
 				"TransferTime[h]");
-		for (VehicleType type : this.fleet.getVehicles().getVehicleTypes().values()) {
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
 			final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) type.getAttributes()
 					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 			if (mode.equals(attrs.samgodsMode)) {

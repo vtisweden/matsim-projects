@@ -38,6 +38,7 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
+import org.matsim.vehicles.Vehicles;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -47,9 +48,8 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
-import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
-import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -62,14 +62,13 @@ public class NTMCalcSerializerTest {
 
 		System.out.println("STARTED ...");
 
-		SamgodsVehicles fleet = new SamgodsVehicles();
-		SamgodsFleetReader reader = new SamgodsFleetReader(fleet);
+		Vehicles vehicles = VehicleUtils.createVehiclesContainer();
+		VehiclesReader reader = new VehiclesReader(vehicles);
 		reader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
 				SamgodsConstants.TransportMode.Road);
 
 		Random rnd = new Random(4711);
-		List<VehicleType> vehTypeList = fleet.getVehicles().getVehicleTypes().values().stream()
-				.collect(Collectors.toList());
+		List<VehicleType> vehTypeList = vehicles.getVehicleTypes().values().stream().collect(Collectors.toList());
 
 		int vehCnt = 10000;
 

@@ -30,9 +30,9 @@ import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
-import org.matsim.api.core.v01.Id;
-import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.VehicleUtils;
+import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
@@ -43,11 +43,11 @@ import se.vti.samgods.utils.ParseNumberUtils;
  * @author GunnarF
  *
  */
-public class SamgodsFleetReader {
+public class VehiclesReader {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(SamgodsFleetReader.class);
+	private static final Logger log = Logger.getLogger(VehiclesReader.class);
 
 	private static final String VEH_NR = "VEH_NR";
 
@@ -89,12 +89,12 @@ public class SamgodsFleetReader {
 
 	// -------------------- MEMBERS --------------------
 
-	private final SamgodsVehicles fleet;
+	private final Vehicles vehicles;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public SamgodsFleetReader(SamgodsVehicles fleet) {
-		this.fleet = fleet;
+	public VehiclesReader(Vehicles vehicles) {
+		this.vehicles = vehicles;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -184,7 +184,7 @@ public class SamgodsFleetReader {
 							+ commodities);
 				}
 
-				this.fleet.getVehicles().addVehicleType(vehicleType);
+				this.vehicles.addVehicleType(vehicleType);
 
 			} catch (InsufficientDataException e) {
 				e.log(this.getClass(), "Failed to build vehicle type " + builder.id + ".");
@@ -195,8 +195,9 @@ public class SamgodsFleetReader {
 	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) throws Exception {
-		SamgodsVehicles fleet = new SamgodsVehicles();
-		SamgodsFleetReader reader = new SamgodsFleetReader(fleet);
+		Vehicles vehicles = VehicleUtils.createVehiclesContainer();
+		
+		VehiclesReader reader = new VehiclesReader(vehicles);
 		reader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
 				SamgodsConstants.TransportMode.Air);
 		reader.load_v12("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
@@ -206,7 +207,7 @@ public class SamgodsFleetReader {
 		reader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 				SamgodsConstants.TransportMode.Sea);
 
-		FleetStatsTable table = new FleetStatsTable(reader.fleet);
+		FleetStatsTable table = new FleetStatsTable(vehicles);
 
 		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Air));
 		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Air));

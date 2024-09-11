@@ -43,6 +43,7 @@ import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
@@ -51,7 +52,6 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
-import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -322,7 +322,7 @@ public class Router {
 
 	private final Network multimodalNetwork;
 
-	private final SamgodsVehicles fleet;
+	private final Vehicles vehicles;
 
 	private boolean logProgress = false;
 
@@ -330,9 +330,9 @@ public class Router {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Router(Network multimodalNetwork, SamgodsVehicles fleet) {
+	public Router(Network multimodalNetwork, Vehicles vehicles) {
 		this.multimodalNetwork = multimodalNetwork;
-		this.fleet = fleet;
+		this.vehicles = vehicles;
 	}
 
 	public Router setLogProgress(boolean logProgress) {
@@ -356,7 +356,7 @@ public class Router {
 		final Iterator<RoutingJob> jobIterator = allJobs.iterator();
 
 		final NetworkDataProvider networkDataProvider = new NetworkDataProvider(this.multimodalNetwork);
-		final FleetDataProvider fleetDataProvider = new FleetDataProvider(this.fleet);
+		final FleetDataProvider fleetDataProvider = new FleetDataProvider(this.vehicles);
 
 		for (int thread = 0; thread < threadCnt; thread++) {
 			final List<RoutingJob> jobs = new LinkedList<>();

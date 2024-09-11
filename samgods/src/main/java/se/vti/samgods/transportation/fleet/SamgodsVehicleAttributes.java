@@ -69,14 +69,14 @@ public class SamgodsVehicleAttributes {
 
 	// -------------------- CONSTRUCTION (private, use builder) --------------------
 
-	private SamgodsVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode mode, double cost_1_km,
+	private SamgodsVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode samgodsMode, double cost_1_km,
 			double cost_1_h, double capacity_ton, Double onFerryCost_1_km, Double onFerryCost_1_h, Double speed_km_h,
 			boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> loadTime_h,
 			Map<SamgodsConstants.Commodity, Double> transferCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> transferTime_h) {
 		this.id = id;
-		this.samgodsMode = mode;
+		this.samgodsMode = samgodsMode;
 		this.cost_1_km = cost_1_km;
 		this.cost_1_h = cost_1_h;
 		this.capacity_ton = capacity_ton;
@@ -90,7 +90,7 @@ public class SamgodsVehicleAttributes {
 		this.transferTime_h = new ConcurrentHashMap<>(transferTime_h);
 	}
 
-	// -------------------- IMPLEMENTATION, thread safe --------------------
+	// -------------------- IMPLEMENTATION --------------------
 
 	public boolean isFerryCompatible() {
 		return (this.onFerryCost_1_km != null) && (this.onFerryCost_1_h != null);
@@ -100,49 +100,7 @@ public class SamgodsVehicleAttributes {
 		return this.loadCost_1_ton.containsKey(commodity) && this.loadTime_h.containsKey(commodity)
 				&& this.transferCost_1_ton.containsKey(commodity) && this.transferTime_h.containsKey(commodity);
 	}
-	
-//	private double speedOnLink_m_s(Link link) throws InsufficientDataException {
-//		if (this.speed_km_h != null) {
-//			return Math.min(Units.M_S_PER_KM_H * this.speed_km_h, link.getFreespeed());
-//		} else if (Double.isFinite(link.getFreespeed())) {
-//			return link.getFreespeed();
-//		} else {
-//			throw new InsufficientDataException(this.getClass(), "Neither vehicle type " + this.id + " nor link "
-//					+ link.getId() + " contains (finite) speed information.");
-//		}
-//	}
 
-//	public double travelTimeOnLink_s(Link link) throws InsufficientDataException {
-//		return Math.max(1e-8, link.getLength()) / this.speedOnLink_m_s(link);
-//	}
-	
-	// -------------------- STATIC IMPLEMENTATION --------------------
-	
-//	public synchronized static SamgodsVehicleAttributes getFreightAttributesSynchronized(VehicleType vehicleType) {
-//		return (SamgodsVehicleAttributes) vehicleType.getAttributes()
-//				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-//	}
-
-//	public synchronized static FreightVehicleAttributes getFreightAttributes(Vehicle vehicle) {
-//		return getFreightAttributes(vehicle.getType());
-//	}
-
-//	public static TransportMode getMode(VehicleType vehicleType) {
-//		return getFreightAttributesSynchronized(vehicleType).mode;
-//	}
-
-//	public static TransportMode getMode(Vehicle vehicle) {
-//		return getFreightAttributes(vehicle).mode;
-//	}
-
-//	public static double getCapacity_ton(VehicleType vehicleType) {
-//		return getFreightAttributesSynchronized(vehicleType).capacity_ton;
-//	}
-
-//	public static double getCapacity_ton(Vehicle vehicle) {
-//		return getFreightAttributes(vehicle).capacity_ton;
-//	}
-	
 	// -------------------- BUILDER --------------------
 
 	public static class Builder {
@@ -151,7 +109,7 @@ public class SamgodsVehicleAttributes {
 
 		private String description = null;
 
-		private SamgodsConstants.TransportMode mode = null;
+		private SamgodsConstants.TransportMode samgodsMode = null;
 
 		private Double cost_1_km = null;
 
@@ -181,7 +139,7 @@ public class SamgodsVehicleAttributes {
 
 		private SamgodsVehicleAttributes buildVehicleAttributes() throws InsufficientDataException {
 			try {
-				return new SamgodsVehicleAttributes(this.id, this.mode, this.cost_1_km, this.cost_1_h,
+				return new SamgodsVehicleAttributes(this.id, this.samgodsMode, this.cost_1_km, this.cost_1_h,
 						this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
 						this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 			} catch (Exception e /* Arises when assigning null Double object to primitive double. */) {
@@ -203,7 +161,7 @@ public class SamgodsVehicleAttributes {
 		}
 
 		public Builder setMode(SamgodsConstants.TransportMode mode) {
-			this.mode = mode;
+			this.samgodsMode = mode;
 			return this;
 		}
 
@@ -270,5 +228,4 @@ public class SamgodsVehicleAttributes {
 			return this;
 		}
 	}
-
 }

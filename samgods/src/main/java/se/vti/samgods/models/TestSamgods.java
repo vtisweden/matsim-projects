@@ -44,6 +44,8 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.VehicleUtils;
+import org.matsim.vehicles.Vehicles;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -86,9 +88,8 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
-import se.vti.samgods.transportation.fleet.SamgodsFleetReader;
+import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
-import se.vti.samgods.transportation.fleet.SamgodsVehicles;
 
 /**
  * 
@@ -171,8 +172,8 @@ public class TestSamgods {
 		 * LOAD FLEET
 		 */
 
-		SamgodsVehicles fleet = new SamgodsVehicles();
-		SamgodsFleetReader fleetReader = new SamgodsFleetReader(fleet);
+		Vehicles vehicles = VehicleUtils.createVehiclesContainer();
+		VehiclesReader fleetReader = new VehiclesReader(vehicles);
 //		fleetReader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
 //				SamgodsConstants.TransportMode.Air);
 		fleetReader.load_v12("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
@@ -241,7 +242,7 @@ public class TestSamgods {
 			 */
 			for (Commodity commodity : consideredCommodities) {
 				log.info(commodity + ": Routing consolidation units.");
-				Router router = new Router(network, fleet).setLogProgress(true).setMaxThreads(maxThreads);
+				Router router = new Router(network, vehicles).setLogProgress(true).setMaxThreads(maxThreads);
 				router.route(commodity, consolidationUnitPattern2representativeUnit.entrySet().stream()
 						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
 			}
@@ -419,7 +420,7 @@ public class TestSamgods {
 				try {
 
 					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network);
-					FleetDataProvider fleetDataProvider = new FleetDataProvider(fleet);
+					FleetDataProvider fleetDataProvider = new FleetDataProvider(vehicles);
 					for (int i = 0; i < threadCnt; i++) {
 						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
 						EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(consolidationCostModel,
@@ -506,7 +507,7 @@ public class TestSamgods {
 				try {
 
 					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network);
-					FleetDataProvider fleetDataProvider = new FleetDataProvider(fleet);
+					FleetDataProvider fleetDataProvider = new FleetDataProvider(vehicles);
 
 					log.info("Starting " + threadCnt + " consolidation threads.");
 					for (int i = 0; i < threadCnt; i++) {
@@ -886,12 +887,12 @@ public class TestSamgods {
 		}
 	}
 
-	static void logFleet(Map<VehicleType, Double> vehType2cnt, int iteration, SamgodsVehicles fleet) {
+	static void logFleet(Map<VehicleType, Double> vehType2cnt, int iteration, Vehicles vehicles) {
 
 		Map<SamgodsConstants.TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
 		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 			mode2types.put(mode,
-					fleet.getVehicles().getVehicleTypes().values().stream()
+					vehicles.getVehicleTypes().values().stream()
 							.filter(t -> mode.equals(((SamgodsVehicleAttributes) t.getAttributes()
 									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).samgodsMode))
 							.collect(Collectors.toList()));
@@ -925,8 +926,7 @@ public class TestSamgods {
 			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 				for (VehicleType type : mode2types.get(mode)) {
 					headerLine += ((SamgodsVehicleAttributes) type.getAttributes()
-									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))
-							.capacity_ton + "\t";
+							.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton + "\t";
 				}
 				headerLine += "\t";
 			}
