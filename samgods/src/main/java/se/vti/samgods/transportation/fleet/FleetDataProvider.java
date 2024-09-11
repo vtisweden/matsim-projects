@@ -67,7 +67,7 @@ public class FleetDataProvider {
 		for (Map.Entry<VehicleType, FreightVehicleAttributes> e : this.vehicleType2attributes.entrySet()) {
 			VehicleType type = e.getKey();
 			FreightVehicleAttributes attrs = e.getValue();
-			if (attrs.mode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
+			if (attrs.samgodsMode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
 					&& (!containsFerry || attrs.isFerryCompatible())) {
 				result.add(type);
 			}

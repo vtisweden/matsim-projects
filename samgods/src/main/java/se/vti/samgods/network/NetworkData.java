@@ -44,43 +44,38 @@ import se.vti.samgods.transportation.costs.BasicTransportCost;
  */
 public class NetworkData {
 
-	// -------------------- MEMBERS --------------------
-
-	private final NetworkDataProvider dataProvider;
-
-	private final Map<TransportMode, Map<Boolean, Network>> mode2containsFerry2network = new LinkedHashMap<>();
-
-//	private final Map<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, TravelDisutility>>>> commodity2mode2isContainer2containsFerry2travelDisutility = new LinkedHashMap<>();
-	private final Map<VehicleType, TravelDisutility> vehicleType2travelDisutility = new LinkedHashMap<>();
-
-//	private final Map<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, TravelTime>>>> commodity2mode2isContainer2containsFerry2travelTime = new LinkedHashMap<>();
-	private final Map<VehicleType, TravelTime> vehicleType2travelTime = new LinkedHashMap<>();
-
 	// -------------------- CONSTRUCTION --------------------
 
 	NetworkData(NetworkDataProvider routingData) {
 		this.dataProvider = routingData;
 	}
 
-	// -------------------- IMPLEMENTATION --------------------
+	// --------------- PASS-THROUGH FROM NetworkDataProvider ---------------
+
+	private final NetworkDataProvider dataProvider;
 
 	public Set<Id<Link>> getFerryLinkIds() {
 		return this.dataProvider.getFerryLinkIds();
-	}
-
-	public Network getUnimodalNetwork(TransportMode mode, boolean containsFerry) {
-		return this.mode2containsFerry2network.computeIfAbsent(mode, m -> new LinkedHashMap<>())
-				.computeIfAbsent(containsFerry, cf -> this.dataProvider.createNetwork(mode, cf));
 	}
 
 	public Map<Id<Link>, BasicTransportCost> getLinkId2unitCost(VehicleType vehicleType) {
 		return this.dataProvider.getLinkId2unitCost(vehicleType);
 	}
 
-//	public Map<Id<Link>, BasicTransportCost> getLinkId2representativeUnitCost(Commodity commodity, TransportMode mode,
-//			boolean isContainer, boolean containsFerry) throws InsufficientDataException {
-//		return this.getLinkId2unitCost(this.getRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
-//	}
+	// -------------------- LOCALLY CACHED UNIMODAL Network --------------------
+
+	private final Map<TransportMode, Map<Boolean, Network>> mode2containsFerry2network = new LinkedHashMap<>();
+
+	public Network getUnimodalNetwork(TransportMode samgodsMode, boolean containsFerry) {
+		return this.mode2containsFerry2network.computeIfAbsent(samgodsMode, m -> new LinkedHashMap<>())
+				.computeIfAbsent(containsFerry, cf -> this.dataProvider.createMATSimNetwork(samgodsMode, cf));
+	}
+
+	// -------------------- LOCALLY CACHED TravelDisutility --------------------
+
+	private final double minMonetaryCost = 1e-3;
+
+	private final Map<VehicleType, TravelDisutility> vehicleType2travelDisutility = new LinkedHashMap<>();
 
 	private TravelDisutility createTravelDisutility(VehicleType vehicleType) {
 		final Map<Id<Link>, BasicTransportCost> linkId2representativeUnitCost = this.getLinkId2unitCost(vehicleType);
@@ -94,25 +89,20 @@ public class NetworkData {
 
 			@Override
 			public double getLinkMinimumTravelDisutility(Link link) {
-				return Math.max(1e-3, linkId2representativeUnitCost.get(link.getId()).monetaryCost);
+				return Math.max(minMonetaryCost, linkId2representativeUnitCost.get(link.getId()).monetaryCost);
 			}
 		};
 	}
 
-//	public TravelDisutility getTravelDisutility(Commodity commodity, TransportMode mode, boolean isContainer,
-//			boolean containsFerry) throws InsufficientDataException {
-//		final Map<Id<Link>, BasicTransportCost> linkId2representativeUnitCost = this
-//				.getLinkId2representativeUnitCost(commodity, mode, isContainer, containsFerry);
-//		return this.commodity2mode2isContainer2containsFerry2travelDisutility
-//				.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
-//				.computeIfAbsent(mode, m -> new LinkedHashMap<>())
-//				.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>())
-//				.computeIfAbsent(containsFerry, cf -> this.createTravelDisutility(linkId2representativeUnitCost));
-//	}
-
 	public TravelDisutility getTravelDisutility(VehicleType vehicleType) throws InsufficientDataException {
 		return this.vehicleType2travelDisutility.computeIfAbsent(vehicleType, vt -> this.createTravelDisutility(vt));
 	}
+
+	// -------------------- LOCALLY CACHED TravelTime --------------------
+
+	private final double minTravelTime_s = 1e-3;
+
+	private final Map<VehicleType, TravelTime> vehicleType2travelTime = new LinkedHashMap<>();
 
 	private TravelTime createTravelTime(VehicleType vehicleType) {
 		final Map<Id<Link>, BasicTransportCost> linkId2representativeUnitCost = this.getLinkId2unitCost(vehicleType);
@@ -121,7 +111,8 @@ public class NetworkData {
 			public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
 				assert (person == null);
 				assert (vehicle == null);
-				return Math.max(1e-3, Units.S_PER_H * linkId2representativeUnitCost.get(link.getId()).duration_h);
+				return Math.max(minTravelTime_s,
+						Units.S_PER_H * linkId2representativeUnitCost.get(link.getId()).duration_h);
 			}
 		};
 	}
@@ -129,5 +120,4 @@ public class NetworkData {
 	public TravelTime getTravelTime(VehicleType vehicleType) throws InsufficientDataException {
 		return this.vehicleType2travelTime.computeIfAbsent(vehicleType, vt -> this.createTravelTime(vehicleType));
 	}
-
 }

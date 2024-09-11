@@ -892,7 +892,7 @@ public class TestSamgods {
 		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
 			mode2types.put(mode,
 					fleet.getVehicles().getVehicleTypes().values().stream()
-							.filter(t -> mode.equals(FreightVehicleAttributes.getFreightAttributesSynchronized(t).mode))
+							.filter(t -> mode.equals(FreightVehicleAttributes.getFreightAttributesSynchronized(t).samgodsMode))
 							.collect(Collectors.toList()));
 			Collections.sort(mode2types.get(mode), new Comparator<VehicleType>() {
 				@Override

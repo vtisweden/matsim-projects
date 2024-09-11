@@ -108,7 +108,7 @@ public class NetworkData_DEPRECATED {
 
 	public Network getUnimodalNetwork(VehicleType vehicleType) {
 		FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(vehicleType);
-		return this.getUnimodalNetwork(attrs.mode, attrs.isFerryCompatible());
+		return this.getUnimodalNetwork(attrs.samgodsMode, attrs.isFerryCompatible());
 	}
 
 	public Map<Id<Link>, BasicTransportCost> getLinkId2unitCost(Commodity commodity, VehicleType vehicleType)

@@ -30,6 +30,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
+ * Just for testing.
  * 
  * @author GunnarF
  *
@@ -56,7 +57,7 @@ public class NetworkStatsTable {
 		for (Link link : network.getLinks().values()) {
 			final LinkAttributes attr = (LinkAttributes) link.getAttributes()
 					.getAttribute(LinkAttributes.ATTRIBUTE_NAME);
-			final TransportMode mode = attr.mode;
+			final TransportMode mode = attr.samgodsMode;
 			mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
 			mode2lengthSum.compute(mode, (m, s) -> s == null ? link.getLength() : s + link.getLength());
 			mode2lanesSum.compute(mode, (m, s) -> s == null ? link.getNumberOfLanes() : s + link.getNumberOfLanes());

@@ -46,7 +46,7 @@ public class FreightVehicleAttributes {
 
 	public final Id<VehicleType> id;
 
-	public final SamgodsConstants.TransportMode mode;
+	public final SamgodsConstants.TransportMode samgodsMode;
 
 	public final double cost_1_km;
 
@@ -79,7 +79,7 @@ public class FreightVehicleAttributes {
 			Map<SamgodsConstants.Commodity, Double> transferCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> transferTime_h) {
 		this.id = id;
-		this.mode = mode;
+		this.samgodsMode = mode;
 		this.cost_1_km = cost_1_km;
 		this.cost_1_h = cost_1_h;
 		this.capacity_ton = capacity_ton;

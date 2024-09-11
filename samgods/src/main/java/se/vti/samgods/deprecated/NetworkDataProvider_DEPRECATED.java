@@ -119,7 +119,7 @@ public class NetworkDataProvider_DEPRECATED {
 
 	synchronized Set<Id<Link>> createFerryLinkIdSet(Network network) {
 		return network.getLinks().values().stream().filter(
-				l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode.isFerry())
+				l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
 				.map(l -> l.getId()).collect(Collectors.toSet());
 	}
 
@@ -133,7 +133,7 @@ public class NetworkDataProvider_DEPRECATED {
 		final double duration_h = Units.H_PER_S * vehicleAttrs.travelTimeOnLink_s(link);
 		assert (Double.isFinite(length_km));
 		assert (Double.isFinite(duration_h));
-		if (((LinkAttributes) link.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode.isFerry()) {
+		if (((LinkAttributes) link.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry()) {
 			return new BasicTransportCost(1.0,
 					duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km, duration_h,
 					length_km);

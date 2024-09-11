@@ -136,9 +136,9 @@ public class VehicleFleet {
 				"FerryCost[1/h]", "MaxSpeed[km/h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
 			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
-			if (mode.equals(attrs.mode)) {
+			if (mode.equals(attrs.samgodsMode)) {
 				table.addRule();
-				table.addRow(attrs.id, type.getDescription(), attrs.mode, attrs.cost_1_km, attrs.cost_1_h,
+				table.addRow(attrs.id, type.getDescription(), attrs.samgodsMode, attrs.cost_1_km, attrs.cost_1_h,
 						attrs.capacity_ton, this.null2notAvail(attrs.onFerryCost_1_km),
 						this.null2notAvail(attrs.onFerryCost_1_h), this.null2notAvail(attrs.speed_km_h));
 			}
@@ -154,7 +154,7 @@ public class VehicleFleet {
 				"TransferTime[h]");
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
 			final FreightVehicleAttributes attrs = FreightVehicleAttributes.getFreightAttributesSynchronized(type);
-			if (mode.equals(attrs.mode)) {
+			if (mode.equals(attrs.samgodsMode)) {
 				for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
 					if (attrs.isCompatible(commodity)) {
 						table.addRule();

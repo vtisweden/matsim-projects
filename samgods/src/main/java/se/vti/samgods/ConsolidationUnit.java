@@ -179,7 +179,7 @@ public class ConsolidationUnit {
 				this.linkIds.add(route.stream().map(l -> l.getId()).toList());
 				this.length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
 				this.containsFerry = this.containsFerry || route.stream().anyMatch(
-						l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode
+						l -> ((LinkAttributes) l.getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode
 								.isFerry());
 			}
 		}
@@ -189,7 +189,7 @@ public class ConsolidationUnit {
 		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
 		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream()).anyMatch(l -> ((LinkAttributes) network
-				.getLinks().get(l).getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).mode.isFerry());
+				.getLinks().get(l).getAttributes().getAttribute(LinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
 	}
 
 	// -------------------- Json Serializer --------------------

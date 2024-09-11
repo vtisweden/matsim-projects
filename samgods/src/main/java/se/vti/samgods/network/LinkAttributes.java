@@ -19,8 +19,6 @@
  */
 package se.vti.samgods.network;
 
-import org.matsim.api.core.v01.network.Link;
-
 import se.vti.samgods.SamgodsConstants;
 
 /**
@@ -34,7 +32,7 @@ public class LinkAttributes {
 
 	public static final String ATTRIBUTE_NAME = "freight";
 
-	public SamgodsConstants.TransportMode mode;
+	public SamgodsConstants.TransportMode samgodsMode;
 
 	public final Double speed1_km_h;
 
@@ -43,7 +41,7 @@ public class LinkAttributes {
 	// -------------------- CONSTRUCTION --------------------
 
 	public LinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h) {
-		this.mode = samgodsMode;
+		this.samgodsMode = samgodsMode;
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
 	}

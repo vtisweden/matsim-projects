@@ -154,8 +154,6 @@ public class Router {
 
 		private final AStarLandmarksFactory routerFactory = new AStarLandmarksFactory(4);
 
-//		private final Map<TransportMode, LeastCostPathCalculator> mode2containerRouter;
-//		private final Map<TransportMode, LeastCostPathCalculator> mode2noContainerRouter;
 		private final Map<TransportMode, Map<Boolean, Map<Boolean, LeastCostPathCalculator>>> mode2isContainer2containsFerry2router = new LinkedHashMap<>();
 
 		RoutingThread(String name, Commodity commodity, List<RoutingJob> jobs, NetworkData networkData,
@@ -169,30 +167,6 @@ public class Router {
 
 			this.networkData = networkData;
 			this.fleetData = fleetData;
-
-//			this.mode2containerRouter = new LinkedHashMap<>();
-//			this.mode2noContainerRouter = new LinkedHashMap<>();
-//			this.mode2isContainer2containsFerry2router = new LinkedHashMap<>();
-//			final Set<TransportMode> allModes = jobs.stream().map(j -> j.mode()).collect(Collectors.toSet());
-//			final AStarLandmarksFactory factory = new AStarLandmarksFactory(4);
-//			for (TransportMode mode : allModes) {
-//				for (boolean isContainer : Arrays.asList(true, false)) {
-//					for (boolean containsFerry : Arrays.asList(true, false)) {
-//						try {
-//							this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
-//									.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>())
-//									.put(containsFerry, factory.createPathCalculator(
-//											networkData.getUnimodalNetwork(networkData.getRepresentativeVehicleType(
-//													commodity, mode, isContainer, containsFerry)),
-//											networkData.getTravelDisutility(commodity, mode, isContainer,
-//													containsFerry),
-//											networkData.getTravelTime(commodity, mode, isContainer, containsFerry)));
-//						} catch (InsufficientDataException e) {
-//							e.log(this.getClass(), "Could not create router", commodity, null, mode, true, null);
-//						}
-//					}
-//				}
-//			}
 		}
 
 		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
@@ -261,11 +235,8 @@ public class Router {
 				}
 			}
 			if (routes.stream().noneMatch(r -> r == null)) {
-//				System.out.println("  FOUND!");
 				return routes;
 			} else {
-				// "all or nothing"
-//				System.out.println("  FAILED: " + routes);
 				return null;
 			}
 		}
@@ -310,8 +281,8 @@ public class Router {
 				}
 
 				if ((withFerryRoutes != null) && !withFerryContainsFerry) {
-					// Allowing for ferry yields a route that does not contain ferry.
-					// No need to look further.
+					// Allowing for ferry yields a route that does not contain ferry, so o need to
+					// look further.
 					job.consolidationUnit.setRoutes(withFerryRoutes);
 				} else {
 					final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
