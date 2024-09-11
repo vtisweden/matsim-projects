@@ -159,12 +159,12 @@ public class Consolidator {
 			// TODO DrawSlot (re)computes all choice probabilities each time when called.
 			final ConsolidationChoiceModel.Slot slot = this.choiceModel.drawSlot(shipment, vehicle2costOverDays);
 
-			final Vehicle assignedVehicle;
-			if (slot.vehicle instanceof PrototypeVehicle) {
-				assignedVehicle = this.fleet.createAndAddVehicle(slot.vehicle.getType());
-			} else {
-				assignedVehicle = slot.vehicle;
-			}
+//			final Vehicle assignedVehicle;
+//			if (slot.vehicle instanceof PrototypeVehicle) {
+//				assignedVehicle = this.fleet.createAndAddVehicle(slot.vehicle.getType());
+//			} else {
+//				assignedVehicle = slot.vehicle;
+//			}
 
 //			final ShipmentVehicleAssignment assignment = this.assignmentsOverDays.get(slot.day);
 //			final double assigned_ton = Math.min(remaining_ton,

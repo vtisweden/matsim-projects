@@ -49,12 +49,12 @@ public class SamgodsVehicles {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public Vehicle createAndAddVehicle(VehicleType type) {
-		assert (this.vehicles.getVehicleTypes().values().contains(type));
-		final Vehicle vehicle = this.vehicles.getFactory().createVehicle(Id.create(this.vehCnt++, Vehicle.class), type);
-		this.vehicles.addVehicle(vehicle);
-		return vehicle;
-	}
+//	public Vehicle createAndAddVehicle(VehicleType type) {
+//		assert (this.vehicles.getVehicleTypes().values().contains(type));
+//		final Vehicle vehicle = this.vehicles.getFactory().createVehicle(Id.create(this.vehCnt++, Vehicle.class), type);
+//		this.vehicles.addVehicle(vehicle);
+//		return vehicle;
+//	}
 
 	public Vehicles getVehicles() {
 		return this.vehicles;

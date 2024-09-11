@@ -275,15 +275,15 @@ public class UniformConsolidator {
 		}
 
 		final List<List<Vehicle>> vehiclesOverDays = new ArrayList<>(this.numberOfDays);
-		for (int day = 0; day < this.numberOfDays; day++) {
-			final List<Vehicle> vehicles = new LinkedList<>();
-			for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
-				for (int n = 0; n < vehTypesPerDay[day][vehTypeIndex]; n++) {
-					vehicles.add(fleet.createAndAddVehicle(this.vehTypesDescendingCapacity.get(vehTypeIndex)));
-				}
-			}
-			vehiclesOverDays.add(vehicles);
-		}
+//		for (int day = 0; day < this.numberOfDays; day++) {
+//			final List<Vehicle> vehicles = new LinkedList<>();
+//			for (int vehTypeIndex = 0; vehTypeIndex < this.vehTypesDescendingCapacity.size(); vehTypeIndex++) {
+//				for (int n = 0; n < vehTypesPerDay[day][vehTypeIndex]; n++) {
+//					vehicles.add(fleet.createAndAddVehicle(this.vehTypesDescendingCapacity.get(vehTypeIndex)));
+//				}
+//			}
+//			vehiclesOverDays.add(vehicles);
+//		}
 		return vehiclesOverDays;
 	}
 
