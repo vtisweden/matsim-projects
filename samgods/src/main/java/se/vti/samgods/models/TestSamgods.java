@@ -78,14 +78,13 @@ import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
-import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.consolidation.ConsolidationJob;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
-import se.vti.samgods.transportation.costs.BasicEpisodeCostModel;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
+import se.vti.samgods.transportation.costs.RealizedConsolidationCostModel;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.costs.EpisodeCostModel;
+import se.vti.samgods.transportation.costs.PredictedEpisodeUnitCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
@@ -151,13 +150,13 @@ public class TestSamgods {
 
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
-//		double samplingRate = 0.01;
-//		boolean upscale = false;
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
-				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
+		double samplingRate = 0.01;
 		boolean upscale = false;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
+//				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
+//		double samplingRate = 1.0;
+//		boolean upscale = false;
 
 		int maxThreads = Integer.MAX_VALUE;
 
@@ -274,7 +273,7 @@ public class TestSamgods {
 			 * episodes from now on share consolidation units. TransortChain.isRouted only
 			 * produces meaningful behavior after this operation is complete.
 			 * 
-			 * TODO Assert that there are no redundancies in the consolidation unit file!
+			 * TODO Assert that there are no redundancies in the consolidation unit file.
 			 */
 			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 				for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
@@ -354,29 +353,11 @@ public class TestSamgods {
 		/*
 		 * REMOVE UNROUTED TRANSPORT CHAINS
 		 */
-//		Set<ConsolidationUnit> unroutedUnits = new LinkedHashSet<>();
-
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			long removedChainCnt = 0;
 			long totalChainCnt = 0;
-
 			for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity)
 					.entrySet()) {
-
-//				for (TransportChain chain : entry.getValue()) {
-//					if (!chain.isRouted()) {
-//						for (TransportEpisode episode : chain.getEpisodes()) {
-//							for (ConsolidationUnit consolidationUnit : episode.getConsolidationUnits()) {
-//								System.out.println(consolidationUnit == null ? "consolidationUnit is null" : "consolidationUnit has links: " + consolidationUnit.linkIds);
-//								if (consolidationUnit.linkIds == null) {
-//									unroutedUnits.add(consolidationUnit.createRoutingEquivalentTemplate());
-//								}
-//							}
-//						}
-//					}
-//					System.out.println();
-//				}
-
 				final int chainCnt = entry.getValue().size();
 				totalChainCnt += chainCnt;
 				entry.setValue(entry.getValue().stream().filter(c -> c.isRouted()).toList());
@@ -384,12 +365,6 @@ public class TestSamgods {
 			}
 			log.warn(commodity + ": Removed " + removedChainCnt + " out of " + totalChainCnt
 					+ " chains with incomplete routes.");
-
-//			System.out.println("UNROUTED CONSOLIDATION UNIT TEMPLATES: ");
-//			int i = 0;
-//			for (ConsolidationUnit cu : unroutedUnits) {
-//				System.out.println(++i + "\t" + cu);
-//			}
 
 		}
 
@@ -422,8 +397,8 @@ public class TestSamgods {
 					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network);
 					FleetDataProvider fleetDataProvider = new FleetDataProvider(vehicles);
 					for (int i = 0; i < threadCnt; i++) {
-						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
-						EpisodeCostModel episodeCostModel = new BasicEpisodeCostModel(consolidationCostModel,
+						RealizedConsolidationCostModel consolidationCostModel = new RealizedConsolidationCostModel();
+						PredictedEpisodeUnitCostModel episodeCostModel = new PredictedEpisodeUnitCostModel(consolidationCostModel,
 								mode2efficiency, signature2efficiency, networkDataProvider.createNetworkData(),
 								fleetDataProvider.createFleetData());
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
@@ -513,7 +488,7 @@ public class TestSamgods {
 					for (int i = 0; i < threadCnt; i++) {
 						NetworkData networkData = networkDataProvider.createNetworkData();
 						FleetData fleetData = fleetDataProvider.createFleetData();
-						ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
+						RealizedConsolidationCostModel consolidationCostModel = new RealizedConsolidationCostModel();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
 								consolidationCostModel, networkData, fleetData, jobQueue, consolidationUnit2assignment);
 						Thread choiceThread = new Thread(consolidationProcessor);
@@ -590,7 +565,7 @@ public class TestSamgods {
 			{
 				Map<TransportMode, Double> mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
 				Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
-				ConsolidationCostModel consolidationCostModel = new ConsolidationCostModel();
+				RealizedConsolidationCostModel consolidationCostModel = new RealizedConsolidationCostModel();
 				NetworkData networkData = new NetworkDataProvider(network).createNetworkData();
 				for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
 					ConsolidationUnit signature = e.getKey();
@@ -640,194 +615,12 @@ public class TestSamgods {
 						.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue() / mode2weightSum.get(e.getKey()))),
 						iteration, "unitcost.txt");
 			}
-
-			/*
-			 * Postprocess consolidation result.
-			 */
-
-//			Map<TransportMode, Double> mode2WeightSum = new LinkedHashMap<>();
-//			Map<TransportMode, Double> mode2CostSum = new LinkedHashMap<>();
-//			Map<TransportMode, Double> mode2TonKmSum = new LinkedHashMap<>();
-
-//			Map<VehicleType, Double> vehicleType2WeightSum = new LinkedHashMap<>();
-//			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightedRealizedEfficiencySum = new LinkedHashMap<>();
-//			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightedCostSum = new LinkedHashMap<>();
-//			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightedRealizedUnitCostSum_avgOfRatio = new LinkedHashMap<>();
-//			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2tonKmSum = new LinkedHashMap<>();
-//			final Map<Commodity, Map<SamgodsConstants.TransportMode, Double>> commodity2mode2weightSum = new LinkedHashMap<>();
-//
-//			for (Commodity commodity : Commodity.values()) {
-//				commodity2mode2weightedRealizedEfficiencySum.put(commodity, new LinkedHashMap<>());
-//				commodity2mode2weightedCostSum.put(commodity, new LinkedHashMap<>());
-//				commodity2mode2weightedRealizedUnitCostSum_avgOfRatio.put(commodity, new LinkedHashMap<>());
-//				commodity2mode2tonKmSum.put(commodity, new LinkedHashMap<>());
-//				commodity2mode2weightSum.put(commodity, new LinkedHashMap<>());
-//			}
-
-//			for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> e : consolidationUnit2assignment
-//					.entrySet()) {
-//
-//				final ConsolidationUnit signature = e.getKey();
-//				final FleetAssignment assignment = e.getValue();
-//
-//				double weight = assignment.snapshotVehicleCnt();
-//				final double tonKm = signature2choices.get(signature).stream()
-//						.mapToDouble(s -> s.annualShipment.getTotalAmount_ton()).sum() * 0.5 * assignment.loopLength_km;
-//
-////				commodity2mode2weightedRealizedEfficiencySum.get(signature.commodity).compute(signature.mode,
-////						(m, s) -> s == null ? assignment.transportEfficiency() * weight
-////								: s + assignment.transportEfficiency() * weight);
-////				commodity2mode2weightedCostSum.get(signature.commodity).compute(signature.mode,
-////						(m, s) -> s == null ? tonKm * assignment.unitCost_1_tonKm
-////								: s + tonKm * assignment.unitCost_1_tonKm);
-////				commodity2mode2weightedRealizedUnitCostSum_avgOfRatio.get(signature.commodity).compute(signature.mode,
-////						(m, s) -> s == null ? assignment.unitCost_1_tonKm * weight
-////								: s + assignment.unitCost_1_tonKm * weight);
-////				commodity2mode2tonKmSum.get(signature.commodity).compute(signature.mode,
-////						(m, c) -> c == null ? tonKm : c + tonKm);
-////				commodity2mode2weightSum.get(signature.commodity).compute(signature.mode,
-////						(m, c) -> c == null ? weight : c + weight);
-//
-//				mode2WeightedEfficiencySum.compute(signature.mode,
-//						(m, s) -> s == null ? assignment.transportEfficiency() * weight
-//								: s + assignment.transportEfficiency() * weight);
-//				mode2WeightedUnitCostSum.compute(signature.mode,
-//						(m, s) -> s == null ? assignment.unitCost_1_tonKm * weight
-//								: s + assignment.unitCost_1_tonKm * weight);
-//				mode2WeightSum.compute(signature.mode, (m, c) -> c == null ? weight : c + weight);
-//				mode2CostSum.compute(signature.mode, (m, s) -> s == null ? tonKm * assignment.unitCost_1_tonKm
-//						: s + tonKm * assignment.unitCost_1_tonKm);
-//				mode2TonKmSum.compute(signature.mode, (m, s) -> s == null ? tonKm : s + tonKm);
-//
-////				vehicleType2WeightSum.compute(assignment.vehicleType, (t, c) -> c == null ? weight : c + weight);
-//
-//				assert (assignment.transportEfficiency() >= 0 && assignment.transportEfficiency() <= 1.001);
-//				signature2efficiency.compute(signature, (sig, eff) -> eff == null ? assignment.transportEfficiency()
-//						: innoWeight * assignment.transportEfficiency() + (1.0 - innoWeight) * eff);
-//			}
-//
-//			effLog.log(signature2efficiency.values());
-//			log.info("efficiency computed for " + signature2efficiency.size() + " signatures.");
-//			BasicStatistics containerStats = new BasicStatistics();
-//			BasicStatistics bulkStats = new BasicStatistics();
-//			for (Map.Entry<ConsolidationUnit, Double> e : signature2efficiency.entrySet()) {
-//				if (e.getKey().isContainer) {
-//					containerStats.add(e.getValue());
-//				} else {
-//					bulkStats.add(e.getValue());
-//				}
-//			}
-//			log.info("  container efficiency stats: avg = " + containerStats.getAvg() + ", stddev = "
-//					+ containerStats.getStddev() + ", cnt = " + containerStats.size());
-//			log.info("  bulk efficiency stats: avg = " + bulkStats.getAvg() + ", stddev = " + bulkStats.getStddev()
-//					+ ", cnt = " + bulkStats.size());
-//
-//			final Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency = new LinkedHashMap<>();
-//			final Map<SamgodsConstants.TransportMode, Double> mode2realizedUnitCost_avgOfRatio = new LinkedHashMap<>();
-//			final Map<SamgodsConstants.TransportMode, Double> mode2realizedUnitCost_ratioOfAvg = new LinkedHashMap<>();
-//
-//			for (SamgodsConstants.TransportMode mode : mode2WeightSum.keySet()) {
-//				mode2realizedUnitCost_avgOfRatio.put(mode,
-//						mode2WeightedUnitCostSum.get(mode) / mode2WeightSum.get(mode));
-//				mode2realizedUnitCost_ratioOfAvg.put(mode, mode2CostSum.get(mode) / mode2TonKmSum.get(mode));
-//				mode2realizedEfficiency.put(mode, mode2WeightedEfficiencySum.get(mode) / mode2WeightSum.get(mode));
-//				mode2efficiency.compute(mode, (m, e) -> e == null ? mode2realizedEfficiency.get(mode)
-//						: innoWeight * mode2realizedEfficiency.get(mode) + (1.0 - innoWeight) * e);
-//			}
-//			logEfficiency(mode2realizedEfficiency, iteration, "efficiency.txt");
-//			logCost(mode2realizedUnitCost_avgOfRatio, iteration, "unitcost_avg-of-ratio.txt");
-//			logCost(mode2realizedUnitCost_ratioOfAvg, iteration, "unitcost_ratio-of-avg.txt");
-//			logFleet(vehicleType2WeightSum, iteration, fleet);
-
-//			for (Commodity commodity : consideredCommodities) {
-//				logEfficiency(
-//						commodity2mode2weightedRealizedEfficiencySum.get(commodity).entrySet().stream()
-//								.collect(Collectors.toMap(e -> e.getKey(),
-//										e -> e.getValue() / commodity2mode2weightSum.get(commodity).get(e.getKey()))),
-//						iteration, commodity + "_efficiency.txt");
-//				logCost(commodity2mode2weightedRealizedUnitCostSum_avgOfRatio.get(commodity).entrySet().stream()
-//						.collect(Collectors.toMap(e -> e.getKey(),
-//								e -> e.getValue() / commodity2mode2weightSum.get(commodity).get(e.getKey()))),
-//						iteration, commodity + "_unitcost_avg-of-ratio.txt");
-//				logCost(commodity2mode2weightedCostSum.get(commodity).entrySet().stream()
-//						.collect(Collectors.toMap(e -> e.getKey(),
-//								e -> e.getValue() / commodity2mode2tonKmSum.get(commodity).get(e.getKey()))),
-//						iteration, commodity + "_unitcost_ratio-of-avg.txt");
-//			}
-
-//			Map<TransportMode, BasicStatistics> mode2efficiencyStats = new LinkedHashMap<>();
-
-//			AsciiTable table = new AsciiTable();
-//			table.addRule();
-//			table.addRow("Mode", "E{payload/capacity}[%]", "E{payload}/E{capacity}[%]");
-//			table.addRule();
-//			for (Map.Entry<TransportMode, BasicStatistics> e : mode2efficiencyStats.entrySet()) {
-//				table.addRow(e.getKey(), MathHelpers.round(e.getValue().getAvg() * 100.0, 2),
-//						MathHelpers.round(100.0 * mode2payloadSum.getOrDefault(e.getKey(), 0.0)
-//								/ mode2capacitySum.getOrDefault(e.getKey(), 0.0), 2));
-//				table.addRule();
-//			}
-//			log.info("Transport efficiency per mode");
-//			log.info("\n" + table.render());
-//
-//			table = new AsciiTable();
-//			table.addRule();
-//			table.addRow("Commodity", "Efficiency[%]", "E{payload}/E{capacity}[%]");
-//			table.addRule();
-//			for (Map.Entry<Commodity, BasicStatistics> e : commodity2efficiencyStats.entrySet()) {
-//				table.addRow(e.getKey(), MathHelpers.round(e.getValue().getAvg() * 100.0, 2),
-//						MathHelpers.round(100.0 * commodity2payloadSum.getOrDefault(e.getKey(), 0.0)
-//								/ commodity2capacitySum.getOrDefault(e.getKey(), 0.0), 2));
-//				table.addRule();
-//			}
-//			log.info("Transport efficiency per commodity");
-//			log.info("\n" + table.render());
-
-//			Map<Id<VehicleType>, Long> type2cnt = new LinkedHashMap<>();
-			//
-//			System.out.println();
-//			System.out.println("totalDemand[ton]\tmeanVehicleCapacity[ton]");
-//			for (Map.Entry<Signature.Episode, List<Shipment>> e : episodeSignature2shipments.entrySet()) {
-//				UniformConsolidator consolidator = new UniformConsolidator(fleet, 7, 0.7);
-//				List<List<Shipment>> shipmentsOverDays = consolidator.distributeShipmentsOverDays(e.getValue());
-//				double totalDemand_ton = shipmentsOverDays.stream().flatMap(l -> l.stream())
-//						.mapToDouble(s -> s.getWeight_ton()).sum();
-//				if (totalDemand_ton > 0) {
-//					List<List<Vehicle>> vehiclesOverDays = consolidator.createVehiclesOverDays(shipmentsOverDays);
-			//
-//					for (List<Vehicle> vehicles : vehiclesOverDays) {
-//						for (Vehicle vehicle : vehicles) {
-//							type2cnt.compute(vehicle.getType().getId(), (id, cnt) -> cnt == null ? 1 : cnt + 1);
-//						}
-//					}
-			//
-//					if (Math.random() < 1e-1) {
-//						OptionalDouble meanCapacity_ton = vehiclesOverDays.stream().flatMap(l -> l.stream())
-//								.mapToDouble(v -> FreightVehicleAttributes.getCapacity_ton(v)).average();
-//						if (meanCapacity_ton.isPresent()) {
-//							System.out.println(totalDemand_ton + "\t" + meanCapacity_ton.getAsDouble());
-//						}
-//					}
-//				}
-//			}
-			//
-//			System.out.println();
-			//
-//			double totalTons = type2cnt.entrySet().stream().mapToDouble(
-//					e -> FreightVehicleAttributes.getCapacity_ton(fleet.getVehicles().getVehicleTypes().get(e.getKey()))
-//							* e.getValue())
-//					.sum();
-//			System.out.println("vehType\tshare");
-//			for (VehicleType type : fleet.getVehicles().getVehicleTypes().values()) {
-//				System.out.println(type.getId() + "\t" + type2cnt.getOrDefault(type.getId(), 0l)
-//						* FreightVehicleAttributes.getCapacity_ton(type) / totalTons);
-//			}
-//			System.out.println();
-
 		}
 
 		log.info("DONE");
 	}
+	
+	// LOGGING/TESTING BELOW
 
 	static void logEfficiency(Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency, int iteration,
 			String fileName) {

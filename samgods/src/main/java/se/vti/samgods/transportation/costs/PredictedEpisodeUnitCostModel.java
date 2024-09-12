@@ -32,7 +32,6 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkData;
-import se.vti.samgods.transportation.consolidation.ConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
@@ -41,11 +40,11 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
  * @author GunnarF
  *
  */
-public class BasicEpisodeCostModel implements EpisodeCostModel {
+public class PredictedEpisodeUnitCostModel {
 
 	// -------------------- MEMBERS --------------------
 
-	private final ConsolidationCostModel consolidationCostModel;
+	private final RealizedConsolidationCostModel consolidationCostModel;
 
 	private final Map<TransportMode, Double> mode2efficiency;
 	private final Map<ConsolidationUnit, Double> consolidationUnit2efficiency;
@@ -55,7 +54,7 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public BasicEpisodeCostModel(ConsolidationCostModel consolidationCostModel,
+	public PredictedEpisodeUnitCostModel(RealizedConsolidationCostModel consolidationCostModel,
 			Map<TransportMode, Double> mode2efficiency, Map<ConsolidationUnit, Double> consolidationUnit2efficiency,
 			NetworkData networkData, FleetData fleetData) {
 		this.consolidationCostModel = consolidationCostModel;
@@ -73,20 +72,19 @@ public class BasicEpisodeCostModel implements EpisodeCostModel {
 		this.fleetData = fleetData;
 	}
 
-	public BasicEpisodeCostModel(ConsolidationCostModel consolidationCostModel, double meanEfficiency,
+	public PredictedEpisodeUnitCostModel(RealizedConsolidationCostModel consolidationCostModel, double meanEfficiency,
 			NetworkData networkData, FleetData fleetData) {
 		this(consolidationCostModel,
 				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> meanEfficiency)),
 				new LinkedHashMap<>(), networkData, fleetData);
 	}
 
-	// -------------------- IMPLEMENTATION OF EpisodeCostModel --------------------
+	// -------------------- IMPLEMENTATION --------------------
 
 	private double efficiency(ConsolidationUnit signature) {
 		return this.consolidationUnit2efficiency.getOrDefault(signature, this.mode2efficiency.get(signature.mode));
 	}
 
-	@Override
 	public DetailedTransportCost computeUnitCost_1_ton(TransportEpisode episode) throws InsufficientDataException {
 
 		final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),

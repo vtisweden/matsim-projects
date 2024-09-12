@@ -30,6 +30,7 @@ import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.transportation.costs.RealizedConsolidationCostModel;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
@@ -43,7 +44,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final ConsolidationCostModel consolidationCostModel;
+	private final RealizedConsolidationCostModel consolidationCostModel;
 	private final NetworkData networkData;
 	private final FleetData fleetData;
 
@@ -52,7 +53,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidationJobProcessor(ConsolidationCostModel consolidationCostModel, NetworkData networkData,
+	public HalfLoopConsolidationJobProcessor(RealizedConsolidationCostModel consolidationCostModel, NetworkData networkData,
 			FleetData fleetData, BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.consolidationCostModel = consolidationCostModel;

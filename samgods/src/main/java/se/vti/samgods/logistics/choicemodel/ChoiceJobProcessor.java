@@ -36,7 +36,7 @@ import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.costs.EpisodeCostModel;
+import se.vti.samgods.transportation.costs.PredictedEpisodeUnitCostModel;
 import se.vti.samgods.utils.ChoiceModelUtils;
 
 public class ChoiceJobProcessor implements Runnable {
@@ -44,14 +44,14 @@ public class ChoiceJobProcessor implements Runnable {
 	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 	private final double scale;
-	private final EpisodeCostModel episodeCostModel;
+	private final PredictedEpisodeUnitCostModel episodeCostModel;
 	private final NonTransportCostModel nonTransportCostModel;
 	private final ChainAndShipmentSizeUtilityFunction utilityFunction;
 
 	private final BlockingQueue<ChoiceJob> jobQueue;
 	private final BlockingQueue<ChainAndShipmentSize> allChoices;
 
-	public ChoiceJobProcessor(double scale, EpisodeCostModel episodeCostModel,
+	public ChoiceJobProcessor(double scale, PredictedEpisodeUnitCostModel episodeCostModel,
 			NonTransportCostModel nonTransportCostModel, ChainAndShipmentSizeUtilityFunction utilityFunction,
 			BlockingQueue<ChoiceJob> jobQueue, BlockingQueue<ChainAndShipmentSize> allChoices) {
 		this.scale = scale;

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.transportation.consolidation;
+package se.vti.samgods.transportation.costs;
 
 import java.util.List;
 import java.util.Map;
@@ -28,8 +28,6 @@ import org.matsim.api.core.v01.network.Link;
 
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
@@ -37,7 +35,7 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
  * @author GunnarF
  *
  */
-public class ConsolidationCostModel {
+public class RealizedConsolidationCostModel {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -45,7 +43,7 @@ public class ConsolidationCostModel {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ConsolidationCostModel() {
+	public RealizedConsolidationCostModel() {
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
