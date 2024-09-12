@@ -48,62 +48,49 @@ public class RealizedConsolidationCostModel {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public DetailedTransportCost computeSignatureCost(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
+	public DetailedTransportCost computeRealizedSignatureCost(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
 			ConsolidationUnit consolidationUnit, boolean loadAtStart, boolean unloadAtEnd,
-			Map<Id<Link>, BasicTransportCost> link2unitCost, Set<Id<Link>> ferryLinks) throws InsufficientDataException {
-
+			Map<Id<Link>, BasicTransportCost> link2unitCost, Set<Id<Link>> ferryLinks)
+			throws InsufficientDataException {
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton)
 				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
 				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0).addDistance_km(0.0);
-
 		if (consolidationUnit.linkIds.size() > 0) {
-
 			final List<Id<Link>> firstLinkIds = consolidationUnit.linkIds.get(0);
 			final List<Id<Link>> lastLinkIds = consolidationUnit.linkIds.get(consolidationUnit.linkIds.size() - 1);
-
 			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
-
-				if (linkIds.size() > 0) {
-
-					if (loadAtStart && (linkIds == firstLinkIds)) {
-						builder.addLoadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
-						builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
-								* Math.max(minTransferredAmount_ton, payload_ton));
+				if (loadAtStart && (linkIds == firstLinkIds)) {
+					builder.addLoadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
+					builder.addLoadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
+							* Math.max(minTransferredAmount_ton, payload_ton));
+				} else {
+					builder.addTransferDuration_h(0.5 * vehicleAttrs.transferTime_h.get(consolidationUnit.commodity));
+					builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(consolidationUnit.commodity)
+							* Math.max(minTransferredAmount_ton, payload_ton));
+				}
+				if (unloadAtEnd && (linkIds == lastLinkIds)) {
+					builder.addUnloadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
+					builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
+							* Math.max(minTransferredAmount_ton, payload_ton));
+				} else {
+					builder.addTransferDuration_h(0.5 * vehicleAttrs.transferTime_h.get(consolidationUnit.commodity));
+					builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(consolidationUnit.commodity)
+							* Math.max(minTransferredAmount_ton, payload_ton));
+				}
+				for (Id<Link> linkId : linkIds) {
+					BasicTransportCost unitCost = link2unitCost.get(linkId);
+					builder.addMoveDuration_h(unitCost.duration_h);
+					builder.addDistance_km(unitCost.length_km);
+					if (ferryLinks.contains(linkId)) {
+						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
+						builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
 					} else {
-						builder.addTransferDuration_h(
-								0.5 * vehicleAttrs.transferTime_h.get(consolidationUnit.commodity));
-						builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(consolidationUnit.commodity)
-								* Math.max(minTransferredAmount_ton, payload_ton));
-					}
-
-					if (unloadAtEnd && (linkIds == lastLinkIds)) {
-						builder.addUnloadingDuration_h(vehicleAttrs.loadTime_h.get(consolidationUnit.commodity));
-						builder.addUnloadingCost(vehicleAttrs.loadCost_1_ton.get(consolidationUnit.commodity)
-								* Math.max(minTransferredAmount_ton, payload_ton));
-					} else {
-						builder.addTransferDuration_h(
-								0.5 * vehicleAttrs.transferTime_h.get(consolidationUnit.commodity));
-						builder.addTransferCost(0.5 * vehicleAttrs.transferCost_1_ton.get(consolidationUnit.commodity)
-								* Math.max(minTransferredAmount_ton, payload_ton));
-					}
-
-					for (Id<Link> linkId : linkIds) {
-						BasicTransportCost unitCost = link2unitCost.get(linkId);
-						builder.addMoveDuration_h(unitCost.duration_h);
-						builder.addDistance_km(unitCost.length_km);
-						if (ferryLinks.contains(linkId)) {
-							builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
-							builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
-						} else {
-							builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
-							builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
-						}
+						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
+						builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
 					}
 				}
 			}
 		}
-
 		return builder.build();
 	}
-
 }

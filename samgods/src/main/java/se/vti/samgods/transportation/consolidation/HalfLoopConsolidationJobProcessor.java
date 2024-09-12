@@ -189,14 +189,14 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			ConsolidationJob job, double serviceDemand_ton, double serviceProba, double length_km)
 			throws InsufficientDataException {
 		FleetAssignment result = new FleetAssignment(vehicleType, vehicleAttrs,
-				this.consolidationCostModel.computeSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
+				this.consolidationCostModel.computeRealizedSignatureCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
 						job.consolidationUnit, true, true, this.networkData.getLinkId2unitCost(vehicleType),
 						this.networkData.getFerryLinkIds()),
 				serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
 			FleetAssignment newResult = new FleetAssignment(vehicleType, vehicleAttrs,
-					this.consolidationCostModel.computeSignatureCost(vehicleAttrs, result.payload_ton,
+					this.consolidationCostModel.computeRealizedSignatureCost(vehicleAttrs, result.payload_ton,
 							job.consolidationUnit, true, true, this.networkData.getLinkId2unitCost(vehicleType),
 							this.networkData.getFerryLinkIds()),
 					serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);

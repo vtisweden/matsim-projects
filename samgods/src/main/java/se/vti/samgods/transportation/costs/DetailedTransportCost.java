@@ -56,10 +56,17 @@ public class DetailedTransportCost extends BasicTransportCost {
 		this.moveDuration_h = moveDuration_h;
 	}
 
-	public DetailedTransportCost computeUnitCost_1_ton() {
+	public DetailedTransportCost createUnitCost_1_ton() {
 		return new DetailedTransportCost(1.0, this.loadingCost / this.amount_ton, this.unloadingCost / this.amount_ton,
 				this.transferCost / this.amount_ton, this.moveCost / this.amount_ton, this.loadingDuration_h,
 				this.unloadingDuration_h, this.transferDuration_h, this.moveDuration_h, this.length_km);
+	}
+
+	public DetailedTransportCost createUnitCost_1_tonKm() {
+		final double tonKm = this.amount_ton * this.length_km;
+		return new DetailedTransportCost(1.0, this.loadingCost / tonKm, this.unloadingCost / tonKm,
+				this.transferCost / tonKm, this.moveCost / tonKm, this.loadingDuration_h, this.unloadingDuration_h,
+				this.transferDuration_h, this.moveDuration_h, 1.0);
 	}
 
 	// -------------------- BUILDER --------------------
@@ -142,7 +149,7 @@ public class DetailedTransportCost extends BasicTransportCost {
 
 		public DetailedTransportCost build() throws InsufficientDataException {
 			try {
-				// Null values raise exception when cast to primitive double.
+				// Null values intentionally raise exception when cast to primitive double.
 				return new DetailedTransportCost(this.amount_ton, this.loadingCost, this.unloadingCost,
 						this.transferCost, this.moveCost, this.loadingDuration_h, this.unloadingDuration_h,
 						this.transferDuration_h, this.moveDuration_h, this.distance_km);

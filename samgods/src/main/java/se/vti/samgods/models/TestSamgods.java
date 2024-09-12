@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -82,9 +83,9 @@ import se.vti.samgods.transportation.consolidation.ConsolidationJob;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.costs.RealizedConsolidationCostModel;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.PredictedEpisodeUnitCostModel;
+import se.vti.samgods.transportation.costs.RealizedConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
@@ -150,13 +151,13 @@ public class TestSamgods {
 
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
-		double samplingRate = 0.01;
-		boolean upscale = false;
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
-//				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
-//		double samplingRate = 1.0;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
+//		double samplingRate = 0.01;
 //		boolean upscale = false;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
+				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
+		double samplingRate = 1.0;
+		boolean upscale = false;
 
 		int maxThreads = Integer.MAX_VALUE;
 
@@ -372,9 +373,9 @@ public class TestSamgods {
 		 * ITERATIONS
 		 */
 
-		Map<ConsolidationUnit, Double> signature2efficiency = new LinkedHashMap<>();
-		Map<TransportMode, Double> mode2efficiency = Arrays.stream(TransportMode.values())
-				.collect(Collectors.toMap(m -> m, m -> 0.7));
+		final ConcurrentMap<ConsolidationUnit, Double> signature2efficiency = new ConcurrentHashMap<>();
+		final ConcurrentMap<TransportMode, Double> mode2efficiency = new ConcurrentHashMap<>(
+				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> 0.7)));
 
 		for (int iteration = 0; iteration < maxIterations; iteration++) {
 			double innoWeight = 1.0 / (1.0 + iteration);
@@ -397,8 +398,7 @@ public class TestSamgods {
 					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network);
 					FleetDataProvider fleetDataProvider = new FleetDataProvider(vehicles);
 					for (int i = 0; i < threadCnt; i++) {
-						RealizedConsolidationCostModel consolidationCostModel = new RealizedConsolidationCostModel();
-						PredictedEpisodeUnitCostModel episodeCostModel = new PredictedEpisodeUnitCostModel(consolidationCostModel,
+						PredictedEpisodeUnitCostModel episodeCostModel = new PredictedEpisodeUnitCostModel(
 								mode2efficiency, signature2efficiency, networkDataProvider.createNetworkData(),
 								fleetDataProvider.createFleetData());
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
@@ -588,10 +588,10 @@ public class TestSamgods {
 											boolean unloadAtEnd = consolidationUnits
 													.get(consolidationUnits.size() - 1) == consolidationUnit;
 											DetailedTransportCost unitCost_1_ton = consolidationCostModel
-													.computeSignatureCost(vehicleAttrs, payload_ton, consolidationUnit,
-															loadAtStart, unloadAtEnd, linkId2unitCost,
-															networkData.getFerryLinkIds())
-													.computeUnitCost_1_ton();
+													.computeRealizedSignatureCost(vehicleAttrs, payload_ton,
+															consolidationUnit, loadAtStart, unloadAtEnd,
+															linkId2unitCost, networkData.getFerryLinkIds())
+													.createUnitCost_1_ton();
 											costSum += unitCost_1_ton.monetaryCost
 													* choice.annualShipment.getTotalAmount_ton();
 											tonSum += choice.annualShipment.getTotalAmount_ton();
@@ -619,7 +619,7 @@ public class TestSamgods {
 
 		log.info("DONE");
 	}
-	
+
 	// LOGGING/TESTING BELOW
 
 	static void logEfficiency(Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency, int iteration,
