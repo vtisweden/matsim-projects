@@ -29,8 +29,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
@@ -47,8 +49,15 @@ import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
+import se.vti.samgods.OD;
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportDemand;
+import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+import se.vti.samgods.logistics.choicemodel.ChoiceJob;
+import se.vti.samgods.models.TestSamgods;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
@@ -109,44 +118,13 @@ public class Router {
 
 	// -------------------- INNER CLASSES --------------------
 
-	/**
-	 * Helper class to avoid that parallel routing gets problems with
-	 * non-synchronized leg/episode/chain references.
-	 * 
-	 * @author GunnarF
-	 *
-	 */
-	private class RoutingJob {
-		final ConsolidationUnit consolidationUnit;
+	private class RouteProcessor implements Runnable {
 
-		RoutingJob(ConsolidationUnit consolidationUnit) {
-			this.consolidationUnit = consolidationUnit;
-		}
-
-		boolean isContainer() {
-			return this.consolidationUnit.isContainer;
-		}
-
-		TransportMode mode() {
-			return this.consolidationUnit.mode;
-		}
-	}
-
-	/**
-	 * Helper class for parallel routing, operates only on its own members.
-	 * 
-	 * @author GunnarF
-	 *
-	 */
-	private class RoutingThread implements Runnable {
-
-		private final Logger log = Logger.getLogger(Router.RoutingThread.class);
+		private final Logger log = Logger.getLogger(Router.RouteProcessor.class);
 
 		private final String name;
 
 		private final Commodity commodity;
-
-		private final Iterable<RoutingJob> jobs;
 
 		private final NetworkData networkData;
 
@@ -156,17 +134,15 @@ public class Router {
 
 		private final Map<TransportMode, Map<Boolean, Map<Boolean, LeastCostPathCalculator>>> mode2isContainer2containsFerry2router = new LinkedHashMap<>();
 
-		RoutingThread(String name, Commodity commodity, List<RoutingJob> jobs, NetworkData networkData,
-				FleetData fleetData) {
+		private final BlockingQueue<ConsolidationUnit> jobQueue;
 
+		RouteProcessor(String name, Commodity commodity, NetworkData networkData, FleetData fleetData,
+				BlockingQueue<ConsolidationUnit> jobQueue) {
 			this.name = name;
 			this.commodity = commodity;
-
-			// Contents of this datastructure are iterated over and modified (routes added).
-			this.jobs = jobs;
-
 			this.networkData = networkData;
 			this.fleetData = fleetData;
+			this.jobQueue = jobQueue;
 		}
 
 		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
@@ -188,19 +164,19 @@ public class Router {
 			}
 		}
 
-		private List<List<Link>> computeRoutes(RoutingJob job, boolean containsFerry) {
+		private List<List<Link>> computeRoutes(ConsolidationUnit job, boolean containsFerry) {
 			final LeastCostPathCalculator router;
 			try {
-				router = this.getRouter(job.mode(), job.isContainer(), containsFerry);
+				router = this.getRouter(job.mode, job.isContainer, containsFerry);
 			} catch (InsufficientDataException e) {
 				return null;
 			}
 
-			final Network network = this.networkData.getUnimodalNetwork(job.consolidationUnit.mode, containsFerry);
-			List<List<Link>> routes = new ArrayList<>(job.consolidationUnit.nodeIds.size() - 1);
-			for (int i = 0; i < job.consolidationUnit.nodeIds.size() - 1; i++) {
-				Id<Node> fromId = job.consolidationUnit.nodeIds.get(i);
-				Id<Node> toId = job.consolidationUnit.nodeIds.get(i + 1);
+			final Network network = this.networkData.getUnimodalNetwork(job.mode, containsFerry);
+			List<List<Link>> routes = new ArrayList<>(job.nodeIds.size() - 1);
+			for (int i = 0; i < job.nodeIds.size() - 1; i++) {
+				Id<Node> fromId = job.nodeIds.get(i);
+				Id<Node> toId = job.nodeIds.get(i + 1);
 
 				if (fromId.equals(toId)) {
 					routes.add(new ArrayList<>());
@@ -241,6 +217,7 @@ public class Router {
 			}
 		}
 
+		// TODO Workaround to not deal with exception handling in lambda expressions
 		private Map<Id<Link>, BasicTransportCost> getExistingLinkId2representativeUnitCost(Commodity commodity,
 				TransportMode mode, boolean isContainer, boolean containsFerry) {
 			try {
@@ -252,70 +229,70 @@ public class Router {
 			}
 		}
 
-		@Override
-		public void run() {
+		private void process(ConsolidationUnit job) {
+			final List<List<Link>> withFerryRoutes = this.computeRoutes(job, true);
+			final Double withFerryCost;
+			final Boolean withFerryContainsFerry;
+			if (withFerryRoutes != null) {
+				final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this
+						.getExistingLinkId2representativeUnitCost(this.commodity, job.mode, job.isContainer, true);
 
-			long failedAtFerryCheckpoint = 0;
-			long jobCnt = 0;
-
-			log.info("THREAD STARTED: " + this.name);
-			for (RoutingJob job : this.jobs) {
-				jobCnt++;
-
-				final List<List<Link>> withFerryRoutes = this.computeRoutes(job, true);
-				final Double withFerryCost;
-				final Boolean withFerryContainsFerry;
-				if (withFerryRoutes != null) {
-
-					final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this
-							.getExistingLinkId2representativeUnitCost(this.commodity, job.mode(), job.isContainer(),
-									true);
-
-					withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
-							.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
-					withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
-							.anyMatch(l -> this.networkData.getFerryLinkIds().contains(l.getId()));
+				withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
+						.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
+				withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
+						.anyMatch(l -> this.networkData.getFerryLinkIds().contains(l.getId()));
+			} else {
+				withFerryCost = null;
+				withFerryContainsFerry = null;
+			}
+			if ((withFerryRoutes != null) && !withFerryContainsFerry) {
+				// Allowing for ferry yields a route that does not contain ferry, so o need to
+				// look further.
+				job.setRoutes(withFerryRoutes);
+			} else {
+				final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
+				final Double withoutFerryCost;
+				if (withoutFerryRoutes != null) {
+					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this
+							.getExistingLinkId2representativeUnitCost(this.commodity, job.mode, job.isContainer, false);
+					withoutFerryCost = withoutFerryRoutes.stream().flatMap(list -> list.stream())
+							.mapToDouble(l -> link2withoutFerryUnitCost.get(l.getId()).monetaryCost).sum();
 				} else {
-					withFerryCost = null;
-					withFerryContainsFerry = null;
+					withoutFerryCost = null;
 				}
-
-				if ((withFerryRoutes != null) && !withFerryContainsFerry) {
-					// Allowing for ferry yields a route that does not contain ferry, so o need to
-					// look further.
-					job.consolidationUnit.setRoutes(withFerryRoutes);
-				} else {
-					final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
-					final Double withoutFerryCost;
-					if (withoutFerryRoutes != null) {
-						Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this
-								.getExistingLinkId2representativeUnitCost(this.commodity, job.mode(), job.isContainer(),
-										false);
-						withoutFerryCost = withoutFerryRoutes.stream().flatMap(list -> list.stream())
-								.mapToDouble(l -> link2withoutFerryUnitCost.get(l.getId()).monetaryCost).sum();
+				if (withFerryRoutes != null) {
+					if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
+						job.setRoutes(withoutFerryRoutes);
 					} else {
-						withoutFerryCost = null;
+						job.setRoutes(withFerryRoutes);
 					}
-
-					if (withFerryRoutes != null) {
-						if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
-							job.consolidationUnit.setRoutes(withoutFerryRoutes);
-						} else {
-							job.consolidationUnit.setRoutes(withFerryRoutes);
-						}
+				} else {
+					if (withoutFerryRoutes != null) {
+						job.setRoutes(withoutFerryRoutes);
 					} else {
-						if (withoutFerryRoutes != null) {
-							job.consolidationUnit.setRoutes(withoutFerryRoutes);
-						} else {
-							job.consolidationUnit.setRoutes(null);
-							failedAtFerryCheckpoint++;
-						}
+						job.setRoutes(null);
 					}
 				}
 			}
-			log.info("THREAD ENDED: " + this.name + ". Failed at ferry checkpoint: " + failedAtFerryCheckpoint
-					+ " out of " + jobCnt);
 		}
+
+		@Override
+		public void run() {
+			log.info("THREAD STARTED: " + this.name);
+			try {
+				while (true) {
+					ConsolidationUnit job = this.jobQueue.take();
+					if (job == ConsolidationUnit.TERMINATE) {
+						break;
+					}
+					this.process(job);
+				}
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			log.info("ROUTING THREAD ENDED: " + this.name);
+		}
+
 	}
 
 	// -------------------- CONSTANTS AND MEMBERS --------------------
@@ -345,54 +322,39 @@ public class Router {
 		return this;
 	}
 
-	// -------------------- INTERNALS --------------------
-
-	private void routeInternally(Commodity commodity, List<RoutingJob> allJobs) {
-
-		final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
-		final long jobsPerThread = allJobs.size() / threadCnt;
-
-		final ExecutorService threadPool = Executors.newFixedThreadPool(threadCnt);
-		final Iterator<RoutingJob> jobIterator = allJobs.iterator();
-
-		final NetworkDataProvider networkDataProvider = new NetworkDataProvider(this.multimodalNetwork);
-		final FleetDataProvider fleetDataProvider = new FleetDataProvider(this.vehicles);
-
-		for (int thread = 0; thread < threadCnt; thread++) {
-			final List<RoutingJob> jobs = new LinkedList<>();
-			while (jobIterator.hasNext() && ((jobs.size() < jobsPerThread) || (thread == threadCnt - 1))) {
-				jobs.add(jobIterator.next());
-			}
-			final RoutingThread routingThread = new RoutingThread(commodity + "_" + thread + "_" + jobs.size() + "jobs",
-					commodity, jobs, networkDataProvider.createNetworkData(), fleetDataProvider.createFleetData());
-			threadPool.execute(routingThread);
-		}
-
-		threadPool.shutdown();
-		try {
-			threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			return;
-		}
-	}
-
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void route(Commodity commodity, List<ConsolidationUnit> consolidationUnits) {
-		final List<RoutingJob> allJobs = new ArrayList<>(
-				consolidationUnits.stream().map(c -> new RoutingJob(c)).toList());
-		Collections.sort(allJobs, new Comparator<>() {
-			@Override
-			public int compare(RoutingJob job1, RoutingJob job2) {
-				int cmp = (job1.mode().compareTo(job2.mode()));
-				if (cmp != 0) {
-					return cmp;
-				} else {
-					return Boolean.compare(job1.isContainer(), job2.isContainer());
-				}
+	public void route(Commodity commodity, Iterable<ConsolidationUnit> allJobs) {
+		try {
+			final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
+			final BlockingQueue<ConsolidationUnit> jobQueue = new LinkedBlockingQueue<>(10 * threadCnt);
+			final List<Thread> routingThreads = new ArrayList<>();
+
+			log.info("Starting " + threadCnt + " routing threads.");
+			final NetworkDataProvider networkDataProvider = new NetworkDataProvider(this.multimodalNetwork);
+			final FleetDataProvider fleetDataProvider = new FleetDataProvider(this.vehicles);
+			for (int i = 0; i < threadCnt; i++) {
+				final RouteProcessor routeProcessor = new RouteProcessor(commodity + "_" + i, commodity,
+						networkDataProvider.createNetworkData(), fleetDataProvider.createFleetData(), jobQueue);
+				final Thread routingThread = new Thread(routeProcessor);
+				routingThreads.add(routingThread);
+				routingThread.start();
 			}
-		});
-		this.routeInternally(commodity, allJobs);
+
+			log.info("Starting to populate routing job queue, continuing as threads progress.");
+			for (ConsolidationUnit job : allJobs) {
+				jobQueue.put(job);
+			}
+
+			log.info("Waiting for routing jobs to complete.");
+			for (int i = 0; i < routingThreads.size(); i++) {
+				jobQueue.put(ConsolidationUnit.TERMINATE);
+			}
+			for (Thread routingThread : routingThreads) {
+				routingThread.join();
+			}
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

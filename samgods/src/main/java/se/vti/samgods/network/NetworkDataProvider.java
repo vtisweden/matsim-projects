@@ -19,8 +19,6 @@
  */
 package se.vti.samgods.network;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -68,17 +66,17 @@ public class NetworkDataProvider {
 
 	private final CopyOnWriteArraySet<Id<Link>> ferryLinkIds;
 
-	Set<Id<Link>> getFerryLinkIds() {
+	CopyOnWriteArraySet<Id<Link>> getFerryLinkIds() {
 		return this.ferryLinkIds;
 	}
 
 	// --------------- THREAD-SAFE, LOCALLY CACHED LINK UNIT COSTS ---------------
 
-	private final ConcurrentMap<VehicleType, Map<Id<Link>, BasicTransportCost>> vehicleType2linkId2unitCost = new ConcurrentHashMap<>();
+	private final ConcurrentMap<VehicleType, ConcurrentMap<Id<Link>, BasicTransportCost>> vehicleType2linkId2unitCost = new ConcurrentHashMap<>();
 
 	private final CopyOnWriteArraySet<Link> allLinks;
 
-	private synchronized Map<Id<Link>, BasicTransportCost> createLinkId2unitCost(VehicleType vehicleType) {
+	private synchronized ConcurrentMap<Id<Link>, BasicTransportCost> createLinkId2unitCost(VehicleType vehicleType) {
 		final ConcurrentHashMap<Id<Link>, BasicTransportCost> result = new ConcurrentHashMap<>(this.allLinks.size());
 		final SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
 				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
@@ -111,7 +109,7 @@ public class NetworkDataProvider {
 		return result;
 	}
 
-	Map<Id<Link>, BasicTransportCost> getLinkId2unitCost(VehicleType vehicleType) {
+	ConcurrentMap<Id<Link>, BasicTransportCost> getLinkId2unitCost(VehicleType vehicleType) {
 		return this.vehicleType2linkId2unitCost.computeIfAbsent(vehicleType,
 				t -> this.createLinkId2unitCost(vehicleType));
 	}

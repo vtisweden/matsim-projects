@@ -55,6 +55,11 @@ import se.vti.samgods.network.SamgodsLinkAttributes;
 @JsonDeserialize(using = ConsolidationUnit.Deserializer.class)
 public class ConsolidationUnit {
 
+	// -------------------- CONSTANTS --------------------
+
+	// "Poison pill" for multithreaded treatment.
+	public static final ConsolidationUnit TERMINATE = new ConsolidationUnit(null, null, null, null, null);
+
 	// -------------------- MEMBERS --------------------
 
 	// TODO synchronize
@@ -178,9 +183,8 @@ public class ConsolidationUnit {
 			for (List<Link> route : routes) {
 				this.linkIds.add(route.stream().map(l -> l.getId()).toList());
 				this.length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
-				this.containsFerry = this.containsFerry || route.stream().anyMatch(
-						l -> ((SamgodsLinkAttributes) l.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode
-								.isFerry());
+				this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> ((SamgodsLinkAttributes) l
+						.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
 			}
 		}
 	}
@@ -188,8 +192,9 @@ public class ConsolidationUnit {
 	public void computeNetworkCharacteristics(Network network) {
 		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
-		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream()).anyMatch(l -> ((SamgodsLinkAttributes) network
-				.getLinks().get(l).getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
+		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
+				.anyMatch(l -> ((SamgodsLinkAttributes) network.getLinks().get(l).getAttributes()
+						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
 	}
 
 	// -------------------- Json Serializer --------------------

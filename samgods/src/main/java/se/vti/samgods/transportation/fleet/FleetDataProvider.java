@@ -21,7 +21,6 @@ package se.vti.samgods.transportation.fleet;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -44,19 +43,18 @@ public class FleetDataProvider {
 
 	private final ConcurrentMap<VehicleType, SamgodsVehicleAttributes> vehicleType2attributes;
 
-	Map<VehicleType, SamgodsVehicleAttributes> getVehicleType2attributes() {
+	ConcurrentMap<VehicleType, SamgodsVehicleAttributes> getVehicleType2attributes() {
 		return this.vehicleType2attributes;
 	}
 
 	// ---------- THREAD-SAFE LOCALLY CACHED COMPATIBLE VEHICLE TYPES ----------
 
-	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, List<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleTypes = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, List<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleTypes = new ConcurrentHashMap<>();
 
 	private synchronized List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode,
 			boolean isContainer, boolean containsFerry) {
-
 		final List<VehicleType> result = new ArrayList<>(this.vehicleType2attributes.size());
-		for (Map.Entry<VehicleType, SamgodsVehicleAttributes> e : this.vehicleType2attributes.entrySet()) {
+		for (ConcurrentMap.Entry<VehicleType, SamgodsVehicleAttributes> e : this.vehicleType2attributes.entrySet()) {
 			VehicleType type = e.getKey();
 			SamgodsVehicleAttributes attrs = e.getValue();
 			if (attrs.samgodsMode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
@@ -66,7 +64,7 @@ public class FleetDataProvider {
 		}
 		return result;
 	}
-	
+
 	List<VehicleType> getCompatibleVehicleTypes(final Commodity commodity, final TransportMode mode,
 			final boolean isContainer, final boolean isFerry) {
 		return this.commodity2transportMode2isContainer2isFerry2representativeVehicleTypes
@@ -78,7 +76,7 @@ public class FleetDataProvider {
 
 	// ---------- THREAD-SAFE LOCALLY CACHED REPRESENTATIVE VEHICLE TYPES ----------
 
-	private final ConcurrentMap<Commodity, Map<TransportMode, Map<Boolean, Map<Boolean, VehicleType>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleType = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, VehicleType>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleType = new ConcurrentHashMap<>();
 
 	private synchronized VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode,
 			boolean isContainer, boolean containsFerry) {
@@ -114,7 +112,7 @@ public class FleetDataProvider {
 	}
 
 	// -------------------- CONSTRUCTION --------------------
-	
+
 	public FleetDataProvider(Vehicles vehicles) {
 		this.vehicleType2attributes = new ConcurrentHashMap<>(vehicles.getVehicleTypes().values().stream()
 				.collect(Collectors.toMap(t -> t, t -> (SamgodsVehicleAttributes) t.getAttributes()

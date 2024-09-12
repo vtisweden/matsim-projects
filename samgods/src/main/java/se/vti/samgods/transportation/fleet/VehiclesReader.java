@@ -141,51 +141,51 @@ public class VehiclesReader {
 
 		for (SamgodsVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
 			try {
-				VehicleType vehicleType = builder.buildVehicleType();
-
-				SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
-						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-				if (attrs.onFerryCost_1_h == null) {
-					log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
-				}
-				if (attrs.onFerryCost_1_km == null) {
-					log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_km.");
-				}
-				if (attrs.speed_km_h == null) {
-					log.warn("Vehicle type " + vehicleType.getId() + " has null speed_km_h.");
-				}
-
-				Set<SamgodsConstants.Commodity> commodities = new LinkedHashSet<>(
-						Arrays.asList(SamgodsConstants.Commodity.values()));
-				commodities.removeAll(attrs.loadCost_1_ton.keySet());
-				if (commodities.size() > 0) {
-					log.warn("Vehicle type " + vehicleType.getId() + " has no loadCost_1_ton for commodities: "
-							+ commodities);
-				}
-
-				commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
-				commodities.removeAll(attrs.loadTime_h.keySet());
-				if (commodities.size() > 0) {
-					log.warn("Vehicle type " + vehicleType.getId() + " has no loadTime_h for commodities: "
-							+ commodities);
-				}
-
-				commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
-				commodities.removeAll(attrs.transferCost_1_ton.keySet());
-				if (commodities.size() > 0) {
-					log.warn("Vehicle type " + vehicleType.getId() + " has no transferCost_1_ton for commodities: "
-							+ commodities);
-				}
-
-				commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
-				commodities.removeAll(attrs.transferTime_h.keySet());
-				if (commodities.size() > 0) {
-					log.warn("Vehicle type " + vehicleType.getId() + " has no transferTime_h for commodities: "
-							+ commodities);
-				}
-
+				final VehicleType vehicleType = builder.buildVehicleType();
 				this.vehicles.addVehicleType(vehicleType);
+				{ // This block is just for logging.
+					final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+							.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+					
+					if (attrs.onFerryCost_1_h == null) {
+						log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
+					}
+					if (attrs.onFerryCost_1_km == null) {
+						log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_km.");
+					}
+					if (attrs.speed_km_h == null) {
+						log.warn("Vehicle type " + vehicleType.getId() + " has null speed_km_h.");
+					}
 
+					Set<SamgodsConstants.Commodity> commodities = new LinkedHashSet<>(
+							Arrays.asList(SamgodsConstants.Commodity.values()));
+					commodities.removeAll(attrs.loadCost_1_ton.keySet());
+					if (commodities.size() > 0) {
+						log.warn("Vehicle type " + vehicleType.getId() + " has no loadCost_1_ton for commodities: "
+								+ commodities);
+					}
+
+					commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
+					commodities.removeAll(attrs.loadTime_h.keySet());
+					if (commodities.size() > 0) {
+						log.warn("Vehicle type " + vehicleType.getId() + " has no loadTime_h for commodities: "
+								+ commodities);
+					}
+
+					commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
+					commodities.removeAll(attrs.transferCost_1_ton.keySet());
+					if (commodities.size() > 0) {
+						log.warn("Vehicle type " + vehicleType.getId() + " has no transferCost_1_ton for commodities: "
+								+ commodities);
+					}
+
+					commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
+					commodities.removeAll(attrs.transferTime_h.keySet());
+					if (commodities.size() > 0) {
+						log.warn("Vehicle type " + vehicleType.getId() + " has no transferTime_h for commodities: "
+								+ commodities);
+					}
+				}
 			} catch (InsufficientDataException e) {
 				e.log(this.getClass(), "Failed to build vehicle type " + builder.id + ".");
 			}
@@ -196,7 +196,7 @@ public class VehiclesReader {
 
 	public static void main(String[] args) throws Exception {
 		Vehicles vehicles = VehicleUtils.createVehiclesContainer();
-		
+
 		VehiclesReader reader = new VehiclesReader(vehicles);
 		reader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
 				SamgodsConstants.TransportMode.Air);

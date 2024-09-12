@@ -26,6 +26,7 @@ import de.vandermeer.asciitable.AsciiTable;
 import se.vti.samgods.SamgodsConstants;
 
 /**
+ * Just for testing.
  * 
  * @author GunnarF
  *

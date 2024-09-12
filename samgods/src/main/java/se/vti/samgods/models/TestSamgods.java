@@ -88,8 +88,8 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.EpisodeCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
-import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.VehiclesReader;
 
 /**
  * 
@@ -162,7 +162,7 @@ public class TestSamgods {
 		int maxThreads = Integer.MAX_VALUE;
 
 		double scale = 1.0;
-		int maxIterations = 0;
+		int maxIterations = 5;
 		double nonTransportCostFactor = 1.0;
 		boolean enforceReroute = false;
 
@@ -238,7 +238,7 @@ public class TestSamgods {
 			 * Route (if possible) the representative consolidation units.
 			 * 
 			 * Routing changes the behavior of hashcode(..) / equals(..) in
-			 * ConsolidationUnit, hence we store (to be) routed units in a List.
+			 * ConsolidationUnit, but this should not affect the *values* of a HashMap.
 			 */
 			for (Commodity commodity : consideredCommodities) {
 				log.info(commodity + ": Routing consolidation units.");

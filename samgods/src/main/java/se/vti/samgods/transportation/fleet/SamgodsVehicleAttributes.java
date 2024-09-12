@@ -51,20 +51,21 @@ public class SamgodsVehicleAttributes {
 
 	public final double capacity_ton;
 
+	// may be null for ferry incompatible vehicles
 	public final Double onFerryCost_1_km;
 
+	// may be null for ferry incompatible vehicles
 	public final Double onFerryCost_1_h;
 
+	// may be null, in which case link speed limit is used
 	public final Double speed_km_h;
 
 	public final boolean isContainer;
 
+	// contains entries only for compatible commodities
 	public final ConcurrentHashMap<SamgodsConstants.Commodity, Double> loadCost_1_ton;
-
 	public final ConcurrentHashMap<SamgodsConstants.Commodity, Double> loadTime_h;
-
 	public final ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferCost_1_ton;
-
 	public final ConcurrentHashMap<SamgodsConstants.Commodity, Double> transferTime_h;
 
 	// -------------------- CONSTRUCTION (private, use builder) --------------------
