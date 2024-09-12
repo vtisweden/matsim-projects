@@ -20,7 +20,7 @@
 package se.vti.samgods.logistics.choicemodel;
 
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.NonTransportCost;
+import se.vti.samgods.logistics.costs.NonTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 
 /**

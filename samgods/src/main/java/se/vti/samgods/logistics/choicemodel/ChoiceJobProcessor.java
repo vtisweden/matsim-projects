@@ -29,11 +29,11 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.ShipmentSize;
-import se.vti.samgods.logistics.NonTransportCost;
-import se.vti.samgods.logistics.NonTransportCostModel;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+import se.vti.samgods.logistics.costs.NonTransportCost;
+import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.PredictedEpisodeUnitCostModel;
@@ -119,7 +119,7 @@ public class ChoiceJobProcessor implements Runnable {
 				for (ShipmentSize size : SamgodsConstants.ShipmentSize.values()) {
 					if ((annualShipment.getSingleInstanceAnnualAmount_ton() >= size.getRepresentativeValue_ton())
 							|| SamgodsConstants.ShipmentSize.getSmallestSize_ton().equals(size)) {
-						final NonTransportCost totalNonTransportCost = this.nonTransportCostModel.computeCost(commodity,
+						final NonTransportCost totalNonTransportCost = this.nonTransportCostModel.computeNonTransportCost(commodity,
 								size, annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost.duration_h);
 						alternatives.add(new ChainAndShipmentSize(annualShipment, size, transportChain,
 								this.utilityFunction.computeUtility(commodity,

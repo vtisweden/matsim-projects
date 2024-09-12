@@ -63,9 +63,6 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.ChainChoiReader;
-import se.vti.samgods.logistics.NonTransportCost;
-import se.vti.samgods.logistics.NonTransportCostModel;
-import se.vti.samgods.logistics.NonTransportCostModel_v1_22;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
@@ -75,6 +72,9 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceJobProcessor;
+import se.vti.samgods.logistics.costs.NonTransportCost;
+import se.vti.samgods.logistics.costs.NonTransportCostModel;
+import se.vti.samgods.logistics.costs.NonTransportCostModel_v1_22;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.network.NetworkReader;
@@ -408,7 +408,7 @@ public class TestSamgods {
 									DetailedTransportCost transportUnitCost, NonTransportCost totalNonTransportCost) {
 								return -transportUnitCost.monetaryCost * amount_ton
 										+ nonTransportCostFactor * (-totalNonTransportCost.totalOrderCost
-												- totalNonTransportCost.totalEnRouteLoss
+												- totalNonTransportCost.totalEnRouteMonetaryLoss
 												- totalNonTransportCost.totalInventoryCost);
 							}
 						};

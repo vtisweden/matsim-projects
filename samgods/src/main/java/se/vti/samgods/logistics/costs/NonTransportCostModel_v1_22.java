@@ -17,10 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.logistics.costs;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import se.vti.samgods.SamgodsConstants;
 
@@ -31,15 +31,15 @@ import se.vti.samgods.SamgodsConstants;
  */
 public class NonTransportCostModel_v1_22 implements NonTransportCostModel {
 
-	private final double annualInterestRate = 1.0;
+	private final double annualInterestRate = 0.1;
 
-	private final Map<SamgodsConstants.Commodity, Double> commodity2value_1_ton = new LinkedHashMap<>(
+	private final ConcurrentMap<SamgodsConstants.Commodity, Double> commodity2value_1_ton = new ConcurrentHashMap<>(
 			SamgodsConstants.commodityCnt());
 
-	private final Map<SamgodsConstants.Commodity, Double> commodity2inventoryCost_1_yrTon = new LinkedHashMap<>(
+	private final ConcurrentMap<SamgodsConstants.Commodity, Double> commodity2inventoryCost_1_yrTon = new ConcurrentHashMap<>(
 			SamgodsConstants.commodityCnt());
 
-	private final Map<SamgodsConstants.Commodity, Double> commodity2orderCost = new LinkedHashMap<>(
+	private final ConcurrentMap<SamgodsConstants.Commodity, Double> commodity2orderCost = new ConcurrentHashMap<>(
 			SamgodsConstants.commodityCnt());
 
 	public NonTransportCostModel_v1_22() {
@@ -97,8 +97,8 @@ public class NonTransportCostModel_v1_22 implements NonTransportCostModel {
 	}
 
 	@Override
-	public NonTransportCost computeCost(SamgodsConstants.Commodity commodity, SamgodsConstants.ShipmentSize shipmentSize,
-			double annualAmount_ton, double transportChainDuration_h) {
+	public NonTransportCost computeNonTransportCost(SamgodsConstants.Commodity commodity,
+			SamgodsConstants.ShipmentSize shipmentSize, double annualAmount_ton, double transportChainDuration_h) {
 		final double frequency_1_yr = annualAmount_ton / shipmentSize.getRepresentativeValue_ton();
 		final double totalOrderCost = this.commodity2orderCost.get(commodity) * frequency_1_yr;
 		final double totalEnRouteLoss = this.annualInterestRate * (transportChainDuration_h / 365.0 / 24.0)

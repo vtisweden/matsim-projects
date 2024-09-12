@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.logistics.costs;
 
 import se.vti.samgods.SamgodsConstants;
 
@@ -28,7 +28,7 @@ import se.vti.samgods.SamgodsConstants;
  */
 public interface NonTransportCostModel {
 
-	NonTransportCost computeCost(SamgodsConstants.Commodity commodity, SamgodsConstants.ShipmentSize shipmentSize,
+	NonTransportCost computeNonTransportCost(SamgodsConstants.Commodity commodity, SamgodsConstants.ShipmentSize shipmentSize,
 			double annualAmount_ton, double transportChainDuration_h);
 
 }

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics;
+package se.vti.samgods.logistics.costs;
 
 /**
  * 
@@ -32,16 +32,16 @@ public class NonTransportCost {
 
 	public final double totalOrderCost;
 
-	public final double totalEnRouteLoss;
+	public final double totalEnRouteMonetaryLoss;
 
 	public final double totalInventoryCost;
 
 	public NonTransportCost(double annualAmount_ton, double frequency_1_yr, double totalOrderCost,
-			double totalEnRouteLoss, double totalInventoryCost) {
+			double totalEnRouteMonetaryLoss, double totalInventoryCost) {
 		this.annualAmount_ton = annualAmount_ton;
 		this.frequency_1_yr = frequency_1_yr;
 		this.totalOrderCost = totalOrderCost;
 		this.totalInventoryCost = totalInventoryCost;
-		this.totalEnRouteLoss = totalEnRouteLoss;
+		this.totalEnRouteMonetaryLoss = totalEnRouteMonetaryLoss;
 	}
 }
