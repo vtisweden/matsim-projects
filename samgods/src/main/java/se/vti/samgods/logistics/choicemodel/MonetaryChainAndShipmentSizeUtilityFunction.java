@@ -19,33 +19,26 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
-import java.util.List;
-
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportDemand;
+import se.vti.samgods.logistics.costs.NonTransportCost;
+import se.vti.samgods.transportation.costs.DetailedTransportCost;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ChoiceJob {
+public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShipmentSizeUtilityFunction {
 
-	public static final ChoiceJob TERMINATE = new ChoiceJob(null, null, null, null) {
-	};
+	public double totalMonetaryCost(double amount_ton, DetailedTransportCost transportUnitCost,
+			NonTransportCost totalNonTransportCost) {
+		return transportUnitCost.monetaryCost * amount_ton + totalNonTransportCost.totalOrderCost
+				+ totalNonTransportCost.totalEnRouteMonetaryLoss + totalNonTransportCost.totalInventoryCost;
+	}
 
-	public final Commodity commodity;
-	public final OD od;
-	public final List<TransportChain> transportChains;
-	public final List<TransportDemand.AnnualShipment> annualShipments;
-
-	public ChoiceJob(Commodity commodity, OD od, List<TransportChain> transportChains,
-			List<TransportDemand.AnnualShipment> annualShipments) {
-		this.commodity = commodity;
-		this.od = od;
-		this.transportChains = transportChains;
-		this.annualShipments = annualShipments;
+	@Override
+	public double computeUtility(Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost,
+			NonTransportCost totalNonTransportCost) {
+		return (-1.0) * this.totalMonetaryCost(amount_ton, transportUnitCost, totalNonTransportCost);
 	}
 }

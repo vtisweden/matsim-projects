@@ -72,6 +72,7 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceJobProcessor;
+import se.vti.samgods.logistics.choicemodel.MonetaryChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.costs.NonTransportCost;
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.logistics.costs.NonTransportCostModel_v1_22;
@@ -402,16 +403,7 @@ public class TestSamgods {
 								mode2efficiency, signature2efficiency, networkDataProvider.createNetworkData(),
 								fleetDataProvider.createFleetData());
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
-						ChainAndShipmentSizeUtilityFunction utilityFunction = new ChainAndShipmentSizeUtilityFunction() {
-							@Override
-							public double computeUtility(Commodity commodity, double amount_ton,
-									DetailedTransportCost transportUnitCost, NonTransportCost totalNonTransportCost) {
-								return -transportUnitCost.monetaryCost * amount_ton
-										+ nonTransportCostFactor * (-totalNonTransportCost.totalOrderCost
-												- totalNonTransportCost.totalEnRouteMonetaryLoss
-												- totalNonTransportCost.totalInventoryCost);
-							}
-						};
+						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction();
 						ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(scale, episodeCostModel,
 								nonTransportCostModel, utilityFunction, jobQueue, allChoices);
 						Thread choiceThread = new Thread(choiceSimulator);

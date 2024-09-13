@@ -32,24 +32,39 @@ import se.vti.samgods.SamgodsConstants.ShipmentSize;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
 import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.costs.NonTransportCost;
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
-import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.PredictedEpisodeUnitCostModel;
 import se.vti.samgods.utils.ChoiceModelUtils;
 
+/**
+ * 
+ * @author GunnarF
+ *
+ */
 public class ChoiceJobProcessor implements Runnable {
+
+	// -------------------- CONSTANTS --------------------
 
 	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
 	private final double scale;
+
 	private final PredictedEpisodeUnitCostModel episodeCostModel;
+
 	private final NonTransportCostModel nonTransportCostModel;
+
 	private final ChainAndShipmentSizeUtilityFunction utilityFunction;
 
+	// -------------------- MEMBERS --------------------
+
 	private final BlockingQueue<ChoiceJob> jobQueue;
+
 	private final BlockingQueue<ChainAndShipmentSize> allChoices;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public ChoiceJobProcessor(double scale, PredictedEpisodeUnitCostModel episodeCostModel,
 			NonTransportCostModel nonTransportCostModel, ChainAndShipmentSizeUtilityFunction utilityFunction,
@@ -75,12 +90,13 @@ public class ChoiceJobProcessor implements Runnable {
 				this.process(job);
 			}
 		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
 		}
 	}
 
 	// -------------------- INTERNALS --------------------
 
+	// TODO make this concurrently available through a ChoicemodelDataProvider
 	private Map<TransportChain, DetailedTransportCost> computeChain2transportUnitCost_1_ton(
 			List<TransportChain> transportChains) {
 		final Map<TransportChain, DetailedTransportCost> chain2transportUnitCost = new LinkedHashMap<>(
@@ -90,10 +106,12 @@ public class ChoiceJobProcessor implements Runnable {
 				final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder()
 						.addAmount_ton(1.0);
 				for (TransportEpisode episode : transportChain.getEpisodes()) {
-					final DetailedTransportCost episodeUnitCost_1_ton = this.episodeCostModel.computeUnitCost_1_ton(episode);
+					final DetailedTransportCost episodeUnitCost_1_ton = this.episodeCostModel
+							.computeUnitCost_1_ton(episode);
 					chainCostBuilder.addLoadingCost(episodeUnitCost_1_ton.loadingCost)
 							.addLoadingDuration_h(episodeUnitCost_1_ton.loadingDuration_h)
-							.addMoveCost(episodeUnitCost_1_ton.moveCost).addMoveDuration_h(episodeUnitCost_1_ton.moveDuration_h)
+							.addMoveCost(episodeUnitCost_1_ton.moveCost)
+							.addMoveDuration_h(episodeUnitCost_1_ton.moveDuration_h)
 							.addTransferCost(episodeUnitCost_1_ton.transferCost)
 							.addTransferDuration_h(episodeUnitCost_1_ton.transferDuration_h)
 							.addUnloadingCost(episodeUnitCost_1_ton.unloadingCost)
@@ -109,44 +127,39 @@ public class ChoiceJobProcessor implements Runnable {
 		return chain2transportUnitCost;
 	}
 
-	private void computeChoices(Commodity commodity, List<TransportDemand.AnnualShipment> annualShipments,
-			Map<TransportChain, DetailedTransportCost> chain2transportUnitCost_1_ton) throws InterruptedException  {
-		for (AnnualShipment annualShipment : annualShipments) {
-			List<ChainAndShipmentSize> alternatives = new ArrayList<>();
-			for (Map.Entry<TransportChain, DetailedTransportCost> e : chain2transportUnitCost_1_ton.entrySet()) {
-				final TransportChain transportChain = e.getKey();
-				final DetailedTransportCost transportUnitCost = e.getValue();
-				for (ShipmentSize size : SamgodsConstants.ShipmentSize.values()) {
-					if ((annualShipment.getSingleInstanceAnnualAmount_ton() >= size.getRepresentativeValue_ton())
-							|| SamgodsConstants.ShipmentSize.getSmallestSize_ton().equals(size)) {
-						final NonTransportCost totalNonTransportCost = this.nonTransportCostModel.computeNonTransportCost(commodity,
-								size, annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost.duration_h);
-						alternatives.add(new ChainAndShipmentSize(annualShipment, size, transportChain,
-								this.utilityFunction.computeUtility(commodity,
-										annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost,
-										totalNonTransportCost)));
+	private void process(ChoiceJob job) throws InterruptedException {
+		final Map<TransportChain, DetailedTransportCost> chain2transportUnitCost_1_ton = this
+				.computeChain2transportUnitCost_1_ton(job.transportChains);
+		if (chain2transportUnitCost_1_ton.size() > 0) {
+			for (AnnualShipment annualShipment : job.annualShipments) {
+				List<ChainAndShipmentSize> alternatives = new ArrayList<>();
+				for (Map.Entry<TransportChain, DetailedTransportCost> e : chain2transportUnitCost_1_ton.entrySet()) {
+					final TransportChain transportChain = e.getKey();
+					final DetailedTransportCost transportUnitCost = e.getValue();
+					for (ShipmentSize size : SamgodsConstants.ShipmentSize.values()) {
+						if ((annualShipment.getSingleInstanceAnnualAmount_ton() >= size.getRepresentativeValue_ton())
+								|| SamgodsConstants.ShipmentSize.getSmallestSize_ton().equals(size)) {
+							final NonTransportCost totalNonTransportCost = this.nonTransportCostModel
+									.computeNonTransportCost(job.commodity, size,
+											annualShipment.getSingleInstanceAnnualAmount_ton(),
+											transportUnitCost.duration_h);
+							alternatives.add(new ChainAndShipmentSize(annualShipment, size, transportChain,
+									this.utilityFunction.computeUtility(job.commodity,
+											annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost,
+											totalNonTransportCost)));
+						}
 					}
 				}
+				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
+					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives,
+							a -> this.scale * a.utility);
+					assert (choice != null);
+					this.allChoices.put(choice);
+				}
 			}
-			for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
-				final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> this.scale * a.utility);
-				assert (choice != null);
-//				DetailedTransportCost cost = chain2transportUnitCost_1_ton.get(choice.transportChain);
-//				System.out.println("SEK/ton = " + cost.monetaryCost + ", SEK/tonKm = " + (cost.monetaryCost / cost.length_km));
-				this.allChoices.put(choice);
-			}
-		}
-	}
-
-	private void process(ChoiceJob job) throws InterruptedException {
-		final Map<TransportChain, DetailedTransportCost> chain2transportUnitCost = this
-				.computeChain2transportUnitCost_1_ton(job.transportChains);
-		if (chain2transportUnitCost.size() > 0) {
-			this.computeChoices(job.commodity, job.annualShipments, chain2transportUnitCost);
 		} else {
 			new InsufficientDataException(this.getClass(), "No transport chains with transport cost available.",
 					job.commodity, job.od, null, null, null);
 		}
 	}
-
 }
