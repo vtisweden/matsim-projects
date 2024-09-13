@@ -88,7 +88,8 @@ public class InsufficientDataException extends Exception {
 	}
 
 	private static synchronized String context(TransportEpisode episode) {
-		return context(episode.getCommodity(), episode.getOD(), episode.getMode(), episode.isContainer(), null);
+		return context(episode.getCommodity(), new OD(episode.getLoadingNodeId(), episode.getUnloadingNodeId()),
+				episode.getMode(), episode.isContainer(), null);
 	}
 
 	private static synchronized String context(TransportChain chain) {

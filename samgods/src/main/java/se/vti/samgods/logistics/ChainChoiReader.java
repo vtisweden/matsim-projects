@@ -119,7 +119,6 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	private final TransportDemand transportDemand;
 
 	private double samplingRate = 1.0;
-	private boolean upscale = false;
 	private Random rnd = null;
 
 	private Network network;
@@ -135,11 +134,6 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
-
-	public ChainChoiReader setUpscaleAgainstSamplingRate(boolean upscale) {
-		this.upscale = upscale;
-		return this;
-	}
 
 	public ChainChoiReader setSamplingRate(double rate, Random rnd) {
 		this.samplingRate = rate;
@@ -208,8 +202,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		final long key = Long.parseLong(this.getStringValue(Key));
 
 		final double proba = this.getDoubleValue(Prob);
-		final double singleInstanceVolume_ton_yr = (this.upscale ? 1.0 / this.samplingRate : 1.0)
-				* this.getDoubleValue(AnnualVolumeTonnesPerRelation);
+		final double singleInstanceVolume_ton_yr = this.getDoubleValue(AnnualVolumeTonnesPerRelation);
 		final int numberOfInstances = this.getIntValue(NRelations);
 		final OD od = new OD(Id.createNodeId(Long.parseLong(this.getStringValue(Orig))),
 				Id.createNodeId(Long.parseLong(this.getStringValue(Dest))));
@@ -308,9 +301,9 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 				}
 
 				if ((this.network != null) && !this.network.getNodes().keySet()
-						.containsAll(transportChain.getLoadingTransferUnloadingNodesSet())) {
+						.containsAll(this.getLoadingTransferUnloadingNodesSet(transportChain))) {
 					final Set<Id<Node>> nodeIdsNotInNetwork = new LinkedHashSet<>(
-							transportChain.getLoadingTransferUnloadingNodesSet());
+							this.getLoadingTransferUnloadingNodesSet(transportChain));
 					nodeIdsNotInNetwork.removeAll(this.network.getNodes().keySet());
 					new InsufficientDataException(this.getClass(),
 							"Transport chain contained nodes " + nodeIdsNotInNetwork + " that are not in the network.",
@@ -330,18 +323,12 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		}
 	}
 
-	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
-
-//	public static void main(String[] args) {
-//
-//		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-//			final ChainChoiReader reader = new ChainChoiReader(commodity).setStoreSamgodsShipments(true)
-//					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
-//			System.out.println(reader.createChainStatsTable(10));
-//			System.out.println(reader.getPWCMatrix().createProductionConsumptionStatsTable(10));
-//			AnnualShipmentJsonSerializer.writeToFile(reader.getSamgodsShipments(),
-//					"./input_2024/" + commodity + "-chains.samgods-out.json");
-//		}
-//	}
-
+	private Set<Id<Node>> getLoadingTransferUnloadingNodesSet(TransportChain chain) {
+		final Set<Id<Node>> result = new LinkedHashSet<>();
+		chain.getEpisodes().stream().flatMap(e -> e.getLegs().stream()).forEach(l -> {
+			result.add(l.getOrigin());
+			result.add(l.getDestination());
+		});
+		return result;
+	}
 }

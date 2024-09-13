@@ -19,7 +19,6 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,7 +26,6 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.ConsolidationUnit;
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
@@ -46,42 +44,16 @@ public class TransportEpisode {
 
 	private TransportChain parent;
 
-	private List<ConsolidationUnit> signatures = null;
+	private List<ConsolidationUnit> consolidationUnits = null;
 
-	// -------------------- CONSTRUCTION --------------------
+	// -------------------- CONSTRUCTION/COMPOSITION --------------------
 
 	public TransportEpisode(TransportMode mode) {
 		this.mode = mode;
 	}
 
-	void setParent(TransportChain parent) {
+	/* package */ void setParent(TransportChain parent) {
 		this.parent = parent;
-	}
-
-	// -------------------- IMPLEMENTATION --------------------
-
-	public boolean hasSignatures() {
-		return (this.signatures != null);
-	}
-
-	public boolean isRouted() {
-		return (this.hasSignatures() && (this.signatures.stream().allMatch(s -> (s != null) && (s.linkIds != null))));
-	}
-
-	public void setConsolidationUnits(List<ConsolidationUnit> signatures) {
-		this.signatures = signatures;
-	}
-
-	public List<ConsolidationUnit> getConsolidationUnits() {
-		return this.signatures;
-	}
-
-	public TransportChain getChain() {
-		return this.parent;
-	}
-
-	public OD getOD() {
-		return new OD(this.getLoadingNode(), this.getUnloadingNode());
 	}
 
 	public void addLeg(final TransportLeg leg) {
@@ -89,12 +61,34 @@ public class TransportEpisode {
 		this.legs.add(leg);
 	}
 
+	public void setConsolidationUnits(List<ConsolidationUnit> signatures) {
+		this.consolidationUnits = signatures;
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public TransportMode getMode() {
+		return this.mode;
+	}
+
 	public LinkedList<TransportLeg> getLegs() {
 		return this.legs;
 	}
 
-	public TransportMode getMode() {
-		return this.mode;
+	public Id<Node> getLoadingNodeId() {
+		if (this.legs.size() == 0) {
+			return null;
+		} else {
+			return this.legs.getFirst().getOrigin();
+		}
+	}
+
+	public Id<Node> getUnloadingNodeId() {
+		if (this.legs.size() == 0) {
+			return null;
+		} else {
+			return this.legs.getLast().getDestination();
+		}
 	}
 
 	public Commodity getCommodity() {
@@ -113,55 +107,16 @@ public class TransportEpisode {
 		}
 	}
 
-	public Id<Node> getLoadingNode() {
-		if (this.legs.size() == 0) {
-			return null;
-		} else {
-			return this.legs.getFirst().getOrigin();
-		}
+	public List<ConsolidationUnit> getConsolidationUnits() {
+		return this.consolidationUnits;
 	}
 
-	public Id<Node> getUnloadingNode() {
-		if (this.legs.size() == 0) {
-			return null;
-		} else {
-			return this.legs.getLast().getDestination();
-		}
+	public boolean hasSignatures() {
+		return (this.consolidationUnits != null);
 	}
 
-	public Integer getTransferNodeCnt() {
-		if (this.legs.size() == 0) {
-			return null;
-		} else {
-			return this.legs.size() - 1;
-		}
-	}
-
-	private List<Id<Node>> createNodeList(boolean onlyTransfers) {
-		if (this.legs == null) {
-			return null;
-		} else if (this.legs.size() == 0) {
-			return Arrays.asList(this.getOD().origin, this.getOD().destination);
-		} else {
-			final LinkedList<Id<Node>> result = new LinkedList<>();
-			if (!onlyTransfers) {
-				result.add(this.legs.getFirst().getOrigin());
-			}
-			for (TransportLeg leg : this.legs) {
-				result.add(leg.getDestination());
-			}
-			if (onlyTransfers) {
-				result.removeLast();
-			}
-			return result;
-		}
-	}
-
-	public List<Id<Node>> createTransferNodesList() {
-		return this.createNodeList(true);
-	}
-
-	public List<Id<Node>> createLoadingTransferUnloadingNodeList() {
-		return this.createNodeList(false);
+	public boolean isRouted() {
+		return (this.hasSignatures()
+				&& (this.consolidationUnits.stream().allMatch(s -> (s != null) && (s.linkIds != null))));
 	}
 }

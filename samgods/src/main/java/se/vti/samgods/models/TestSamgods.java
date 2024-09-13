@@ -62,10 +62,10 @@ import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
-import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 import se.vti.samgods.logistics.choice.ChainAndShipmentChoiceStats;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSizeUtilityFunction;
@@ -157,13 +157,11 @@ public class TestSamgods {
 		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
 				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
 		double samplingRate = 1.0;
-		boolean upscale = false;
 
 		int maxThreads = Integer.MAX_VALUE;
 
 		double scale = 1.0;
 		int maxIterations = 5;
-		double nonTransportCostFactor = 1.0;
 		boolean enforceReroute = false;
 
 		log.info("STARTED ...");
@@ -197,10 +195,9 @@ public class TestSamgods {
 		TransportDemand transportDemand = new TransportDemand();
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			new ChainChoiReader(commodity, transportDemand).setSamplingRate(samplingRate, new Random(4711))
-					.setUpscaleAgainstSamplingRate(upscale)
 					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
-			double odCnt = transportDemand.commodity2od2transportChains.get(commodity).size();
-			double chainCnt = transportDemand.commodity2od2transportChains.get(commodity).values().stream()
+			double odCnt = transportDemand.getCommodity2od2transportChains().get(commodity).size();
+			double chainCnt = transportDemand.getCommodity2od2transportChains().get(commodity).values().stream()
 					.mapToDouble(l -> l.size()).sum();
 			log.info(commodity + ": avg number of chains per OD = " + chainCnt / odCnt);
 		}
@@ -220,7 +217,7 @@ public class TestSamgods {
 			 */
 			final Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-				for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
+				for (List<TransportChain> chains : transportDemand.getCommodity2od2transportChains().get(commodity)
 						.values()) {
 					for (TransportChain chain : chains) {
 						for (TransportEpisode episode : chain.getEpisodes()) {
@@ -277,7 +274,7 @@ public class TestSamgods {
 			 * TODO Assert that there are no redundancies in the consolidation unit file.
 			 */
 			for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-				for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
+				for (List<TransportChain> chains : transportDemand.getCommodity2od2transportChains().get(commodity)
 						.values()) {
 					for (TransportChain chain : chains) {
 						for (TransportEpisode episode : chain.getEpisodes()) {
@@ -324,7 +321,7 @@ public class TestSamgods {
 				log.info("Attaching consolidation units to episodes.");
 				for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 					log.info("... processing commodity: " + commodity);
-					for (List<TransportChain> chains : transportDemand.commodity2od2transportChains.get(commodity)
+					for (List<TransportChain> chains : transportDemand.getCommodity2od2transportChains().get(commodity)
 							.values()) {
 						for (TransportChain chain : chains) {
 							for (TransportEpisode episode : chain.getEpisodes()) {
@@ -357,7 +354,7 @@ public class TestSamgods {
 		for (SamgodsConstants.Commodity commodity : consideredCommodities) {
 			long removedChainCnt = 0;
 			long totalChainCnt = 0;
-			for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.commodity2od2transportChains.get(commodity)
+			for (Map.Entry<OD, List<TransportChain>> entry : transportDemand.getCommodity2od2transportChains().get(commodity)
 					.entrySet()) {
 				final int chainCnt = entry.getValue().size();
 				totalChainCnt += chainCnt;
@@ -410,11 +407,11 @@ public class TestSamgods {
 
 					log.info("Starting to populate choice job queue, continuing as threads progress.");
 					for (SamgodsConstants.Commodity commodity : consideredCommodities) {
-						for (Map.Entry<OD, List<TransportDemand.AnnualShipment>> e : transportDemand.commodity2od2annualShipments
+						for (Map.Entry<OD, List<AnnualShipment>> e : transportDemand.getCommodity2od2annualShipments()
 								.get(commodity).entrySet()) {
 							final OD od = e.getKey();
 							final List<AnnualShipment> annualShipments = e.getValue();
-							final List<TransportChain> transportChains = transportDemand.commodity2od2transportChains
+							final List<TransportChain> transportChains = transportDemand.getCommodity2od2transportChains()
 									.get(commodity).get(od);
 							if (transportChains.size() > 0) {
 								jobQueue.put(new ChoiceJob(commodity, od, transportChains, annualShipments));

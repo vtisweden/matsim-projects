@@ -55,7 +55,6 @@ import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportDemand;
-import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 import se.vti.samgods.logistics.choice.ChoiceJob;
 import se.vti.samgods.models.TestSamgods;
 import se.vti.samgods.transportation.costs.BasicTransportCost;

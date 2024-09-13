@@ -19,15 +19,19 @@
  */
 package se.vti.samgods.logistics.choice;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.external.rail.ChainAndAnnualShipmentJsonSerializer;
+import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportDemand.AnnualShipment;
 
 /**
  * 
  * @author GunnarF
  *
  */
+@JsonSerialize(using = ChainAndAnnualShipmentJsonSerializer.class)
 public class ChainAndShipmentSize {
 
 	// -------------------- PUBLIC CONSTANTS --------------------

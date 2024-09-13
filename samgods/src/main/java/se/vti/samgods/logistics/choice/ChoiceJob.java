@@ -23,8 +23,8 @@ import java.util.List;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportDemand;
 
 /**
  * 
@@ -39,10 +39,10 @@ public class ChoiceJob {
 	public final Commodity commodity;
 	public final OD od;
 	public final List<TransportChain> transportChains;
-	public final List<TransportDemand.AnnualShipment> annualShipments;
+	public final List<AnnualShipment> annualShipments;
 
 	public ChoiceJob(Commodity commodity, OD od, List<TransportChain> transportChains,
-			List<TransportDemand.AnnualShipment> annualShipments) {
+			List<AnnualShipment> annualShipments) {
 		this.commodity = commodity;
 		this.od = od;
 		this.transportChains = transportChains;

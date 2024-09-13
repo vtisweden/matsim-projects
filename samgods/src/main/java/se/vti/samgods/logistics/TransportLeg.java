@@ -19,19 +19,11 @@
  */
 package se.vti.samgods.logistics;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.network.SamgodsLinkAttributes;
 
 /**
  * 
@@ -46,21 +38,7 @@ public class TransportLeg {
 
 	private TransportEpisode parent;
 
-	// derived
-//	private List<Id<Link>> routeIds = null;
-//	private Double length_km = null;
-//	private Boolean containsFerry = null;
-
-	// -------------------- CONSTRUCTION --------------------
-
-	public TransportLeg deepCopy() {
-		TransportLeg result = new TransportLeg(this.od);
-		result.setParent(this.parent);
-//		result.routeIds = this.routeIds == null ? null : new ArrayList<>(this.routeIds);
-//		result.length_km = this.length_km;
-//		result.containsFerry = this.containsFerry;
-		return result;
-	}
+	// -------------------- CONSTRUCTION/COMPOSITION --------------------
 
 	public TransportLeg(OD od) {
 		this.od = od;
@@ -70,19 +48,17 @@ public class TransportLeg {
 		this(new OD(origin, destination));
 	}
 
-	// -------------------- IMPLEMENTATION --------------------
-
-	public TransportEpisode getEpisode() {
-		return this.parent;
-	}
-
-	public TransportChain getChain() {
-		return this.getEpisode().getChain();
+	public TransportLeg deepCopy() {
+		TransportLeg result = new TransportLeg(this.od);
+		result.setParent(this.parent);
+		return result;
 	}
 
 	/* package */ void setParent(TransportEpisode parent) {
 		this.parent = parent;
 	}
+
+	// -------------------- IMPLEMENTATION --------------------
 
 	public Id<Node> getOrigin() {
 		return this.od.origin;
@@ -90,10 +66,6 @@ public class TransportLeg {
 
 	public Id<Node> getDestination() {
 		return this.od.destination;
-	}
-
-	public OD getOD() {
-		return this.od;
 	}
 
 	public SamgodsConstants.Commodity getCommodity() {
@@ -119,51 +91,4 @@ public class TransportLeg {
 			return this.parent.getMode();
 		}
 	}
-
-//	public Double getLength_km() {
-//		return this.length_km;
-//	}
-//
-//	public Boolean containsFerry() {
-//		return this.containsFerry;
-//	}
-//
-//	public void setRoute(final List<Link> route) {
-//		if (route == null) {
-//			this.routeIds = null;
-//			this.length_km = null;
-//			this.containsFerry = null;
-//		} else {
-//			this.routeIds = Collections
-//					.unmodifiableList(route.stream().map(l -> l.getId()).collect(Collectors.toList()));
-//			this.length_km = Units.KM_PER_M * route.stream().mapToDouble(l -> l.getLength()).sum();
-//			this.containsFerry = route.stream().anyMatch(l -> LinkAttributes.getMode(l).isFerry());
-//		}
-//	}
-//
-//	public List<Id<Link>> getRouteIdsView() {
-//		return this.routeIds;
-//	}
-//
-//	public boolean isRouted() {
-//		return (this.routeIds != null);
-//	}
-
-	// -------------------- OVERRIDING OF Object --------------------
-
-//	@Override
-//	public int hashCode() {
-//		return this.asList().hashCode();
-//	}
-//
-//	@Override
-//	public boolean equals(Object other) {
-//		if (this == other) {
-//			return true;
-//		} else if (!(other instanceof TransportLeg)) {
-//			return false;
-//		} else {
-//			return this.asList().equals(((TransportLeg) other).asList());
-//		}
-//	}
 }
