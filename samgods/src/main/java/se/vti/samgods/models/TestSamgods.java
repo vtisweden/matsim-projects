@@ -72,8 +72,8 @@ import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choicemodel.ChoiceJob;
 import se.vti.samgods.logistics.choicemodel.ChoiceJobProcessor;
+import se.vti.samgods.logistics.choicemodel.LogisticChoiceDataProvider;
 import se.vti.samgods.logistics.choicemodel.MonetaryChainAndShipmentSizeUtilityFunction;
-import se.vti.samgods.logistics.costs.NonTransportCost;
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.logistics.costs.NonTransportCostModel_v1_22;
 import se.vti.samgods.network.NetworkData;
@@ -85,7 +85,6 @@ import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProce
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.costs.PredictedEpisodeUnitCostModel;
 import se.vti.samgods.transportation.costs.RealizedConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
@@ -395,17 +394,15 @@ public class TestSamgods {
 
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
-
-					NetworkDataProvider networkDataProvider = new NetworkDataProvider(network);
-					FleetDataProvider fleetDataProvider = new FleetDataProvider(vehicles);
+					final LogisticChoiceDataProvider choiceDataProvider = new LogisticChoiceDataProvider(
+							mode2efficiency, signature2efficiency, new NetworkDataProvider(network),
+							new FleetDataProvider(vehicles));
 					for (int i = 0; i < threadCnt; i++) {
-						PredictedEpisodeUnitCostModel episodeCostModel = new PredictedEpisodeUnitCostModel(
-								mode2efficiency, signature2efficiency, networkDataProvider.createNetworkData(),
-								fleetDataProvider.createFleetData());
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction();
-						ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(scale, episodeCostModel,
-								nonTransportCostModel, utilityFunction, jobQueue, allChoices);
+						ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(scale,
+								choiceDataProvider.createLogisticChoiceData(), nonTransportCostModel, utilityFunction,
+								jobQueue, allChoices);
 						Thread choiceThread = new Thread(choiceSimulator);
 						choiceThreads.add(choiceThread);
 						choiceThread.start();

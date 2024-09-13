@@ -19,22 +19,16 @@
  */
 package se.vti.samgods.logistics.choicemodel;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.matsim.vehicles.VehicleType;
-
 import se.vti.samgods.ConsolidationUnit;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.costs.RealizedConsolidationCostModel;
-import se.vti.samgods.transportation.fleet.FleetData;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.FleetDataProvider;
 
 /**
  * 
@@ -45,70 +39,40 @@ public class LogisticChoiceDataProvider {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final RealizedConsolidationCostModel consolidationCostModel;
-	private final ConcurrentMap<TransportMode, Double> mode2efficiency;
-	private final ConcurrentMap<ConsolidationUnit, Double> consolidationUnit2efficiency;
-	private final NetworkData networkData;
-	private final FleetData fleetData;
+	private final NetworkDataProvider networkDataProvider;
+	private final FleetDataProvider fleetDataProvider;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public LogisticChoiceDataProvider(Map<TransportMode, Double> mode2efficiency,
-			Map<ConsolidationUnit, Double> consolidationUnit2efficiency, NetworkData networkData, FleetData fleetData) {
-		this.consolidationCostModel = new RealizedConsolidationCostModel();
+			Map<ConsolidationUnit, Double> consolidationUnit2efficiency, NetworkDataProvider networkData,
+			FleetDataProvider fleetData) {
 		this.mode2efficiency = new ConcurrentHashMap<>(mode2efficiency);
 		this.consolidationUnit2efficiency = new ConcurrentHashMap<>(consolidationUnit2efficiency);
-		this.networkData = networkData;
-		this.fleetData = fleetData;
+		this.networkDataProvider = networkData;
+		this.fleetDataProvider = fleetData;
 	}
-	
+
 	public LogisticChoiceData createLogisticChoiceData() {
-		return new LogisticChoiceData(this);
+		return new LogisticChoiceData(this, this.networkDataProvider.createNetworkData(),
+				this.fleetDataProvider.createFleetData());
 	}
 
-	// ---------- THREAD SAFE, INTERNALLY CHACHED EPISODE UNIT COSTS ----------
+	// -------------------- THREAD SAFE --------------------
 
-	private final ConcurrentMap<TransportEpisode, DetailedTransportCost> episodeToUnitCost_1_ton = new ConcurrentHashMap<>();
+	private final ConcurrentMap<TransportMode, Double> mode2efficiency;
+	private final ConcurrentMap<ConsolidationUnit, Double> consolidationUnit2efficiency;
 
-	private DetailedTransportCost createEpisodeUnitCost_1_ton(TransportEpisode episode) {
-		try {
-			final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),
-					episode.getMode(), episode.isContainer(),
-					episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
-			final SamgodsVehicleAttributes vehicleAttributes = this.fleetData.getVehicleType2attributes()
-					.get(vehicleType);
-			final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(1.0)
-					.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0)
-					.addMoveDuration_h(0.0).addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0)
-					.addMoveCost(0.0).addDistance_km(0.0);
-			final List<ConsolidationUnit> signatures = episode.getConsolidationUnits();
-			for (ConsolidationUnit signature : signatures) {
-				final double efficiency = this.consolidationUnit2efficiency.getOrDefault(signature,
-						this.mode2efficiency.get(signature.mode));
-				final DetailedTransportCost signatureUnitCost_1_ton = this.consolidationCostModel
-						.computeRealizedSignatureCost(vehicleAttributes, efficiency * vehicleAttributes.capacity_ton,
-								signature, signatures.get(0) == signature,
-								signatures.get(signatures.size() - 1) == signature,
-								this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds())
-						.createUnitCost_1_ton();
-				builder.addLoadingDuration_h(signatureUnitCost_1_ton.loadingDuration_h)
-						.addTransferDuration_h(signatureUnitCost_1_ton.transferDuration_h)
-						.addUnloadingDuration_h(signatureUnitCost_1_ton.unloadingDuration_h)
-						.addMoveDuration_h(signatureUnitCost_1_ton.moveDuration_h)
-						.addLoadingCost(signatureUnitCost_1_ton.loadingCost)
-						.addTransferCost(signatureUnitCost_1_ton.transferCost)
-						.addUnloadingCost(signatureUnitCost_1_ton.unloadingCost)
-						.addMoveCost(signatureUnitCost_1_ton.moveCost)
-						.addDistance_km(signatureUnitCost_1_ton.length_km);
-			}
-			return builder.build();
-		} catch (InsufficientDataException e) {
-			e.log(this.getClass(), "cannot create episode unit cost", episode);
-			return null;
-		}
+	double getEfficiency(ConsolidationUnit consolidationUnit) {
+		return this.consolidationUnit2efficiency.getOrDefault(consolidationUnit,
+				this.mode2efficiency.get(consolidationUnit.mode));
 	}
 
-	public DetailedTransportCost getEpisodeUnitCost_1_ton(TransportEpisode episode) {
-		return this.episodeToUnitCost_1_ton.computeIfAbsent(episode, e -> this.createEpisodeUnitCost_1_ton(episode));
+// -------------------- THREAD SAFE, INTERNALLY CHACHED --------------------
+
+	private final ConcurrentMap<TransportEpisode, DetailedTransportCost> episode2unitCost_1_ton = new ConcurrentHashMap<>();
+
+	ConcurrentMap<TransportEpisode, DetailedTransportCost> getEpisode2unitCost_1_ton(TransportEpisode episode) {
+		return this.episode2unitCost_1_ton;
 	}
 }
