@@ -45,12 +45,12 @@ public class LogisticChoiceDataProvider {
 	// -------------------- CONSTRUCTION --------------------
 
 	public LogisticChoiceDataProvider(Map<TransportMode, Double> mode2efficiency,
-			Map<ConsolidationUnit, Double> consolidationUnit2efficiency, NetworkDataProvider networkData,
-			FleetDataProvider fleetData) {
+			Map<ConsolidationUnit, Double> consolidationUnit2efficiency, NetworkDataProvider networkDataProvider,
+			FleetDataProvider fleetDataProvider) {
 		this.mode2efficiency = new ConcurrentHashMap<>(mode2efficiency);
 		this.consolidationUnit2efficiency = new ConcurrentHashMap<>(consolidationUnit2efficiency);
-		this.networkDataProvider = networkData;
-		this.fleetDataProvider = fleetData;
+		this.networkDataProvider = networkDataProvider;
+		this.fleetDataProvider = fleetDataProvider;
 	}
 
 	public LogisticChoiceData createLogisticChoiceData() {
@@ -58,7 +58,7 @@ public class LogisticChoiceDataProvider {
 				this.fleetDataProvider.createFleetData());
 	}
 
-	// -------------------- THREAD SAFE --------------------
+	// -------------------- THREAD SAFE EFFICIENCY ACCESS --------------------
 
 	private final ConcurrentMap<TransportMode, Double> mode2efficiency;
 	private final ConcurrentMap<ConsolidationUnit, Double> consolidationUnit2efficiency;
@@ -68,11 +68,11 @@ public class LogisticChoiceDataProvider {
 				this.mode2efficiency.get(consolidationUnit.mode));
 	}
 
-// -------------------- THREAD SAFE --------------------
+// -------------------- THREAD SAFE UNIT COST ACCESS --------------------
 
 	private final ConcurrentMap<TransportEpisode, DetailedTransportCost> episode2unitCost_1_ton = new ConcurrentHashMap<>();
 
-	ConcurrentMap<TransportEpisode, DetailedTransportCost> getEpisode2unitCost_1_ton(TransportEpisode episode) {
+	ConcurrentMap<TransportEpisode, DetailedTransportCost> getEpisode2unitCost_1_ton() {
 		return this.episode2unitCost_1_ton;
 	}
 }

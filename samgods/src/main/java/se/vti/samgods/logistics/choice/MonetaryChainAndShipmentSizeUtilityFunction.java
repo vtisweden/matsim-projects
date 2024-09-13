@@ -37,8 +37,8 @@ public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShip
 	}
 
 	@Override
-	public double computeUtility(Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost,
+	public double computeUtility(Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost_1_ton,
 			NonTransportCost totalNonTransportCost) {
-		return (-1.0) * this.totalMonetaryCost(amount_ton, transportUnitCost, totalNonTransportCost);
+		return (-1.0) * this.totalMonetaryCost(amount_ton, transportUnitCost_1_ton, totalNonTransportCost);
 	}
 }

@@ -44,14 +44,16 @@ public class LogisticChoiceData {
 
 	private final RealizedConsolidationCostModel consolidationCostModel = new RealizedConsolidationCostModel();
 
-	private final LogisticChoiceDataProvider dataProvider;
+	private final LogisticChoiceDataProvider logisticChoiceDdataProvider;
+
 	private final NetworkData networkData;
+
 	private final FleetData fleetData;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	LogisticChoiceData(LogisticChoiceDataProvider dataProvider, NetworkData networkData, FleetData fleetData) {
-		this.dataProvider = dataProvider;
+		this.logisticChoiceDdataProvider = dataProvider;
 		this.networkData = networkData;
 		this.fleetData = fleetData;
 	}
@@ -82,7 +84,8 @@ public class LogisticChoiceData {
 			for (ConsolidationUnit consolidationUnit : consolidationUnits) {
 				final DetailedTransportCost signatureUnitCost_1_ton = this.consolidationCostModel
 						.computeRealizedSignatureCost(vehicleAttributes,
-								this.dataProvider.getEfficiency(consolidationUnit) * vehicleAttributes.capacity_ton,
+								this.logisticChoiceDdataProvider.getEfficiency(consolidationUnit)
+										* vehicleAttributes.capacity_ton,
 								consolidationUnit, consolidationUnits.get(0) == consolidationUnit,
 								consolidationUnits.get(consolidationUnits.size() - 1) == consolidationUnit,
 								this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds())
@@ -105,7 +108,7 @@ public class LogisticChoiceData {
 	}
 
 	public DetailedTransportCost getEpisodeUnitCost_1_ton(TransportEpisode episode) {
-		return this.dataProvider.getEpisode2unitCost_1_ton(episode).computeIfAbsent(episode,
+		return this.logisticChoiceDdataProvider.getEpisode2unitCost_1_ton().computeIfAbsent(episode,
 				e -> this.createEpisodeUnitCost_1_ton(e));
 	}
 

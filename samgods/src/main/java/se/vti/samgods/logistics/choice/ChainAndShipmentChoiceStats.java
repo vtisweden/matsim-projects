@@ -34,6 +34,7 @@ import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.utils.MiscUtils;
 
 /**
+ * JUST FOR TESTING
  * 
  * @author GunnarF
  *
@@ -61,14 +62,6 @@ public class ChainAndShipmentChoiceStats {
 						* choice.transportChain.getEpisodes().stream().flatMap(e -> e.getConsolidationUnits().stream())
 								.mapToDouble(cu -> cu.length_m).sum());
 	}
-
-//	public void add(SamgodsConstants.Commodity commodity, List<ChainAndShipmentSize> choices) {
-//		for (ChainAndShipmentSize choice : choices) {
-//			this.commodity2size2cnt.get(commodity).compute(choice.sizeClass, (s, c) -> c + 1);
-//			this.commodity2lengths.get(commodity).add(Units.KM_PER_M * choice.transportChain.getEpisodes().stream()
-//					.flatMap(e -> e.getConsolidationUnits().stream()).mapToDouble(cu -> cu.computeLength_m()).sum());
-//		}
-//	}
 
 	public String createChoiceStatsTable() {
 		final AsciiTable table = new AsciiTable();
