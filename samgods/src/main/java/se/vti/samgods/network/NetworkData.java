@@ -22,6 +22,8 @@ package se.vti.samgods.network;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -36,6 +38,7 @@ import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -43,6 +46,10 @@ import se.vti.samgods.transportation.costs.BasicTransportCost;
  *
  */
 public class NetworkData {
+
+	// -------------------- CONSTANTS --------------------
+
+	private final NetworkDataProvider dataProvider;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -52,14 +59,49 @@ public class NetworkData {
 
 	// --------------- PASS-THROUGH FROM NetworkDataProvider ---------------
 
-	private final NetworkDataProvider dataProvider;
-
 	public Set<Id<Link>> getFerryLinkIds() {
 		return this.dataProvider.getFerryLinkIds();
 	}
 
+	// --------------- PASS-THROUGH FROM NetworkDataProvider ---------------
+
+	private ConcurrentMap<Id<Link>, BasicTransportCost> createLinkId2unitCost(VehicleType vehicleType) {
+		final ConcurrentHashMap<Id<Link>, BasicTransportCost> result = new ConcurrentHashMap<>(
+				this.dataProvider.getAllLinks().size());
+		final SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+		for (Link link : this.dataProvider.getAllLinks()) {
+			final SamgodsLinkAttributes linkAttrs = ((SamgodsLinkAttributes) link.getAttributes()
+					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME));
+			if (linkAttrs.samgodsMode.equals(vehicleAttrs.samgodsMode)
+					|| (linkAttrs.samgodsMode.isFerry() && vehicleAttrs.isFerryCompatible())) {
+				final double speed_km_h;
+				if (vehicleAttrs.speed_km_h != null) {
+					speed_km_h = Math.min(vehicleAttrs.speed_km_h, Units.KM_H_PER_M_S * link.getFreespeed());
+				} else {
+					speed_km_h = Units.KM_H_PER_M_S * link.getFreespeed();
+				}
+				assert (speed_km_h > 0 && Double.isFinite(speed_km_h));
+				final double length_km = Units.KM_PER_M * link.getLength();
+				final double duration_h = length_km / speed_km_h;
+				if (linkAttrs.samgodsMode.isFerry()) {
+					result.put(link.getId(), new BasicTransportCost(1.0,
+							duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km,
+							duration_h, length_km));
+				} else {
+					result.put(link.getId(),
+							new BasicTransportCost(1.0,
+									duration_h * vehicleAttrs.cost_1_h + length_km * vehicleAttrs.cost_1_km, duration_h,
+									length_km));
+				}
+			}
+		}
+		return result;
+	}
+
 	public Map<Id<Link>, BasicTransportCost> getLinkId2unitCost(VehicleType vehicleType) {
-		return this.dataProvider.getLinkId2unitCost(vehicleType);
+		return this.dataProvider.getVehicleType2linkId2unitCost().computeIfAbsent(vehicleType,
+				vt -> this.createLinkId2unitCost(vt));
 	}
 
 	// -------------------- LOCALLY CACHED UNIMODAL Network --------------------

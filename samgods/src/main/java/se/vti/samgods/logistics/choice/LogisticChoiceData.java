@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics.choicemodel;
+package se.vti.samgods.logistics.choice;
 
 import java.util.List;
 
@@ -28,8 +28,8 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.transportation.consolidation.RealizedConsolidationCostModel;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.costs.RealizedConsolidationCostModel;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
@@ -40,17 +40,23 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
  */
 public class LogisticChoiceData {
 
-	private final LogisticChoiceDataProvider dataProvider;
+	// -------------------- CONSTANTS --------------------
 
 	private final RealizedConsolidationCostModel consolidationCostModel = new RealizedConsolidationCostModel();
+
+	private final LogisticChoiceDataProvider dataProvider;
 	private final NetworkData networkData;
 	private final FleetData fleetData;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	LogisticChoiceData(LogisticChoiceDataProvider dataProvider, NetworkData networkData, FleetData fleetData) {
 		this.dataProvider = dataProvider;
 		this.networkData = networkData;
 		this.fleetData = fleetData;
 	}
+
+	// -------------------- TRANSPORT EPISODE UNIT COSTS --------------------
 
 	/**
 	 * This is currently an *approximation* of the realized unit cost of a
@@ -102,6 +108,8 @@ public class LogisticChoiceData {
 		return this.dataProvider.getEpisode2unitCost_1_ton(episode).computeIfAbsent(episode,
 				e -> this.createEpisodeUnitCost_1_ton(e));
 	}
+
+	// -------------------- TRANSPORT CHAIN UNIT COSTS --------------------
 
 	public DetailedTransportCost computeChain2transportUnitCost_1_ton(TransportChain transportChain) {
 		try {

@@ -32,10 +32,8 @@ import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
 import org.matsim.vehicles.VehicleType;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -43,6 +41,21 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
  *
  */
 public class NetworkDataProvider {
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public NetworkDataProvider(final Network multimodalNetwork) {
+		this.multimodalNetwork = multimodalNetwork;
+		this.allLinks = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values());
+		this.ferryLinkIds = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values().stream()
+				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
+						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
+				.map(l -> l.getId()).collect(Collectors.toSet()));
+	}
+
+	public NetworkData createNetworkData() {
+		return new NetworkData(this);
+	}
 
 	// --------------- LOCAL, NOT THREADSAFE multimodal Network ---------------
 
@@ -70,62 +83,19 @@ public class NetworkDataProvider {
 		return this.ferryLinkIds;
 	}
 
+	// --------------- THREAD-SAFE, LOCALLY CACHED LINK REFERENCES ---------------
+
+	private final CopyOnWriteArraySet<Link> allLinks;
+
+	CopyOnWriteArraySet<Link> getAllLinks() {
+		return this.allLinks;
+	}
+
 	// --------------- THREAD-SAFE, LOCALLY CACHED LINK UNIT COSTS ---------------
 
 	private final ConcurrentMap<VehicleType, ConcurrentMap<Id<Link>, BasicTransportCost>> vehicleType2linkId2unitCost = new ConcurrentHashMap<>();
 
-	private final CopyOnWriteArraySet<Link> allLinks;
-
-	private synchronized ConcurrentMap<Id<Link>, BasicTransportCost> createLinkId2unitCost(VehicleType vehicleType) {
-		final ConcurrentHashMap<Id<Link>, BasicTransportCost> result = new ConcurrentHashMap<>(this.allLinks.size());
-		final SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
-				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-		for (Link link : this.allLinks) {
-			final SamgodsLinkAttributes linkAttrs = ((SamgodsLinkAttributes) link.getAttributes()
-					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME));
-			if (linkAttrs.samgodsMode.equals(vehicleAttrs.samgodsMode)
-					|| (linkAttrs.samgodsMode.isFerry() && vehicleAttrs.isFerryCompatible())) {
-				final double speed_km_h;
-				if (vehicleAttrs.speed_km_h != null) {
-					speed_km_h = Math.min(vehicleAttrs.speed_km_h, Units.KM_H_PER_M_S * link.getFreespeed());
-				} else {
-					speed_km_h = Units.KM_H_PER_M_S * link.getFreespeed();
-				}
-				assert (speed_km_h > 0 && Double.isFinite(speed_km_h));
-				final double length_km = Units.KM_PER_M * link.getLength();
-				final double duration_h = length_km / speed_km_h;
-				if (linkAttrs.samgodsMode.isFerry()) {
-					result.put(link.getId(), new BasicTransportCost(1.0,
-							duration_h * vehicleAttrs.onFerryCost_1_h + length_km * vehicleAttrs.onFerryCost_1_km,
-							duration_h, length_km));
-				} else {
-					result.put(link.getId(),
-							new BasicTransportCost(1.0,
-									duration_h * vehicleAttrs.cost_1_h + length_km * vehicleAttrs.cost_1_km, duration_h,
-									length_km));
-				}
-			}
-		}
-		return result;
-	}
-
-	ConcurrentMap<Id<Link>, BasicTransportCost> getLinkId2unitCost(VehicleType vehicleType) {
-		return this.vehicleType2linkId2unitCost.computeIfAbsent(vehicleType,
-				t -> this.createLinkId2unitCost(vehicleType));
-	}
-
-	// -------------------- CONSTRUCTION --------------------
-
-	public NetworkDataProvider(final Network multimodalNetwork) {
-		this.multimodalNetwork = multimodalNetwork;
-		this.allLinks = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values());
-		this.ferryLinkIds = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values().stream()
-				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
-						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
-				.map(l -> l.getId()).collect(Collectors.toSet()));
-	}
-
-	public NetworkData createNetworkData() {
-		return new NetworkData(this);
+	ConcurrentMap<VehicleType, ConcurrentMap<Id<Link>, BasicTransportCost>> getVehicleType2linkId2unitCost() {
+		return this.vehicleType2linkId2unitCost;
 	}
 }

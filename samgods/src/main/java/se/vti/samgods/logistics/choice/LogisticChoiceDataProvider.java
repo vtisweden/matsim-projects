@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.logistics.choicemodel;
+package se.vti.samgods.logistics.choice;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,7 +68,7 @@ public class LogisticChoiceDataProvider {
 				this.mode2efficiency.get(consolidationUnit.mode));
 	}
 
-// -------------------- THREAD SAFE, INTERNALLY CHACHED --------------------
+// -------------------- THREAD SAFE --------------------
 
 	private final ConcurrentMap<TransportEpisode, DetailedTransportCost> episode2unitCost_1_ton = new ConcurrentHashMap<>();
 

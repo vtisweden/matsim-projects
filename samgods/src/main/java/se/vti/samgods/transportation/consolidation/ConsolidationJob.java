@@ -22,7 +22,7 @@ package se.vti.samgods.transportation.consolidation;
 import java.util.List;
 
 import se.vti.samgods.ConsolidationUnit;
-import se.vti.samgods.logistics.choicemodel.ChainAndShipmentSize;
+import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 
 /**
  * 

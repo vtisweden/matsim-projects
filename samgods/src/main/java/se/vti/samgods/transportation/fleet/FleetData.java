@@ -19,8 +19,11 @@
  */
 package se.vti.samgods.transportation.fleet;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.matsim.vehicles.VehicleType;
 
@@ -35,24 +38,80 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
  */
 public class FleetData {
 
+	// -------------------- CONSTANTS --------------------
+
 	private final FleetDataProvider dataProvider;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public FleetData(FleetDataProvider dataProvider) {
 		this.dataProvider = dataProvider;
 	}
 
+	// -------------------- PASS-THROUGH FROM DATA PROVIDER --------------------
+
 	public Map<VehicleType, SamgodsVehicleAttributes> getVehicleType2attributes() {
 		return this.dataProvider.getVehicleType2attributes();
 	}
 
-	public VehicleType getRepresentativeVehicleType(Commodity commodity, TransportMode mode, boolean isContainer,
-			boolean containsFerry) throws InsufficientDataException {
-		return this.dataProvider.getRepresentativeVehicleType(commodity, mode, isContainer, containsFerry);
+	// ----- THREAD SAFE ACCESS TO & UPDATE OF COMPATIBLE VEHICLE TYPES -----
+
+	private List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
+			boolean containsFerry) {
+		final List<VehicleType> result = new ArrayList<>(this.dataProvider.getVehicleType2attributes().size());
+		for (ConcurrentMap.Entry<VehicleType, SamgodsVehicleAttributes> e : this.dataProvider
+				.getVehicleType2attributes().entrySet()) {
+			VehicleType type = e.getKey();
+			SamgodsVehicleAttributes attrs = e.getValue();
+			if (attrs.samgodsMode.equals(mode) && (attrs.isContainer == isContainer) && attrs.isCompatible(commodity)
+					&& (!containsFerry || attrs.isFerryCompatible())) {
+				result.add(type);
+			}
+		}
+		return result;
 	}
 
 	public List<VehicleType> getCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
 			boolean containsFerry) {
-		return this.dataProvider.getCompatibleVehicleTypes(commodity, mode, isContainer, containsFerry);
+		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleTypes()
+				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
+				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
+				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
+						f -> this.createCompatibleVehicleTypes(commodity, mode, isContainer, f));
 	}
 
+	// ----- THREAD SAFE ACCESS TO & UPDATE OF REPRESENTATIVE VEHICLE TYPE -----
+
+	private VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode, boolean isContainer,
+			boolean containsFerry) {
+		final List<VehicleType> compatibleTypes = this.createCompatibleVehicleTypes(commodity, mode, isContainer,
+				containsFerry);
+		if (compatibleTypes.size() > 0) {
+			VehicleType result = null;
+			final double meanCapacity_ton = compatibleTypes.stream()
+					.mapToDouble(t -> this.getVehicleType2attributes().get(t).capacity_ton).average().getAsDouble();
+			double resultDeviation_ton = Double.POSITIVE_INFINITY;
+			for (VehicleType candidate : compatibleTypes) {
+				final double candidateDeviation_ton = Math
+						.abs(this.getVehicleType2attributes().get(candidate).capacity_ton - meanCapacity_ton);
+				if (candidateDeviation_ton < resultDeviation_ton) {
+					result = candidate;
+					resultDeviation_ton = candidateDeviation_ton;
+				}
+			}
+			return result;
+		} else {
+			return null;
+		}
+	}
+
+	// may be null
+	public VehicleType getRepresentativeVehicleType(final Commodity commodity, final TransportMode mode,
+			final boolean isContainer, final boolean containsFerry) throws InsufficientDataException {
+		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleType()
+				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
+				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
+				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
+						cf -> this.createRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
+	}
 }
