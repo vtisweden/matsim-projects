@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.consolidation.road
+ * se.vti.samgods.transportation.consolidation
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 

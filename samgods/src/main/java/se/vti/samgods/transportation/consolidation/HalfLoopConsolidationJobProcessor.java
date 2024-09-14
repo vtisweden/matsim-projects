@@ -1,5 +1,5 @@
 /**
- * se.vti.samgods.transportation.consolidation.halfloop
+ * se.vti.samgods.transportation.consolidation
  * 
  * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.ConsolidationUnit;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.network.NetworkData;

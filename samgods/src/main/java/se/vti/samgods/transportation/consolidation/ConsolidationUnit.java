@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods;
+package se.vti.samgods.transportation.consolidation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,6 +45,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
@@ -57,62 +58,34 @@ public class ConsolidationUnit {
 
 	// -------------------- CONSTANTS --------------------
 
-	// "Poison pill" for multithreaded treatment.
+	// "Poison pill" for multithreaded routing.
 	public static final ConsolidationUnit TERMINATE = new ConsolidationUnit(null, null, null, null, null);
 
 	// -------------------- MEMBERS --------------------
 
-	// TODO synchronize
+	// TODO synchronize?
 	public final List<Id<Node>> nodeIds;
 	public final SamgodsConstants.Commodity commodity;
 	public final SamgodsConstants.TransportMode mode;
 	public final Boolean isContainer;
 
-	// TODO synchronize
+	// TODO synchronize?
 	public List<List<Id<Link>>> linkIds = null;
 	public Double length_m = null;
 	public Boolean containsFerry = null;
-
-//	public synchronized List<Id<Node>> getNodesCopy() {
-//		return this.nodeIds.stream().toList();
-//	}
-//
-//	public synchronized boolean isRouted() {
-//		return (this.linkIds != null);
-//	}
-//
-//	public synchronized List<List<Id<Link>>> getRoutesCopy() {
-//		List<List<Id<Link>>> result = new ArrayList<>(this.linkIds.size());
-//		for (List<Id<Link>> route : this.linkIds) {
-//			result.add(route.stream().toList());
-//		}
-//		return result;
-//	}
 
 	// --------------------CONSTRUCTION --------------------
 
 	private ConsolidationUnit(List<Id<Node>> nodes, SamgodsConstants.Commodity commodity,
 			SamgodsConstants.TransportMode mode, Boolean isContainer, List<List<Id<Link>>> linkIds) {
 		this.nodeIds = nodes;
-//		if (nodes == null) {
-//			this.nodeIds = null;
-//		} else {
-//			this.nodeIds = Collections.synchronizedList(nodes);
-//		}
 		this.commodity = commodity;
 		this.mode = mode;
 		this.isContainer = isContainer;
 		this.linkIds = linkIds;
-//		if (linkIds == null) {
-//			this.linkIds = null;
-//		} else {
-//			this.linkIds = Collections.synchronizedList(new ArrayList<>(linkIds.size()));
-//			for (List<Id<Link>> linkIdSegment : linkIds) {
-//				this.linkIds.add(Collections.synchronizedList(linkIdSegment));
-//			}
-//		}
 	}
 
+	// TODO synchronize?
 	public synchronized static List<ConsolidationUnit> createUnrouted(TransportEpisode episode) {
 		if (episode.getLegs() == null) {
 			return Collections.emptyList();
@@ -129,12 +102,14 @@ public class ConsolidationUnit {
 		}
 	}
 
+	// TODO synchronize?
 	public synchronized ConsolidationUnit createRoutingEquivalentTemplate() {
 		return new ConsolidationUnit(this.nodeIds, this.commodity, this.mode, this.isContainer, null);
 	}
 
 	// -------------------- INTERNALS --------------------
 
+	// TODO synchronize?
 	private synchronized static List<Id<Node>> extractNodes(List<TransportLeg> legs) {
 		final ArrayList<Id<Node>> nodes = new ArrayList<>(legs.size() + 1);
 		legs.stream().map(l -> l.getOrigin()).forEach(n -> nodes.add(n));
@@ -142,6 +117,7 @@ public class ConsolidationUnit {
 		return nodes;
 	}
 
+	// TODO synchronize?
 	private synchronized List<Object> createAsList() {
 		return Arrays.asList(this.nodeIds, this.commodity, this.mode, this.isContainer, this.linkIds);
 	}
@@ -277,5 +253,4 @@ public class ConsolidationUnit {
 			return new ConsolidationUnit(nodes, commodity, mode, isContainer, routes);
 		}
 	}
-
 }
