@@ -48,12 +48,6 @@ public class TransportLeg {
 		this(new OD(origin, destination));
 	}
 
-	public TransportLeg deepCopy() {
-		TransportLeg result = new TransportLeg(this.od);
-		result.setParent(this.parent);
-		return result;
-	}
-
 	/* package */ void setParent(TransportEpisode parent) {
 		this.parent = parent;
 	}
