@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 
 import de.vandermeer.asciitable.AsciiTable;
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.utils.MiscUtils;
 
@@ -57,10 +56,8 @@ public class ChainAndShipmentChoiceStats {
 
 	public void add(ChainAndShipmentSize choice) {
 		this.commodity2size2cnt.get(choice.annualShipment.getCommodity()).compute(choice.sizeClass, (s, c) -> c + 1);
-		this.commodity2lengths.get(choice.annualShipment.getCommodity())
-				.add(Units.KM_PER_M
-						* choice.transportChain.getEpisodes().stream().flatMap(e -> e.getConsolidationUnits().stream())
-								.mapToDouble(cu -> cu.length_m).sum());
+		this.commodity2lengths.get(choice.annualShipment.getCommodity()).add(choice.transportChain.getEpisodes()
+				.stream().flatMap(e -> e.getConsolidationUnits().stream()).mapToDouble(cu -> cu.length_km).sum());
 	}
 
 	public String createChoiceStatsTable() {

@@ -20,20 +20,13 @@
 package se.vti.samgods.network;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -48,14 +41,8 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportDemand;
-import se.vti.samgods.logistics.choice.ChoiceJob;
-import se.vti.samgods.models.TestSamgods;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
@@ -166,12 +153,12 @@ public class Router {
 		private List<List<Link>> computeRoutes(ConsolidationUnit job, boolean containsFerry) {
 			final LeastCostPathCalculator router;
 			try {
-				router = this.getRouter(job.mode, job.isContainer, containsFerry);
+				router = this.getRouter(job.samgodsMode, job.isContainer, containsFerry);
 			} catch (InsufficientDataException e) {
 				return null;
 			}
 
-			final Network network = this.networkData.getUnimodalNetwork(job.mode, containsFerry);
+			final Network network = this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry);
 			List<List<Link>> routes = new ArrayList<>(job.nodeIds.size() - 1);
 			for (int i = 0; i < job.nodeIds.size() - 1; i++) {
 				Id<Node> fromId = job.nodeIds.get(i);
@@ -216,26 +203,14 @@ public class Router {
 			}
 		}
 
-		// TODO Workaround to not deal with exception handling in lambda expressions
-		private Map<Id<Link>, BasicTransportCost> getExistingLinkId2representativeUnitCost(Commodity commodity,
-				TransportMode mode, boolean isContainer, boolean containsFerry) {
-			try {
-				final VehicleType representativeVehicleType = this.fleetData
-						.getRepresentativeVehicleType(this.commodity, mode, isContainer, containsFerry);
-				return this.networkData.getLinkId2unitCost(representativeVehicleType);
-			} catch (InsufficientDataException e) {
-				throw new RuntimeException(e); // should be impossible
-			}
-		}
-
 		private void process(ConsolidationUnit job) {
 			final List<List<Link>> withFerryRoutes = this.computeRoutes(job, true);
 			final Double withFerryCost;
 			final Boolean withFerryContainsFerry;
 			if (withFerryRoutes != null) {
-				final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this
-						.getExistingLinkId2representativeUnitCost(this.commodity, job.mode, job.isContainer, true);
-
+				final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
+						.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity, job.samgodsMode,
+								job.isContainer, true));
 				withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
 						.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
 				withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
@@ -252,8 +227,9 @@ public class Router {
 				final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
 				final Double withoutFerryCost;
 				if (withoutFerryRoutes != null) {
-					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this
-							.getExistingLinkId2representativeUnitCost(this.commodity, job.mode, job.isContainer, false);
+					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this.networkData
+							.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
+									job.samgodsMode, job.isContainer, false));
 					withoutFerryCost = withoutFerryRoutes.stream().flatMap(list -> list.stream())
 							.mapToDouble(l -> link2withoutFerryUnitCost.get(l.getId()).monetaryCost).sum();
 				} else {

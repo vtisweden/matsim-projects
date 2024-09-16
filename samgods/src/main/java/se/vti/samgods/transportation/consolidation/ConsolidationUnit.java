@@ -45,6 +45,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
@@ -66,12 +67,12 @@ public class ConsolidationUnit {
 	// TODO synchronize?
 	public final List<Id<Node>> nodeIds;
 	public final SamgodsConstants.Commodity commodity;
-	public final SamgodsConstants.TransportMode mode;
+	public final SamgodsConstants.TransportMode samgodsMode;
 	public final Boolean isContainer;
 
 	// TODO synchronize?
 	public List<List<Id<Link>>> linkIds = null;
-	public Double length_m = null;
+	public Double length_km = null;
 	public Boolean containsFerry = null;
 
 	// --------------------CONSTRUCTION --------------------
@@ -80,7 +81,7 @@ public class ConsolidationUnit {
 			SamgodsConstants.TransportMode mode, Boolean isContainer, List<List<Id<Link>>> linkIds) {
 		this.nodeIds = nodes;
 		this.commodity = commodity;
-		this.mode = mode;
+		this.samgodsMode = mode;
 		this.isContainer = isContainer;
 		this.linkIds = linkIds;
 	}
@@ -104,7 +105,7 @@ public class ConsolidationUnit {
 
 	// TODO synchronize?
 	public synchronized ConsolidationUnit createRoutingEquivalentTemplate() {
-		return new ConsolidationUnit(this.nodeIds, this.commodity, this.mode, this.isContainer, null);
+		return new ConsolidationUnit(this.nodeIds, this.commodity, this.samgodsMode, this.isContainer, null);
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -119,7 +120,7 @@ public class ConsolidationUnit {
 
 	// TODO synchronize?
 	private synchronized List<Object> createAsList() {
-		return Arrays.asList(this.nodeIds, this.commodity, this.mode, this.isContainer, this.linkIds);
+		return Arrays.asList(this.nodeIds, this.commodity, this.samgodsMode, this.isContainer, this.linkIds);
 	}
 
 	// -------------------- OVERRIDING Object --------------------
@@ -150,23 +151,24 @@ public class ConsolidationUnit {
 	public synchronized void setRoutes(List<List<Link>> routes) {
 		if (routes == null) {
 			this.linkIds = null;
-			this.length_m = null;
+			this.length_km = null;
 			this.containsFerry = null;
 		} else {
 			this.linkIds = new ArrayList<>(routes.size());
-			this.length_m = 0.0;
+			double length_m = 0.0;
 			this.containsFerry = false;
 			for (List<Link> route : routes) {
 				this.linkIds.add(route.stream().map(l -> l.getId()).toList());
-				this.length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
+				length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
 				this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> ((SamgodsLinkAttributes) l
 						.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
 			}
+			this.length_km = Units.KM_PER_M * length_m;
 		}
 	}
 
 	public void computeNetworkCharacteristics(Network network) {
-		this.length_m = this.linkIds.stream().flatMap(ll -> ll.stream())
+		this.length_km = Units.KM_PER_M * this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
 		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.anyMatch(l -> ((SamgodsLinkAttributes) network.getLinks().get(l).getAttributes()
@@ -195,7 +197,7 @@ public class ConsolidationUnit {
 			gen.writeEndArray();
 
 			gen.writeStringField("commodity", consolidationUnit.commodity.toString());
-			gen.writeStringField("mode", consolidationUnit.mode.toString());
+			gen.writeStringField("mode", consolidationUnit.samgodsMode.toString());
 			gen.writeStringField("isContainer", consolidationUnit.isContainer.toString());
 			gen.writeFieldName("routes");
 			gen.writeStartArray();

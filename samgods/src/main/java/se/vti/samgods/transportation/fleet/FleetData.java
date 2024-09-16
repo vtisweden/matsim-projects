@@ -30,6 +30,7 @@ import org.matsim.vehicles.VehicleType;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 
 /**
  * 
@@ -80,6 +81,11 @@ public class FleetData {
 						f -> this.createCompatibleVehicleTypes(commodity, mode, isContainer, f));
 	}
 
+	public List<VehicleType> getCompatibleVehicleTypes(ConsolidationUnit consolidationUnit) {
+		return this.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
+				consolidationUnit.isContainer, consolidationUnit.containsFerry);
+	}
+
 	// ----- THREAD SAFE ACCESS TO & UPDATE OF REPRESENTATIVE VEHICLE TYPE -----
 
 	private VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode, boolean isContainer,
@@ -107,7 +113,7 @@ public class FleetData {
 
 	// may be null
 	public VehicleType getRepresentativeVehicleType(final Commodity commodity, final TransportMode mode,
-			final boolean isContainer, final boolean containsFerry) throws InsufficientDataException {
+			final boolean isContainer, final boolean containsFerry) {
 		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleType()
 				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())

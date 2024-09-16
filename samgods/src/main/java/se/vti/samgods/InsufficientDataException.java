@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 
 /**
  * 
@@ -113,6 +114,11 @@ public class InsufficientDataException extends Exception {
 	public InsufficientDataException(Class<?> throwClass, String throwMessage, SamgodsConstants.Commodity commodity,
 			OD od, SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
 		this(throwClass, throwMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
+	}
+
+	public InsufficientDataException(Class<?> throwClass, String throwMessage, ConsolidationUnit consolidationUnit) {
+		this(throwClass, throwMessage + " " + context(consolidationUnit.commodity, null, consolidationUnit.samgodsMode,
+				consolidationUnit.isContainer, consolidationUnit.containsFerry));
 	}
 
 	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportEpisode episode) {

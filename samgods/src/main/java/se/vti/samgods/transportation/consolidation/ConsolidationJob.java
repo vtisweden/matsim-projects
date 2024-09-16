@@ -19,7 +19,9 @@
  */
 package se.vti.samgods.transportation.consolidation;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 
@@ -30,18 +32,20 @@ import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
  */
 public class ConsolidationJob {
 
-	public static final ConsolidationJob TERMINATE = new ConsolidationJob(null, null, 0);
+	public static final ConsolidationJob TERMINATE = new ConsolidationJob(null, new ArrayList<>(0), 0);
 
+	// concurrency: only references in this job
 	public final ConsolidationUnit consolidationUnit;
 
-	public final List<ChainAndShipmentSize> choices;
+	// concurrency: list entries possibly referenced in many jobs
+	public final CopyOnWriteArrayList<ChainAndShipmentSize> choices;
 
 	public final int serviceInterval_days;
-	
+
 	public ConsolidationJob(ConsolidationUnit consolidationUnit, List<ChainAndShipmentSize> choices,
 			int serviceInterval_days) {
 		this.consolidationUnit = consolidationUnit;
-		this.choices = choices;
+		this.choices = new CopyOnWriteArrayList<>(choices);
 		this.serviceInterval_days = serviceInterval_days;
 	}
 

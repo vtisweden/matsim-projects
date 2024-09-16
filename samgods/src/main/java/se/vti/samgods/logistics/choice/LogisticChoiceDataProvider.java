@@ -65,7 +65,7 @@ public class LogisticChoiceDataProvider {
 
 	double getEfficiency(ConsolidationUnit consolidationUnit) {
 		return this.consolidationUnit2efficiency.getOrDefault(consolidationUnit,
-				this.mode2efficiency.get(consolidationUnit.mode));
+				this.mode2efficiency.get(consolidationUnit.samgodsMode));
 	}
 
 // -------------------- THREAD SAFE UNIT COST ACCESS --------------------
