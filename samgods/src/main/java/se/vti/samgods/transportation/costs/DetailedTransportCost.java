@@ -97,6 +97,42 @@ public class DetailedTransportCost extends BasicTransportCost {
 			}
 		}
 
+		public Builder setToAllZeros() {
+			this.amount_ton = 0.0;
+
+			this.loadingCost = 0.0;
+			this.unloadingCost = 0.0;
+			this.transferCost = 0.0;
+			this.moveCost = 0.0;
+
+			this.loadingDuration_h = 0.0;
+			this.unloadingDuration_h = 0.0;
+			this.transferDuration_h = 0.0;
+			this.moveDuration_h = 0.0;
+
+			this.distance_km = 0.0;
+
+			return this;
+		}
+
+		public Builder addAll(DetailedTransportCost cost) {
+			this.addAmount_ton(cost.amount_ton);
+
+			this.addLoadingCost(cost.loadingCost);
+			this.addUnloadingCost(cost.unloadingCost);
+			this.addTransferCost(cost.transferCost);
+			this.addMoveCost(cost.moveCost);
+
+			this.addLoadingDuration_h(cost.loadingDuration_h);
+			this.addUnloadingDuration_h(cost.unloadingDuration_h);
+			this.addTransferDuration_h(cost.transferDuration_h);
+			this.addMoveDuration_h(cost.moveDuration_h);
+
+			this.addDistance_km(cost.length_km);
+
+			return this;
+		}
+
 		public Builder addAmount_ton(Double amount_ton) {
 			this.amount_ton = this.sum(this.amount_ton, amount_ton);
 			return this;

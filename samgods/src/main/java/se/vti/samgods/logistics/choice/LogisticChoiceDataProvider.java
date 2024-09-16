@@ -19,11 +19,9 @@
  */
 package se.vti.samgods.logistics.choice;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -44,11 +42,11 @@ public class LogisticChoiceDataProvider {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public LogisticChoiceDataProvider(Map<TransportMode, Double> mode2efficiency,
-			Map<ConsolidationUnit, Double> consolidationUnit2efficiency, NetworkDataProvider networkDataProvider,
-			FleetDataProvider fleetDataProvider) {
-		this.mode2efficiency = new ConcurrentHashMap<>(mode2efficiency);
-		this.consolidationUnit2efficiency = new ConcurrentHashMap<>(consolidationUnit2efficiency);
+	public LogisticChoiceDataProvider(// Map<TransportMode, Double> mode2efficiency,
+			ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost,
+			NetworkDataProvider networkDataProvider, FleetDataProvider fleetDataProvider) {
+//		this.mode2efficiency = new ConcurrentHashMap<>(mode2efficiency);
+		this.consolidationUnit2realizedCost = consolidationUnit2realizedCost;
 		this.networkDataProvider = networkDataProvider;
 		this.fleetDataProvider = fleetDataProvider;
 	}
@@ -60,12 +58,11 @@ public class LogisticChoiceDataProvider {
 
 	// -------------------- THREAD SAFE EFFICIENCY ACCESS --------------------
 
-	private final ConcurrentMap<TransportMode, Double> mode2efficiency;
-	private final ConcurrentMap<ConsolidationUnit, Double> consolidationUnit2efficiency;
+//	private final ConcurrentMap<TransportMode, Double> mode2efficiency;
+	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost;
 
-	double getEfficiency(ConsolidationUnit consolidationUnit) {
-		return this.consolidationUnit2efficiency.getOrDefault(consolidationUnit,
-				this.mode2efficiency.get(consolidationUnit.samgodsMode));
+	DetailedTransportCost getRealizedCost(ConsolidationUnit consolidationUnit) {
+		return this.consolidationUnit2realizedCost.get(consolidationUnit);
 	}
 
 // -------------------- THREAD SAFE UNIT COST ACCESS --------------------
