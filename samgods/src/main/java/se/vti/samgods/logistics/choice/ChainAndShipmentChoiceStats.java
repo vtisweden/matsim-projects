@@ -77,9 +77,7 @@ public class ChainAndShipmentChoiceStats {
 						.evaluate(this.commodity2lengths.get(commodity).stream().mapToDouble(l -> l).toArray());
 
 				final List<Map.Entry<SamgodsConstants.ShipmentSize, Long>> sortedSizeEntries = MiscUtils
-						.getSortedEntryList(this.commodity2size2cnt.get(commodity),
-								(e, f) -> Double.compare(e.getKey().getRepresentativeValue_ton(),
-										f.getKey().getRepresentativeValue_ton()));
+						.getSortedEntryListSmallestFirst(this.commodity2size2cnt.get(commodity));
 				final double avgSize = sortedSizeEntries.stream()
 						.mapToDouble(e -> e.getKey().getRepresentativeValue_ton() * e.getValue()).sum() / totalCnt;
 

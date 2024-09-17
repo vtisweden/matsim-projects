@@ -22,7 +22,6 @@ package se.vti.samgods.utils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,13 +34,6 @@ import java.util.Map.Entry;
 public class MiscUtils {
 
 	private MiscUtils() {
-	}
-
-	public static <K, V> List<Map.Entry<K, V>> getSortedEntryList(Map<K, V> map,
-			Comparator<Map.Entry<K, V>> comparator) {
-		final List<Map.Entry<K, V>> entryList = new ArrayList<>(map.entrySet());
-		Collections.sort(entryList, comparator);
-		return entryList;
 	}
 
 	private static <K, N extends Number> List<Map.Entry<K, N>> getSortedEntryList(Map<K, N> map, int sortCompSgn) {
@@ -62,19 +54,4 @@ public class MiscUtils {
 	public static <K, N extends Number> List<Map.Entry<K, N>> getSortedEntryListLargestFirst(Map<K, N> map) {
 		return getSortedEntryList(map, -1);
 	}
-
-	public static void main(String[] args) {
-
-		Map<String, Integer> name2age = new LinkedHashMap<>();
-		name2age.put("Albert", 54);
-		name2age.put("Bert", 12);
-		name2age.put("Carsten", 40);
-		name2age.put("Doris", 32);
-
-		for (Map.Entry<?, ?> e : getSortedEntryListLargestFirst(name2age)) {
-			System.out.println(e);
-		}
-
-	}
-
 }
