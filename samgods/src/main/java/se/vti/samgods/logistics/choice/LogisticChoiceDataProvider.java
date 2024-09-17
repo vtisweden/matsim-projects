@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
@@ -37,35 +36,30 @@ public class LogisticChoiceDataProvider {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final NetworkDataProvider networkDataProvider;
 	private final FleetDataProvider fleetDataProvider;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public LogisticChoiceDataProvider(// Map<TransportMode, Double> mode2efficiency,
+	public LogisticChoiceDataProvider(
 			ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost,
-			NetworkDataProvider networkDataProvider, FleetDataProvider fleetDataProvider) {
-//		this.mode2efficiency = new ConcurrentHashMap<>(mode2efficiency);
+			FleetDataProvider fleetDataProvider) {
 		this.consolidationUnit2realizedCost = consolidationUnit2realizedCost;
-		this.networkDataProvider = networkDataProvider;
 		this.fleetDataProvider = fleetDataProvider;
 	}
 
 	public LogisticChoiceData createLogisticChoiceData() {
-		return new LogisticChoiceData(this, this.networkDataProvider.createNetworkData(),
-				this.fleetDataProvider.createFleetData());
+		return new LogisticChoiceData(this, this.fleetDataProvider.createFleetData());
 	}
 
-	// -------------------- THREAD SAFE EFFICIENCY ACCESS --------------------
+	// ---------- THREAD SAFE CONSOLIDATION UNIT UNIT COST ACCESS ----------
 
-//	private final ConcurrentMap<TransportMode, Double> mode2efficiency;
 	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost;
 
 	DetailedTransportCost getRealizedCost(ConsolidationUnit consolidationUnit) {
 		return this.consolidationUnit2realizedCost.get(consolidationUnit);
 	}
 
-// -------------------- THREAD SAFE UNIT COST ACCESS --------------------
+// -------------------- THREAD SAFE EPISODE UNIT COST ACCESS --------------------
 
 	private final ConcurrentMap<TransportEpisode, DetailedTransportCost> episode2unitCost_1_ton = new ConcurrentHashMap<>();
 

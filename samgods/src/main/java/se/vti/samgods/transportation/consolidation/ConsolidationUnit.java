@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -60,78 +61,116 @@ public class ConsolidationUnit {
 	// -------------------- CONSTANTS --------------------
 
 	// "Poison pill" for multithreaded routing.
-	public static final ConsolidationUnit TERMINATE = new ConsolidationUnit(null, null, null, null, null);
+	public static final ConsolidationUnit TERMINATE = new ConsolidationUnit(new ArrayList<>(0), null, null, null);
 
 	// -------------------- MEMBERS --------------------
 
-	// TODO synchronize?
-	public final List<Id<Node>> nodeIds;
+	public final CopyOnWriteArrayList<Id<Node>> nodeIds;
 	public final SamgodsConstants.Commodity commodity;
 	public final SamgodsConstants.TransportMode samgodsMode;
 	public final Boolean isContainer;
 
-	// TODO synchronize?
-	public List<List<Id<Link>>> linkIds = null;
+	public CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>> linkIds = null;
 	public Double length_km = null;
 	public Boolean containsFerry = null;
 
 	// --------------------CONSTRUCTION --------------------
 
 	private ConsolidationUnit(List<Id<Node>> nodes, SamgodsConstants.Commodity commodity,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, List<List<Id<Link>>> linkIds) {
-		this.nodeIds = nodes;
+			SamgodsConstants.TransportMode mode, Boolean isContainer) {
+		this.nodeIds = new CopyOnWriteArrayList<>(nodes);
 		this.commodity = commodity;
 		this.samgodsMode = mode;
 		this.isContainer = isContainer;
-		this.linkIds = linkIds;
 	}
 
-	// TODO synchronize?
-	public synchronized static List<ConsolidationUnit> createUnrouted(TransportEpisode episode) {
+	public static List<ConsolidationUnit> createUnrouted(TransportEpisode episode) {
 		if (episode.getLegs() == null) {
 			return Collections.emptyList();
 		} else {
 			if (episode.getMode().equals(TransportMode.Rail) && (episode.getLegs().size() > 1)) {
 				return episode
 						.getLegs().stream().map(leg -> new ConsolidationUnit(extractNodes(Arrays.asList(leg)),
-								episode.getCommodity(), episode.getMode(), episode.isContainer(), null))
+								episode.getCommodity(), episode.getMode(), episode.isContainer()))
 						.collect(Collectors.toList());
 			} else {
 				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getLegs()), episode.getCommodity(),
-						episode.getMode(), episode.isContainer(), null));
+						episode.getMode(), episode.isContainer()));
 			}
 		}
 	}
 
-	// TODO synchronize?
-	public synchronized ConsolidationUnit createRoutingEquivalentTemplate() {
-		return new ConsolidationUnit(this.nodeIds, this.commodity, this.samgodsMode, this.isContainer, null);
+	public ConsolidationUnit createRoutingEquivalentTemplate() {
+		return new ConsolidationUnit(this.nodeIds, this.commodity, this.samgodsMode, this.isContainer);
 	}
 
 	// -------------------- INTERNALS --------------------
 
-	// TODO synchronize?
-	private synchronized static List<Id<Node>> extractNodes(List<TransportLeg> legs) {
+	private static List<Id<Node>> extractNodes(List<TransportLeg> legs) {
 		final ArrayList<Id<Node>> nodes = new ArrayList<>(legs.size() + 1);
 		legs.stream().map(l -> l.getOrigin()).forEach(n -> nodes.add(n));
 		nodes.add(legs.get(legs.size() - 1).getDestination());
 		return nodes;
 	}
 
-	// TODO synchronize?
-	private synchronized List<Object> createAsList() {
-		return Arrays.asList(this.nodeIds, this.commodity, this.samgodsMode, this.isContainer, this.linkIds);
+	// -------------------- IMPLEMENTATION --------------------
+
+	public void setRoutes(List<List<Link>> routes) {
+		if (routes == null) {
+			this.linkIds = null;
+			this.length_km = null;
+			this.containsFerry = null;
+		} else {
+			final List<CopyOnWriteArrayList<Id<Link>>> tmpLinkIds = new ArrayList<>(routes.size());
+			double length_m = 0.0;
+			this.containsFerry = false;
+			for (List<Link> route : routes) {
+				tmpLinkIds.add(new CopyOnWriteArrayList<>(route.stream().map(l -> l.getId()).toList()));
+				length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
+				this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> ((SamgodsLinkAttributes) l
+						.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
+			}
+			this.linkIds = new CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>>(tmpLinkIds);
+			this.length_km = Units.KM_PER_M * length_m;
+		}
+	}
+	
+	public void setRouteIds(List<List<Id<Link>>> routes) {
+		this.length_km = null;
+		this.containsFerry = null;
+		if (routes == null) {
+			this.linkIds = null;
+		} else {
+			final List<CopyOnWriteArrayList<Id<Link>>> tmpLinkIds = new ArrayList<>(routes.size());
+			for (List<Id<Link>> route : routes) {
+				tmpLinkIds.add(new CopyOnWriteArrayList<>(route));
+			}
+			this.linkIds = new CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>>(tmpLinkIds);
+		}
+	}
+	
+
+	public void computeNetworkCharacteristics(Network network) {
+		this.length_km = Units.KM_PER_M * this.linkIds.stream().flatMap(ll -> ll.stream())
+				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
+		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
+				.anyMatch(l -> ((SamgodsLinkAttributes) network.getLinks().get(l).getAttributes()
+						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
 	}
 
 	// -------------------- OVERRIDING Object --------------------
 
+	private List<Object> createAsList() {
+		return Arrays.asList(this.nodeIds, this.commodity, this.samgodsMode, this.isContainer, this.linkIds);
+	}
+
 	@Override
-	public synchronized int hashCode() {
+	public int hashCode() {
 		return this.createAsList().hashCode();
 	}
 
 	@Override
-	public synchronized boolean equals(Object other) {
+	public boolean equals(Object other) {
 		if (this == other) {
 			return true;
 		} else if (other instanceof ConsolidationUnit) {
@@ -142,38 +181,10 @@ public class ConsolidationUnit {
 	}
 
 	@Override
-	public synchronized String toString() {
+	public String toString() {
 		return this.createAsList().toString();
 	}
 
-	// -------------------- IMPLEMENTATION --------------------
-
-	public synchronized void setRoutes(List<List<Link>> routes) {
-		if (routes == null) {
-			this.linkIds = null;
-			this.length_km = null;
-			this.containsFerry = null;
-		} else {
-			this.linkIds = new ArrayList<>(routes.size());
-			double length_m = 0.0;
-			this.containsFerry = false;
-			for (List<Link> route : routes) {
-				this.linkIds.add(route.stream().map(l -> l.getId()).toList());
-				length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
-				this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> ((SamgodsLinkAttributes) l
-						.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
-			}
-			this.length_km = Units.KM_PER_M * length_m;
-		}
-	}
-
-	public void computeNetworkCharacteristics(Network network) {
-		this.length_km = Units.KM_PER_M * this.linkIds.stream().flatMap(ll -> ll.stream())
-				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
-		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
-				.anyMatch(l -> ((SamgodsLinkAttributes) network.getLinks().get(l).getAttributes()
-						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
-	}
 
 	// -------------------- Json Serializer --------------------
 
@@ -252,7 +263,9 @@ public class ConsolidationUnit {
 				routes.add(route);
 			}
 
-			return new ConsolidationUnit(nodes, commodity, mode, isContainer, routes);
+			final ConsolidationUnit result = new ConsolidationUnit(nodes, commodity, mode, isContainer);
+			result.setRouteIds(routes);
+			return result;
 		}
 	}
 }

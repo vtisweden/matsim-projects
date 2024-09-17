@@ -115,8 +115,10 @@ public class DetailedTransportCost extends BasicTransportCost {
 			return this;
 		}
 
-		public Builder addAll(DetailedTransportCost cost) {
-			this.addAmount_ton(cost.amount_ton);
+		public Builder add(DetailedTransportCost cost, boolean includeAmount) {
+			if (includeAmount) {
+				this.addAmount_ton(cost.amount_ton);
+			}
 
 			this.addLoadingCost(cost.loadingCost);
 			this.addUnloadingCost(cost.unloadingCost);

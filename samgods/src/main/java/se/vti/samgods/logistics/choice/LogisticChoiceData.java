@@ -20,19 +20,13 @@
 package se.vti.samgods.logistics.choice;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
-import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
@@ -48,47 +42,17 @@ public class LogisticChoiceData {
 
 	private final LogisticChoiceDataProvider logisticChoiceDataProvider;
 
-	private final NetworkData networkData;
-
 	private final FleetData fleetData;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	LogisticChoiceData(LogisticChoiceDataProvider dataProvider, NetworkData networkData, FleetData fleetData) {
+	LogisticChoiceData(LogisticChoiceDataProvider dataProvider, FleetData fleetData) {
 		this.logisticChoiceDataProvider = dataProvider;
-		this.networkData = networkData;
 		this.fleetData = fleetData;
 	}
 
 	// -------------------- TRANSPORT EPISODE UNIT COSTS --------------------
 
-	// TODO encapsulate, multithread, cache, ...
-	public synchronized static DetailedTransportCost computeRealizedInVehicleCost(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
-			ConsolidationUnit consolidationUnit, Map<Id<Link>, BasicTransportCost> link2unitCost,
-			Set<Id<Link>> ferryLinks) throws InsufficientDataException {
-		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().addAmount_ton(payload_ton)
-				.addLoadingDuration_h(0.0).addTransferDuration_h(0.0).addUnloadingDuration_h(0.0).addMoveDuration_h(0.0)
-				.addLoadingCost(0.0).addTransferCost(0.0).addUnloadingCost(0.0).addMoveCost(0.0).addDistance_km(0.0);
-		if (consolidationUnit.linkIds.size() > 0) {
-			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
-				for (Id<Link> linkId : linkIds) {
-					BasicTransportCost unitCost = link2unitCost.get(linkId);
-					builder.addMoveDuration_h(unitCost.duration_h);
-					builder.addDistance_km(unitCost.length_km);
-					if (ferryLinks.contains(linkId)) {
-						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
-						builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
-					} else {
-						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
-						builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
-					}
-				}
-			}
-		}
-		return builder.build();
-	}
-
-	
 	/**
 	 * This is currently an *approximation* of the realized unit cost of a
 	 * previously used episode, in that it evaluates the unit cost of a
@@ -131,21 +95,7 @@ public class LogisticChoiceData {
 
 			final List<ConsolidationUnit> consolidationUnits = episode.getConsolidationUnits();
 			for (ConsolidationUnit consolidationUnit : consolidationUnits) {
-				builder.addAll(this.logisticChoiceDataProvider.getRealizedCost(consolidationUnit));
-//				final DetailedTransportCost signatureUnitCost_1_ton = this.consolidationCostModel
-//						.computeRealizedSignatureCost(vehicleAttributes,
-//								this.logisticChoiceDataProvider.getEfficiency(consolidationUnit)
-//										* vehicleAttributes.capacity_ton,
-//								consolidationUnit, consolidationUnits.get(0) == consolidationUnit,
-//								consolidationUnits.get(consolidationUnits.size() - 1) == consolidationUnit,
-//								this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds())
-//						.createUnitCost_1_ton();
-//				builder.addLoadingDuration_h(onlyMovementCost.loadingDuration_h)
-//						.addTransferDuration_h(onlyMovementCost.transferDuration_h)
-//						.addUnloadingDuration_h(onlyMovementCost.unloadingDuration_h)
-//						.addMoveDuration_h(onlyMovementCost.moveDuration_h).addLoadingCost(onlyMovementCost.loadingCost)
-//						.addTransferCost(onlyMovementCost.transferCost).addUnloadingCost(onlyMovementCost.unloadingCost)
-//						.addMoveCost(onlyMovementCost.moveCost).addDistance_km(onlyMovementCost.length_km);
+				builder.add(this.logisticChoiceDataProvider.getRealizedCost(consolidationUnit), true);
 			}
 			return builder.build().createUnitCost_1_ton();
 
@@ -167,16 +117,7 @@ public class LogisticChoiceData {
 			final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder()
 					.addAmount_ton(1.0);
 			for (TransportEpisode episode : transportChain.getEpisodes()) {
-				final DetailedTransportCost episodeUnitCost_1_ton = this.getEpisodeUnitCost_1_ton(episode);
-				chainCostBuilder.addLoadingCost(episodeUnitCost_1_ton.loadingCost)
-						.addLoadingDuration_h(episodeUnitCost_1_ton.loadingDuration_h)
-						.addMoveCost(episodeUnitCost_1_ton.moveCost)
-						.addMoveDuration_h(episodeUnitCost_1_ton.moveDuration_h)
-						.addTransferCost(episodeUnitCost_1_ton.transferCost)
-						.addTransferDuration_h(episodeUnitCost_1_ton.transferDuration_h)
-						.addUnloadingCost(episodeUnitCost_1_ton.unloadingCost)
-						.addUnloadingDuration_h(episodeUnitCost_1_ton.unloadingDuration_h)
-						.addDistance_km(episodeUnitCost_1_ton.length_km);
+				chainCostBuilder.add(this.getEpisodeUnitCost_1_ton(episode), false);
 			}
 			return chainCostBuilder.build();
 		} catch (InsufficientDataException e) {

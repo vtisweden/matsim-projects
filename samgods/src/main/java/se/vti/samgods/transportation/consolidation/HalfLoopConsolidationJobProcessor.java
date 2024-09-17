@@ -28,9 +28,9 @@ import org.matsim.vehicles.VehicleType;
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
-import se.vti.samgods.logistics.choice.LogisticChoiceData;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
+import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
@@ -43,6 +43,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTANTS --------------------
 
+	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
+
 	private final NetworkData networkData;
 	private final FleetData fleetData;
 
@@ -51,8 +53,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidationJobProcessor(
-			NetworkData networkData, FleetData fleetData, BlockingQueue<ConsolidationJob> jobQueue,
+	public HalfLoopConsolidationJobProcessor(NetworkData networkData, FleetData fleetData,
+			BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.networkData = networkData;
 		this.fleetData = fleetData;
@@ -148,16 +150,14 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			double serviceDemand_ton, double serviceProba, double length_km) throws InsufficientDataException {
 		final SamgodsVehicleAttributes vehicleAttrs = this.fleetData.getVehicleType2attributes().get(vehicleType);
 		FleetAssignment result = new FleetAssignment(vehicleType, vehicleAttrs.capacity_ton,
-				LogisticChoiceData.computeRealizedInVehicleCost(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton,
-						job.consolidationUnit, this.networkData.getLinkId2unitCost(vehicleType),
-						this.networkData.getFerryLinkIds()),
+				this.realizedInVehicleCost.compute(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, job.consolidationUnit,
+						this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds()),
 				serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
 			FleetAssignment newResult = new FleetAssignment(vehicleType, vehicleAttrs.capacity_ton,
-					LogisticChoiceData.computeRealizedInVehicleCost(vehicleAttrs, result.payload_ton,
-							job.consolidationUnit, this.networkData.getLinkId2unitCost(vehicleType),
-							this.networkData.getFerryLinkIds()),
+					this.realizedInVehicleCost.compute(vehicleAttrs, result.payload_ton, job.consolidationUnit,
+							this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds()),
 					serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;
 			done = (dev < 1e-8);

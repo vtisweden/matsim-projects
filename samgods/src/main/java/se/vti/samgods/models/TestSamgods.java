@@ -87,6 +87,7 @@ import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProce
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
+import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
@@ -152,11 +153,11 @@ public class TestSamgods {
 
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
-//		double samplingRate = 0.01;
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
-				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
-		double samplingRate = 1.0;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
+		double samplingRate = 0.01;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
+//				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
+//		double samplingRate = 1.0;
 
 		int maxThreads = Integer.MAX_VALUE;
 
@@ -383,6 +384,7 @@ public class TestSamgods {
 			final double initialTransportEfficiency = 0.7; // TODO magic number
 			final NetworkData networkData = new NetworkDataProvider(network).createNetworkData();
 			final FleetData fleetData = new FleetDataProvider(vehicles).createFleetData();
+			final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 			for (ConsolidationUnit consolidationUnit : allConsolidationUnits) {
 				final VehicleType vehicleType = fleetData.getRepresentativeVehicleType(consolidationUnit.commodity,
 						consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
@@ -391,7 +393,7 @@ public class TestSamgods {
 							.get(vehicleType);
 					try {
 						consolidationUnit2realizedMoveCost.put(consolidationUnit,
-								LogisticChoiceData.computeRealizedInVehicleCost(vehicleAttributes,
+								realizedInVehicleCost.compute(vehicleAttributes,
 										initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
 										networkData.getLinkId2unitCost(vehicleType), networkData.getFerryLinkIds()));
 					} catch (InsufficientDataException e) {
@@ -429,8 +431,7 @@ public class TestSamgods {
 				try {
 					final LogisticChoiceDataProvider choiceDataProvider = new LogisticChoiceDataProvider(
 //							mode2efficiency, 
-							consolidationUnit2realizedMoveCost, new NetworkDataProvider(network),
-							new FleetDataProvider(vehicles));
+							consolidationUnit2realizedMoveCost, new FleetDataProvider(vehicles));
 					for (int i = 0; i < threadCnt; i++) {
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction();
@@ -559,6 +560,7 @@ public class TestSamgods {
 			{
 				final NetworkData networkData = new NetworkDataProvider(network).createNetworkData();
 				final FleetData fleetData = new FleetDataProvider(vehicles).createFleetData();
+				final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 
 				final Map<TransportMode, Double> mode2WeightedEfficiencySum = new LinkedHashMap<>();
 				final Map<TransportMode, Double> mode2WeightSum = new LinkedHashMap<>();
@@ -578,8 +580,7 @@ public class TestSamgods {
 								.get(assignment.vehicleType);
 						try {
 							consolidationUnit2realizedMoveCost.put(signature,
-									LogisticChoiceData.computeRealizedInVehicleCost(vehicleAttributes,
-											assignment.payload_ton, signature,
+									realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton, signature,
 											networkData.getLinkId2unitCost(assignment.vehicleType),
 											networkData.getFerryLinkIds()));
 						} catch (InsufficientDataException e1) {
@@ -598,6 +599,7 @@ public class TestSamgods {
 
 			log.info("Computing unit cost per mode.");
 			{
+				final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 				Map<TransportMode, Double> mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
 				Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
 				NetworkData networkData = new NetworkDataProvider(network).createNetworkData();
@@ -618,10 +620,9 @@ public class TestSamgods {
 									for (ConsolidationUnit consolidationUnit : consolidationUnits) {
 										if (consolidationUnit.equals(signature)) {
 											double payload_ton = fleetAssignment.payload_ton;
-											DetailedTransportCost unitCost_1_ton = LogisticChoiceData
-													.computeRealizedInVehicleCost(vehicleAttrs, payload_ton,
-															consolidationUnit, linkId2unitCost,
-															networkData.getFerryLinkIds())
+											DetailedTransportCost unitCost_1_ton = realizedInVehicleCost
+													.compute(vehicleAttrs, payload_ton, consolidationUnit,
+															linkId2unitCost, networkData.getFerryLinkIds())
 													.createUnitCost_1_ton();
 											costSum += unitCost_1_ton.monetaryCost
 													* choice.annualShipment.getTotalAmount_ton();
