@@ -46,10 +46,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.SamgodsLinkAttributes;
-import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.VehiclesReader;
 
 /**
  * 
@@ -131,7 +130,7 @@ public class NTMCalcSerializerTest {
 						routeLinks.add(link);
 					}
 
-					TransportLeg leg = new TransportLeg(routeNodes.getFirst().getId(), routeNodes.getLast().getId());
+//					TransportLeg leg = new TransportLeg(routeNodes.getFirst().getId(), routeNodes.getLast().getId());
 
 					throw new RuntimeException("TODO");
 //					leg.setRoute(routeLinks);

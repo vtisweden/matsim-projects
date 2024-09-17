@@ -47,11 +47,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
@@ -85,16 +85,16 @@ public class ConsolidationUnit {
 	}
 
 	public static List<ConsolidationUnit> createUnrouted(TransportEpisode episode) {
-		if (episode.getLegs() == null) {
+		if (episode.getLegODs() == null) {
 			return Collections.emptyList();
 		} else {
-			if (episode.getMode().equals(TransportMode.Rail) && (episode.getLegs().size() > 1)) {
+			if (episode.getMode().equals(TransportMode.Rail) && (episode.getLegODs().size() > 1)) {
 				return episode
-						.getLegs().stream().map(leg -> new ConsolidationUnit(extractNodes(Arrays.asList(leg)),
+						.getLegODs().stream().map(od -> new ConsolidationUnit(extractNodes(Arrays.asList(od)),
 								episode.getCommodity(), episode.getMode(), episode.isContainer()))
 						.collect(Collectors.toList());
 			} else {
-				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getLegs()), episode.getCommodity(),
+				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getLegODs()), episode.getCommodity(),
 						episode.getMode(), episode.isContainer()));
 			}
 		}
@@ -106,11 +106,11 @@ public class ConsolidationUnit {
 
 	// -------------------- INTERNALS --------------------
 
-	private static List<Id<Node>> extractNodes(List<TransportLeg> legs) {
-		final ArrayList<Id<Node>> nodes = new ArrayList<>(legs.size() + 1);
-		legs.stream().map(l -> l.getOrigin()).forEach(n -> nodes.add(n));
-		nodes.add(legs.get(legs.size() - 1).getDestination());
-		return nodes;
+	private static List<Id<Node>> extractNodes(List<OD> legODs) {
+		final ArrayList<Id<Node>> nodeIds = new ArrayList<>(legODs.size() + 1);
+		legODs.stream().map(l -> l.origin).forEach(n -> nodeIds.add(n));
+		nodeIds.add(legODs.get(legODs.size() - 1).destination);
+		return nodeIds;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -134,21 +134,20 @@ public class ConsolidationUnit {
 			this.length_km = Units.KM_PER_M * length_m;
 		}
 	}
-	
-	public void setRouteIds(List<List<Id<Link>>> routes) {
+
+	public void setRouteIds(List<List<Id<Link>>> routeIds) {
 		this.length_km = null;
 		this.containsFerry = null;
-		if (routes == null) {
+		if (routeIds == null) {
 			this.linkIds = null;
 		} else {
-			final List<CopyOnWriteArrayList<Id<Link>>> tmpLinkIds = new ArrayList<>(routes.size());
-			for (List<Id<Link>> route : routes) {
+			final List<CopyOnWriteArrayList<Id<Link>>> tmpLinkIds = new ArrayList<>(routeIds.size());
+			for (List<Id<Link>> route : routeIds) {
 				tmpLinkIds.add(new CopyOnWriteArrayList<>(route));
 			}
 			this.linkIds = new CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>>(tmpLinkIds);
 		}
 	}
-	
 
 	public void computeNetworkCharacteristics(Network network) {
 		this.length_km = Units.KM_PER_M * this.linkIds.stream().flatMap(ll -> ll.stream())
@@ -184,7 +183,6 @@ public class ConsolidationUnit {
 	public String toString() {
 		return this.createAsList().toString();
 	}
-
 
 	// -------------------- Json Serializer --------------------
 

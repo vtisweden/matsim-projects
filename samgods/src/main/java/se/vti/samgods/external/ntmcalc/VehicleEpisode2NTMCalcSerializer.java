@@ -19,12 +19,9 @@
  */
 package se.vti.samgods.external.ntmcalc;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
-import java.util.List;
 
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
@@ -32,25 +29,15 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
-import org.matsim.vehicles.Vehicle;
-import org.matsim.vehicles.VehicleType;
-import org.matsim.vehicles.VehicleUtils;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.logistics.TransportLeg;
-import se.vti.samgods.network.SamgodsLinkAttributes;
 
 /**
  * 
@@ -81,8 +68,8 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 
 		gen.writeFieldName("links");
 		gen.writeStartArray();
-		for (TransportLeg leg : vehicleEpisode.getTransportEpisode().getLegs()) {
-			throw new RuntimeException("TODO");
+//		for (TransportLeg leg : vehicleEpisode.getTransportEpisode().getLegs()) {
+//			throw new RuntimeException("TODO");
 //			for (Id<Link> linkId : leg.getRouteIdsView()) {
 //				final Link link = this.network.getLinks().get(linkId);
 //				gen.writeStartObject();
@@ -100,7 +87,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 //				}
 //				gen.writeEndObject();
 //			}
-		}
+//		}
 		gen.writeEndArray();
 
 		gen.writeEndObject();
@@ -120,7 +107,7 @@ public class VehicleEpisode2NTMCalcSerializer extends JsonSerializer<VehicleEpis
 		link1.setFreespeed(Units.M_S_PER_KM_H * 60.0);
 		link2.setFreespeed(Units.M_S_PER_KM_H * 100.0);
 
-		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()));
+//		TransportLeg leg = new TransportLeg(new OD(node.getId(), node.getId()));
 		throw new RuntimeException("TODO");
 		// leg.setRoute(Arrays.asList(link1, link2));
 //

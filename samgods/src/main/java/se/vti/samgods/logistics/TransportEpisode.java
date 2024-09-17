@@ -25,6 +25,7 @@ import java.util.List;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -40,7 +41,7 @@ public class TransportEpisode {
 
 	private final TransportMode mode;
 
-	private final LinkedList<TransportLeg> legs = new LinkedList<>();
+	private final LinkedList<OD> legODs = new LinkedList<>();
 
 	private TransportChain parent;
 
@@ -56,13 +57,12 @@ public class TransportEpisode {
 		this.parent = parent;
 	}
 
-	public void addLeg(final TransportLeg leg) {
-		leg.setParent(this);
-		this.legs.add(leg);
+	public void addLegOD(OD od) {
+		this.legODs.add(od);
 	}
 
-	public void setConsolidationUnits(List<ConsolidationUnit> signatures) {
-		this.consolidationUnits = signatures;
+	public void setConsolidationUnits(List<ConsolidationUnit> consolidationUnits) {
+		this.consolidationUnits = consolidationUnits;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -71,23 +71,23 @@ public class TransportEpisode {
 		return this.mode;
 	}
 
-	public LinkedList<TransportLeg> getLegs() {
-		return this.legs;
+	public LinkedList<OD> getLegODs() {
+		return this.legODs;
 	}
 
 	public Id<Node> getLoadingNodeId() {
-		if (this.legs.size() == 0) {
+		if (this.legODs.size() == 0) {
 			return null;
 		} else {
-			return this.legs.getFirst().getOrigin();
+			return this.legODs.getFirst().origin;
 		}
 	}
 
 	public Id<Node> getUnloadingNodeId() {
-		if (this.legs.size() == 0) {
+		if (this.legODs.size() == 0) {
 			return null;
 		} else {
-			return this.legs.getLast().getDestination();
+			return this.legODs.getLast().destination;
 		}
 	}
 

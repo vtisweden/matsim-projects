@@ -22,7 +22,6 @@ package se.vti.samgods.logistics;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import de.vandermeer.asciitable.AsciiTable;
 import floetteroed.utilities.math.MathHelpers;
@@ -38,22 +37,20 @@ import se.vti.samgods.utils.MiscUtils;
  */
 public class TransportDemandStatsTable {
 
-	private List<List<SamgodsConstants.TransportMode>> getTransportModeSequence(TransportChain chain) {
-		return chain.getEpisodes().stream()
-				.map(e -> e.getLegs().stream().map(l -> l.getMode()).collect(Collectors.toList()))
-				.collect(Collectors.toList());
+	private List<SamgodsConstants.TransportMode> getTransportModeSequence(TransportChain chain) {
+		return chain.getEpisodes().stream().map(e -> e.getMode()).toList();
 	}
 
 	public String createChainStatsTable(int maxRowCnt, Commodity commodity, TransportDemand demand) {
 		// OD flow -> chain assignment may not be available, hence just counting chains.
-		final Map<List<List<SamgodsConstants.TransportMode>>, Integer> modeSeq2cnt = new LinkedHashMap<>();
+		final Map<List<SamgodsConstants.TransportMode>, Integer> modeSeq2cnt = new LinkedHashMap<>();
 		for (List<TransportChain> chains : demand.getCommodity2od2transportChains().get(commodity).values()) {
 			for (TransportChain chain : chains) {
-				final List<List<SamgodsConstants.TransportMode>> modes = this.getTransportModeSequence(chain);
+				final List<SamgodsConstants.TransportMode> modes = this.getTransportModeSequence(chain);
 				modeSeq2cnt.compute(modes, (m, c) -> c == null ? 1 : c + 1);
 			}
 		}
-		final List<Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer>> sortedEntries = MiscUtils
+		final List<Map.Entry<List<SamgodsConstants.TransportMode>, Integer>> sortedEntries = MiscUtils
 				.getSortedEntryListLargestFirst(modeSeq2cnt);
 
 		final long total = modeSeq2cnt.values().stream().mapToLong(c -> c).sum();
@@ -64,7 +61,7 @@ public class TransportDemandStatsTable {
 		table.addRow("", "Total", total, 100);
 		table.addRule();
 		for (int i = 0; i < Math.min(maxRowCnt, sortedEntries.size()); i++) {
-			Map.Entry<List<List<SamgodsConstants.TransportMode>>, Integer> entry = sortedEntries.get(i);
+			Map.Entry<List<SamgodsConstants.TransportMode>, Integer> entry = sortedEntries.get(i);
 			table.addRow(i + 1, entry.getKey(), entry.getValue(),
 					MathHelpers.round(100.0 * entry.getValue().doubleValue() / total, 2));
 			table.addRule();

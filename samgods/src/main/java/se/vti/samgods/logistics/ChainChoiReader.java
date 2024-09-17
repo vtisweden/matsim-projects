@@ -202,12 +202,12 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		final List<String> originColumns = originsColumnsByChainLength.get(chainType.length());
 		final List<String> destinationColumns = destinationColumnsByChainLength.get(chainType.length());
 
-		final List<TransportLeg> legs = new ArrayList<>(chainType.length());
+		final List<OD> legODs = new ArrayList<>(chainType.length());
 		final List<SamgodsConstants.TransportMode> modes = new ArrayList<>(chainType.length());
 		for (int i = 0; i < chainType.length(); i++) {
 			final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
 			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
-			legs.add(new TransportLeg(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination)));
+			legODs.add(new OD(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination)));
 			modes.add(code2samgodsMode.get(chainType.charAt(i)));
 		}
 
@@ -217,18 +217,17 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		assert (!SamgodsFerryModes.contains(chainType.charAt(chainType.length() - 1)));
 
 		int i = 1;
-		while (i < legs.size() - 1) {
+		while (i < legODs.size() - 1) {
 			if (SamgodsFerryModes.contains(chainType.charAt(i))) {
 				assert (!SamgodsFerryModes.contains(chainType.charAt(i - 1)));
 				assert (!SamgodsFerryModes.contains(chainType.charAt(i + 1)));
 				assert (modes.get(i - 1).equals(modes.get(i)));
 				assert (modes.get(i).equals(modes.get(i + 1)));
 
-				final TransportLeg condensedLeg = new TransportLeg(legs.get(i - 1).getOrigin(),
-						legs.get(i + 1).getDestination());
-				legs.remove(i + 1);
-				legs.remove(i);
-				legs.set(i - 1, condensedLeg);
+				final OD condensedOD = new OD(legODs.get(i - 1).origin, legODs.get(i + 1).destination);
+				legODs.remove(i + 1);
+				legODs.remove(i);
+				legODs.set(i - 1, condensedOD);
 
 				modes.remove(i + 1);
 				modes.remove(i);
@@ -236,21 +235,21 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 				i++;
 			}
 		}
-		assert (legs.size() == modes.size());
+		assert (legODs.size() == modes.size());
 
 		/*
 		 * Compose episodes from legs. The only case where an episode contains more than
 		 * one leg are rail legs in sequence.
 		 */
 
-		if (legs.size() > 0) {
+		if (legODs.size() > 0) {
 			// TODO Could already here filter out impossible commodity/container
 			// combinations.
 			for (boolean isContainer : new boolean[] { true, false }) {
 				final TransportChain transportChain = new TransportChain(this.commodity, isContainer);
 				TransportEpisode currentEpisode = null;
-				for (int legIndex = 0; legIndex < legs.size(); legIndex++) {
-					final TransportLeg leg = legs.get(legIndex);
+				for (int legIndex = 0; legIndex < legODs.size(); legIndex++) {
+					final OD legOD = legODs.get(legIndex);
 					final SamgodsConstants.TransportMode legMode = modes.get(legIndex);
 					if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
 							|| !SamgodsConstants.TransportMode.Rail.equals(legMode)) {
@@ -259,7 +258,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 						transportChain.addEpisode(currentEpisode);
 					}
 					assert (currentEpisode.getMode().equals(legMode));
-					currentEpisode.addLeg(leg);
+					currentEpisode.addLegOD(legOD);
 				}
 				this.transportDemand.add(transportChain);
 			}
