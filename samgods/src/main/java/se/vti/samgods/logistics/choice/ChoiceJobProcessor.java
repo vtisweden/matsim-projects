@@ -123,8 +123,9 @@ public class ChoiceJobProcessor implements Runnable {
 				}
 			}
 		} else {
-			new InsufficientDataException(this.getClass(), "No transport chains with transport cost available.",
-					job.commodity, job.od, null, null, null);
+			InsufficientDataException.log(new InsufficientDataException(this.getClass(),
+					"No transport chains with transport cost available.", job.commodity, job.od, null, null, null),
+					null);
 		}
 	}
 }

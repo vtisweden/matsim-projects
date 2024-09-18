@@ -100,7 +100,8 @@ public class LogisticChoiceData {
 			return builder.build().createUnitCost_1_ton();
 
 		} catch (InsufficientDataException e) {
-			e.log(this.getClass(), "cannot create episode unit cost", episode);
+			InsufficientDataException.log(e,
+					new InsufficientDataException(this.getClass(), "cannot create episode unit cost"));
 			return null;
 		}
 	}
@@ -121,8 +122,8 @@ public class LogisticChoiceData {
 			}
 			return chainCostBuilder.build();
 		} catch (InsufficientDataException e) {
-			e.log(this.getClass(), "No transport cost data for at least one episode in this transport chain.",
-					transportChain);
+			InsufficientDataException.log(e, new InsufficientDataException(this.getClass(),
+					"No transport cost data for at least one episode in this transport chain."));
 			return null;
 		}
 	}

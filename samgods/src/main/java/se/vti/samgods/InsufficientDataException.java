@@ -19,14 +19,15 @@
  */
 package se.vti.samgods;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
-import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 
 /**
@@ -37,17 +38,19 @@ import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 @SuppressWarnings("serial")
 public class InsufficientDataException extends Exception {
 
-	// -------------------- GLOBAL LOGGING --------------------
+	// -------------------- STATIC INTERNALS --------------------
+
+	private static final Logger log = Logger.getLogger(InsufficientDataException.class);
 
 	private static boolean logDuringRuntime = true;
 
-	public static void setLogDuringRuntime(boolean log) {
-		logDuringRuntime = log;
+	private static List<InsufficientDataException> originalExceptions = new ArrayList<>();
+	private static List<InsufficientDataException> resultingExceptions = new ArrayList<>();
+
+	private static String logMsg(InsufficientDataException originalException,
+			InsufficientDataException resultingException) {
+		return (resultingException != null ? resultingException + " CAUSED BY " : "") + originalException;
 	}
-
-	private static Logger log = Logger.getLogger(InsufficientDataException.class);
-
-	private static LinkedList<InsufficientDataException> history = new LinkedList<>();
 
 	static {
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -55,110 +58,84 @@ public class InsufficientDataException extends Exception {
 			public void run() {
 				StringBuffer msg = new StringBuffer(
 						"\n--------------------------------------------------------------------------------------------------------------------------------------------\n");
-				for (InsufficientDataException e : history) {
-					msg.append("  " + e.toString() + "\n");
+				for (int i = 0; i < originalExceptions.size(); i++) {
+					msg.append(logMsg(originalExceptions.get(i), resultingExceptions.get(i)) + "\n");
 				}
 				msg.append(
 						"--------------------------------------------------------------------------------------------------------------------------------------------");
-				log.warn(msg);
+				System.err.println(msg.toString());
 			}
 		}));
 	}
 
-	// -------------------- STATIC INTERNALS --------------------
+	// -------------------- GLOBAL STATIC --------------------
 
-	private static synchronized String context(SamgodsConstants.Commodity commodity, OD od,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-		List<String> msgList = new LinkedList<>();
-		if (commodity != null) {
-			msgList.add("commodity=" + commodity);
-		}
-		if (od != null) {
-			msgList.add("od=" + od);
-		}
-		if (mode != null) {
-			msgList.add("mode=" + mode);
-		}
-		if (isContainer != null) {
-			msgList.add("isContainer=" + isContainer);
-		}
-		if (containsFerry != null) {
-			msgList.add("containsFerry=" + containsFerry);
-		}
-		return msgList.stream().collect(Collectors.joining(", "));
+	public static void setLogDuringRuntime(boolean log) {
+		logDuringRuntime = log;
 	}
 
-	private static synchronized String context(TransportEpisode episode) {
-		return context(episode.getCommodity(), new OD(episode.getLoadingNodeId(), episode.getUnloadingNodeId()),
-				episode.getMode(), episode.isContainer(), null);
-	}
-
-	private static synchronized String context(TransportChain chain) {
-		return context(chain.getCommodity(), chain.getOD(), null, chain.isContainer(), null);
+	public static synchronized void log(InsufficientDataException originalException,
+			InsufficientDataException resultingException) {
+		originalExceptions.add(originalException);
+		resultingExceptions.add(resultingException);
+		if (logDuringRuntime) {
+			log.warn(logMsg(originalException, resultingException));
+		}
 	}
 
 	// -------------------- MEMBERS --------------------
 
-	private Class<?> throwClass;
-
-	private Class<?> catchClass = null;
-	private String catchMessage = null;
+	public final Class<?> clazz;
+	public final Commodity commodity;
+	public final OD od;
+	public final TransportMode samgodsMode;
+	public final Boolean isContainer;
+	public final Boolean containsFerry;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public InsufficientDataException(Class<?> throwClass, String throwMessage) {
-		super(throwMessage);
-		this.throwClass = throwClass;
-	}
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage, SamgodsConstants.Commodity commodity,
-			OD od, SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-		this(throwClass, throwMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
+	public InsufficientDataException(Class<?> clazz, String message, SamgodsConstants.Commodity commodity, OD od,
+			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+		super(message);
+		this.clazz = clazz;
+		this.commodity = commodity;
+		this.od = od;
+		this.samgodsMode = mode;
+		this.isContainer = isContainer;
+		this.containsFerry = containsFerry;
 	}
 
 	public InsufficientDataException(Class<?> throwClass, String throwMessage, ConsolidationUnit consolidationUnit) {
-		this(throwClass, throwMessage + " " + context(consolidationUnit.commodity, null, consolidationUnit.samgodsMode,
-				consolidationUnit.isContainer, consolidationUnit.containsFerry));
+		this(throwClass, throwMessage, consolidationUnit.commodity,
+				new OD(consolidationUnit.nodeIds.get(0),
+						consolidationUnit.nodeIds.get(consolidationUnit.nodeIds.size() - 1)),
+				consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
 	}
 
-	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportEpisode episode) {
-		this(throwClass, throwMessage + " " + context(episode));
-	}
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage, TransportChain chain) {
-		this(throwClass, throwMessage + " " + context(chain));
+	public InsufficientDataException(Class<?> throwClass, String throwMessage) {
+		this(throwClass, throwMessage, null, null, null, null, null);
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public synchronized void log(Class<?> catchClass, String catchMessage) {
-		this.catchMessage = catchMessage;
-		this.catchClass = catchClass;
-		history.add(this);
-		if (logDuringRuntime) {
-			log.warn(this.toString());
-		}
-	}
-
-	public synchronized void log(Class<?> catchClass, String catchMessage, SamgodsConstants.Commodity commodity, OD od,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-		this.log(catchClass, catchMessage + " " + context(commodity, od, mode, isContainer, containsFerry));
-	}
-
-	public synchronized void log(Class<?> catchClass, String catchMessage, TransportEpisode episode) {
-		this.log(catchClass, catchMessage + " " + context(episode));
-	}
-
-	public synchronized void log(Class<?> catchClass, String catchMessage, TransportChain chain) {
-		this.log(catchClass, catchMessage + " " + context(chain));
-	}
-
-	public synchronized void log() {
-		this.log(this.throwClass, "./.");
-	}
-
 	public String toString() {
-		return this.throwClass.getSimpleName() + "[" + this.getMessage() + "] ==> " + this.catchClass.getSimpleName()
-				+ "[" + this.catchMessage + "]";
+		final List<String> contextList = new LinkedList<>();
+		if (this.commodity != null) {
+			contextList.add("commodity=" + this.commodity);
+		}
+		if (this.od != null) {
+			contextList.add("od=" + this.od);
+		}
+		if (this.samgodsMode != null) {
+			contextList.add("mode=" + this.samgodsMode);
+		}
+		if (this.isContainer != null) {
+			contextList.add("isContainer=" + this.isContainer);
+		}
+		if (this.containsFerry != null) {
+			contextList.add("containsFerry=" + this.containsFerry);
+		}
+		return this.getMessage() + " in " + this.clazz.getSimpleName()
+				+ (contextList.size() > 0 ? ", context: " + contextList.stream().collect(Collectors.joining(",")) : "");
 	}
 }

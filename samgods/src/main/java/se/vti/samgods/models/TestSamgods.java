@@ -451,8 +451,10 @@ public class TestSamgods {
 							if (transportChains.size() > 0) {
 								jobQueue.put(new ChoiceJob(commodity, od, transportChains, annualShipments));
 							} else {
-								new InsufficientDataException(TestSamgods.class, "No transport chains available.",
-										commodity, od, null, null, null).log();
+								InsufficientDataException.log(
+										new InsufficientDataException(TestSamgods.class,
+												"No transport chains available.", commodity, od, null, null, null),
+										null);
 							}
 						}
 					}
@@ -530,9 +532,11 @@ public class TestSamgods {
 								jobQueue.put(job);
 							}
 						} else {
-							new InsufficientDataException(TestSamgods.class, "No transport chains available.",
-									consolidationUnit.commodity, null, consolidationUnit.samgodsMode,
-									consolidationUnit.isContainer, consolidationUnit.containsFerry).log();
+							InsufficientDataException.log(
+									new InsufficientDataException(TestSamgods.class, "No transport chains available.",
+											consolidationUnit.commodity, null, consolidationUnit.samgodsMode,
+											consolidationUnit.isContainer, consolidationUnit.containsFerry),
+									null);
 						}
 					}
 

@@ -40,6 +40,7 @@ import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
+import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -130,39 +131,61 @@ public class Router {
 			this.jobQueue = jobQueue;
 		}
 
-		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
-				throws InsufficientDataException {
-			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
-					mode, isContainer, containsFerry);
-			if (representativeVehicleType != null) {
-				final TravelDisutility travelDisutility = this.networkData
-						.getTravelDisutility(representativeVehicleType);
-				final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
-				return this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
-						.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>()).computeIfAbsent(containsFerry,
-								cf -> this.routerFactory.createPathCalculator(
-										this.networkData.getUnimodalNetwork(mode, containsFerry), travelDisutility,
-										travelTime));
-			} else {
-				throw new InsufficientDataException(this.getClass(), "no representative vehicle type available",
-						this.commodity, null, mode, isContainer, containsFerry);
-			}
-		}
+//		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
+//				throws InsufficientDataException {
+//			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
+//					mode, isContainer, containsFerry);
+//			if (representativeVehicleType != null) {
+//				final TravelDisutility travelDisutility = this.networkData
+//						.getTravelDisutility(representativeVehicleType);
+//				final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
+//				return this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
+//						.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>()).computeIfAbsent(containsFerry,
+//								cf -> this.routerFactory.createPathCalculator(
+//										this.networkData.getUnimodalNetwork(mode, containsFerry), travelDisutility,
+//										travelTime));
+//			} else {
+//				throw new InsufficientDataException(this.getClass(), "no representative vehicle type available",
+//						this.commodity, null, mode, isContainer, containsFerry);
+//			}
+//		}
 
-		private List<List<Link>> computeRoutes(ConsolidationUnit job, boolean containsFerry) {
-			final LeastCostPathCalculator router;
-			try {
-				router = this.getRouter(job.samgodsMode, job.isContainer, containsFerry);
-			} catch (InsufficientDataException e) {
-				return null;
+		private List<List<Link>> computeRoutes(ConsolidationUnit job, boolean containsFerry)
+				throws InsufficientDataException {
+
+			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
+					job.samgodsMode, job.isContainer, containsFerry);
+			if (representativeVehicleType == null) {
+				throw new InsufficientDataException(this.getClass(), "no representative vehicle type available",
+						this.commodity, null, job.samgodsMode, job.isContainer, containsFerry);
+			}
+
+			final TravelDisutility travelDisutility = this.networkData.getTravelDisutility(representativeVehicleType);
+			if (travelDisutility == null) {
+				throw new InsufficientDataException(this.getClass(), "no TravelDisutility available", this.commodity,
+						null, job.samgodsMode, job.isContainer, containsFerry);
+			}
+			final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
+			if (travelTime == null) {
+				throw new InsufficientDataException(this.getClass(), "no TravelTime available", this.commodity, null,
+						job.samgodsMode, job.isContainer, containsFerry);
+			}
+			final LeastCostPathCalculator router = this.mode2isContainer2containsFerry2router
+					.computeIfAbsent(job.samgodsMode, m -> new LinkedHashMap<>())
+					.computeIfAbsent(job.isContainer, ic -> new LinkedHashMap<>()).computeIfAbsent(containsFerry,
+							cf -> this.routerFactory.createPathCalculator(
+									this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry),
+									travelDisutility, travelTime));
+			if (router == null) {
+				throw new InsufficientDataException(this.getClass(), "could not create router, reason unknown",
+						this.commodity, null, job.samgodsMode, job.isContainer, containsFerry);
 			}
 
 			final Network network = this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry);
-			List<List<Link>> routes = new ArrayList<>(job.nodeIds.size() - 1);
+			final List<List<Link>> routes = new ArrayList<>(job.nodeIds.size() - 1);
 			for (int i = 0; i < job.nodeIds.size() - 1; i++) {
-				Id<Node> fromId = job.nodeIds.get(i);
-				Id<Node> toId = job.nodeIds.get(i + 1);
-
+				final Id<Node> fromId = job.nodeIds.get(i);
+				final Id<Node> toId = job.nodeIds.get(i + 1);
 				if (fromId.equals(toId)) {
 					routes.add(new ArrayList<>());
 					if (logProgress) {
@@ -198,12 +221,21 @@ public class Router {
 			if (routes.stream().noneMatch(r -> r == null)) {
 				return routes;
 			} else {
+				// Not finding a route does not necessarily mean insufficient data.
 				return null;
 			}
 		}
 
 		private void process(ConsolidationUnit job) {
-			final List<List<Link>> withFerryRoutes = this.computeRoutes(job, true);
+
+			List<List<Link>> withFerryRoutes;
+			try {
+				withFerryRoutes = this.computeRoutes(job, true);
+			} catch (InsufficientDataException e) {
+				InsufficientDataException.log(e,
+						new InsufficientDataException(this.getClass(), "could not find with-ferry routes"));
+				withFerryRoutes = null;
+			}
 			final Double withFerryCost;
 			final Boolean withFerryContainsFerry;
 			if (withFerryRoutes != null) {
@@ -219,11 +251,17 @@ public class Router {
 				withFerryContainsFerry = null;
 			}
 			if ((withFerryRoutes != null) && !withFerryContainsFerry) {
-				// Allowing for ferry yields a route that does not contain ferry, so o need to
-				// look further.
 				job.setRoutes(withFerryRoutes);
 			} else {
-				final List<List<Link>> withoutFerryRoutes = this.computeRoutes(job, false);
+
+				List<List<Link>> withoutFerryRoutes;
+				try {
+					withoutFerryRoutes = this.computeRoutes(job, false);
+				} catch (InsufficientDataException e) {
+					InsufficientDataException.log(e,
+							new InsufficientDataException(this.getClass(), "could not find without-ferry routes"));
+					withoutFerryRoutes = null;
+				}
 				final Double withoutFerryCost;
 				if (withoutFerryRoutes != null) {
 					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this.networkData
@@ -234,6 +272,7 @@ public class Router {
 				} else {
 					withoutFerryCost = null;
 				}
+
 				if (withFerryRoutes != null) {
 					if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
 						job.setRoutes(withoutFerryRoutes);

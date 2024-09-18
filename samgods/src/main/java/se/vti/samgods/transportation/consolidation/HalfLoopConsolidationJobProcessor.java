@@ -72,13 +72,13 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				if (job == ConsolidationJob.TERMINATE) {
 					break;
 				}
-				FleetAssignment fleetAssignment = null;
+				FleetAssignment fleetAssignment;
 				try {
 					fleetAssignment = this.computeOptimalFleetAssignment(job);
 				} catch (InsufficientDataException e) {
-					e.log(this.getClass(), "Consolidation data missing", job.consolidationUnit.commodity, null,
-							job.consolidationUnit.samgodsMode, job.consolidationUnit.isContainer,
-							job.consolidationUnit.containsFerry);
+					fleetAssignment = null;
+					InsufficientDataException.log(e,
+							new InsufficientDataException(this.getClass(), "could not consolidate"));
 				}
 				if (fleetAssignment != null) {
 					this.consolidationUnit2fleetAssignment.put(job.consolidationUnit, fleetAssignment);
