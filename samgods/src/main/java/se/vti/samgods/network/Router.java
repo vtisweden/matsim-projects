@@ -38,7 +38,6 @@ import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
-import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -272,9 +271,9 @@ public class Router {
 
 	// -------------------- CONSTANTS AND MEMBERS --------------------
 
-	private final Network multimodalNetwork;
+	private final NetworkDataProvider networkDataProvider;
 
-	private final Vehicles vehicles;
+	private final FleetDataProvider fleetDataProvider;
 
 	private boolean logProgress = false;
 
@@ -282,9 +281,9 @@ public class Router {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Router(Network multimodalNetwork, Vehicles vehicles) {
-		this.multimodalNetwork = multimodalNetwork;
-		this.vehicles = vehicles;
+	public Router(NetworkDataProvider networkDataProvider, FleetDataProvider fleetDataProvider) {
+		this.networkDataProvider = networkDataProvider;
+		this.fleetDataProvider = fleetDataProvider;
 	}
 
 	public Router setLogProgress(boolean logProgress) {
@@ -306,11 +305,10 @@ public class Router {
 			final List<Thread> routingThreads = new ArrayList<>();
 
 			log.info("Starting " + threadCnt + " routing threads.");
-			final NetworkDataProvider networkDataProvider = new NetworkDataProvider(this.multimodalNetwork);
-			final FleetDataProvider fleetDataProvider = new FleetDataProvider(this.vehicles);
 			for (int i = 0; i < threadCnt; i++) {
 				final RouteProcessor routeProcessor = new RouteProcessor(commodity + "_" + i, commodity,
-						networkDataProvider.createNetworkData(), fleetDataProvider.createFleetData(), jobQueue);
+						this.networkDataProvider.createNetworkData(), this.fleetDataProvider.createFleetData(),
+						jobQueue);
 				final Thread routingThread = new Thread(routeProcessor);
 				routingThreads.add(routingThread);
 				routingThread.start();

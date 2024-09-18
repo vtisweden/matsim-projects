@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
