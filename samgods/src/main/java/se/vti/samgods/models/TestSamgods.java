@@ -43,8 +43,6 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
@@ -84,7 +82,6 @@ import se.vti.samgods.transportation.consolidation.ConsolidationJob;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
-import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
 import se.vti.samgods.transportation.fleet.FleetData;
@@ -152,16 +149,16 @@ public class TestSamgods {
 
 //		EfficiencyLogger effLog = new EfficiencyLogger("efficiencyDetail.txt");
 
-		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
-		double samplingRate = 0.01;
-//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
-//				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
-//		double samplingRate = 1.0;
+//		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.asList(Commodity.AGRICULTURE);
+//		double samplingRate = 0.01;
+		List<SamgodsConstants.Commodity> consideredCommodities = Arrays.stream(Commodity.values())
+				.filter(c -> !SamgodsConstants.Commodity.AIR.equals(c)).toList();
+		double samplingRate = 1.0;
 
 		int maxThreads = Integer.MAX_VALUE;
 
 		double scale = 1.0;
-		int maxIterations = 5;
+		int maxIterations = 10;
 		boolean enforceReroute = false;
 
 		log.info("STARTED ...");
@@ -474,20 +471,20 @@ public class TestSamgods {
 			}
 
 			log.info("Collecting data, calculating choice stats.");
-			Map<ConsolidationUnit, List<ChainAndShipmentSize>> signature2choices = new LinkedHashMap<>();
+			Map<ConsolidationUnit, List<ChainAndShipmentSize>> consolidationUnit2choices = new LinkedHashMap<>();
 			ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
 			for (ChainAndShipmentSize choice : allChoices) {
 				stats.add(choice);
 				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
 					List<ConsolidationUnit> signatures = episode.getConsolidationUnits();
 					for (ConsolidationUnit signature : signatures) {
-						signature2choices.computeIfAbsent(signature, s -> new LinkedList<>()).add(choice);
+						consolidationUnit2choices.computeIfAbsent(signature, s -> new LinkedList<>()).add(choice);
 					}
 				}
 			}
 			log.info(allChoices.stream().mapToLong(c -> c.transportChain.getEpisodes().size()).sum() + " episodes.");
-			log.info(signature2choices.size() + " episode signatures.");
-			log.info(signature2choices.values().stream().flatMap(l -> l.stream())
+			log.info(consolidationUnit2choices.size() + " episode signatures.");
+			log.info(consolidationUnit2choices.values().stream().flatMap(l -> l.stream())
 					.mapToDouble(c -> c.annualShipment.getTotalAmount_ton() / c.sizeClass.getRepresentativeValue_ton())
 					.sum() + " shipments.");
 			log.info("\n" + stats.createChoiceStatsTable());
@@ -520,7 +517,7 @@ public class TestSamgods {
 					}
 
 					log.info("Starting to populate consolidation job queue, continuing as threads progress.");
-					for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> entry : signature2choices
+					for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> entry : consolidationUnit2choices
 							.entrySet()) {
 						ConsolidationUnit consolidationUnit = entry.getKey();
 						List<ChainAndShipmentSize> choices = entry.getValue();
@@ -556,102 +553,80 @@ public class TestSamgods {
 			 * POSTPROCESSING, SUMMARY STATISTICS.
 			 */
 
-			log.info("Computing transport efficiency per consolidation unit.");
+			log.info("Computing transport efficiency and unit cost per consolidation unit.");
 			{
 				final NetworkData networkData = networkDataProvider.createNetworkData();
 				final FleetData fleetData = fleetDataProvider.createFleetData();
 				final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 
 				final Map<TransportMode, Double> mode2WeightedEfficiencySum = new LinkedHashMap<>();
-				final Map<TransportMode, Double> mode2WeightSum = new LinkedHashMap<>();
+				final Map<TransportMode, Double> mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
+				final Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
+
 				for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> e : consolidationUnit2assignment
 						.entrySet()) {
-					final ConsolidationUnit signature = e.getKey();
+					final ConsolidationUnit consolidationUnit = e.getKey();
 					final FleetAssignment assignment = e.getValue();
-					final double weight = assignment.expectedSnapshotVehicleCnt;
-					final double transportEfficiency = assignment.payload_ton
-							/ ((SamgodsVehicleAttributes) assignment.vehicleType.getAttributes()
-									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton;
 					if (assignment.payload_ton >= 1e-3) {
-						mode2WeightedEfficiencySum.compute(signature.samgodsMode,
-								(m, s) -> s == null ? transportEfficiency * weight : s + transportEfficiency * weight);
-						mode2WeightSum.compute(signature.samgodsMode, (m, c) -> c == null ? weight : c + weight);
-						final SamgodsVehicleAttributes vehicleAttributes = fleetData.getVehicleType2attributes()
-								.get(assignment.vehicleType);
+						final double weight = assignment.expectedSnapshotVehicleCnt;
+						mode2weightSum.compute(consolidationUnit.samgodsMode,
+								(m, s) -> s == null ? weight : s + weight);
+						final double efficiency = assignment.payload_ton
+								/ fleetData.getVehicleType2attributes().get(assignment.vehicleType).capacity_ton;
+						mode2WeightedEfficiencySum.compute(consolidationUnit.samgodsMode,
+								(m, s) -> s == null ? efficiency * weight : s + efficiency * weight);
+						mode2weightedUnitCostSum_1_tonKm.compute(consolidationUnit.samgodsMode,
+								(m, s) -> s == null ? weight * assignment.unitCost_1_tonKm
+										: s + weight * assignment.unitCost_1_tonKm);
 						try {
-							consolidationUnit2realizedMoveCost.put(signature,
-									realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton, signature,
-											networkData.getLinkId2unitCost(assignment.vehicleType),
+							final SamgodsVehicleAttributes vehicleAttributes = fleetData.getVehicleType2attributes()
+									.get(assignment.vehicleType);
+							consolidationUnit2realizedMoveCost.put(consolidationUnit,
+									realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton,
+											consolidationUnit, networkData.getLinkId2unitCost(assignment.vehicleType),
 											networkData.getFerryLinkIds()));
 						} catch (InsufficientDataException e1) {
 							throw new RuntimeException(e1);
 						}
 					}
 				}
-				final Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency = new LinkedHashMap<>();
-				for (SamgodsConstants.TransportMode mode : mode2WeightSum.keySet()) {
-					mode2realizedEfficiency.put(mode, mode2WeightedEfficiencySum.get(mode) / mode2WeightSum.get(mode));
-//					mode2efficiency.compute(mode, (m, e) -> e == null ? mode2realizedEfficiency.get(mode)
-//							: innoWeight * mode2realizedEfficiency.get(mode) + (1.0 - innoWeight) * e);
-				}
-				logEfficiency(mode2realizedEfficiency, iteration, "efficiency.txt");
-			}
-
-			log.info("Computing unit cost per mode.");
-			{
-				final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
-				Map<TransportMode, Double> mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
-				Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
-				NetworkData networkData = networkDataProvider.createNetworkData();
-				for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> e : signature2choices.entrySet()) {
-					ConsolidationUnit signature = e.getKey();
-					FleetAssignment fleetAssignment = consolidationUnit2assignment.get(signature);
-					if (fleetAssignment != null) {
-						SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) fleetAssignment.vehicleType
-								.getAttributes().getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-						try {
-							Map<Id<Link>, BasicTransportCost> linkId2unitCost = networkData
-									.getLinkId2unitCost(fleetAssignment.vehicleType);
-							double costSum = 0.0;
-							double tonSum = 0.0;
-							for (ChainAndShipmentSize choice : e.getValue()) {
-								for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
-									List<ConsolidationUnit> consolidationUnits = episode.getConsolidationUnits();
-									for (ConsolidationUnit consolidationUnit : consolidationUnits) {
-										if (consolidationUnit.equals(signature)) {
-											double payload_ton = fleetAssignment.payload_ton;
-											DetailedTransportCost unitCost_1_ton = realizedInVehicleCost
-													.compute(vehicleAttrs, payload_ton, consolidationUnit,
-															linkId2unitCost, networkData.getFerryLinkIds())
-													.createUnitCost_1_ton();
-											costSum += unitCost_1_ton.monetaryCost
-													* choice.annualShipment.getTotalAmount_ton();
-											tonSum += choice.annualShipment.getTotalAmount_ton();
-										}
-									}
-								}
-							}
-							if (costSum >= 1.0 && tonSum >= 1e-3) {
-								double weight = fleetAssignment.expectedSnapshotVehicleCnt;
-								double addend_1_tonKm = costSum / tonSum / signature.length_km;
-								mode2weightedUnitCostSum_1_tonKm.compute(signature.samgodsMode,
-										(m, s) -> s == null ? weight * addend_1_tonKm : s + weight * addend_1_tonKm);
-								mode2weightSum.compute(signature.samgodsMode,
-										(m, s) -> s == null ? weight : s + weight);
-							}
-						} catch (InsufficientDataException e1) {
-							// ignore
-						}
-					}
-				}
+				logEfficiency(
+						mode2WeightedEfficiencySum.entrySet().stream().collect(
+								Collectors.toMap(e -> e.getKey(), e -> e.getValue() / mode2weightSum.get(e.getKey()))),
+						iteration, "efficiency.txt");
 				logCost(mode2weightedUnitCostSum_1_tonKm.entrySet().stream()
 						.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue() / mode2weightSum.get(e.getKey()))),
 						iteration, "unitcost.txt");
 			}
-		}
 
+//			log.info("Computing unit cost per mode.");
+//			{
+//				final Map<TransportMode, Double> mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
+//				final Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
+//				for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> e : consolidationUnit2assignment
+//						.entrySet()) {
+//					final ConsolidationUnit consolidationUnit = e.getKey();
+//					final FleetAssignment assignment = e.getValue();
+//					if (assignment.payload_ton >= 1e-3) {
+//						final double weight = assignment.expectedSnapshotVehicleCnt;
+//						mode2weightedUnitCostSum_1_tonKm.compute(consolidationUnit.samgodsMode,
+//								(m, s) -> s == null ? weight * assignment.unitCost_1_tonKm
+//										: s + weight * assignment.unitCost_1_tonKm);
+//						mode2weightSum.compute(consolidationUnit.samgodsMode,
+//								(m, s) -> s == null ? weight : s + weight);
+//					}
+//				}
+//				logCost(mode2weightedUnitCostSum_1_tonKm.entrySet().stream()
+//						.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue() / mode2weightSum.get(e.getKey()))),
+//						iteration, "unitcost.txt");
+//			}
+		}
 		log.info("DONE");
 	}
+
+	// ====================================================================================================
+	// ====================================================================================================
+	// ====================================================================================================
 
 	// LOGGING/TESTING BELOW
 
