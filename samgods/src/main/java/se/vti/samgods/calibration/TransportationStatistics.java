@@ -22,6 +22,7 @@ package se.vti.samgods.calibration;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
@@ -87,94 +88,116 @@ public class TransportationStatistics {
 
 	// -------------------- INTERNALS --------------------
 
-	private Map<TransportMode, Double> computeMode2value(Commodity commodity,
+	private Map<TransportMode, Double> computeMode2weightedMean(
+			Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedSum) {
+		final Map<TransportMode, Double> mode2weightedSum = new LinkedHashMap<>();
+		commodity2mode2weightedSum.values().stream().flatMap(m2s -> m2s.entrySet().stream()).forEach(
+				e -> mode2weightedSum.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
+		final Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
+		this.commodity2mode2weightSum.values().stream().flatMap(m2s -> m2s.entrySet().stream()).forEach(
+				e -> mode2weightSum.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
+		return mode2weightSum.entrySet().stream().filter(e -> e.getValue() >= this.weightThreshold).collect(
+				Collectors.toMap(e -> e.getKey(), e -> mode2weightedSum.getOrDefault(e.getKey(), 0.0) / e.getValue()));
+	}
+
+	private Map<TransportMode, Double> computeMode2weightedMean(Commodity commodity,
 			Map<TransportMode, Double> mode2weightedSum) {
-		final Map<TransportMode, Double> mode2value = new LinkedHashMap<>();
-		for (Map.Entry<TransportMode, Double> mode2weightSumEntry : this.commodity2mode2weightSum.get(commodity)
-				.entrySet()) {
+		final Map<TransportMode, Double> mode2weightedMean = new LinkedHashMap<>();
+		for (Map.Entry<TransportMode, Double> mode2weightSumEntry : this.commodity2mode2weightSum
+				.getOrDefault(commodity, Collections.emptyMap()).entrySet()) {
 			final double weightSum = mode2weightSumEntry.getValue();
 			if (weightSum >= this.weightThreshold) {
 				final TransportMode mode = mode2weightSumEntry.getKey();
-				mode2value.put(mode, mode2weightedSum.getOrDefault(mode, 0.0) / weightSum);
+				mode2weightedMean.put(mode, mode2weightedSum.getOrDefault(mode, 0.0) / weightSum);
 			}
 		}
-		return mode2value;
+		return mode2weightedMean;
 	}
 
-	private Map<Commodity, Map<TransportMode, Double>> computeCommodity2mode2value(
+	private Map<Commodity, Map<TransportMode, Double>> computeCommodity2mode2weightedMean(
 			Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedSum) {
-		final Map<Commodity, Map<TransportMode, Double>> commodity2mode2value = new LinkedHashMap<>();
+		final Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedMean = new LinkedHashMap<>();
 		for (Commodity commodity : commodity2mode2weightedSum.keySet()) {
-			commodity2mode2value.put(commodity, this.computeMode2value(commodity,
-					commodity2mode2weightedSum.getOrDefault(commodity, Collections.emptyMap())));
+			final Map<TransportMode, Double> mode2weightedMean = this.computeMode2weightedMean(commodity,
+					commodity2mode2weightedSum.getOrDefault(commodity, Collections.emptyMap()));
+			if (mode2weightedMean != null) {
+				commodity2mode2weightedMean.put(commodity, mode2weightedMean);
+			}
 		}
-		return commodity2mode2value;
+		return commodity2mode2weightedMean;
 	}
 
-	private Map<Commodity, Double> computeCommodity2value(TransportMode mode,
+	private Map<Commodity, Double> computeCommodity2weightedMean(TransportMode mode,
 			Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedSum) {
-		final Map<Commodity, Double> commodity2value = new LinkedHashMap<>();
-		for (Commodity commodity : commodity2mode2weightedSum.keySet()) {
-			final double weightSum = this.commodity2mode2weightSum.get(commodity).values().stream().mapToDouble(w -> w)
-					.sum();
+		final Map<Commodity, Double> commodity2weightedMean = new LinkedHashMap<>();
+		for (Map.Entry<Commodity, Map<TransportMode, Double>> entry : this.commodity2mode2weightSum.entrySet()) {
+			final double weightSum = entry.getValue().values().stream().mapToDouble(w -> w).sum();
 			if (weightSum >= this.weightThreshold) {
-				commodity2value.put(commodity,
-						commodity2mode2weightedSum.get(commodity).values().stream().mapToDouble(w -> w).sum()
-								/ weightSum);
+				final Commodity commodity = entry.getKey();
+				final double weightedSum = commodity2mode2weightedSum.getOrDefault(commodity, Collections.emptyMap())
+						.values().stream().mapToDouble(w -> w).sum();
+				commodity2weightedMean.put(commodity, weightedSum / weightSum);
 			}
 		}
-		return commodity2value;
+		return commodity2weightedMean;
 	}
 
-	private <T> Map<T, Double> normalizedOrNull(Map<T, Double> t2share) {
-		final double sum = t2share.values().stream().mapToDouble(w -> w).sum();
+	private <T> Map<T, Double> normalized(Map<T, Double> t2val) {
+		final double sum = t2val.values().stream().mapToDouble(v -> v).sum();
 		if (sum < this.weightThreshold) {
-			return null;
+			return Collections.emptyMap();
 		} else {
-			t2share.entrySet().stream().forEach(e -> e.setValue(e.getValue() / sum));
-			return t2share;
+			t2val.entrySet().stream().forEach(e -> e.setValue(e.getValue() / sum));
+			return t2val;
 		}
 	}
 
 	// -------------------- CONTENT ACCESS --------------------
 
 	public Map<Commodity, Map<TransportMode, Double>> computeCommodity2mode2efficiency() {
-		return this.computeCommodity2mode2value(this.commodity2mode2weightedEfficiencySum);
+		return this.computeCommodity2mode2weightedMean(this.commodity2mode2weightedEfficiencySum);
 	}
 
 	public Map<Commodity, Map<TransportMode, Double>> computeCommodity2mode2unitCost_1_tonKm() {
-		return this.computeCommodity2mode2value(this.commodity2mode2weightedUnitCostSum_1_tonKm);
+		return this.computeCommodity2mode2weightedMean(this.commodity2mode2weightedUnitCostSum_1_tonKm);
 	}
 
 	public Map<Commodity, Double> computeCommodity2efficiency(TransportMode mode) {
-		return this.computeCommodity2value(mode, this.commodity2mode2weightedEfficiencySum);
+		return this.computeCommodity2weightedMean(mode, this.commodity2mode2weightedEfficiencySum);
 	}
 
 	public Map<Commodity, Double> computeCommodity2unitCost_1_tonKm(TransportMode mode) {
-		return this.computeCommodity2value(mode, this.commodity2mode2weightedUnitCostSum_1_tonKm);
+		return this.computeCommodity2weightedMean(mode, this.commodity2mode2weightedUnitCostSum_1_tonKm);
 	}
 
 	public Map<TransportMode, Double> computeMode2efficiency(Commodity commodity) {
-		return this.computeMode2value(commodity,
+		return this.computeMode2weightedMean(commodity,
 				this.commodity2mode2weightedEfficiencySum.getOrDefault(commodity, Collections.emptyMap()));
 	}
 
 	public Map<TransportMode, Double> computeMode2unitCost_1_tonKm(Commodity commodity) {
-		return this.computeMode2value(commodity,
+		return this.computeMode2weightedMean(commodity,
 				this.commodity2mode2weightedUnitCostSum_1_tonKm.getOrDefault(commodity, Collections.emptyMap()));
 	}
 
+	public Map<TransportMode, Double> computeMode2efficiency() {
+		return this.computeMode2weightedMean(this.commodity2mode2weightedEfficiencySum);
+	}
+
+	public Map<TransportMode, Double> computeMode2unitCost_1_tonKm() {
+		return this.computeMode2weightedMean(this.commodity2mode2weightedUnitCostSum_1_tonKm);
+	}
+
 	public Map<TransportMode, Double> computeMode2share(Commodity commodity) {
-		final Map<TransportMode, Double> mode2share = new LinkedHashMap<>();
-		this.commodity2mode2weightSum.getOrDefault(commodity, Collections.emptyMap()).entrySet().stream()
-				.forEach(e -> mode2share.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
-		return this.normalizedOrNull(mode2share);
+		final Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>(
+				this.commodity2mode2weightSum.getOrDefault(commodity, Collections.emptyMap()));
+		return this.normalized(mode2weightSum);
 	}
 
 	public Map<TransportMode, Double> computeMode2share() {
-		final Map<TransportMode, Double> mode2share = new LinkedHashMap<>();
-		this.commodity2mode2weightSum.values().stream().flatMap(m2w -> m2w.entrySet().stream())
-				.forEach(e -> mode2share.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
-		return this.normalizedOrNull(mode2share);
+		final Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>();
+		this.commodity2mode2weightSum.values().stream().flatMap(m2w -> m2w.entrySet().stream()).forEach(
+				e -> mode2weightSum.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
+		return this.normalized(mode2weightSum);
 	}
 }
