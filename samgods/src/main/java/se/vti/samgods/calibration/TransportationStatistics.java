@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.calibration;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -86,62 +87,94 @@ public class TransportationStatistics {
 
 	// -------------------- INTERNALS --------------------
 
-	private Double computeNormalized(Commodity commodity, TransportMode mode,
-			Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedSum) {
-		final double den = this.commodity2mode2weightSum.get(commodity).getOrDefault(mode, 0.0);
-		if (den < this.weightThreshold) {
-			return null;
-		} else {
-			return commodity2mode2weightedSum.get(commodity).getOrDefault(mode, 0.0) / den;
+	private Map<TransportMode, Double> computeMode2value(Commodity commodity,
+			Map<TransportMode, Double> mode2weightedSum) {
+		final Map<TransportMode, Double> mode2value = new LinkedHashMap<>();
+		for (Map.Entry<TransportMode, Double> mode2weightSumEntry : this.commodity2mode2weightSum.get(commodity)
+				.entrySet()) {
+			final double weightSum = mode2weightSumEntry.getValue();
+			if (weightSum >= this.weightThreshold) {
+				final TransportMode mode = mode2weightSumEntry.getKey();
+				mode2value.put(mode, mode2weightedSum.getOrDefault(mode, 0.0) / weightSum);
+			}
 		}
+		return mode2value;
 	}
 
-	private Double computeNormalized(Commodity commodity,
+	private Map<Commodity, Map<TransportMode, Double>> computeCommodity2mode2value(
 			Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedSum) {
-		final double den = this.commodity2mode2weightSum.get(commodity).values().stream().mapToDouble(s -> s).sum();
-		if (den < this.weightThreshold) {
-			return null;
-		} else {
-			return commodity2mode2weightedSum.get(commodity).values().stream().mapToDouble(s -> s).sum() / den;
+		final Map<Commodity, Map<TransportMode, Double>> commodity2mode2value = new LinkedHashMap<>();
+		for (Commodity commodity : commodity2mode2weightedSum.keySet()) {
+			commodity2mode2value.put(commodity, this.computeMode2value(commodity,
+					commodity2mode2weightedSum.getOrDefault(commodity, Collections.emptyMap())));
 		}
+		return commodity2mode2value;
 	}
 
-	private Double computeNormalized(TransportMode mode,
+	private Map<Commodity, Double> computeCommodity2value(TransportMode mode,
 			Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedSum) {
-		final double den = this.commodity2mode2weightSum.values().stream()
-				.mapToDouble(m2s -> m2s.getOrDefault(mode, 0.0)).sum();
-		if (den < this.weightThreshold) {
+		final Map<Commodity, Double> commodity2value = new LinkedHashMap<>();
+		for (Commodity commodity : commodity2mode2weightedSum.keySet()) {
+			final double weightSum = this.commodity2mode2weightSum.get(commodity).values().stream().mapToDouble(w -> w)
+					.sum();
+			if (weightSum >= this.weightThreshold) {
+				commodity2value.put(commodity,
+						commodity2mode2weightedSum.get(commodity).values().stream().mapToDouble(w -> w).sum()
+								/ weightSum);
+			}
+		}
+		return commodity2value;
+	}
+
+	private <T> Map<T, Double> normalizedOrNull(Map<T, Double> t2share) {
+		final double sum = t2share.values().stream().mapToDouble(w -> w).sum();
+		if (sum < this.weightThreshold) {
 			return null;
 		} else {
-			return commodity2mode2weightedSum.values().stream().mapToDouble(m2e -> m2e.getOrDefault(mode, 0.0)).sum()
-					/ den;
+			t2share.entrySet().stream().forEach(e -> e.setValue(e.getValue() / sum));
+			return t2share;
 		}
 	}
 
 	// -------------------- CONTENT ACCESS --------------------
 
-	public Double computeEfficiency(Commodity commodity, TransportMode mode) {
-		return this.computeNormalized(commodity, mode, this.commodity2mode2weightedEfficiencySum);
+	public Map<Commodity, Map<TransportMode, Double>> computeCommodity2mode2efficiency() {
+		return this.computeCommodity2mode2value(this.commodity2mode2weightedEfficiencySum);
 	}
 
-	public Double computeUnitCost_1_tonKm(Commodity commodity, TransportMode mode) {
-		return this.computeNormalized(commodity, mode, this.commodity2mode2weightedUnitCostSum_1_tonKm);
+	public Map<Commodity, Map<TransportMode, Double>> computeCommodity2mode2unitCost_1_tonKm() {
+		return this.computeCommodity2mode2value(this.commodity2mode2weightedUnitCostSum_1_tonKm);
 	}
 
-	public Double computeEfficiency(Commodity commodity) {
-		return this.computeNormalized(commodity, this.commodity2mode2weightedEfficiencySum);
+	public Map<Commodity, Double> computeCommodity2efficiency(TransportMode mode) {
+		return this.computeCommodity2value(mode, this.commodity2mode2weightedEfficiencySum);
 	}
 
-	public Double computeUnitCost_1_tonKm(Commodity commodity) {
-		return this.computeNormalized(commodity, this.commodity2mode2weightedUnitCostSum_1_tonKm);
+	public Map<Commodity, Double> computeCommodity2unitCost_1_tonKm(TransportMode mode) {
+		return this.computeCommodity2value(mode, this.commodity2mode2weightedUnitCostSum_1_tonKm);
 	}
 
-	public Double computeEfficiency(TransportMode mode) {
-		return this.computeNormalized(mode, this.commodity2mode2weightedEfficiencySum);
+	public Map<TransportMode, Double> computeMode2efficiency(Commodity commodity) {
+		return this.computeMode2value(commodity,
+				this.commodity2mode2weightedEfficiencySum.getOrDefault(commodity, Collections.emptyMap()));
 	}
 
-	public Double computeUnitCost_1_tonKm(TransportMode mode) {
-		return this.computeNormalized(mode, this.commodity2mode2weightedUnitCostSum_1_tonKm);
+	public Map<TransportMode, Double> computeMode2unitCost_1_tonKm(Commodity commodity) {
+		return this.computeMode2value(commodity,
+				this.commodity2mode2weightedUnitCostSum_1_tonKm.getOrDefault(commodity, Collections.emptyMap()));
 	}
 
+	public Map<TransportMode, Double> computeMode2share(Commodity commodity) {
+		final Map<TransportMode, Double> mode2share = new LinkedHashMap<>();
+		this.commodity2mode2weightSum.getOrDefault(commodity, Collections.emptyMap()).entrySet().stream()
+				.forEach(e -> mode2share.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
+		return this.normalizedOrNull(mode2share);
+	}
+
+	public Map<TransportMode, Double> computeMode2share() {
+		final Map<TransportMode, Double> mode2share = new LinkedHashMap<>();
+		this.commodity2mode2weightSum.values().stream().flatMap(m2w -> m2w.entrySet().stream())
+				.forEach(e -> mode2share.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
+		return this.normalizedOrNull(mode2share);
+	}
 }
