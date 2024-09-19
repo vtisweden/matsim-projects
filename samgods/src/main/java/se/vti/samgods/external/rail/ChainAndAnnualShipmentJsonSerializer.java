@@ -19,15 +19,23 @@
  */
 package se.vti.samgods.external.rail;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 
+/*
+ * 
+ */
 public class ChainAndAnnualShipmentJsonSerializer extends JsonSerializer<ChainAndShipmentSize> {
 
 		@Override
@@ -54,14 +62,14 @@ public class ChainAndAnnualShipmentJsonSerializer extends JsonSerializer<ChainAn
 			gen.writeEndObject();
 		}
 
-//		public static void writeToFile(List<AnnualShipment> shipments, String fileName) {
-//			ObjectMapper mapper = new ObjectMapper();
-//			mapper.enable(SerializationFeature.INDENT_OUTPUT);
-//			mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-//			try {
-//				mapper.writeValue(new File(fileName), shipments);
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
-//		}
+		public static void writeToFile(List<AnnualShipment> shipments, String fileName) {
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.enable(SerializationFeature.INDENT_OUTPUT);
+			mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+			try {
+				mapper.writeValue(new File(fileName), shipments);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}

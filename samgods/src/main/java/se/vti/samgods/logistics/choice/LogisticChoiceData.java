@@ -53,17 +53,6 @@ public class LogisticChoiceData {
 
 	// -------------------- TRANSPORT EPISODE UNIT COSTS --------------------
 
-	/**
-	 * This is currently an *approximation* of the realized unit cost of a
-	 * previously used episode, in that it evaluates the unit cost of a
-	 * *representative vehicle* loaded according to the *average transport
-	 * efficiency* on that episode.
-	 * 
-	 * A natural refinement is to replace this by an average over the realized unit
-	 * costs per episode.
-	 * 
-	 * TODO Can an episode have no consolidation units at all?
-	 */
 	private DetailedTransportCost createEpisodeUnitCost_1_ton(TransportEpisode episode) {
 		try {
 			final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),
