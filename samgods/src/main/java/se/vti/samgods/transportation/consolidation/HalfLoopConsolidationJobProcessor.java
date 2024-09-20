@@ -28,6 +28,7 @@ import org.matsim.vehicles.VehicleType;
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
+import se.vti.samgods.logistics.choice.LogisticChoiceData;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
@@ -47,6 +48,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	private final NetworkData networkData;
 	private final FleetData fleetData;
+	private final LogisticChoiceData logisticChoiceData;
 
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
@@ -54,10 +56,11 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidationJobProcessor(NetworkData networkData, FleetData fleetData,
-			BlockingQueue<ConsolidationJob> jobQueue,
+			LogisticChoiceData logisticChoiceData, BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.networkData = networkData;
 		this.fleetData = fleetData;
+		this.logisticChoiceData = logisticChoiceData;
 		this.jobQueue = jobQueue;
 		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
 	}
@@ -182,7 +185,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 		final double expectedDemandPerActiveServiceInterval_ton = (1.0 / serviceIntervalActiveProba)
 				* (job.serviceInterval_days / 365.0)
-				* job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
+				* job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum()
+				* this.logisticChoiceData.getMode2freightFactor().getOrDefault(job.consolidationUnit.samgodsMode, 1.0);
 
 		// Identify compatible vehicles. If none, give up.
 		final List<VehicleType> compatibleVehicleTypes = this.fleetData

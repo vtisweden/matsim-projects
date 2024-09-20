@@ -20,10 +20,12 @@
 package se.vti.samgods.logistics.choice;
 
 import java.util.List;
+import java.util.Map;
 
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -39,6 +41,8 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 public class LogisticChoiceData {
 
 	// -------------------- CONSTANTS --------------------
+
+	private final double minPayload_ton = 1.0;
 
 	private final LogisticChoiceDataProvider logisticChoiceDataProvider;
 
@@ -60,10 +64,11 @@ public class LogisticChoiceData {
 					episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
 			final SamgodsVehicleAttributes vehicleAttributes = this.fleetData.getVehicleType2attributes()
 					.get(vehicleType);
-			final double payload_ton = Math.max(1.0, // TODO magic number
-					episode.getConsolidationUnits().stream()
-							.mapToDouble(cu -> this.logisticChoiceDataProvider.getRealizedCost(cu).amount_ton).average()
-							.getAsDouble()); // This is an approximation.
+			final double realizedPayload_ton = episode.getConsolidationUnits().stream()
+					.mapToDouble(cu -> this.logisticChoiceDataProvider.getRealizedCost(cu).amount_ton).average()
+					.getAsDouble();
+			final double payload_ton = Math.max(this.minPayload_ton, realizedPayload_ton
+					* this.logisticChoiceDataProvider.getMode2freightFactor().getOrDefault(episode.getMode(), 1.0));
 
 			final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
 					.addAmount_ton(payload_ton);
@@ -115,5 +120,11 @@ public class LogisticChoiceData {
 					"No transport cost data for at least one episode in this transport chain."));
 			return null;
 		}
+	}
+
+	// --------------- FREIGHT INFLATION FACTORS, FOR CALIBRATION ---------------
+
+	public Map<TransportMode, Double> getMode2freightFactor() {
+		return this.logisticChoiceDataProvider.getMode2freightFactor();
 	}
 }

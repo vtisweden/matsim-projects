@@ -19,9 +19,11 @@
  */
 package se.vti.samgods.logistics.choice;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
@@ -47,6 +49,10 @@ public class LogisticChoiceDataProvider {
 		this.fleetDataProvider = fleetDataProvider;
 	}
 
+	public void setMode2freightFactor(Map<TransportMode, Double> mode2freightFactor) {
+		this.mode2freightFactor = new ConcurrentHashMap<>(mode2freightFactor);
+	}
+
 	public LogisticChoiceData createLogisticChoiceData() {
 		return new LogisticChoiceData(this, this.fleetDataProvider.createFleetData());
 	}
@@ -59,11 +65,19 @@ public class LogisticChoiceDataProvider {
 		return this.consolidationUnit2realizedCost.get(consolidationUnit);
 	}
 
-// -------------------- THREAD SAFE EPISODE UNIT COST ACCESS --------------------
+	// --------------- THREAD SAFE EPISODE UNIT COST ACCESS ---------------
 
 	private final ConcurrentMap<TransportEpisode, DetailedTransportCost> episode2unitCost_1_ton = new ConcurrentHashMap<>();
 
 	ConcurrentMap<TransportEpisode, DetailedTransportCost> getEpisode2unitCost_1_ton() {
 		return this.episode2unitCost_1_ton;
+	}
+
+	// --------------- THREAD SAFE BACKGROUND TRANSPORT CALIBRATION ---------------
+
+	private ConcurrentMap<TransportMode, Double> mode2freightFactor = new ConcurrentHashMap<>();
+
+	ConcurrentMap<TransportMode, Double> getMode2freightFactor() {
+		return this.mode2freightFactor;
 	}
 }

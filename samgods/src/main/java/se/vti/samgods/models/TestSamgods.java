@@ -59,6 +59,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.calibration.BackgroundTransportWork;
 import se.vti.samgods.calibration.TransportationStatistics;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
@@ -70,6 +71,7 @@ import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choice.ChoiceJob;
 import se.vti.samgods.logistics.choice.ChoiceJobProcessor;
+import se.vti.samgods.logistics.choice.LogisticChoiceData;
 import se.vti.samgods.logistics.choice.LogisticChoiceDataProvider;
 import se.vti.samgods.logistics.choice.MonetaryChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
@@ -158,7 +160,7 @@ public class TestSamgods {
 		int maxThreads = Integer.MAX_VALUE;
 
 		double scale = 1.0;
-		int maxIterations = 5;
+		int maxIterations = 20;
 		boolean enforceReroute = false;
 
 		log.info("STARTED ...");
@@ -412,12 +414,25 @@ public class TestSamgods {
 //		final ConcurrentMap<TransportMode, Double> mode2efficiency = new ConcurrentHashMap<>(
 //				Arrays.stream(TransportMode.values()).collect(Collectors.toMap(m -> m, m -> 0.7)));
 
+		final BackgroundTransportWork backgroundTransportWork = null;
+//		new BackgroundTransportWork().setMSAExponent(0.5)
+//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Road, 1.5)
+//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Rail, 0.5)
+//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Sea, 0.2)
+//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Air, 10.0);
+
 		for (int iteration = 0; iteration < maxIterations; iteration++) {
 			log.info("STARTING ITERATION " + iteration);
 
 			/*
 			 * Simulate choices.
 			 */
+
+			final LogisticChoiceDataProvider choiceDataProvider = new LogisticChoiceDataProvider(
+					consolidationUnit2realizedMoveCost, fleetDataProvider);
+			if (backgroundTransportWork != null) {
+				choiceDataProvider.setMode2freightFactor(backgroundTransportWork.getMode2freightFactor());
+			}
 
 			BlockingQueue<ChainAndShipmentSize> allChoices = new LinkedBlockingQueue<>();
 			{
@@ -427,8 +442,6 @@ public class TestSamgods {
 
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
-					final LogisticChoiceDataProvider choiceDataProvider = new LogisticChoiceDataProvider(
-							consolidationUnit2realizedMoveCost, fleetDataProvider);
 					for (int i = 0; i < threadCnt; i++) {
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction();
@@ -511,8 +524,9 @@ public class TestSamgods {
 					for (int i = 0; i < threadCnt; i++) {
 						NetworkData networkData = networkDataProvider.createNetworkData();
 						FleetData fleetData = fleetDataProvider.createFleetData();
+						LogisticChoiceData choiceData = choiceDataProvider.createLogisticChoiceData();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								networkData, fleetData, jobQueue, consolidationUnit2assignment);
+								networkData, fleetData, choiceData, jobQueue, consolidationUnit2assignment);
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
 						choiceThread.start();
@@ -560,6 +574,8 @@ public class TestSamgods {
 			{
 				final TransportationStatistics transpStats = new TransportationStatistics(consolidationUnit2assignment,
 						fleetDataProvider.createFleetData());
+				backgroundTransportWork.updateInternally(transpStats);
+
 				logEfficiency(transpStats.computeMode2efficiency(), iteration, "efficiency.txt");
 				logCost(transpStats.computeMode2unitCost_1_tonKm(), iteration, "unitcost.txt");
 			}
