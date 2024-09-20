@@ -40,6 +40,7 @@ import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.VehiclesReader;
 
 /**
+ * TODO public members only while moving this into TestSamgods.
  * 
  * @author GunnarF
  *
@@ -60,28 +61,32 @@ public class SamgodsRunner {
 
 	private final double defaultSamplingRate = 1.0;
 
+	private final double defaultScale = 1.0;
+
 	private Random rnd;
 
-	private List<Commodity> consideredCommodities;
+	public List<Commodity> consideredCommodities;
 
-	private int maxThreads;
+	public int maxThreads;
 
 	private double samplingRate;
 
 	// TODO concurrency?
-	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days = new LinkedHashMap<>();
+	public final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days = new LinkedHashMap<>();
 
-	private int maxIterations;
+	public int maxIterations;
 
-	private boolean enforceReroute;
+	public boolean enforceReroute;
+
+	public double scale;
 
 	private Vehicles vehicles = null;
-	private FleetDataProvider fleetDatProvider = null;
+	private FleetDataProvider fleetDataProvider = null;
 
-	private Network network = null;
+	public Network network = null;
 	private NetworkDataProvider networkDataProvider = null;
 
-	private TransportDemand transportDemand = null;
+	public TransportDemand transportDemand = null;
 
 	public SamgodsRunner() {
 		this.setRandomSeed(this.defaultSeed);
@@ -91,6 +96,12 @@ public class SamgodsRunner {
 		this.setMaxIterations(this.defaultMaxIterations);
 		this.setEnforceReroute(this.defaultEnforceReroute);
 		this.setSamplingRate(this.defaultSamplingRate);
+		this.setScale(this.defaultScale);
+	}
+
+	public SamgodsRunner setScale(double scale) {
+		this.scale = scale;
+		return this;
 	}
 
 	public SamgodsRunner setRandomSeed(long seed) {
@@ -133,7 +144,6 @@ public class SamgodsRunner {
 			TransportMode samgodsMode) throws IOException {
 		if (this.vehicles == null) {
 			this.vehicles = VehicleUtils.createVehiclesContainer();
-			this.fleetDatProvider = new FleetDataProvider(this.vehicles);
 		}
 		final VehiclesReader fleetReader = new VehiclesReader(this.vehicles);
 		fleetReader.load_v12(vehicleParametersFileName, transferParametersFileName, samgodsMode);
@@ -141,8 +151,7 @@ public class SamgodsRunner {
 	}
 
 	public SamgodsRunner loadNetwork(String nodesFile, String linksFile) throws IOException {
-		this.network = new NetworkReader().load("./input_2024/node_parameters.csv", "./input_2024/link_parameters.csv");
-		this.networkDataProvider = new NetworkDataProvider(this.network);
+		this.network = new NetworkReader().load(nodesFile, linksFile);
 		return this;
 	}
 
@@ -150,9 +159,35 @@ public class SamgodsRunner {
 		this.transportDemand = new TransportDemand();
 		for (Commodity commodity : this.consideredCommodities) {
 			new ChainChoiReader(commodity, transportDemand).setSamplingRate(this.samplingRate, new Random(4711))
-					.parse("./input_2024/ChainChoi" + commodity.twoDigitCode() + "XTD.out");
+					.parse(demandFilePrefix + commodity.twoDigitCode() + demandFileSuffix);
 		}
 		return this;
 	}
+	
+	public FleetDataProvider getOrCreateFleetDataProvider() {
+		if (this.fleetDataProvider == null) {
+			this.fleetDataProvider = new FleetDataProvider(this.vehicles);
+		}
+		return this.fleetDataProvider;
+	}
 
+	public NetworkDataProvider getOrCreateNetworkDataProvider() {
+		if (this.networkDataProvider == null) {
+			this.networkDataProvider = new NetworkDataProvider(this.network);
+		}
+		return this.networkDataProvider;
+	}
+	
+	// -------------------- PREPARE CONSOLIDATION UNITS --------------------
+	
+	public void createOrLoadConsolidationUnits(String consolidationUnitsFileName) {
+		
+		// TODO CONTINUE HERE
+		
+	}
+	
+	
+	
+	
+	
 }
