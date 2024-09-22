@@ -21,6 +21,7 @@ package se.vti.samgods.models;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +41,7 @@ import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsRunner;
+import se.vti.samgods.calibration.BackgroundTransportWork;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
@@ -60,9 +62,16 @@ public class TestSamgods {
 		InsufficientDataException.setLogDuringRuntime(false);
 		InsufficientDataException.setLogUponShutdown(false);
 
+		List<Commodity> allWithoutAir = new ArrayList<>(Arrays.asList(Commodity.values()));
+		allWithoutAir.remove(Commodity.AIR);
+		allWithoutAir.toArray();
+
+//		final SamgodsRunner runner = new SamgodsRunner().setServiceInterval_days(7)
+//				.setConsideredCommodities(Commodity.AGRICULTURE).setSamplingRate(0.01).setMaxThreads(Integer.MAX_VALUE)
+//				.setScale(1.0).setMaxIterations(100).setEnforceReroute(true);
 		final SamgodsRunner runner = new SamgodsRunner().setServiceInterval_days(7)
-				.setConsideredCommodities(Commodity.AGRICULTURE).setSamplingRate(0.01).setMaxThreads(Integer.MAX_VALUE)
-				.setScale(1.0).setMaxIterations(5).setEnforceReroute(false);
+				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(1.0)
+				.setMaxThreads(Integer.MAX_VALUE).setScale(1.0).setMaxIterations(1000).setEnforceReroute(false);
 
 		runner.loadVehicles("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
 				SamgodsConstants.TransportMode.Rail)
@@ -75,15 +84,16 @@ public class TestSamgods {
 		runner.createOrLoadConsolidationUnits("consolidationUnits.json");
 		runner.removeUnusedTransportChains();
 
+		BackgroundTransportWork backgroundTransportWork = new BackgroundTransportWork()
+				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Road, 1.5)
+				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Rail, 0.5)
+				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Sea, 0.2)
+				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Air, 10.0);
+
+		runner.setBackgroundTransportWork(backgroundTransportWork);
+
 		runner.clearBeforeIterations();
-		
-		runner.setBackgroundTransportWork(null);
-//		new BackgroundTransportWork().setMSAExponent(0.5)
-//		.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Road, 1.5)
-//		.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Rail, 0.5)
-//		.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Sea, 0.2)
-//		.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Air, 10.0);
-		
+		runner.setBackgroundTransportWork(backgroundTransportWork);
 		runner.initializeConsolidationCosts();
 		runner.iterate();
 

@@ -19,8 +19,10 @@
  */
 package se.vti.samgods.calibration;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -48,11 +50,17 @@ public class TransportationStatistics {
 	private final Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedEfficiencySum = new LinkedHashMap<>();
 	private final Map<Commodity, Map<TransportMode, Double>> commodity2mode2weightedUnitCostSum_1_tonKm = new LinkedHashMap<>();
 
+	private final Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new LinkedHashMap<>();
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public TransportationStatistics(
 			Map<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
 			FleetData fleetData, double payloadThreshold_ton, double weightThreshold) {
+
+//		final Map<TransportMode, Regression> mode2regr = new LinkedHashMap<>();
+		final Map<Commodity, Map<TransportMode, List<Double>>> commodity2mode2totalDemandList = new LinkedHashMap<>();
+
 		this.weightThreshold = weightThreshold;
 		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
 				.entrySet()) {
@@ -75,9 +83,51 @@ public class TransportationStatistics {
 							.compute(consolidationUnit.samgodsMode,
 									(m, s) -> s == null ? weight * fleetAssignment.unitCost_1_tonKm
 											: s + weight * fleetAssignment.unitCost_1_tonKm);
+
+//					mode2regr.computeIfAbsent(consolidationUnit.samgodsMode, m -> new Regression(1.0, 1)).update(
+//							new Vector(1.0 / fleetAssignment.totalDemand_ton), fleetAssignment.unitCost_1_tonKm);
+					commodity2mode2totalDemandList
+							.computeIfAbsent(consolidationUnit.commodity, c -> new LinkedHashMap<>())
+							.computeIfAbsent(consolidationUnit.samgodsMode, m -> new ArrayList<>())
+							.add(fleetAssignment.totalDemand_ton);
 				}
 			}
 		}
+
+		for (Map.Entry<Commodity, Map<TransportMode, List<Double>>> c2m2lEntry : commodity2mode2totalDemandList
+				.entrySet()) {
+			final Commodity commodity = c2m2lEntry.getKey();
+			for (Map.Entry<TransportMode, List<Double>> m2lEntry : c2m2lEntry.getValue().entrySet()) {
+				if (m2lEntry.getValue().size() > 0) {
+					this.commodity2mode2avgTotalDemand_ton.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).put(
+							m2lEntry.getKey(),
+							m2lEntry.getValue().stream().mapToDouble(v -> v.doubleValue()).average().getAsDouble());
+				}
+			}
+		}
+
+//		this.mode2oneOverTotalDemandSlope.clear();
+//		for (Map.Entry<TransportMode, Regression> mode2regrEntry : mode2regr.entrySet()) {
+//			final TransportMode mode = mode2regrEntry.getKey();
+//			final Regression regr = mode2regrEntry.getValue();
+//			this.mode2oneOverTotalDemandSlope.put(mode, regr.getCoefficients().get(0));
+//		}
+
+//		System.out.println("PRED\tREAL");
+//		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
+//				.entrySet()) {
+//			final FleetAssignment fleetAssignment = entry.getValue();
+//			if (fleetAssignment.payload_ton >= payloadThreshold_ton) {
+//				final double weight = fleetAssignment.expectedSnapshotVehicleCnt;
+//				if (weight >= weightThreshold) {
+//					final ConsolidationUnit consolidationUnit = entry.getKey();
+//					final double predUnitCost_1_ton = this.mode2oneOverTotalDemandSlope
+//							.get(consolidationUnit.samgodsMode) / fleetAssignment.totalDemand_ton;
+//					System.out.println(predUnitCost_1_ton + "\t" + fleetAssignment.unitCost_1_tonKm);
+//				}
+//			}
+//		}
+//		System.out.println("---");
 	}
 
 	public TransportationStatistics(
@@ -187,7 +237,7 @@ public class TransportationStatistics {
 	public Map<TransportMode, Double> computeMode2unitCost_1_tonKm() {
 		return this.computeMode2weightedMean(this.commodity2mode2weightedUnitCostSum_1_tonKm);
 	}
-
+	
 	public Map<TransportMode, Double> computeMode2share(Commodity commodity) {
 		final Map<TransportMode, Double> mode2weightSum = new LinkedHashMap<>(
 				this.commodity2mode2weightSum.getOrDefault(commodity, Collections.emptyMap()));
@@ -199,5 +249,13 @@ public class TransportationStatistics {
 		this.commodity2mode2weightSum.values().stream().flatMap(m2w -> m2w.entrySet().stream()).forEach(
 				e -> mode2weightSum.compute(e.getKey(), (m, s) -> s == null ? e.getValue() : s + e.getValue()));
 		return this.normalized(mode2weightSum);
+	}
+
+//	public Map<TransportMode, Double> getMode2oneOverTotalDemandSlope() {
+//		return mode2oneOverTotalDemandSlope;
+//	}
+
+	public Map<Commodity, Map<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
+		return commodity2mode2avgTotalDemand_ton;
 	}
 }

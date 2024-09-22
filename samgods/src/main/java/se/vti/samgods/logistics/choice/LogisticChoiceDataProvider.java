@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -49,12 +50,20 @@ public class LogisticChoiceDataProvider {
 		this.fleetDataProvider = fleetDataProvider;
 	}
 
-	public void setMode2freightFactor(Map<TransportMode, Double> mode2freightFactor) {
-		this.mode2freightFactor = new ConcurrentHashMap<>(mode2freightFactor);
-	}
-
 	public LogisticChoiceData createLogisticChoiceData() {
 		return new LogisticChoiceData(this, this.fleetDataProvider.createFleetData());
+	}
+
+	// -------------------- INTERNALS --------------------
+
+	private ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> concurrentDeepCopy(
+			Map<Commodity, Map<TransportMode, Double>> commodity2mode2double) {
+		ConcurrentHashMap<Commodity, ConcurrentMap<TransportMode, Double>> copy = new ConcurrentHashMap<>(
+				commodity2mode2double.size());
+		for (Map.Entry<Commodity, Map<TransportMode, Double>> c2m2dEntry : commodity2mode2double.entrySet()) {
+			copy.put(c2m2dEntry.getKey(), new ConcurrentHashMap<>(c2m2dEntry.getValue()));
+		}
+		return copy;
 	}
 
 	// ---------- THREAD SAFE CONSOLIDATION UNIT UNIT COST ACCESS ----------
@@ -75,9 +84,26 @@ public class LogisticChoiceDataProvider {
 
 	// --------------- THREAD SAFE BACKGROUND TRANSPORT CALIBRATION ---------------
 
-	private ConcurrentMap<TransportMode, Double> mode2freightFactor = new ConcurrentHashMap<>();
+	private ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2freightFactor = new ConcurrentHashMap<>();
 
-	ConcurrentMap<TransportMode, Double> getMode2freightFactor() {
-		return this.mode2freightFactor;
+	public void setCommodity2mode2freightFactor(
+			Map<Commodity, Map<TransportMode, Double>> commodity2mode2freightFactor) {
+		this.commodity2mode2freightFactor = this.concurrentDeepCopy(commodity2mode2freightFactor);
 	}
+
+	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2freightFactor() {
+		return this.commodity2mode2freightFactor;
+	}
+
+	public ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new ConcurrentHashMap<>();
+
+	public void setCommodity2mode2avgTotalDemand_ton(
+			Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton) {
+		this.commodity2mode2avgTotalDemand_ton = this.concurrentDeepCopy(commodity2mode2avgTotalDemand_ton);
+	}
+
+	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
+		return this.commodity2mode2avgTotalDemand_ton;
+	}
+
 }

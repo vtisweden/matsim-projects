@@ -387,13 +387,12 @@ public class SamgodsRunner {
 	public ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedMoveCost = null;
 
 	public BackgroundTransportWork backgroundTransportWork = null;
-	
-	
+
 	public void clearBeforeIterations() {
 		this.consolidationUnit2realizedMoveCost = null;
 		this.backgroundTransportWork = null;
 	}
-	
+
 	public void initializeConsolidationCosts() {
 		this.consolidationUnit2realizedMoveCost = new ConcurrentHashMap<>();
 		final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
@@ -432,7 +431,7 @@ public class SamgodsRunner {
 	public void setBackgroundTransportWork(BackgroundTransportWork backgroundTransportWork) {
 		this.backgroundTransportWork = backgroundTransportWork;
 	}
-	
+
 	public void iterate() {
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
@@ -444,8 +443,11 @@ public class SamgodsRunner {
 
 			final LogisticChoiceDataProvider choiceDataProvider = new LogisticChoiceDataProvider(
 					this.consolidationUnit2realizedMoveCost, this.getOrCreateFleetDataProvider());
-			if (this.backgroundTransportWork != null) {
-				choiceDataProvider.setMode2freightFactor(this.backgroundTransportWork.getMode2freightFactor());
+			if (iteration > 0) {
+				choiceDataProvider.setCommodity2mode2freightFactor(
+						this.backgroundTransportWork.getCommodity2mode2freightFactor());
+				choiceDataProvider.setCommodity2mode2avgTotalDemand_ton(
+						this.backgroundTransportWork.getCommodity2mode2avgTotalDemand_ton());
 			}
 
 			BlockingQueue<ChainAndShipmentSize> allChoices = new LinkedBlockingQueue<>();
@@ -585,16 +587,11 @@ public class SamgodsRunner {
 			 * POSTPROCESSING, SUMMARY STATISTICS.
 			 */
 			log.info("Collecting transport statistics");
-			{
-				final TransportationStatistics transpStats = new TransportationStatistics(consolidationUnit2assignment,
-						this.getOrCreateFleetDataProvider().createFleetData());
-				if (this.backgroundTransportWork != null) {
-					this.backgroundTransportWork.updateInternally(transpStats);
-				}
-
-				TestSamgods.logEfficiency(transpStats.computeMode2efficiency(), iteration, "efficiency.txt");
-				TestSamgods.logCost(transpStats.computeMode2unitCost_1_tonKm(), iteration, "unitcost.txt");
-			}
+			final TransportationStatistics transpStats = new TransportationStatistics(consolidationUnit2assignment,
+					this.getOrCreateFleetDataProvider().createFleetData());
+			this.backgroundTransportWork.updateInternally(transpStats);
+			TestSamgods.logEfficiency(transpStats.computeMode2efficiency(), iteration, "efficiency.txt");
+			TestSamgods.logCost(transpStats.computeMode2unitCost_1_tonKm(), iteration, "unitcost.txt");
 
 			log.info("Computing transport efficiency and unit cost per consolidation unit.");
 			{
@@ -620,7 +617,6 @@ public class SamgodsRunner {
 				}
 			}
 		}
-
 	}
 
 }

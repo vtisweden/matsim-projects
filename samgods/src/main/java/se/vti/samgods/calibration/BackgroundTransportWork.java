@@ -22,6 +22,7 @@ package se.vti.samgods.calibration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 
@@ -32,25 +33,30 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
  */
 public class BackgroundTransportWork {
 
+	// -------------------- CONSTANTS --------------------
+
+	private final double defaultStepSize = 0.2;
+
 	// -------------------- MEMBERS --------------------
 
-	private final Map<TransportMode, Double> mode2targetUnitCost_1_tonKm = new LinkedHashMap<>();
-
-	private final Map<TransportMode, Double> mode2freightFactor = new LinkedHashMap<>();
+	private double stepSize;
 
 	private final Map<Commodity, Map<TransportMode, Double>> commodity2mode2targetUnitCost_1_tonKm = new LinkedHashMap<>();
 
-	private double msaExponent = 0.0;
+	private final Map<Commodity, Map<TransportMode, Double>> commodity2mode2freightFactor = new LinkedHashMap<>();
 
-	private int updateCounter = 0;
+	private final Map<Commodity, Map<TransportMode, Double>> commodity2mode2errorSum_1_tonKm = new LinkedHashMap<>();
+
+	private Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public BackgroundTransportWork() {
+		this.setStepSize(this.defaultStepSize);
 	}
 
-	public BackgroundTransportWork setTargetUnitCost_1_tonKm(TransportMode mode, double targetUnitCost_1_tonKm) {
-		this.mode2targetUnitCost_1_tonKm.put(mode, targetUnitCost_1_tonKm);
+	public BackgroundTransportWork setStepSize(double stepSize) {
+		this.stepSize = stepSize;
 		return this;
 	}
 
@@ -61,42 +67,43 @@ public class BackgroundTransportWork {
 		return this;
 	}
 
-	public BackgroundTransportWork setMSAExponent(double msaExponent) {
-		this.msaExponent = msaExponent;
+	public BackgroundTransportWork setTargetUnitCost_1_tonKm(TransportMode mode, double targetUnitCost_1_tonKm) {
+		for (Commodity commodity : SamgodsConstants.Commodity.values()) {
+			this.setTargetUnitCost_1_tonKm(commodity, mode, targetUnitCost_1_tonKm);
+		}
 		return this;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void updateInternally(TransportationStatistics transpStats) {
-		this.updateCounter++;
-		final double innoWeight = 1.0 / Math.pow(this.updateCounter, this.msaExponent);
-
-		/*-
-		 * 			  totalCost     realizedUnitCost
-		 * unitCost = ----------- = ----------------
-		 *            fact * load   fact
-		 *            
-		 *            realizedUnitCost
-		 * <=> fact = ----------------
-		 *            unitCost
-		 */
-		final Map<TransportMode, Double> mode2empiricalUnitCost_1_tonKm = transpStats.computeMode2unitCost_1_tonKm();
-		for (Map.Entry<TransportMode, Double> entry : this.mode2targetUnitCost_1_tonKm.entrySet()) {
-			final TransportMode mode = entry.getKey();
-			final double targetUnitCost_1_tonKm = entry.getValue();
-			final Double realizedUnitCost_1_tonKm = mode2empiricalUnitCost_1_tonKm.get(mode);
-			if (realizedUnitCost_1_tonKm != null) {
-				final double freightFactor = realizedUnitCost_1_tonKm / targetUnitCost_1_tonKm;
-				this.mode2freightFactor.compute(mode,
-						(m, f) -> f == null ? freightFactor : innoWeight * freightFactor + (1.0 - innoWeight) * f);
+	public void updateInternally(TransportationStatistics transportationStatistics) {
+		this.commodity2mode2avgTotalDemand_ton = transportationStatistics.getCommodity2mode2avgTotalDemand_ton();
+		final Map<Commodity, Map<TransportMode, Double>> commodity2mode2realizedUnitCost_1_tonKm = transportationStatistics
+				.computeCommodity2mode2unitCost_1_tonKm();
+		for (Commodity commodity : commodity2mode2realizedUnitCost_1_tonKm.keySet()) {
+			Map<TransportMode, Double> mode2realizedUnitCost_1_tonKm = commodity2mode2realizedUnitCost_1_tonKm
+					.get(commodity);
+			for (TransportMode mode : mode2realizedUnitCost_1_tonKm.keySet()) {
+				final double realizedUnitCost_1_tonKm = mode2realizedUnitCost_1_tonKm.get(mode);
+				final Double targetUnitCost_1_tonKm = this.commodity2mode2targetUnitCost_1_tonKm.get(commodity)
+						.get(mode);
+				if (targetUnitCost_1_tonKm != null) {
+					final double error_1_tonKm = realizedUnitCost_1_tonKm - targetUnitCost_1_tonKm;
+					this.commodity2mode2errorSum_1_tonKm.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
+							.compute(mode, (m, s) -> s == null ? error_1_tonKm : s + error_1_tonKm);
+					this.commodity2mode2freightFactor.computeIfAbsent(commodity, c -> new LinkedHashMap<>()).put(mode,
+							this.stepSize * this.commodity2mode2errorSum_1_tonKm.get(commodity).get(mode));
+				}
 			}
 		}
 	}
-	
-	public 	Map<TransportMode, Double> getMode2freightFactor() {
-		return this.mode2freightFactor;
+
+	public Map<Commodity, Map<TransportMode, Double>> getCommodity2mode2freightFactor() {
+		return this.commodity2mode2freightFactor;
 	}
 
-	
+	public Map<Commodity, Map<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
+		return this.commodity2mode2avgTotalDemand_ton;
+	}
+
 }

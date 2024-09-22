@@ -96,6 +96,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	public static class FleetAssignment {
 
+		public final double totalDemand_ton;
+
 		public final VehicleType vehicleType;
 		public final double loopLength_km;
 		public final double minLoopDuration_h;
@@ -104,9 +106,11 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		public final double payload_ton;
 		public final double unitCost_1_tonKm;
 
-		public FleetAssignment(VehicleType vehicleType, double vehicleCapacity_ton, DetailedTransportCost cost,
-				double serviceDemandPerActiveServiceInterval_ton, double serviceInterval_h,
+		public FleetAssignment(double totalDemand_ton, VehicleType vehicleType, double vehicleCapacity_ton,
+				DetailedTransportCost cost, double serviceDemandPerActiveServiceInterval_ton, double serviceInterval_h,
 				double serviceIntervalActiveProba, double length_km) {
+
+			this.totalDemand_ton = totalDemand_ton; // TODO recover from other parameters
 
 			this.vehicleType = vehicleType;
 			this.loopLength_km = 2.0 * length_km;
@@ -149,16 +153,17 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 	}
 
-	private FleetAssignment dimensionFleetAssignment(VehicleType vehicleType, ConsolidationJob job,
-			double serviceDemand_ton, double serviceProba, double length_km) throws InsufficientDataException {
+	private FleetAssignment dimensionFleetAssignment(double totalDemand_ton, VehicleType vehicleType,
+			ConsolidationJob job, double serviceDemand_ton, double serviceProba, double length_km)
+			throws InsufficientDataException {
 		final SamgodsVehicleAttributes vehicleAttrs = this.fleetData.getVehicleType2attributes().get(vehicleType);
-		FleetAssignment result = new FleetAssignment(vehicleType, vehicleAttrs.capacity_ton,
+		FleetAssignment result = new FleetAssignment(totalDemand_ton, vehicleType, vehicleAttrs.capacity_ton,
 				this.realizedInVehicleCost.compute(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, job.consolidationUnit,
 						this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds()),
 				serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
 		boolean done = false;
 		while (!done) {
-			FleetAssignment newResult = new FleetAssignment(vehicleType, vehicleAttrs.capacity_ton,
+			FleetAssignment newResult = new FleetAssignment(totalDemand_ton, vehicleType, vehicleAttrs.capacity_ton,
 					this.realizedInVehicleCost.compute(vehicleAttrs, result.payload_ton, job.consolidationUnit,
 							this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds()),
 					serviceDemand_ton, Units.H_PER_D * job.serviceInterval_days, serviceProba, length_km);
@@ -183,10 +188,12 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			}
 			serviceIntervalActiveProba = 1.0 - probaSingleServiceIntervalInactive;
 		}
+		final double totalDemand_ton = job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton())
+				.sum();
 		final double expectedDemandPerActiveServiceInterval_ton = (1.0 / serviceIntervalActiveProba)
-				* (job.serviceInterval_days / 365.0)
-				* job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum()
-				* this.logisticChoiceData.getMode2freightFactor().getOrDefault(job.consolidationUnit.samgodsMode, 1.0);
+				* (job.serviceInterval_days / 365.0) * totalDemand_ton
+				* this.logisticChoiceData.computeFreightInflationFactor(job.consolidationUnit.commodity,
+						job.consolidationUnit.samgodsMode, totalDemand_ton);
 
 		// Identify compatible vehicles. If none, give up.
 		final List<VehicleType> compatibleVehicleTypes = this.fleetData
@@ -199,8 +206,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		// Identify optimal fleet assigment.
 		FleetAssignment overallBestAssignment = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(vehicleType, job,
-					expectedDemandPerActiveServiceInterval_ton, serviceIntervalActiveProba,
+			FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(totalDemand_ton, vehicleType,
+					job, expectedDemandPerActiveServiceInterval_ton, serviceIntervalActiveProba,
 					job.consolidationUnit.length_km);
 			if ((overallBestAssignment == null)
 					|| (bestAssignmentForVehicleType.unitCost_1_tonKm < overallBestAssignment.unitCost_1_tonKm)) {
