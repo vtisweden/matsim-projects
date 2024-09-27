@@ -37,7 +37,7 @@ import se.vti.roundtrips.single.Location;
 public class Scenario<L extends Location> {
 
 	private final Random rnd = new Random();
-	
+
 	private final LocationFactory<L> locationFactory;
 
 	private int timeBinCnt = 24;
@@ -51,16 +51,22 @@ public class Scenario<L extends Location> {
 	private final Map<Tuple<L, L>, Double> od2time_h = new LinkedHashMap<>();
 
 	private List<L> locationsView = Collections.unmodifiableList(new ArrayList<>(0));
-	
+
 	public Scenario(LocationFactory<L> locationFactory) {
 		this.locationFactory = locationFactory;
 	}
 
+	// TODO NEW
+	public void addLocation(L location) {
+		this.name2location.put(location.getName(), location);
+		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
+	}
+
 	public L createAndAddLocation(String name) {
 		L result = this.locationFactory.createLocation(name);
-		// this.locations.add(result);
-		this.name2location.put(name, result);
-		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
+//		this.name2location.put(name, result);
+//		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
+		this.addLocation(result);
 		return result;
 	}
 
@@ -88,8 +94,7 @@ public class Scenario<L extends Location> {
 		}
 		return loc;
 	}
-	
-	
+
 	public void setDistance_km(L from, L to, double dist_km) {
 		Tuple<L, L> od = new Tuple<>(from, to);
 		this.od2distance_km.put(od, dist_km);
