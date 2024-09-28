@@ -43,8 +43,8 @@ public class FleetDataProvider {
 		this.vehicleType2attributes = new ConcurrentHashMap<>(vehicles.getVehicleTypes().values().stream()
 				.collect(Collectors.toMap(t -> t, t -> (SamgodsVehicleAttributes) t.getAttributes()
 						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))));
-		this.vehicleType2costFactor = new ConcurrentHashMap<>(
-				vehicles.getVehicleTypes().values().stream().collect(Collectors.toMap(t -> t, t -> 1.0)));
+		this.vehicleType2asc = new ConcurrentHashMap<>(
+				vehicles.getVehicleTypes().values().stream().collect(Collectors.toMap(t -> t, t -> 0.0)));
 	}
 
 	public FleetData createFleetData() {
@@ -77,14 +77,14 @@ public class FleetDataProvider {
 
 	// ---------- THREAD-SAFE LOCALLY CACHED VEHICLE COST FACTORS ----------
 
-	private ConcurrentMap<VehicleType, Double> vehicleType2costFactor;
+	private ConcurrentMap<VehicleType, Double> vehicleType2asc;
 
-	public void setVehicleType2costFactor(ConcurrentMap<VehicleType, Double> vehicleType2costFactor) {
-		this.vehicleType2costFactor = vehicleType2costFactor;
+	public void setVehicleType2asc(ConcurrentMap<VehicleType, Double> vehicleType2asc) {
+		this.vehicleType2asc = vehicleType2asc;
 	}
 
-	ConcurrentMap<VehicleType, Double> getVehicleType2costFactor() {
-		return this.vehicleType2costFactor;
+	ConcurrentMap<VehicleType, Double> getVehicleType2asc() {
+		return this.vehicleType2asc;
 	}
 
 }

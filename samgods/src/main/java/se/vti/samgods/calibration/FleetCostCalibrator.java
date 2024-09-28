@@ -30,8 +30,6 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
-
 /**
  * 
  * @author GunnarF
@@ -40,7 +38,7 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 public class FleetCostCalibrator {
 
 	private static final Logger log = Logger.getLogger(FleetCostCalibrator.class);
-	
+
 	final double minCostFactor = 1e-3;
 
 	public static enum Group {
@@ -49,23 +47,24 @@ public class FleetCostCalibrator {
 	};
 
 	private final Vehicles vehicles;
-	private final double eta;
+	private final double kP;
+	private final double kI;
 
 //	private final Map<Group, Set<VehicleType>> group2vehicleTypes = new LinkedHashMap<>();
 	private final Map<VehicleType, Group> vehicleType2group;
 
-	private final Map<Group, Double> group2costScale;
+	final Map<Group, Double> group2normalizedTarget;
 
-	private final Map<Group, Double> group2normalizedTarget;
+	Map<Group, Double> group2lastNormalizedRealized = null;
 
+	private final Map<Group, Double> group2lastError = new LinkedHashMap<>();
 	private final Map<Group, Double> group2errorSum = new LinkedHashMap<>();
 
-	private Group referenceGroup = null;
-
-	public FleetCostCalibrator(Vehicles vehicles, double eta) {
+	public FleetCostCalibrator(Vehicles vehicles, double kP, double kI) {
 
 		this.vehicles = vehicles;
-		this.eta = eta;
+		this.kP = kP;
+		this.kI = kI;
 
 		this.vehicleType2group = new LinkedHashMap<>(vehicles.getVehicleTypes().size());
 
@@ -117,19 +116,6 @@ public class FleetCostCalibrator {
 		group2target.put(Group.SEA, 29.61);
 
 		this.group2normalizedTarget = this.createNormalized(group2target);
-
-		this.group2costScale = new LinkedHashMap<>(vehicles.getVehicleTypes().size());
-		final Map<Group, Integer> group2size = new LinkedHashMap<>();
-		for (VehicleType vehicleType : vehicles.getVehicleTypes().values()) {
-			final Group group = this.vehicleType2group.get(vehicleType);
-			final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
-					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-			final double costScale = attrs.cost_1_km / attrs.capacity_ton;
-			this.group2costScale.compute(group, (g, cs) -> cs == null ? costScale : cs + costScale);
-			group2size.compute(group, (g, s) -> s == null ? 1 : s + 1);
-		}
-		this.group2costScale.entrySet().stream().forEach(e -> e.setValue(e.getValue() / group2size.get(e.getKey())));
-
 	}
 
 	private VehicleType name2type(String name) {
@@ -150,33 +136,41 @@ public class FleetCostCalibrator {
 			final double realized = fleetStats.getVehicleType2tonKm().getOrDefault(entry.getKey(), 0.0);
 			group2realized.compute(entry.getValue(), (g, r) -> r == null ? realized : r + realized);
 		}
-		final Map<Group, Double> group2normalizedRealized = this.createNormalized(group2realized);
+		this.group2lastNormalizedRealized = this.createNormalized(group2realized);
 
+		this.group2lastError.clear();
 		for (Map.Entry<Group, Double> entry : this.group2normalizedTarget.entrySet()) {
 			final Group group = entry.getKey();
-			final double error = Math.log(group2normalizedRealized.get(group)) - Math.log(entry.getValue());
+			final double error = Math.log(this.group2lastNormalizedRealized.get(group)) - Math.log(entry.getValue());
+			this.group2lastError.put(group, error);
 			this.group2errorSum.compute(group, (g, s) -> s == null ? error : s + error);
-		}
-
-		if (this.referenceGroup == null) {
-			this.referenceGroup = this.group2errorSum.entrySet().stream()
-					.min((e1, e2) -> e1.getValue().compareTo(e2.getValue())).get().getKey();
 		}
 	}
 
-	public ConcurrentMap<VehicleType, Double> createConcurrentVehicleType2costFactor() {
-		final ConcurrentMap<VehicleType, Double> vehicleType2costFactor = new ConcurrentHashMap<>(
+	Map<Group, Double> computeGroupASCs() {
+		final ConcurrentMap<Group, Double> group2asc = new ConcurrentHashMap<>(Group.values().length);
+		for (Group group : Group.values()) {
+			final double asc = (-1.0) * (this.kP * this.group2lastError.getOrDefault(group, 0.0)
+					+ this.kI * this.group2errorSum.getOrDefault(group, 0.0));
+			group2asc.put(group, asc);
+		}
+		final double ascShift = group2asc.values().stream().mapToDouble(asc -> asc).sum() / group2asc.size();
+		group2asc.entrySet().stream().forEach(e -> e.setValue(e.getValue() - ascShift));
+		return group2asc;
+	}
+
+	public ConcurrentMap<VehicleType, Double> createConcurrentVehicleType2asc() {
+		final Map<Group, Double> group2asc = this.computeGroupASCs();
+		final ConcurrentMap<VehicleType, Double> vehicleType2asc = new ConcurrentHashMap<>(
 				this.vehicles.getVehicleTypes().size());
 		for (VehicleType vehicleType : this.vehicles.getVehicleTypes().values()) {
 			final Group group = this.vehicleType2group.get(vehicleType);
-			if (group == null || group == this.referenceGroup) {
-				vehicleType2costFactor.put(vehicleType, 1.0);
+			if (group == null) {
+				vehicleType2asc.put(vehicleType, 0.0);
 			} else {
-				final double costFactor = Math.max(this.minCostFactor, 1.0 + this.eta
-						/ this.group2costScale.getOrDefault(group, 1.0) * this.group2errorSum.getOrDefault(group, 0.0));
-				vehicleType2costFactor.put(vehicleType, costFactor);
+				vehicleType2asc.put(vehicleType, group2asc.getOrDefault(group, 0.0));
 			}
 		}
-		return vehicleType2costFactor;
+		return vehicleType2asc;
 	}
 }

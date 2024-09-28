@@ -73,6 +73,7 @@ public class ConsolidationUnit {
 	public CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>> linkIds = null;
 	public Double length_km = null;
 	public Boolean containsFerry = null;
+	public Double domesticLength_km = null;
 
 	// --------------------CONSTRUCTION --------------------
 
@@ -120,24 +121,32 @@ public class ConsolidationUnit {
 			this.linkIds = null;
 			this.length_km = null;
 			this.containsFerry = null;
+			this.domesticLength_km = null;
 		} else {
 			final List<CopyOnWriteArrayList<Id<Link>>> tmpLinkIds = new ArrayList<>(routes.size());
 			double length_m = 0.0;
+			double domesticLength_m = 0.0;
 			this.containsFerry = false;
 			for (List<Link> route : routes) {
 				tmpLinkIds.add(new CopyOnWriteArrayList<>(route.stream().map(l -> l.getId()).toList()));
 				length_m += route.stream().mapToDouble(l -> l.getLength()).sum();
+				domesticLength_m += route.stream()
+						.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
+								.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).isDomestic)
+						.mapToDouble(l -> l.getLength()).sum();
 				this.containsFerry = this.containsFerry || route.stream().anyMatch(l -> ((SamgodsLinkAttributes) l
 						.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
 			}
 			this.linkIds = new CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>>(tmpLinkIds);
 			this.length_km = Units.KM_PER_M * length_m;
+			this.domesticLength_km = Units.KM_PER_M * domesticLength_m;
 		}
 	}
 
 	public void setRouteIds(List<List<Id<Link>>> routeIds) {
 		this.length_km = null;
 		this.containsFerry = null;
+		this.domesticLength_km = null;
 		if (routeIds == null) {
 			this.linkIds = null;
 		} else {
@@ -152,6 +161,11 @@ public class ConsolidationUnit {
 	public void computeNetworkCharacteristics(Network network) {
 		this.length_km = Units.KM_PER_M * this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
+		this.domesticLength_km = Units.KM_PER_M
+				* this.linkIds.stream().flatMap(ll -> ll.stream()).map(id -> network.getLinks().get(id))
+						.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
+								.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).isDomestic)
+						.mapToDouble(l -> l.getLength()).sum();
 		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.anyMatch(l -> ((SamgodsLinkAttributes) network.getLinks().get(l).getAttributes()
 						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());

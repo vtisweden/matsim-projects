@@ -109,10 +109,13 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		public final double expectedSnapshotVehicleCnt;
 		public final double payload_ton;
 		public final double unitCost_1_tonKm;
-
+		
+		public final double asc;
+		public final double domesticLoopLength_km;
+		
 		public FleetAssignment(double realDemand_ton, double backgroundDemand_ton, VehicleType vehicleType,
 				double vehicleCapacity_ton, DetailedTransportCost cost, double serviceIntervalActiveProba,
-				ConsolidationJob job, double costFactor) {
+				ConsolidationJob job, double asc) {
 
 			this.realDemand_ton = realDemand_ton;
 			this.backgroundDemand_ton = backgroundDemand_ton;
@@ -121,6 +124,9 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			this.loopLength_km = 2.0 * job.consolidationUnit.length_km;
 			this.minLoopDuration_h = 2.0 * cost.duration_h;
 
+			this.asc = asc;
+			this.domesticLoopLength_km = 2.0 * job.consolidationUnit.domesticLength_km;
+			
 			final double serviceInterval_h = Units.H_PER_D * job.serviceInterval_days;
 			final double serviceDemandPerActiveServiceInterval_ton = (1.0 / serviceIntervalActiveProba)
 					* (job.serviceInterval_days / 365.0) * (realDemand_ton + backgroundDemand_ton);
@@ -145,12 +151,13 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			assert (f == Math.min(fMax, Math.max(fMin, nf / n)));
 
 			this.payload_ton = serviceDemandPerActiveServiceInterval_ton / n / f;
-			this.unitCost_1_tonKm = costFactor * cost.monetaryCost / this.payload_ton / (0.5 * this.loopLength_km);
+			this.unitCost_1_tonKm = cost.monetaryCost / this.payload_ton / (0.5 * this.loopLength_km);
 
 			final double supplyPerActiveServiceInterval_ton = n * f * vehicleCapacity_ton;
 			assert (serviceDemandPerActiveServiceInterval_ton <= 1e-8 + supplyPerActiveServiceInterval_ton);
 
 			this.expectedSnapshotVehicleCnt = serviceIntervalActiveProba * n;
+						
 		}
 
 		@Override
@@ -165,13 +172,13 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	private FleetAssignment dimensionFleetAssignment(double realDemand_ton, double backgroundDemand_ton,
 			VehicleType vehicleType, ConsolidationJob job, double serviceIntervalActiveProba)
 			throws InsufficientDataException {
-		final double costFactor = this.fleetData.getVehicleType2costFactor().get(vehicleType);
+		final double asc = this.fleetData.getVehicleType2asc().get(vehicleType);
 		final SamgodsVehicleAttributes vehicleAttrs = this.fleetData.getVehicleType2attributes().get(vehicleType);
 		FleetAssignment result = new FleetAssignment(realDemand_ton, backgroundDemand_ton, vehicleType,
 				vehicleAttrs.capacity_ton,
 				this.realizedInVehicleCost.compute(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, job.consolidationUnit,
 						this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds()),
-				serviceIntervalActiveProba, job, costFactor);
+				serviceIntervalActiveProba, job, asc);
 		boolean done = false;
 		final int maxIts = 100;
 //		List<Double> devList = new ArrayList<>(maxIts);
@@ -182,7 +189,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 					vehicleAttrs.capacity_ton,
 					this.realizedInVehicleCost.compute(vehicleAttrs, result.payload_ton, job.consolidationUnit,
 							this.networkData.getLinkId2unitCost(vehicleType), this.networkData.getFerryLinkIds()),
-					serviceIntervalActiveProba, job, costFactor);
+					serviceIntervalActiveProba, job, asc);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;
 //			devList.add(dev);
 			if (++its == maxIts) {
@@ -226,15 +233,19 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 
 		// Identify optimal fleet assigment.
-		FleetAssignment overallBestAssignment = null;
+		FleetAssignment bestAssignment = null;
+		Double bestCost = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			final FleetAssignment bestAssignmentForVehicleType = this.dimensionFleetAssignment(realDemand_ton,
+			final FleetAssignment candidateAssignment = this.dimensionFleetAssignment(realDemand_ton,
 					backgroundDemand_ton, vehicleType, job, serviceIntervalActiveProba);
-			if ((overallBestAssignment == null)
-					|| (bestAssignmentForVehicleType.unitCost_1_tonKm < overallBestAssignment.unitCost_1_tonKm)) {
-				overallBestAssignment = bestAssignmentForVehicleType;
+			final double candidateCost = candidateAssignment.unitCost_1_tonKm * 0.5 * candidateAssignment.loopLength_km
+					* realDemand_ton + this.fleetData.getVehicleType2asc().get(vehicleType);
+			this.fleetData.getVehicleType2asc().get(vehicleType);
+			if ((bestAssignment == null) || (candidateCost < bestCost)) {
+				bestAssignment = candidateAssignment;
+				bestCost = candidateCost;
 			}
 		}
-		return overallBestAssignment;
+		return bestAssignment;
 	}
 }

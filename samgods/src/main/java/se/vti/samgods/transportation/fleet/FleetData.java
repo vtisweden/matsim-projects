@@ -122,7 +122,7 @@ public class FleetData {
 
 	// TODO NEW, FOR CALIBRATION
 
-	public Map<VehicleType, Double> getVehicleType2costFactor() {
-		return this.dataProvider.getVehicleType2costFactor();
+	public Map<VehicleType, Double> getVehicleType2asc() {
+		return this.dataProvider.getVehicleType2asc();
 	}
 }

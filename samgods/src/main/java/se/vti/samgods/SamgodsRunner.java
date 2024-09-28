@@ -35,6 +35,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Network;
@@ -52,6 +53,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.calibration.BackgroundTransportWork;
+import se.vti.samgods.calibration.FleetCalibrationLogger;
 import se.vti.samgods.calibration.FleetCostCalibrator;
 import se.vti.samgods.calibration.FleetStatistics;
 import se.vti.samgods.calibration.TransportationStatistics;
@@ -111,7 +113,8 @@ public class SamgodsRunner {
 
 	private final double defaultSamplingRate = 1.0;
 
-	private final double defaultScale = 1.0;
+	private final Map<Commodity, Double> commodity2scale = new LinkedHashMap<>(
+			Arrays.stream(Commodity.values()).collect(Collectors.toMap(c -> c, c -> 1.0)));
 
 	private Random rnd;
 
@@ -128,8 +131,6 @@ public class SamgodsRunner {
 
 	public boolean enforceReroute;
 
-	public double scale;
-
 	public Vehicles vehicles = null;
 	private FleetDataProvider fleetDataProvider = null;
 
@@ -140,10 +141,10 @@ public class SamgodsRunner {
 
 	private BackgroundTransportWork backgroundTransportWork = null;
 
-	private FleetCostCalibrator fleetCostCalibrator = null;
+	private FleetCostCalibrator fleetCalibrator = null;
 
 	public void setFleetCostCalibrator(FleetCostCalibrator fleetCostCalibrator) {
-		this.fleetCostCalibrator = fleetCostCalibrator;
+		this.fleetCalibrator = fleetCostCalibrator;
 	}
 
 	public void setBackgroundTransportWork(BackgroundTransportWork backgroundTransportWork) {
@@ -158,11 +159,10 @@ public class SamgodsRunner {
 		this.setMaxIterations(this.defaultMaxIterations);
 		this.setEnforceReroute(this.defaultEnforceReroute);
 		this.setSamplingRate(this.defaultSamplingRate);
-		this.setScale(this.defaultScale);
 	}
 
-	public SamgodsRunner setScale(double scale) {
-		this.scale = scale;
+	public SamgodsRunner setScale(Commodity commodity, double scale) {
+		this.commodity2scale.put(commodity, scale);
 		return this;
 	}
 
@@ -399,6 +399,7 @@ public class SamgodsRunner {
 
 	public void run() {
 
+		final FleetCalibrationLogger fleetCalibrationLogger = new FleetCalibrationLogger();
 		final TransportationStatisticsLogger statisticsLogger = new TransportationStatisticsLogger();
 		final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedMoveCost = new ConcurrentHashMap<>();
 		final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedDomesticMoveCost = new ConcurrentHashMap<>();
@@ -444,6 +445,8 @@ public class SamgodsRunner {
 			}
 		}
 
+		ConcurrentMap<TransportMode, Double> mode2meanASC = null;
+
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
 			log.info("STARTING ITERATION " + iteration);
 
@@ -471,8 +474,9 @@ public class SamgodsRunner {
 				try {
 					for (int i = 0; i < threadCnt; i++) {
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
-						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction();
-						ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(this.scale,
+						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
+								new LinkedHashMap<>(this.commodity2scale), mode2meanASC);
+						ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(
 								logisticChoiceDataProvider.createLogisticChoiceData(), nonTransportCostModel,
 								utilityFunction, jobQueue, allChoices);
 						Thread choiceThread = new Thread(choiceSimulator);
@@ -594,6 +598,18 @@ public class SamgodsRunner {
 				}
 			}
 
+			mode2meanASC = new ConcurrentHashMap<>();
+			final Map<TransportMode, Integer> mode2cnt = new LinkedHashMap<>();
+			for (HalfLoopConsolidationJobProcessor.FleetAssignment assignment : consolidationUnit2assignment.values()) {
+				final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) assignment.vehicleType.getAttributes()
+						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+				final TransportMode mode = attrs.samgodsMode;
+				mode2meanASC.compute(mode, (m, asc) -> asc == null ? assignment.asc : asc + assignment.asc);
+				mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
+			}
+			mode2meanASC.entrySet().stream().forEach(e -> e.setValue(e.getValue() / mode2cnt.get(e.getKey())));
+			log.info("Mode ASCs: " + mode2meanASC);
+
 			/*
 			 * POSTPROCESSING, SUMMARY STATISTICS.
 			 */
@@ -611,10 +627,10 @@ public class SamgodsRunner {
 
 			log.info("Collecting fleet statistics");
 			final FleetStatistics fleetStats = new FleetStatistics(consolidationUnit2assignment);
-			if (this.fleetCostCalibrator != null) {
-				this.fleetCostCalibrator.updateInternally(fleetStats);
-				this.fleetDataProvider
-						.setVehicleType2costFactor(this.fleetCostCalibrator.createConcurrentVehicleType2costFactor());
+			if (this.fleetCalibrator != null) {
+				this.fleetCalibrator.updateInternally(fleetStats);
+				this.fleetDataProvider.setVehicleType2asc(this.fleetCalibrator.createConcurrentVehicleType2asc());
+				fleetCalibrationLogger.log(this.fleetCalibrator);
 			}
 
 			log.info("Computing transport efficiency and unit cost per consolidation unit.");

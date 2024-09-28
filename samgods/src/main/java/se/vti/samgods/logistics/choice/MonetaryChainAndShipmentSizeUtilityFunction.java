@@ -19,7 +19,12 @@
  */
 package se.vti.samgods.logistics.choice;
 
+import java.util.Map;
+
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.logistics.TransportChain;
+import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.costs.NonTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 
@@ -30,6 +35,29 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
  */
 public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShipmentSizeUtilityFunction {
 
+	private final Map<TransportMode, Double> mode2meanASC;
+	private final Map<Commodity, Double> commodity2scale;
+
+	public MonetaryChainAndShipmentSizeUtilityFunction(Map<Commodity, Double> commodity2scale,
+			Map<TransportMode, Double> mode2meanASC) {
+		this.commodity2scale = commodity2scale;
+		this.mode2meanASC = mode2meanASC;
+	}
+
+	public double totalASC(TransportChain transportChain) {
+		if (this.mode2meanASC == null) {
+			return 0.0;
+		} else {
+			double result = 0.0;
+			for (TransportEpisode episode : transportChain.getEpisodes()) {
+				result += this.mode2meanASC.getOrDefault(episode.getMode(), 0.0);
+			}
+			return result;
+//			return transportChain.getEpisodes().stream().flatMap(e -> e.getConsolidationUnits().stream())
+//					.mapToDouble(cu -> this.consolidationUnit2fleetAssignment.get(cu).asc).sum();
+		}
+	}
+
 	public double totalMonetaryCost(double amount_ton, DetailedTransportCost transportUnitCost,
 			NonTransportCost totalNonTransportCost) {
 		return transportUnitCost.monetaryCost * amount_ton + totalNonTransportCost.totalOrderCost
@@ -37,8 +65,10 @@ public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShip
 	}
 
 	@Override
-	public double computeUtility(Commodity commodity, double amount_ton, DetailedTransportCost transportUnitCost_1_ton,
-			NonTransportCost totalNonTransportCost) {
-		return (-1.0) * this.totalMonetaryCost(amount_ton, transportUnitCost_1_ton, totalNonTransportCost);
+	public double computeUtility(TransportChain transportChain, double amount_ton,
+			DetailedTransportCost transportUnitCost_1_ton, NonTransportCost totalNonTransportCost) {
+		return (-1.0) * this.commodity2scale.get(transportChain.getCommodity())
+				* this.totalMonetaryCost(amount_ton, transportUnitCost_1_ton, totalNonTransportCost)
+				+ this.totalASC(transportChain);
 	}
 }

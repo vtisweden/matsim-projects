@@ -55,7 +55,7 @@ public class FleetStatistics {
 		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
 				.entrySet()) {
 			final FleetAssignment fleetAssignment = entry.getValue();
-			final double transportWork_tonKm = fleetAssignment.realDemand_ton * 0.5 * fleetAssignment.loopLength_km;
+			final double transportWork_tonKm = fleetAssignment.realDemand_ton * 0.5 * fleetAssignment.domesticLoopLength_km;
 			if (transportWork_tonKm >= this.workThreshold_tonKm) {
 				this.vehicleType2tonKm.compute(fleetAssignment.vehicleType,
 						(vt, tk) -> tk == null ? transportWork_tonKm : tk + transportWork_tonKm);

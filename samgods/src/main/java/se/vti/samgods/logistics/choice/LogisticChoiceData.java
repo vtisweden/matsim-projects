@@ -91,8 +91,8 @@ public class LogisticChoiceData {
 			for (ConsolidationUnit consolidationUnit : consolidationUnits) {
 				builder.add(this.logisticChoiceDataProvider.getRealizedCost(consolidationUnit), true);
 			}
-			return builder.build().createUnitCost_1_ton()
-					.createWithScaledMonetaryCost(this.fleetData.getVehicleType2costFactor().get(vehicleType));
+			return builder.build().createUnitCost_1_ton();
+//					.createWithScaledMonetaryCost(this.fleetData.getVehicleType2costFactor().get(vehicleType));
 
 		} catch (InsufficientDataException e) {
 			InsufficientDataException.log(e,
@@ -113,7 +113,7 @@ public class LogisticChoiceData {
 	public DetailedTransportCost getRealizedDomesticCost(ConsolidationUnit consolidationUnit) {
 		return this.logisticChoiceDataProvider.getRealizedDomesticCost(consolidationUnit);
 	}
-
+	
 	// -------------------- TRANSPORT CHAIN UNIT COSTS --------------------
 
 	public DetailedTransportCost computeChain2transportUnitCost_1_ton(TransportChain transportChain) {

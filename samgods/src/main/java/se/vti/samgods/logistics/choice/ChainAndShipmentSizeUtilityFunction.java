@@ -19,7 +19,7 @@
  */
 package se.vti.samgods.logistics.choice;
 
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.costs.NonTransportCost;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 
@@ -30,7 +30,7 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
  */
 public interface ChainAndShipmentSizeUtilityFunction {
 
-	double computeUtility(SamgodsConstants.Commodity commodity, double annualAmount_ton,
+	double computeUtility(TransportChain transportChain, double annualAmount_ton,
 			DetailedTransportCost transportUnitCost_1_ton, NonTransportCost nonTransportCost);
 
 }

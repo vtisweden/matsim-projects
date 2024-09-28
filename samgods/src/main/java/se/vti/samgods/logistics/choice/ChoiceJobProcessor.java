@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.ShipmentSize;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
@@ -46,8 +47,6 @@ public class ChoiceJobProcessor implements Runnable {
 
 	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
 
-	private final double scale;
-
 	private final LogisticChoiceData choiceData;
 
 	private final NonTransportCostModel nonTransportCostModel;
@@ -62,10 +61,9 @@ public class ChoiceJobProcessor implements Runnable {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ChoiceJobProcessor(double scale, LogisticChoiceData choiceData, NonTransportCostModel nonTransportCostModel,
+	public ChoiceJobProcessor(LogisticChoiceData choiceData, NonTransportCostModel nonTransportCostModel,
 			ChainAndShipmentSizeUtilityFunction utilityFunction, BlockingQueue<ChoiceJob> jobQueue,
 			BlockingQueue<ChainAndShipmentSize> allChoices) {
-		this.scale = scale;
 		this.choiceData = choiceData;
 		this.nonTransportCostModel = nonTransportCostModel;
 		this.utilityFunction = utilityFunction;
@@ -109,15 +107,14 @@ public class ChoiceJobProcessor implements Runnable {
 											annualShipment.getSingleInstanceAnnualAmount_ton(),
 											transportUnitCost.duration_h);
 							alternatives.add(new ChainAndShipmentSize(annualShipment, size, transportChain,
-									this.utilityFunction.computeUtility(job.commodity,
+									this.utilityFunction.computeUtility(transportChain,
 											annualShipment.getSingleInstanceAnnualAmount_ton(), transportUnitCost,
 											totalNonTransportCost)));
 						}
 					}
 				}
 				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
-					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives,
-							a -> this.scale * a.utility);
+					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
 					assert (choice != null);
 					this.allChoices.put(choice);
 				}
