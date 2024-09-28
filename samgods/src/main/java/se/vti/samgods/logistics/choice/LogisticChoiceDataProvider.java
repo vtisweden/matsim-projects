@@ -45,8 +45,10 @@ public class LogisticChoiceDataProvider {
 
 	public LogisticChoiceDataProvider(
 			ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost,
+			ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedDomesticCost,
 			FleetDataProvider fleetDataProvider) {
 		this.consolidationUnit2realizedCost = consolidationUnit2realizedCost;
+		this.consolidationUnit2realizedDomesticCost = consolidationUnit2realizedDomesticCost;
 		this.fleetDataProvider = fleetDataProvider;
 	}
 
@@ -69,9 +71,14 @@ public class LogisticChoiceDataProvider {
 	// ---------- THREAD SAFE CONSOLIDATION UNIT UNIT COST ACCESS ----------
 
 	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost;
+	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedDomesticCost;
 
 	DetailedTransportCost getRealizedCost(ConsolidationUnit consolidationUnit) {
 		return this.consolidationUnit2realizedCost.get(consolidationUnit);
+	}
+
+	DetailedTransportCost getRealizedDomesticCost(ConsolidationUnit consolidationUnit) {
+		return this.consolidationUnit2realizedDomesticCost.get(consolidationUnit);
 	}
 
 	// --------------- THREAD SAFE EPISODE UNIT COST ACCESS ---------------
@@ -95,15 +102,15 @@ public class LogisticChoiceDataProvider {
 		return this.commodity2mode2freightFactor;
 	}
 
-	public ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new ConcurrentHashMap<>();
-
-	public void setCommodity2mode2avgTotalDemand_ton(
-			Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton) {
-		this.commodity2mode2avgTotalDemand_ton = this.concurrentDeepCopy(commodity2mode2avgTotalDemand_ton);
-	}
-
-	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
-		return this.commodity2mode2avgTotalDemand_ton;
-	}
+//	public ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new ConcurrentHashMap<>();
+//
+//	public void setCommodity2mode2avgTotalDemand_ton(
+//			Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton) {
+//		this.commodity2mode2avgTotalDemand_ton = this.concurrentDeepCopy(commodity2mode2avgTotalDemand_ton);
+//	}
+//
+//	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
+//		return this.commodity2mode2avgTotalDemand_ton;
+//	}
 
 }

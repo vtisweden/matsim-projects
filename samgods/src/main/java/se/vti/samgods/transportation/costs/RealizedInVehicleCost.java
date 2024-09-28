@@ -42,21 +42,23 @@ public class RealizedInVehicleCost {
 
 	public DetailedTransportCost compute(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
 			ConsolidationUnit consolidationUnit, Map<Id<Link>, BasicTransportCost> link2unitCost,
-			Set<Id<Link>> ferryLinks) throws InsufficientDataException {
+			Set<Id<Link>> ferryLinks, Set<Id<Link>> limitedToTheseLinkIds) throws InsufficientDataException {
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
 				.addAmount_ton(payload_ton);
 		if (consolidationUnit.linkIds.size() > 0) {
 			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
 				for (Id<Link> linkId : linkIds) {
-					BasicTransportCost unitCost = link2unitCost.get(linkId);
-					builder.addMoveDuration_h(unitCost.duration_h);
-					builder.addDistance_km(unitCost.length_km);
-					if (ferryLinks.contains(linkId)) {
-						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
-						builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
-					} else {
-						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
-						builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
+					if ((limitedToTheseLinkIds == null) || limitedToTheseLinkIds.contains(linkId)) {
+						BasicTransportCost unitCost = link2unitCost.get(linkId);
+						builder.addMoveDuration_h(unitCost.duration_h);
+						builder.addDistance_km(unitCost.length_km);
+						if (ferryLinks.contains(linkId)) {
+							builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
+							builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
+						} else {
+							builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
+							builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
+						}
 					}
 				}
 			}
@@ -64,4 +66,9 @@ public class RealizedInVehicleCost {
 		return builder.build();
 	}
 
+	public DetailedTransportCost compute(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
+			ConsolidationUnit consolidationUnit, Map<Id<Link>, BasicTransportCost> link2unitCost,
+			Set<Id<Link>> ferryLinks) throws InsufficientDataException {
+		return this.compute(vehicleAttrs, payload_ton, consolidationUnit, link2unitCost, ferryLinks, null);
+	}
 }

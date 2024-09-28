@@ -119,4 +119,10 @@ public class FleetData {
 				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
 						cf -> this.createRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
 	}
+
+	// TODO NEW, FOR CALIBRATION
+
+	public Map<VehicleType, Double> getVehicleType2costFactor() {
+		return this.dataProvider.getVehicleType2costFactor();
+	}
 }

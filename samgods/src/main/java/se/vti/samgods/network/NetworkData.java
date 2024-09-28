@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
@@ -58,6 +59,14 @@ public class NetworkData {
 	}
 
 	// --------------- PASS-THROUGH FROM NetworkDataProvider ---------------
+
+	public Set<Id<Node>> getDomesticNodeIds() {
+		return this.dataProvider.getDomesticNodeIds();
+	}
+
+	public Set<Id<Link>> getDomesticLinkIds() {
+		return this.dataProvider.getDomesticLinkIds();
+	}
 
 	public Set<Id<Link>> getFerryLinkIds() {
 		return this.dataProvider.getFerryLinkIds();

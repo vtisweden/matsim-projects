@@ -19,34 +19,22 @@
  */
 package se.vti.samgods.network;
 
-import se.vti.samgods.SamgodsConstants;
-
 /**
  * 
  * @author GunnarF
  *
  */
-public class SamgodsLinkAttributes {
+public class SamgodsNodeAttributes {
 
 	// -------------------- CONSTANTS --------------------
 
 	public static final String ATTRIBUTE_NAME = "freight";
 
-	public SamgodsConstants.TransportMode samgodsMode;
-
-	public final Double speed1_km_h;
-
-	public final Double speed2_km_h;
-
 	public final boolean isDomestic;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public SamgodsLinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h,
-			boolean isDomestic) {
-		this.samgodsMode = samgodsMode;
-		this.speed1_km_h = speed1_km_h;
-		this.speed2_km_h = speed2_km_h;
+	public SamgodsNodeAttributes(boolean isDomestic) {
 		this.isDomestic = isDomestic;
 	}
 }

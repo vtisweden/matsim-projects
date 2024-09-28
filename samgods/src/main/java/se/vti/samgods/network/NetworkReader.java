@@ -22,7 +22,9 @@ package se.vti.samgods.network;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -54,6 +56,7 @@ public class NetworkReader {
 	private static final String NODE_X = "X";
 	private static final String NODE_Y = "Y";
 	private static final String NODE_ID = "NORIG";
+	private static final String NODE_ID_COUNTRY = "ID_COUNTRY";
 
 	private static final String LINK_ID = "OBJECTID";
 	private static final String LINK_FROM_NODE_COUNTER = "A";
@@ -123,12 +126,20 @@ public class NetworkReader {
 		// Need this because NODE_ID and NODE_COUNTER are different.
 		final Map<Long, Node> nodeCounter2node = new LinkedHashMap<>();
 
+		final Set<Node> domesticNodes = new LinkedHashSet<>();
+
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(nodesFile))) {
 			final Id<Node> id = Id.createNodeId(Long.parseLong(record.get(NODE_ID)));
 			assert (!network.getNodes().containsKey(id));
 			final double x = Double.parseDouble(record.get(NODE_X));
 			final double y = Double.parseDouble(record.get(NODE_Y));
 			final Node node = NetworkUtils.createAndAddNode(network, id, new Coord(x, y));
+			final boolean isDomestic = (1 == Integer.parseInt(record.get(NODE_ID_COUNTRY))); // TODO magic number
+			if (isDomestic) {
+				domesticNodes.add(node);
+			}
+			node.getAttributes().putAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME,
+					new SamgodsNodeAttributes(isDomestic));
 			nodeCounter2node.put(Long.parseLong(record.get(NODE_COUNTER)), node);
 		}
 
@@ -140,6 +151,7 @@ public class NetworkReader {
 			assert (fromNode != null);
 			assert (toNode != null);
 			final double nodeDist_m = NetworkUtils.getEuclideanDistance(fromNode.getCoord(), toNode.getCoord());
+			final boolean isDomestic = domesticNodes.contains(fromNode) && domesticNodes.contains(toNode);
 
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
 			final SamgodsConstants.TransportMode mode = SamgodsConstants.TransportMode.valueOf(record.get(LINK_MODE));
@@ -185,7 +197,7 @@ public class NetworkReader {
 							Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
 					link.setAllowedModes(mode.matsimModes);
 					link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
-							new SamgodsLinkAttributes(mode, speed1_km_h, speed2_km_h));
+							new SamgodsLinkAttributes(mode, speed1_km_h, speed2_km_h, isDomestic));
 				}
 			}
 		}

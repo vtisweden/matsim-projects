@@ -35,7 +35,7 @@ public class BackgroundTransportWork {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final double defaultStepSize = 0.2;
+	private final double defaultStepSize = 0.1;
 
 	// -------------------- MEMBERS --------------------
 
@@ -47,7 +47,7 @@ public class BackgroundTransportWork {
 
 	private final Map<Commodity, Map<TransportMode, Double>> commodity2mode2errorSum_1_tonKm = new LinkedHashMap<>();
 
-	private Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new LinkedHashMap<>();
+//	private Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -77,7 +77,7 @@ public class BackgroundTransportWork {
 	// -------------------- IMPLEMENTATION --------------------
 
 	public void updateInternally(TransportationStatistics transportationStatistics) {
-		this.commodity2mode2avgTotalDemand_ton = transportationStatistics.getCommodity2mode2avgTotalDemand_ton();
+//		this.commodity2mode2avgTotalDemand_ton = transportationStatistics.getCommodity2mode2avgTotalDemand_ton();
 		final Map<Commodity, Map<TransportMode, Double>> commodity2mode2realizedUnitCost_1_tonKm = transportationStatistics
 				.computeCommodity2mode2unitCost_1_tonKm();
 		for (Commodity commodity : commodity2mode2realizedUnitCost_1_tonKm.keySet()) {
@@ -102,8 +102,8 @@ public class BackgroundTransportWork {
 		return this.commodity2mode2freightFactor;
 	}
 
-	public Map<Commodity, Map<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
-		return this.commodity2mode2avgTotalDemand_ton;
-	}
+//	public Map<Commodity, Map<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
+//		return this.commodity2mode2avgTotalDemand_ton;
+//	}
 
 }

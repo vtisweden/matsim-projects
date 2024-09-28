@@ -52,7 +52,10 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.calibration.BackgroundTransportWork;
+import se.vti.samgods.calibration.FleetCostCalibrator;
+import se.vti.samgods.calibration.FleetStatistics;
 import se.vti.samgods.calibration.TransportationStatistics;
+import se.vti.samgods.calibration.TransportationStatisticsLogger;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
@@ -127,13 +130,25 @@ public class SamgodsRunner {
 
 	public double scale;
 
-	private Vehicles vehicles = null;
+	public Vehicles vehicles = null;
 	private FleetDataProvider fleetDataProvider = null;
 
 	public Network network = null;
 	private NetworkDataProvider networkDataProvider = null;
 
-	public TransportDemand transportDemand = null;
+	private TransportDemand transportDemand = null;
+
+	private BackgroundTransportWork backgroundTransportWork = null;
+
+	private FleetCostCalibrator fleetCostCalibrator = null;
+
+	public void setFleetCostCalibrator(FleetCostCalibrator fleetCostCalibrator) {
+		this.fleetCostCalibrator = fleetCostCalibrator;
+	}
+
+	public void setBackgroundTransportWork(BackgroundTransportWork backgroundTransportWork) {
+		this.backgroundTransportWork = backgroundTransportWork;
+	}
 
 	public SamgodsRunner() {
 		this.setRandomSeed(this.defaultSeed);
@@ -233,10 +248,10 @@ public class SamgodsRunner {
 
 			/*
 			 * Several episodes may have consolidation units with the same routes. To reduce
-			 * routing effort, we here collect, for each possible routing configuration, one
+			 * routing effort, we collect here, for each possible routing configuration, one
 			 * representative consolidation unit to be routed. We store a back-links to the
 			 * consolidation units attached to the episodes in order to later replace them
-			 * by equivalent routed instances.
+			 * by their equivalent routed instances.
 			 */
 			final Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			for (SamgodsConstants.Commodity commodity : this.consideredCommodities) {
@@ -366,9 +381,7 @@ public class SamgodsRunner {
 				}
 			}
 		}
-	}
 
-	public void removeUnusedTransportChains() {
 		for (SamgodsConstants.Commodity commodity : this.consideredCommodities) {
 			long removedChainCnt = 0;
 			long totalChainCnt = 0;
@@ -384,55 +397,52 @@ public class SamgodsRunner {
 		}
 	}
 
-	public ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedMoveCost = null;
+	public void run() {
 
-	public BackgroundTransportWork backgroundTransportWork = null;
+		final TransportationStatisticsLogger statisticsLogger = new TransportationStatisticsLogger();
+		final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedMoveCost = new ConcurrentHashMap<>();
+		final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedDomesticMoveCost = new ConcurrentHashMap<>();
 
-	public void clearBeforeIterations() {
-		this.consolidationUnit2realizedMoveCost = null;
-		this.backgroundTransportWork = null;
-	}
-
-	public void initializeConsolidationCosts() {
-		this.consolidationUnit2realizedMoveCost = new ConcurrentHashMap<>();
-		final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
-		for (SamgodsConstants.Commodity commodity : this.consideredCommodities) {
-			log.info(commodity + ": Computing initial unit costs for consolidation units.");
-			for (List<TransportChain> transportChains : this.transportDemand.getCommodity2od2transportChains()
-					.get(commodity).values()) {
-				transportChains.stream().flatMap(c -> c.getEpisodes().stream())
-						.forEach(e -> allConsolidationUnits.addAll(e.getConsolidationUnits()));
+		{
+			final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
+			for (SamgodsConstants.Commodity commodity : this.consideredCommodities) {
+				log.info(commodity + ": Collecting consolidation units.");
+				for (List<TransportChain> transportChains : this.transportDemand.getCommodity2od2transportChains()
+						.get(commodity).values()) {
+					transportChains.stream().flatMap(c -> c.getEpisodes().stream())
+							.forEach(e -> allConsolidationUnits.addAll(e.getConsolidationUnits()));
+				}
 			}
-		}
-		final double initialTransportEfficiency = 0.7; // TODO magic number
-		final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
-		final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-		final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
-		for (ConsolidationUnit consolidationUnit : allConsolidationUnits) {
-			final VehicleType vehicleType = fleetData.getRepresentativeVehicleType(consolidationUnit.commodity,
-					consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
-			if (vehicleType != null) {
-				final SamgodsVehicleAttributes vehicleAttributes = fleetData.getVehicleType2attributes()
-						.get(vehicleType);
-				try {
-					consolidationUnit2realizedMoveCost.put(consolidationUnit,
-							realizedInVehicleCost.compute(vehicleAttributes,
-									initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
-									networkData.getLinkId2unitCost(vehicleType), networkData.getFerryLinkIds()));
-				} catch (InsufficientDataException e) {
+
+			final double initialTransportEfficiency = 0.7; // TODO magic number
+			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
+			final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+			final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
+			log.info("Computing consolidation costs for " + allConsolidationUnits.size() + " consolidation units");
+			for (ConsolidationUnit consolidationUnit : allConsolidationUnits) {
+				final VehicleType vehicleType = fleetData.getRepresentativeVehicleType(consolidationUnit.commodity,
+						consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
+				if (vehicleType != null) {
+					final SamgodsVehicleAttributes vehicleAttributes = fleetData.getVehicleType2attributes()
+							.get(vehicleType);
+					try {
+						consolidationUnit2realizedMoveCost.put(consolidationUnit,
+								realizedInVehicleCost.compute(vehicleAttributes,
+										initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
+										networkData.getLinkId2unitCost(vehicleType), networkData.getFerryLinkIds()));
+						consolidationUnit2realizedDomesticMoveCost.put(consolidationUnit,
+								realizedInVehicleCost.compute(vehicleAttributes,
+										initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
+										networkData.getLinkId2unitCost(vehicleType), networkData.getFerryLinkIds(),
+										networkData.getDomesticLinkIds()));
+					} catch (InsufficientDataException e) {
+						log.warn("could not initialize unit cost for consolidation unit " + consolidationUnit);
+					}
+				} else {
 					log.warn("could not initialize unit cost for consolidation unit " + consolidationUnit);
 				}
-			} else {
-				log.warn("could not initialize unit cost for consolidation unit " + consolidationUnit);
 			}
 		}
-	}
-
-	public void setBackgroundTransportWork(BackgroundTransportWork backgroundTransportWork) {
-		this.backgroundTransportWork = backgroundTransportWork;
-	}
-
-	public void iterate() {
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
 			log.info("STARTING ITERATION " + iteration);
@@ -441,13 +451,14 @@ public class SamgodsRunner {
 			 * Simulate choices.
 			 */
 
-			final LogisticChoiceDataProvider choiceDataProvider = new LogisticChoiceDataProvider(
-					this.consolidationUnit2realizedMoveCost, this.getOrCreateFleetDataProvider());
-			if (iteration > 0) {
-				choiceDataProvider.setCommodity2mode2freightFactor(
+			final LogisticChoiceDataProvider logisticChoiceDataProvider = new LogisticChoiceDataProvider(
+					consolidationUnit2realizedMoveCost, consolidationUnit2realizedDomesticMoveCost,
+					this.getOrCreateFleetDataProvider());
+			if ((iteration > 0) && (this.backgroundTransportWork != null)) {
+				logisticChoiceDataProvider.setCommodity2mode2freightFactor(
 						this.backgroundTransportWork.getCommodity2mode2freightFactor());
-				choiceDataProvider.setCommodity2mode2avgTotalDemand_ton(
-						this.backgroundTransportWork.getCommodity2mode2avgTotalDemand_ton());
+//				choiceDataProvider.setCommodity2mode2avgTotalDemand_ton(
+//						this.backgroundTransportWork.getCommodity2mode2avgTotalDemand_ton());
 			}
 
 			BlockingQueue<ChainAndShipmentSize> allChoices = new LinkedBlockingQueue<>();
@@ -462,8 +473,8 @@ public class SamgodsRunner {
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction();
 						ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(this.scale,
-								choiceDataProvider.createLogisticChoiceData(), nonTransportCostModel, utilityFunction,
-								jobQueue, allChoices);
+								logisticChoiceDataProvider.createLogisticChoiceData(), nonTransportCostModel,
+								utilityFunction, jobQueue, allChoices);
 						Thread choiceThread = new Thread(choiceSimulator);
 						choiceThreads.add(choiceThread);
 						choiceThread.start();
@@ -540,7 +551,7 @@ public class SamgodsRunner {
 					for (int i = 0; i < threadCnt; i++) {
 						NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
 						FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-						LogisticChoiceData choiceData = choiceDataProvider.createLogisticChoiceData();
+						LogisticChoiceData choiceData = logisticChoiceDataProvider.createLogisticChoiceData();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
 								networkData, fleetData, choiceData, jobQueue, consolidationUnit2assignment);
 						Thread choiceThread = new Thread(consolidationProcessor);
@@ -587,11 +598,24 @@ public class SamgodsRunner {
 			 * POSTPROCESSING, SUMMARY STATISTICS.
 			 */
 			log.info("Collecting transport statistics");
-			final TransportationStatistics transpStats = new TransportationStatistics(consolidationUnit2assignment,
-					this.getOrCreateFleetDataProvider().createFleetData());
-			this.backgroundTransportWork.updateInternally(transpStats);
+			final TransportationStatistics transpStats = new TransportationStatistics(allChoices,
+					consolidationUnit2assignment, this.getOrCreateNetworkDataProvider().createNetworkData(),
+					this.getOrCreateFleetDataProvider().createFleetData(),
+					logisticChoiceDataProvider.createLogisticChoiceData());
+			statisticsLogger.log(transpStats);
+			if (this.backgroundTransportWork != null) {
+				this.backgroundTransportWork.updateInternally(transpStats);
+			}
 			TestSamgods.logEfficiency(transpStats.computeMode2efficiency(), iteration, "efficiency.txt");
 			TestSamgods.logCost(transpStats.computeMode2unitCost_1_tonKm(), iteration, "unitcost.txt");
+
+			log.info("Collecting fleet statistics");
+			final FleetStatistics fleetStats = new FleetStatistics(consolidationUnit2assignment);
+			if (this.fleetCostCalibrator != null) {
+				this.fleetCostCalibrator.updateInternally(fleetStats);
+				this.fleetDataProvider
+						.setVehicleType2costFactor(this.fleetCostCalibrator.createConcurrentVehicleType2costFactor());
+			}
 
 			log.info("Computing transport efficiency and unit cost per consolidation unit.");
 			{
@@ -606,10 +630,14 @@ public class SamgodsRunner {
 						try {
 							final SamgodsVehicleAttributes vehicleAttributes = fleetData.getVehicleType2attributes()
 									.get(assignment.vehicleType);
-							this.consolidationUnit2realizedMoveCost.put(consolidationUnit,
+							consolidationUnit2realizedMoveCost.put(consolidationUnit,
 									realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton,
 											consolidationUnit, networkData.getLinkId2unitCost(assignment.vehicleType),
 											networkData.getFerryLinkIds()));
+							consolidationUnit2realizedDomesticMoveCost.put(consolidationUnit,
+									realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton,
+											consolidationUnit, networkData.getLinkId2unitCost(assignment.vehicleType),
+											networkData.getFerryLinkIds(), networkData.getDomesticLinkIds()));
 						} catch (InsufficientDataException e1) {
 							throw new RuntimeException(e1);
 						}

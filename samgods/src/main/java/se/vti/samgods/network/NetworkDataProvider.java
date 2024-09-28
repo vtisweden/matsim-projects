@@ -19,14 +19,15 @@
  */
 package se.vti.samgods.network;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
@@ -46,8 +47,16 @@ public class NetworkDataProvider {
 
 	public NetworkDataProvider(final Network multimodalNetwork) {
 		this.multimodalNetwork = multimodalNetwork;
-		this.allLinks = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values());
-		this.ferryLinkIds = new CopyOnWriteArraySet<>(multimodalNetwork.getLinks().values().stream()
+		this.allLinks.addAll(multimodalNetwork.getLinks().values());
+		this.domesticNodeIds.addAll(multimodalNetwork.getNodes().values().stream()
+				.filter(l -> ((SamgodsNodeAttributes) l.getAttributes()
+						.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME)).isDomestic)
+				.map(l -> l.getId()).collect(Collectors.toSet()));
+		this.domesticLinkIds.addAll(multimodalNetwork.getLinks().values().stream()
+				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
+						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).isDomestic)
+				.map(l -> l.getId()).collect(Collectors.toSet()));
+		this.ferryLinkIds.addAll(multimodalNetwork.getLinks().values().stream()
 				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
 						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
 				.map(l -> l.getId()).collect(Collectors.toSet()));
@@ -75,19 +84,32 @@ public class NetworkDataProvider {
 		return unimodalNetwork;
 	}
 
+	// --------------- THREAD-SAFE, LOCALLY CACHED DOMESTIC LINK IDS ---------------
+
+	private final Set<Id<Node>> domesticNodeIds = ConcurrentHashMap.newKeySet();
+	private final Set<Id<Link>> domesticLinkIds = ConcurrentHashMap.newKeySet();
+
+	Set<Id<Node>> getDomesticNodeIds() {
+		return this.domesticNodeIds;
+	}
+
+	Set<Id<Link>> getDomesticLinkIds() {
+		return this.domesticLinkIds;
+	}
+
 	// --------------- THREAD-SAFE, LOCALLY CACHED FERRY LINK IDS ---------------
 
-	private final CopyOnWriteArraySet<Id<Link>> ferryLinkIds;
+	private final Set<Id<Link>> ferryLinkIds = ConcurrentHashMap.newKeySet();
 
-	CopyOnWriteArraySet<Id<Link>> getFerryLinkIds() {
+	Set<Id<Link>> getFerryLinkIds() {
 		return this.ferryLinkIds;
 	}
 
 	// --------------- THREAD-SAFE, LOCALLY CACHED LINK REFERENCES ---------------
 
-	private final CopyOnWriteArraySet<Link> allLinks;
+	private final Set<Link> allLinks = ConcurrentHashMap.newKeySet();
 
-	CopyOnWriteArraySet<Link> getAllLinks() {
+	Set<Link> getAllLinks() {
 		return this.allLinks;
 	}
 
