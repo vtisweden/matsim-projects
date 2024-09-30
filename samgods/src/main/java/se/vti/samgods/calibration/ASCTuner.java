@@ -32,36 +32,73 @@ import java.util.function.Function;
  */
 public class ASCTuner<A> {
 
+	private final double minProba = 1e-3;
+
+	private final double targetTotal;
+
+	private final double eta;
+	
 	private final ConcurrentMap<A, Double> alternative2asc = new ConcurrentHashMap<>();
 
-	private final Map<A, Double> alternative2lnTargetProba = new LinkedHashMap<>();
+	private final Map<A, Double> alternative2target = new LinkedHashMap<>();
 
-	private A referenceAlternative = null;
+//	private A referenceAlternative = null;
 
-	public ASCTuner() {
+	public ASCTuner(double targetTotal, double eta) {
+		this.targetTotal = targetTotal;
+		this.eta = eta;
 	}
 
-	public void setTargetProba(A alternative, Double proba) {
-		if (this.referenceAlternative == null) {
-			this.referenceAlternative = alternative;
-		}
-		this.alternative2lnTargetProba.put(alternative, Math.log(proba));
+	public void setTarget(A alternative, Double target) {
+//		if (this.referenceAlternative == null) {
+//			this.referenceAlternative = alternative;
+//		}
+		this.alternative2target.put(alternative, target);
 		this.alternative2asc.put(alternative, 0.0);
 	}
 
 	public void update(Function<A, Double> alternative2realized) {
-		final double lnT0 = this.alternative2lnTargetProba.get(this.referenceAlternative);
-		final double lnP0 = Math.log(Math.max(1e-3, alternative2realized.apply(this.referenceAlternative)));
-		for (Map.Entry<A, Double> e : this.alternative2lnTargetProba.entrySet()) {
-			final A alternative = e.getKey();
-			final double lnT = e.getValue();
-			final double lnP = Math.log(Math.max(1e-3, alternative2realized.apply(alternative)));
-			final double deltaASC = (lnT - lnP) - (lnT0 - lnP0);
-			this.alternative2asc.compute(alternative, (alt, asc) -> asc + deltaASC);
+		final double realizedTotal = this.alternative2target.keySet().stream()
+				.mapToDouble(a -> alternative2realized.apply(a)).sum();
+
+		final double lnT0;
+		final double lnP0;
+		if (realizedTotal <= this.targetTotal) {
+			lnT0 = Math.log(this.minProba);
+			lnP0 = Math.log(Math.max(this.minProba, this.targetTotal - realizedTotal));
+		} else {
+			lnT0 = Math.log(Math.max(this.minProba, realizedTotal - this.targetTotal));
+			lnP0 = Math.log(this.minProba);
 		}
 
-		final double maxASC = this.alternative2asc.values().stream().mapToDouble(asc -> asc).max().getAsDouble();
-		this.alternative2asc.entrySet().stream().forEach(e -> e.setValue(e.getValue() - maxASC));
+//		final double lnT0 = this.alternative2lnTarget.get(this.referenceAlternative);
+//		final double lnP0 = Math.log(Math.max(1e-3, alternative2realized.apply(this.referenceAlternative)));
+//		final double lnT0 = Math.log(this.relativeTolerance * this.targetTotal);
+//		final double lnP0 = Math.log(Math.max(1e-3, alternative2realized.apply(this.referenceAlternative)));
+
+//		final Map<A, Double> alternative2DeltaASC = new LinkedHashMap<>();
+		for (Map.Entry<A, Double> e : this.alternative2target.entrySet()) {
+			final A alternative = e.getKey();
+			final double lnT = Math.log(Math.max(this.minProba, e.getValue()));
+			final double lnP = Math.log(Math.max(this.minProba, alternative2realized.apply(alternative)));
+			final double deltaASC = (lnT - lnP) - (lnT0 - lnP0);
+			this.alternative2asc.compute(alternative, (alt, asc) -> asc + this.eta * deltaASC);
+//			alternative2DeltaASC.put(alternative, deltaASC);
+		}
+		
+//		final double maxDeltaASC = alternative2DeltaASC.values().stream().mapToDouble(asc -> Math.abs(asc)).max()
+//				.getAsDouble();
+//		final double sumDeltaASC = alternative2DeltaASC.values().stream().mapToDouble(asc -> asc).max()
+//				.getAsDouble();
+//		if (maxDeltaASC - minDeltaASC > Math.log(2)) {
+//			final double fact = Math.log(2) / maxDeltaASC;
+//			alternative2DeltaASC.entrySet().stream().forEach(e -> e.setValue(fact * e.getValue()));
+//		}
+//		alternative2DeltaASC.entrySet().stream()
+//				.forEach(e -> this.alternative2asc.compute(e.getKey(), (alt, asc) -> asc + e.getValue()));
+
+//		final double maxASC = this.alternative2asc.values().stream().mapToDouble(asc -> asc).max().getAsDouble();
+//		this.alternative2asc.entrySet().stream().forEach(e -> e.setValue(e.getValue() - maxASC));
 	}
 
 	public ConcurrentMap<A, Double> getAlternative2asc() {

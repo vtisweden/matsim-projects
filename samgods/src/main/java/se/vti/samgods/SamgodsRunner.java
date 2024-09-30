@@ -54,12 +54,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.calibration.BackgroundTransportWork;
 import se.vti.samgods.calibration.FleetCalibrationLogger;
 import se.vti.samgods.calibration.FleetCostCalibrator;
 import se.vti.samgods.calibration.FleetStatistics;
-import se.vti.samgods.calibration.TransportationStatistics;
-import se.vti.samgods.calibration.TransportationStatisticsLogger;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
@@ -145,7 +142,7 @@ public class SamgodsRunner {
 
 	private TransportDemand transportDemand = null;
 
-	private BackgroundTransportWork backgroundTransportWork = null;
+//	private BackgroundTransportWork backgroundTransportWork = null;
 
 	private FleetCostCalibrator fleetCalibrator = null;
 
@@ -153,9 +150,9 @@ public class SamgodsRunner {
 		this.fleetCalibrator = fleetCostCalibrator;
 	}
 
-	public void setBackgroundTransportWork(BackgroundTransportWork backgroundTransportWork) {
-		this.backgroundTransportWork = backgroundTransportWork;
-	}
+//	public void setBackgroundTransportWork(BackgroundTransportWork backgroundTransportWork) {
+//		this.backgroundTransportWork = backgroundTransportWork;
+//	}
 
 	public SamgodsRunner() {
 		this.setRandomSeed(this.defaultSeed);
@@ -493,12 +490,12 @@ public class SamgodsRunner {
 			final LogisticChoiceDataProvider logisticChoiceDataProvider = new LogisticChoiceDataProvider(
 					consolidationUnit2realizedMoveCost, consolidationUnit2realizedDomesticMoveCost,
 					this.getOrCreateFleetDataProvider());
-			if ((iteration > 0) && (this.backgroundTransportWork != null)) {
-				logisticChoiceDataProvider.setCommodity2mode2freightFactor(
-						this.backgroundTransportWork.getCommodity2mode2freightFactor());
+//			if ((iteration > 0) && (this.backgroundTransportWork != null)) {
+//				logisticChoiceDataProvider.setCommodity2mode2freightFactor(
+//						this.backgroundTransportWork.getCommodity2mode2freightFactor());
 //				choiceDataProvider.setCommodity2mode2avgTotalDemand_ton(
 //						this.backgroundTransportWork.getCommodity2mode2avgTotalDemand_ton());
-			}
+//			}
 
 			BlockingQueue<ChainAndShipmentSize> allChoices = new LinkedBlockingQueue<>();
 			{

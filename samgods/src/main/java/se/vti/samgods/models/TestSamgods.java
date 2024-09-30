@@ -102,7 +102,7 @@ public class TestSamgods {
 				.loadVehicles("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 						SamgodsConstants.TransportMode.Sea);
 
-		runner.setFleetCostCalibrator(new FleetCostCalibrator(runner.vehicles));
+		runner.setFleetCostCalibrator(new FleetCostCalibrator(runner.vehicles, 0.1));
 
 		runner.loadNetwork("./input_2024/node_parameters.csv", "./input_2024/link_parameters.csv");
 		runner.loadLinkRegionalWeights("./input_2024/link_regions.csv");

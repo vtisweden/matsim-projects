@@ -91,16 +91,16 @@ public class LogisticChoiceDataProvider {
 
 	// --------------- THREAD SAFE BACKGROUND TRANSPORT CALIBRATION ---------------
 
-	private ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2freightFactor = new ConcurrentHashMap<>();
-
-	public void setCommodity2mode2freightFactor(
-			Map<Commodity, Map<TransportMode, Double>> commodity2mode2freightFactor) {
-		this.commodity2mode2freightFactor = this.concurrentDeepCopy(commodity2mode2freightFactor);
-	}
-
-	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2freightFactor() {
-		return this.commodity2mode2freightFactor;
-	}
+//	private ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2freightFactor = new ConcurrentHashMap<>();
+//
+//	public void setCommodity2mode2freightFactor(
+//			Map<Commodity, Map<TransportMode, Double>> commodity2mode2freightFactor) {
+//		this.commodity2mode2freightFactor = this.concurrentDeepCopy(commodity2mode2freightFactor);
+//	}
+//
+//	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2freightFactor() {
+//		return this.commodity2mode2freightFactor;
+//	}
 
 //	public ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new ConcurrentHashMap<>();
 //

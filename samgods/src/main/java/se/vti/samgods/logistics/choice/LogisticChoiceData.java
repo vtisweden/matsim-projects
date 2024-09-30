@@ -67,8 +67,8 @@ public class LogisticChoiceData {
 					.getAsDouble();
 //			final double inflatedPayload_ton = Math.max(this.minPayload_ton, realizedPayload_ton * this
 //					.computeFreightInflationFactor(episode.getCommodity(), episode.getMode(), realizedPayload_ton));
-			final double inflatedPayload_ton = realizedPayload_ton
-					+ this.computeFreightOffset_ton(episode.getCommodity(), episode.getMode(), realizedPayload_ton);
+			final double inflatedPayload_ton = realizedPayload_ton;
+//					+ this.computeFreightOffset_ton(episode.getCommodity(), episode.getMode(), realizedPayload_ton);
 
 			final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
 					.addAmount_ton(inflatedPayload_ton);
@@ -152,17 +152,17 @@ public class LogisticChoiceData {
 //				Math.min(this.maxFreightFactor, freightFactor * Math.sqrt(avgDemand_ton / demand_ton)));
 //	}
 
-	public double computeFreightOffset_ton(Commodity commodity, TransportMode mode, double demand_ton) {
-		if (!this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().containsKey(commodity)) {
-			return 1.0;
-		}
-		final Double freightFactor = this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().get(commodity)
-				.get(mode);
-		if (freightFactor == null) {
-			return 1.0;
-		}
-		final double a_ton = Math.max(freightFactor, 1e-8); // TODO Not really a factor
-		return a_ton * Math.exp(-demand_ton / a_ton);
-	}
+//	public double computeFreightOffset_ton(Commodity commodity, TransportMode mode, double demand_ton) {
+//		if (!this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().containsKey(commodity)) {
+//			return 1.0;
+//		}
+//		final Double freightFactor = this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().get(commodity)
+//				.get(mode);
+//		if (freightFactor == null) {
+//			return 1.0;
+//		}
+//		final double a_ton = Math.max(freightFactor, 1e-8); // TODO Not really a factor
+//		return a_ton * Math.exp(-demand_ton / a_ton);
+//	}
 
 }

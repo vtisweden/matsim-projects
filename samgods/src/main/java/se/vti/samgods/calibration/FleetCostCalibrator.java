@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.VehicleType;
@@ -49,16 +48,16 @@ public class FleetCostCalibrator {
 	private final Map<VehicleType, Group> vehicleType2group;
 	private final Map<Group, TransportMode> group2mode;
 
-	final Map<Group, Double> group2normalizedTarget;
-	final Map<TransportMode, Double> mode2normalizedTarget;
+//	final Map<Group, Double> group2normalizedTarget;
+//	final Map<TransportMode, Double> mode2normalizedTarget;
 
 	private final ASCTuner<TransportMode> modeAscTuner;
 	private final Map<TransportMode, ASCTuner<Group>> mode2groupAscTuner;
 
 	// -------------------- MEMBERS --------------------
 
-	Map<Group, Double> group2lastNormalizedRealized = null;
-	Map<TransportMode, Double> mode2lastNormalizedRealized = null;
+//	Map<Group, Double> group2lastNormalizedRealized = null;
+//	Map<TransportMode, Double> mode2lastNormalizedRealized = null;
 
 	final Map<Group, Double> group2targetDomesticGTonKm;
 	Map<Group, Double> group2lastRealizedDomesticGTonKm = null;
@@ -68,7 +67,7 @@ public class FleetCostCalibrator {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FleetCostCalibrator(Vehicles vehicles) {
+	public FleetCostCalibrator(Vehicles vehicles, double eta) {
 
 		this.vehicles = vehicles;
 
@@ -166,22 +165,25 @@ public class FleetCostCalibrator {
 					(m, t) -> t == null ? groupTarget : t + groupTarget);
 		}
 
-		this.group2normalizedTarget = this.createNormalized(this.group2targetDomesticGTonKm);
-		this.mode2normalizedTarget = this.createNormalized(this.mode2targetDomesticGTonKm);
+//		this.group2normalizedTarget = this.createNormalized(this.group2targetDomesticGTonKm);
+//		this.mode2normalizedTarget = this.createNormalized(this.mode2targetDomesticGTonKm);
 
-		this.modeAscTuner = new ASCTuner<>();
-		for (Map.Entry<TransportMode, Double> e : this.mode2normalizedTarget.entrySet()) {
+		this.modeAscTuner = new ASCTuner<>(this.mode2targetDomesticGTonKm.values().stream().mapToDouble(t -> t).sum(),
+				eta);
+		for (Map.Entry<TransportMode, Double> e : this.mode2targetDomesticGTonKm.entrySet()) {
 			final TransportMode mode = e.getKey();
-			final Double target = e.getValue();
-			this.modeAscTuner.setTargetProba(mode, target);
+			final Double target_GTonKm = e.getValue();
+			this.modeAscTuner.setTarget(mode, target_GTonKm);
 		}
 
 		this.mode2groupAscTuner = new LinkedHashMap<>();
-		for (Map.Entry<Group, Double> e : this.group2normalizedTarget.entrySet()) {
+		for (Map.Entry<Group, Double> e : this.group2targetDomesticGTonKm.entrySet()) {
 			final Group group = e.getKey();
+			final Double target_GTonKm = e.getValue();
 			final TransportMode mode = this.group2mode.get(group);
-			final double target = e.getValue() / this.mode2normalizedTarget.get(mode);
-			this.mode2groupAscTuner.computeIfAbsent(mode, m -> new ASCTuner<>()).setTargetProba(group, target);
+			this.mode2groupAscTuner
+					.computeIfAbsent(mode, m -> new ASCTuner<>(this.mode2targetDomesticGTonKm.get(m), eta))
+					.setTarget(group, target_GTonKm);
 		}
 	}
 
@@ -193,12 +195,12 @@ public class FleetCostCalibrator {
 		return type;
 	}
 
-	private <K> Map<K, Double> createNormalized(Map<K, Double> group2value) {
-		final double minValue = 1e-8;
-		final double sum = group2value.values().stream().mapToDouble(v -> Math.max(minValue, v)).sum();
-		return group2value.entrySet().stream()
-				.collect(Collectors.toMap(e -> e.getKey(), e -> Math.max(minValue, e.getValue()) / sum));
-	}
+//	private <K> Map<K, Double> createNormalized(Map<K, Double> group2value) {
+//		final double minValue = 1e-8;
+//		final double sum = group2value.values().stream().mapToDouble(v -> Math.max(minValue, v)).sum();
+//		return group2value.entrySet().stream()
+//				.collect(Collectors.toMap(e -> e.getKey(), e -> Math.max(minValue, e.getValue()) / sum));
+//	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
@@ -216,15 +218,14 @@ public class FleetCostCalibrator {
 			this.mode2lastRealizedDomesticGTonKm.compute(mode,
 					(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
 		}
-		this.group2lastNormalizedRealized = this.createNormalized(this.group2lastRealizedDomesticGTonKm);
-		this.mode2lastNormalizedRealized = this.createNormalized(this.mode2lastRealizedDomesticGTonKm);
+//		this.group2lastNormalizedRealized = this.createNormalized(this.group2lastRealizedDomesticGTonKm);
+//		this.mode2lastNormalizedRealized = this.createNormalized(this.mode2lastRealizedDomesticGTonKm);
 
-		this.modeAscTuner.update(m -> this.mode2lastNormalizedRealized.getOrDefault(m, 0.0));
-		for (Map.Entry<Group, Double> e : this.group2lastNormalizedRealized.entrySet()) {
+		this.modeAscTuner.update(m -> this.mode2lastRealizedDomesticGTonKm.getOrDefault(m, 0.0));
+		for (Map.Entry<Group, Double> e : this.group2lastRealizedDomesticGTonKm.entrySet()) {
 			final Group group = e.getKey();
 			final TransportMode mode = this.group2mode.get(group);
-			this.mode2groupAscTuner.get(mode).update(g -> this.group2lastNormalizedRealized.get(g)
-					/ Math.max(1e-8, this.mode2lastNormalizedRealized.get(this.group2mode.get(g))));
+			this.mode2groupAscTuner.get(mode).update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
 		}
 	}
 
@@ -235,7 +236,7 @@ public class FleetCostCalibrator {
 		}
 
 		// TODO!!!
-//		 group2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
+		 group2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
 
 		return group2asc;
 	}
@@ -266,7 +267,7 @@ public class FleetCostCalibrator {
 		}
 
 		// TODO!!!
-//		vehicleType2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
+		vehicleType2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
 
 		return vehicleType2asc;
 	}

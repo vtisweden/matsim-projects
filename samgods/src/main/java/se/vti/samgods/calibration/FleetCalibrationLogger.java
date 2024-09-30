@@ -30,34 +30,34 @@ import se.vti.utils.misc.iterationlogging.LogWriter;
  */
 public class FleetCalibrationLogger {
 
-	private final LogWriter<FleetCostCalibrator> groupErrorWriter;
+//	private final LogWriter<FleetCostCalibrator> groupErrorWriter;
 	private final LogWriter<FleetCostCalibrator> groupASCWriter;
 	private final LogWriter<FleetCostCalibrator> gTonKmWriter;
 
 	public FleetCalibrationLogger() {
 
-		this.groupErrorWriter = new LogWriter<>("vehicleGroupErrors.txt", false);
+//		this.groupErrorWriter = new LogWriter<>("vehicleGroupErrors.txt", false);
 		this.groupASCWriter = new LogWriter<>("vehicleGroupASCs.txt", false);
 		this.gTonKmWriter = new LogWriter<>("GTonKm.txt", false);
 
 		for (FleetCostCalibrator.Group group : FleetCostCalibrator.Group.values()) {
-			this.groupErrorWriter.addEntry(new LogEntry<>() {
-				@Override
-				public String label() {
-					return group.toString();
-				}
-
-				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
-					if (fleetCalibrator.group2lastNormalizedRealized == null) {
-						return "";
-					} else {
-						return LogEntry
-								.toString(100.0 * (fleetCalibrator.group2lastNormalizedRealized.getOrDefault(group, 0.0)
-										- fleetCalibrator.group2normalizedTarget.get(group)));
-					}
-				}
-			});
+//			this.groupErrorWriter.addEntry(new LogEntry<>() {
+//				@Override
+//				public String label() {
+//					return group.toString();
+//				}
+//
+//				@Override
+//				public String value(FleetCostCalibrator fleetCalibrator) {
+//					if (fleetCalibrator.group2lastNormalizedRealized == null) {
+//						return "";
+//					} else {
+//						return LogEntry
+//								.toString(100.0 * (fleetCalibrator.group2lastNormalizedRealized.getOrDefault(group, 0.0)
+//										- fleetCalibrator.group2normalizedTarget.get(group)));
+//					}
+//				}
+//			});
 			this.groupASCWriter.addEntry(new LogEntry<>() {
 				@Override
 				public String label() {
@@ -110,24 +110,24 @@ public class FleetCalibrationLogger {
 					return LogEntry.toString(fleetCalibrator.createConcurrentMode2asc().getOrDefault(mode, 0.0));
 				}
 			});
-			this.groupErrorWriter.addEntry(new LogEntry<>() {
-				@Override
-				public String label() {
-					return mode.toString();
-				}
-
-				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
-					if (fleetCalibrator.mode2lastNormalizedRealized == null
-							|| !fleetCalibrator.mode2normalizedTarget.containsKey(mode)) {
-						return "";
-					} else {
-						return LogEntry
-								.toString(100.0 * (fleetCalibrator.mode2lastNormalizedRealized.getOrDefault(mode, 0.0)
-										- fleetCalibrator.mode2normalizedTarget.get(mode)));
-					}
-				}
-			});
+//			this.groupErrorWriter.addEntry(new LogEntry<>() {
+//				@Override
+//				public String label() {
+//					return mode.toString();
+//				}
+//
+//				@Override
+//				public String value(FleetCostCalibrator fleetCalibrator) {
+//					if (fleetCalibrator.mode2lastNormalizedRealized == null
+//							|| !fleetCalibrator.mode2normalizedTarget.containsKey(mode)) {
+//						return "";
+//					} else {
+//						return LogEntry
+//								.toString(100.0 * (fleetCalibrator.mode2lastNormalizedRealized.getOrDefault(mode, 0.0)
+//										- fleetCalibrator.mode2normalizedTarget.get(mode)));
+//					}
+//				}
+//			});
 
 			this.gTonKmWriter.addEntry(new LogEntry<>() {
 				@Override
@@ -187,7 +187,7 @@ public class FleetCalibrationLogger {
 	}
 
 	public void log(FleetCostCalibrator fleetCalibr) {
-		this.groupErrorWriter.writeToFile(fleetCalibr);
+//		this.groupErrorWriter.writeToFile(fleetCalibr);
 		this.groupASCWriter.writeToFile(fleetCalibr);
 		this.gTonKmWriter.writeToFile(fleetCalibr);
 	}
