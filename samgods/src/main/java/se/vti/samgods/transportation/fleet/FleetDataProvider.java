@@ -61,10 +61,10 @@ public class FleetDataProvider {
 
 	// ---------- THREAD-SAFE LOCALLY CACHED COMPATIBLE VEHICLE TYPES ----------
 
-	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, List<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleTypes = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, List<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2compatibleVehicleTypes = new ConcurrentHashMap<>();
 
-	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, List<VehicleType>>>>> getCommodity2transportMode2isContainer2isFerry2representativeVehicleTypes() {
-		return this.commodity2transportMode2isContainer2isFerry2representativeVehicleTypes;
+	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, List<VehicleType>>>>> getCommodity2transportMode2isContainer2isFerry2compatibleVehicleTypes() {
+		return this.commodity2transportMode2isContainer2isFerry2compatibleVehicleTypes;
 	}
 
 	// ---------- THREAD-SAFE LOCALLY CACHED REPRESENTATIVE VEHICLE TYPES ----------

@@ -19,7 +19,9 @@
  */
 package se.vti.samgods.logistics.choice;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
@@ -48,13 +50,11 @@ public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShip
 		if (this.mode2meanASC == null) {
 			return 0.0;
 		} else {
-			double result = 0.0;
+			final Set<TransportMode> modes = new LinkedHashSet<>();
 			for (TransportEpisode episode : transportChain.getEpisodes()) {
-				result += this.mode2meanASC.getOrDefault(episode.getMode(), 0.0);
+				modes.add(episode.getMode());
 			}
-			return result;
-//			return transportChain.getEpisodes().stream().flatMap(e -> e.getConsolidationUnits().stream())
-//					.mapToDouble(cu -> this.consolidationUnit2fleetAssignment.get(cu).asc).sum();
+			return modes.stream().mapToDouble(m -> this.mode2meanASC.getOrDefault(m, 0.0)).sum();
 		}
 	}
 

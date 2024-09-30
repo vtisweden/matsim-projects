@@ -251,7 +251,7 @@ public class Router {
 				withFerryContainsFerry = null;
 			}
 			if ((withFerryRoutes != null) && !withFerryContainsFerry) {
-				job.setRoutes(withFerryRoutes);
+				job.setRoutes(withFerryRoutes, networkData);
 			} else {
 
 				List<List<Link>> withoutFerryRoutes;
@@ -275,15 +275,15 @@ public class Router {
 
 				if (withFerryRoutes != null) {
 					if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
-						job.setRoutes(withoutFerryRoutes);
+						job.setRoutes(withoutFerryRoutes, networkData);
 					} else {
-						job.setRoutes(withFerryRoutes);
+						job.setRoutes(withFerryRoutes, networkData);
 					}
 				} else {
 					if (withoutFerryRoutes != null) {
-						job.setRoutes(withoutFerryRoutes);
+						job.setRoutes(withoutFerryRoutes, networkData);
 					} else {
-						job.setRoutes(null);
+						job.setRoutes(null, networkData);
 					}
 				}
 			}

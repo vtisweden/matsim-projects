@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.network;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,7 +28,6 @@ import java.util.stream.Collectors;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
@@ -45,17 +45,20 @@ public class NetworkDataProvider {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public NetworkDataProvider(final Network multimodalNetwork) {
+	public NetworkDataProvider(final Network multimodalNetwork, Map<Id<Link>, Double> linkId2domesticWeight) {
 		this.multimodalNetwork = multimodalNetwork;
 		this.allLinks.addAll(multimodalNetwork.getLinks().values());
-		this.domesticNodeIds.addAll(multimodalNetwork.getNodes().values().stream()
-				.filter(l -> ((SamgodsNodeAttributes) l.getAttributes()
-						.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME)).isDomestic)
-				.map(l -> l.getId()).collect(Collectors.toSet()));
-		this.domesticLinkIds.addAll(multimodalNetwork.getLinks().values().stream()
-				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
-						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).isDomestic)
-				.map(l -> l.getId()).collect(Collectors.toSet()));
+		
+//		this.domesticNodeIds.addAll(multimodalNetwork.getNodes().values().stream()
+//				.filter(l -> ((SamgodsNodeAttributes) l.getAttributes()
+//						.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME)).isDomestic)
+//				.map(l -> l.getId()).collect(Collectors.toSet()));
+//		this.domesticLinkIds.addAll(multimodalNetwork.getLinks().values().stream()
+//				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
+//						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).isDomestic)
+//				.map(l -> l.getId()).collect(Collectors.toSet()));
+		this.linkId2domesticWeight.putAll(linkId2domesticWeight);
+		
 		this.ferryLinkIds.addAll(multimodalNetwork.getLinks().values().stream()
 				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
 						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
@@ -86,15 +89,21 @@ public class NetworkDataProvider {
 
 	// --------------- THREAD-SAFE, LOCALLY CACHED DOMESTIC LINK IDS ---------------
 
-	private final Set<Id<Node>> domesticNodeIds = ConcurrentHashMap.newKeySet();
-	private final Set<Id<Link>> domesticLinkIds = ConcurrentHashMap.newKeySet();
+//	private final Set<Id<Node>> domesticNodeIds = ConcurrentHashMap.newKeySet();
+//	private final Set<Id<Link>> domesticLinkIds = ConcurrentHashMap.newKeySet();
+//
+//	Set<Id<Node>> getDomesticNodeIds() {
+//		return this.domesticNodeIds;
+//	}
+//
+//	Set<Id<Link>> getDomesticLinkIds() {
+//		return this.domesticLinkIds;
+//	}
 
-	Set<Id<Node>> getDomesticNodeIds() {
-		return this.domesticNodeIds;
-	}
+	private final ConcurrentMap<Id<Link>, Double> linkId2domesticWeight = new ConcurrentHashMap<>();
 
-	Set<Id<Link>> getDomesticLinkIds() {
-		return this.domesticLinkIds;
+	public ConcurrentMap<Id<Link>, Double> getLinkId2domesticWeight() {
+		return this.linkId2domesticWeight;
 	}
 
 	// --------------- THREAD-SAFE, LOCALLY CACHED FERRY LINK IDS ---------------

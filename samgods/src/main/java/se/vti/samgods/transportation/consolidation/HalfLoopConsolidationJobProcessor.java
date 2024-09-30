@@ -20,6 +20,7 @@
 package se.vti.samgods.transportation.consolidation;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +29,8 @@ import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.InsufficientDataException;
+import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choice.LogisticChoiceData;
 import se.vti.samgods.network.NetworkData;
@@ -56,16 +59,20 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
 
+	private final Map<Commodity, Double> commodity2scale;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidationJobProcessor(NetworkData networkData, FleetData fleetData,
 			LogisticChoiceData logisticChoiceData, BlockingQueue<ConsolidationJob> jobQueue,
-			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
+			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
+			final Map<Commodity, Double> commodity2scale) {
 		this.networkData = networkData;
 		this.fleetData = fleetData;
 		this.logisticChoiceData = logisticChoiceData;
 		this.jobQueue = jobQueue;
 		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
+		this.commodity2scale = commodity2scale;
 	}
 
 	// -------------------- IMPLEMENTATION OF Runnable --------------------
@@ -109,10 +116,10 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		public final double expectedSnapshotVehicleCnt;
 		public final double payload_ton;
 		public final double unitCost_1_tonKm;
-		
+
 		public final double asc;
 		public final double domesticLoopLength_km;
-		
+
 		public FleetAssignment(double realDemand_ton, double backgroundDemand_ton, VehicleType vehicleType,
 				double vehicleCapacity_ton, DetailedTransportCost cost, double serviceIntervalActiveProba,
 				ConsolidationJob job, double asc) {
@@ -126,7 +133,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 			this.asc = asc;
 			this.domesticLoopLength_km = 2.0 * job.consolidationUnit.domesticLength_km;
-			
+
 			final double serviceInterval_h = Units.H_PER_D * job.serviceInterval_days;
 			final double serviceDemandPerActiveServiceInterval_ton = (1.0 / serviceIntervalActiveProba)
 					* (job.serviceInterval_days / 365.0) * (realDemand_ton + backgroundDemand_ton);
@@ -157,7 +164,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			assert (serviceDemandPerActiveServiceInterval_ton <= 1e-8 + supplyPerActiveServiceInterval_ton);
 
 			this.expectedSnapshotVehicleCnt = serviceIntervalActiveProba * n;
-						
+
 		}
 
 		@Override
@@ -232,18 +239,23 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 					job.consolidationUnit);
 		}
 
+		if (job.consolidationUnit.isContainer && SamgodsConstants.TransportMode.Rail.equals(job.consolidationUnit.samgodsMode))   {
+			
+		}
+		
 		// Identify optimal fleet assigment.
+		final double scale = this.commodity2scale.get(job.consolidationUnit.commodity);
 		FleetAssignment bestAssignment = null;
-		Double bestCost = null;
+		Double bestUtility = null;
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
 			final FleetAssignment candidateAssignment = this.dimensionFleetAssignment(realDemand_ton,
 					backgroundDemand_ton, vehicleType, job, serviceIntervalActiveProba);
-			final double candidateCost = candidateAssignment.unitCost_1_tonKm * 0.5 * candidateAssignment.loopLength_km
-					* realDemand_ton + this.fleetData.getVehicleType2asc().get(vehicleType);
-			this.fleetData.getVehicleType2asc().get(vehicleType);
-			if ((bestAssignment == null) || (candidateCost < bestCost)) {
+			final double candidateUtility = (-1.0) * scale * candidateAssignment.unitCost_1_tonKm * 0.5
+					* candidateAssignment.loopLength_km * realDemand_ton
+					+ this.fleetData.getVehicleType2asc().get(vehicleType);
+			if ((bestAssignment == null) || (candidateUtility > bestUtility)) {
 				bestAssignment = candidateAssignment;
-				bestCost = candidateCost;
+				bestUtility = candidateUtility;
 			}
 		}
 		return bestAssignment;

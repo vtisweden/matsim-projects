@@ -68,20 +68,20 @@ public class FleetStatistics {
 
 	public FleetStatistics(
 			Map<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
-		this(consolidationUnit2fleetAssignment, 1e-3);
+		this(consolidationUnit2fleetAssignment, 1e-6);
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public Map<VehicleType, Double> getVehicleType2tonKm() {
+	public Map<VehicleType, Double> getVehicleType2domesticTonKm() {
 		return this.vehicleType2tonKm;
 	}
 
-	public Map<VehicleType, Double> getVehicleType2costSum() {
+	public Map<VehicleType, Double> getVehicleType2domesticCostSum() {
 		return this.vehicleType2costSum;
 	}
 
-	public Map<VehicleType, Double> computeVehicleType2unitCost_1_tonKm() {
+	public Map<VehicleType, Double> computeVehicleType2domesticUnitCost_1_tonKm() {
 		return this.vehicleType2tonKm.entrySet().stream().filter(e -> e.getValue() >= this.workThreshold_tonKm).collect(
 				Collectors.toMap(e -> e.getKey(), e -> this.vehicleType2costSum.get(e.getKey()) / e.getValue()));
 	}

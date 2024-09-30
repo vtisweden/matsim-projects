@@ -63,20 +63,20 @@ public class TransportationStatistics {
 			double payloadThreshold_ton, double weightThreshold) {
 
 		for (ChainAndShipmentSize choice : allChoices) {
-			if (networkData.getDomesticNodeIds()
-					.contains(choice.transportChain.getEpisodes().getFirst().getLoadingNodeId())
-					&& networkData.getDomesticNodeIds()
-							.contains(choice.transportChain.getEpisodes().getLast().getUnloadingNodeId())) {
-				final Map<TransportMode, Double> mode2transportWork_tonKm = this.commodity2mode2domesticTransportWork_tonKm
-						.computeIfAbsent(choice.transportChain.getCommodity(), c -> new LinkedHashMap<>());
-				final double amount_ton = choice.annualShipment.getTotalAmount_ton();
-				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
-					final double work_tonKm = amount_ton * episode.getConsolidationUnits().stream()
-							.mapToDouble(cu -> logisticChoiceData.getRealizedCost(cu).length_km).sum();
-					mode2transportWork_tonKm.compute(episode.getMode(),
-							(m, w) -> w == null ? work_tonKm : w + work_tonKm);
-				}
-			}
+//			if (networkData.getDomesticNodeIds()
+//					.contains(choice.transportChain.getEpisodes().getFirst().getLoadingNodeId())
+//					&& networkData.getDomesticNodeIds()
+//							.contains(choice.transportChain.getEpisodes().getLast().getUnloadingNodeId())) {
+//				final Map<TransportMode, Double> mode2transportWork_tonKm = this.commodity2mode2domesticTransportWork_tonKm
+//						.computeIfAbsent(choice.transportChain.getCommodity(), c -> new LinkedHashMap<>());
+//				final double amount_ton = choice.annualShipment.getTotalAmount_ton();
+//				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
+//					final double work_tonKm = amount_ton * episode.getConsolidationUnits().stream()
+//							.mapToDouble(cu -> logisticChoiceData.getRealizedCost(cu).length_km).sum();
+//					mode2transportWork_tonKm.compute(episode.getMode(),
+//							(m, w) -> w == null ? work_tonKm : w + work_tonKm);
+//				}
+//			}
 		}
 
 		this.weightThreshold = weightThreshold;

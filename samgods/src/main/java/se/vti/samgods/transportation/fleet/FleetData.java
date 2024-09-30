@@ -73,7 +73,7 @@ public class FleetData {
 
 	public List<VehicleType> getCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
 			boolean containsFerry) {
-		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleTypes()
+		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2compatibleVehicleTypes()
 				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
 				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,

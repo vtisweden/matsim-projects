@@ -67,7 +67,7 @@ public class TestSamgods {
 		allWithoutAir.toArray();
 
 //		final SamgodsRunner runner = new SamgodsRunner().setServiceInterval_days(7)
-//				.setConsideredCommodities(Commodity.AGRICULTURE).setSamplingRate(0.001).setMaxThreads(Integer.MAX_VALUE)
+//				.setConsideredCommodities(Commodity.AGRICULTURE).setSamplingRate(0.001).setMaxThreads(1)
 //				.setScale(Commodity.AGRICULTURE, 0.0004).setScale(Commodity.COAL, 0.0000001)
 //				.setScale(Commodity.METAL, 0.00000005).setScale(Commodity.FOOD, 0.00006)
 //				.setScale(Commodity.TEXTILES, 0.0003).setScale(Commodity.WOOD, 0.000003)
@@ -80,7 +80,7 @@ public class TestSamgods {
 		final SamgodsRunner runner = new SamgodsRunner().setServiceInterval_days(7)
 				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(1.0)
 				.setMaxThreads(Integer.MAX_VALUE).setScale(Commodity.AGRICULTURE, 0.0004)
-				.setScale(Commodity.COAL, 0.0000001).setScale(Commodity.METAL, 0.00000005)
+				.setScale(Commodity.COAL, 0.0000001).setScale(Commodity.METAL, 0.0 /* estimated has wrong sign */)
 				.setScale(Commodity.FOOD, 0.00006).setScale(Commodity.TEXTILES, 0.0003)
 				.setScale(Commodity.WOOD, 0.000003).setScale(Commodity.COKE, 0.00002)
 				.setScale(Commodity.CHEMICALS, 0.00002).setScale(Commodity.OTHERMINERAL, 0.00003)
@@ -102,9 +102,10 @@ public class TestSamgods {
 				.loadVehicles("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
 						SamgodsConstants.TransportMode.Sea);
 
-		runner.setFleetCostCalibrator(new FleetCostCalibrator(runner.vehicles,  0.1, 0.1));
+		runner.setFleetCostCalibrator(new FleetCostCalibrator(runner.vehicles));
 
 		runner.loadNetwork("./input_2024/node_parameters.csv", "./input_2024/link_parameters.csv");
+		runner.loadLinkRegionalWeights("./input_2024/link_regions.csv");
 		runner.loadTransportDemand("./input_2024/ChainChoi", "XTD.out");
 		runner.createOrLoadConsolidationUnits("consolidationUnits.json");
 

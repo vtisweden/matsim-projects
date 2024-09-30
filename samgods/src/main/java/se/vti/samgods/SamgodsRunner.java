@@ -38,6 +38,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
@@ -74,10 +76,12 @@ import se.vti.samgods.logistics.choice.MonetaryChainAndShipmentSizeUtilityFuncti
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.logistics.costs.NonTransportCostModel_v1_22;
 import se.vti.samgods.models.TestSamgods;
+import se.vti.samgods.network.LinkRegionsReader;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
+import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.ConsolidationJob;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
@@ -136,6 +140,8 @@ public class SamgodsRunner {
 
 	public Network network = null;
 	private NetworkDataProvider networkDataProvider = null;
+
+	private Map<Id<Link>, Double> linkId2domesticWeights = null;
 
 	private TransportDemand transportDemand = null;
 
@@ -217,6 +223,36 @@ public class SamgodsRunner {
 		return this;
 	}
 
+	public SamgodsRunner loadLinkRegionalWeights(String linkRegionFile) throws IOException {
+		this.linkId2domesticWeights = new LinkRegionsReader(this.network).read(linkRegionFile);
+
+		final Map<TransportMode, Double> mode2inFileSum = new LinkedHashMap<>();
+		final Map<TransportMode, Double> mode2inferred = new LinkedHashMap<>();
+
+		for (Link link : this.network.getLinks().values()) {
+			SamgodsLinkAttributes attrs = (SamgodsLinkAttributes) link.getAttributes()
+					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
+			mode2inFileSum.compute(attrs.samgodsMode,
+					(m, s) -> s == null ? this.linkId2domesticWeights.getOrDefault(link.getId(), 0.0)
+							: s + this.linkId2domesticWeights.getOrDefault(link.getId(), 0.0));
+			mode2inferred.compute(attrs.samgodsMode,
+					(m, s) -> s == null ? (attrs.isDomestic ? 1 : 0) : s + (attrs.isDomestic ? 1 : 0));
+		}
+
+		StringBuffer txt = new StringBuffer("mode\tinFile\tinferred\n");
+		for (TransportMode mode : TransportMode.values()) {
+			txt.append(mode);
+			txt.append("\t");
+			txt.append(mode2inFileSum.getOrDefault(mode, 0.0));
+			txt.append("\t");
+			txt.append(mode2inferred.getOrDefault(mode, 0.0));
+			txt.append("\n");
+		}
+		log.info(txt);
+
+		return this;
+	}
+
 	public SamgodsRunner loadTransportDemand(String demandFilePrefix, String demandFileSuffix) {
 		this.transportDemand = new TransportDemand();
 		for (Commodity commodity : this.consideredCommodities) {
@@ -235,7 +271,7 @@ public class SamgodsRunner {
 
 	public NetworkDataProvider getOrCreateNetworkDataProvider() {
 		if (this.networkDataProvider == null) {
-			this.networkDataProvider = new NetworkDataProvider(this.network);
+			this.networkDataProvider = new NetworkDataProvider(this.network, this.linkId2domesticWeights);
 		}
 		return this.networkDataProvider;
 	}
@@ -348,7 +384,7 @@ public class SamgodsRunner {
 			Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			while (parser.nextToken() != null) {
 				ConsolidationUnit unit = reader.readValue(parser);
-				unit.computeNetworkCharacteristics(this.network);
+				unit.computeNetworkCharacteristics(this.network, this.getOrCreateNetworkDataProvider().createNetworkData());
 				consolidationUnitPattern2representativeUnit.put(unit.createRoutingEquivalentTemplate(), unit);
 			}
 			parser.close();
@@ -400,7 +436,7 @@ public class SamgodsRunner {
 	public void run() {
 
 		final FleetCalibrationLogger fleetCalibrationLogger = new FleetCalibrationLogger();
-		final TransportationStatisticsLogger statisticsLogger = new TransportationStatisticsLogger();
+//		final TransportationStatisticsLogger statisticsLogger = new TransportationStatisticsLogger();
 		final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedMoveCost = new ConcurrentHashMap<>();
 		final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedDomesticMoveCost = new ConcurrentHashMap<>();
 
@@ -435,7 +471,7 @@ public class SamgodsRunner {
 								realizedInVehicleCost.compute(vehicleAttributes,
 										initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
 										networkData.getLinkId2unitCost(vehicleType), networkData.getFerryLinkIds(),
-										networkData.getDomesticLinkIds()));
+										networkData.getLinkId2domesticWeight()));
 					} catch (InsufficientDataException e) {
 						log.warn("could not initialize unit cost for consolidation unit " + consolidationUnit);
 					}
@@ -445,7 +481,7 @@ public class SamgodsRunner {
 			}
 		}
 
-		ConcurrentMap<TransportMode, Double> mode2meanASC = null;
+//		ConcurrentMap<TransportMode, Double> mode2meanASC = null;
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
 			log.info("STARTING ITERATION " + iteration);
@@ -475,7 +511,9 @@ public class SamgodsRunner {
 					for (int i = 0; i < threadCnt; i++) {
 						NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
-								new LinkedHashMap<>(this.commodity2scale), mode2meanASC);
+								new LinkedHashMap<>(this.commodity2scale),
+								(iteration == 0) || (this.fleetCalibrator == null) ? null
+										: this.fleetCalibrator.createConcurrentMode2asc());
 						ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(
 								logisticChoiceDataProvider.createLogisticChoiceData(), nonTransportCostModel,
 								utilityFunction, jobQueue, allChoices);
@@ -557,7 +595,8 @@ public class SamgodsRunner {
 						FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
 						LogisticChoiceData choiceData = logisticChoiceDataProvider.createLogisticChoiceData();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								networkData, fleetData, choiceData, jobQueue, consolidationUnit2assignment);
+								networkData, fleetData, choiceData, jobQueue, consolidationUnit2assignment,
+								new LinkedHashMap<>(this.commodity2scale));
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
 						choiceThread.start();
@@ -598,32 +637,32 @@ public class SamgodsRunner {
 				}
 			}
 
-			mode2meanASC = new ConcurrentHashMap<>();
-			final Map<TransportMode, Integer> mode2cnt = new LinkedHashMap<>();
-			for (HalfLoopConsolidationJobProcessor.FleetAssignment assignment : consolidationUnit2assignment.values()) {
-				final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) assignment.vehicleType.getAttributes()
-						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-				final TransportMode mode = attrs.samgodsMode;
-				mode2meanASC.compute(mode, (m, asc) -> asc == null ? assignment.asc : asc + assignment.asc);
-				mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
-			}
-			mode2meanASC.entrySet().stream().forEach(e -> e.setValue(e.getValue() / mode2cnt.get(e.getKey())));
-			log.info("Mode ASCs: " + mode2meanASC);
+//			mode2meanASC = new ConcurrentHashMap<>();
+//			final Map<TransportMode, Integer> mode2cnt = new LinkedHashMap<>();
+//			for (HalfLoopConsolidationJobProcessor.FleetAssignment assignment : consolidationUnit2assignment.values()) {
+//				final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) assignment.vehicleType.getAttributes()
+//						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+//				final TransportMode mode = attrs.samgodsMode;
+//				mode2meanASC.compute(mode, (m, asc) -> asc == null ? assignment.asc : asc + assignment.asc);
+//				mode2cnt.compute(mode, (m, c) -> c == null ? 1 : c + 1);
+//			}
+//			mode2meanASC.entrySet().stream().forEach(e -> e.setValue(e.getValue() / mode2cnt.get(e.getKey())));
+//			log.info("Mode ASCs: " + mode2meanASC);
 
 			/*
 			 * POSTPROCESSING, SUMMARY STATISTICS.
 			 */
-			log.info("Collecting transport statistics");
-			final TransportationStatistics transpStats = new TransportationStatistics(allChoices,
-					consolidationUnit2assignment, this.getOrCreateNetworkDataProvider().createNetworkData(),
-					this.getOrCreateFleetDataProvider().createFleetData(),
-					logisticChoiceDataProvider.createLogisticChoiceData());
-			statisticsLogger.log(transpStats);
-			if (this.backgroundTransportWork != null) {
-				this.backgroundTransportWork.updateInternally(transpStats);
-			}
-			TestSamgods.logEfficiency(transpStats.computeMode2efficiency(), iteration, "efficiency.txt");
-			TestSamgods.logCost(transpStats.computeMode2unitCost_1_tonKm(), iteration, "unitcost.txt");
+//			log.info("Collecting transport statistics");
+//			final TransportationStatistics transpStats = new TransportationStatistics(allChoices,
+//					consolidationUnit2assignment, this.getOrCreateNetworkDataProvider().createNetworkData(),
+//					this.getOrCreateFleetDataProvider().createFleetData(),
+//					logisticChoiceDataProvider.createLogisticChoiceData());
+//			statisticsLogger.log(transpStats);
+//			if (this.backgroundTransportWork != null) {
+//				this.backgroundTransportWork.updateInternally(transpStats);
+//			}
+//			TestSamgods.logEfficiency(transpStats.computeMode2efficiency(), iteration, "efficiency.txt");
+//			TestSamgods.logCost(transpStats.computeMode2unitCost_1_tonKm(), iteration, "unitcost.txt");
 
 			log.info("Collecting fleet statistics");
 			final FleetStatistics fleetStats = new FleetStatistics(consolidationUnit2assignment);
@@ -653,7 +692,7 @@ public class SamgodsRunner {
 							consolidationUnit2realizedDomesticMoveCost.put(consolidationUnit,
 									realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton,
 											consolidationUnit, networkData.getLinkId2unitCost(assignment.vehicleType),
-											networkData.getFerryLinkIds(), networkData.getDomesticLinkIds()));
+											networkData.getFerryLinkIds(), networkData.getLinkId2domesticWeight()));
 						} catch (InsufficientDataException e1) {
 							throw new RuntimeException(e1);
 						}
