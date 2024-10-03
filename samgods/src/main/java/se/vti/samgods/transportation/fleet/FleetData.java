@@ -120,9 +120,14 @@ public class FleetData {
 						cf -> this.createRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
 	}
 
-	// TODO NEW, FOR CALIBRATION
+	// -------------------- THREAD SAFE ACCESS TO ASCs --------------------
 
 	public Map<VehicleType, Double> getVehicleType2asc() {
 		return this.dataProvider.getVehicleType2asc();
 	}
+	
+	public Map<TransportMode, Double> getMode2asc() {
+		return this.dataProvider.getMode2asc();
+	}
+
 }

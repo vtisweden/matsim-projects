@@ -68,7 +68,7 @@ public class TestSamgods {
 
 		final double scaleFactor = 1.0;
 //		final SamgodsRunner runner = new SamgodsRunner().setServiceInterval_days(7)
-//				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(0.001)
+//				.setConsideredCommodities(Commodity.AGRICULTURE).setSamplingRate(0.001)
 //				.setMaxThreads(1).setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
 //				.setScale(Commodity.COAL, scaleFactor * 0.0000001).setScale(Commodity.METAL, scaleFactor * 0.0000001
 //				/* METAL: using coal parameter because, estimated has wrong sign */)
@@ -82,7 +82,7 @@ public class TestSamgods {
 //				.setScale(Commodity.FURNITURE, scaleFactor * 0.0002)
 //				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
 //				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
-//				.setMaxIterations(1).setEnforceReroute(true);
+//				.setMaxIterations(2).setEnforceReroute(true);
 		final SamgodsRunner runner = new SamgodsRunner().setServiceInterval_days(7)
 				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(1.0)
 				.setMaxThreads(Integer.MAX_VALUE)

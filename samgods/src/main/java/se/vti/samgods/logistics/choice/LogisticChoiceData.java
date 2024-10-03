@@ -24,8 +24,6 @@ import java.util.List;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -62,37 +60,31 @@ public class LogisticChoiceData {
 					episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
 			final SamgodsVehicleAttributes vehicleAttributes = this.fleetData.getVehicleType2attributes()
 					.get(vehicleType);
-			final double realizedPayload_ton = episode.getConsolidationUnits().stream()
-					.mapToDouble(cu -> this.logisticChoiceDataProvider.getRealizedCost(cu).amount_ton).average()
-					.getAsDouble();
-//			final double inflatedPayload_ton = Math.max(this.minPayload_ton, realizedPayload_ton * this
-//					.computeFreightInflationFactor(episode.getCommodity(), episode.getMode(), realizedPayload_ton));
-			final double inflatedPayload_ton = realizedPayload_ton;
-//					+ this.computeFreightOffset_ton(episode.getCommodity(), episode.getMode(), realizedPayload_ton);
+			final double payload_ton = episode.getConsolidationUnits().stream()
+					.mapToDouble(cu -> this.logisticChoiceDataProvider.getInVehicleTransportCost(cu).amount_ton)
+					.average().getAsDouble();
 
 			final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
-					.addAmount_ton(inflatedPayload_ton);
+					.addAmount_ton(payload_ton);
 			builder.addLoadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
-			builder.addLoadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * inflatedPayload_ton);
+			builder.addLoadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
 
 			final int transferCnt = episode.getConsolidationUnits().size() - 1;
 			if (transferCnt > 0) {
 				builder.addTransferDuration_h(
 						transferCnt * vehicleAttributes.transferTime_h.get(episode.getCommodity()));
-				builder.addTransferCost(transferCnt * vehicleAttributes.transferCost_1_ton.get(episode.getCommodity())
-						* inflatedPayload_ton);
+				builder.addTransferCost(
+						transferCnt * vehicleAttributes.transferCost_1_ton.get(episode.getCommodity()) * payload_ton);
 			}
 
 			builder.addUnloadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
-			builder.addUnloadingCost(
-					vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * inflatedPayload_ton);
+			builder.addUnloadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
 
 			final List<ConsolidationUnit> consolidationUnits = episode.getConsolidationUnits();
 			for (ConsolidationUnit consolidationUnit : consolidationUnits) {
-				builder.add(this.logisticChoiceDataProvider.getRealizedCost(consolidationUnit), true);
+				builder.add(this.logisticChoiceDataProvider.getInVehicleTransportCost(consolidationUnit), true);
 			}
 			return builder.build().createUnitCost_1_ton();
-//					.createWithScaledMonetaryCost(this.fleetData.getVehicleType2costFactor().get(vehicleType));
 
 		} catch (InsufficientDataException e) {
 			InsufficientDataException.log(e,
@@ -106,14 +98,6 @@ public class LogisticChoiceData {
 				e -> this.createEpisodeUnitCost_1_ton(e));
 	}
 
-//	public DetailedTransportCost getRealizedCost(ConsolidationUnit consolidationUnit) {
-//		return this.logisticChoiceDataProvider.getRealizedCost(consolidationUnit);
-//	}
-//
-//	public DetailedTransportCost getRealizedDomesticCost(ConsolidationUnit consolidationUnit) {
-//		return this.logisticChoiceDataProvider.getRealizedDomesticCost(consolidationUnit);
-//	}
-	
 	// -------------------- TRANSPORT CHAIN UNIT COSTS --------------------
 
 	public DetailedTransportCost computeChain2transportUnitCost_1_ton(TransportChain transportChain) {
@@ -130,39 +114,4 @@ public class LogisticChoiceData {
 			return null;
 		}
 	}
-
-	// --------------- FREIGHT INFLATION FACTORS, FOR CALIBRATION ---------------
-
-//	private double minFreightFactor = 1e-2;
-//	private double maxFreightFactor = 1e+2;
-//
-//	public double computeFreightInflationFactor(Commodity commodity, TransportMode mode, double demand_ton) {
-//		if (!this.logisticChoiceDataProvider.getCommodity2mode2avgTotalDemand_ton().containsKey(commodity)
-//				|| !this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().containsKey(commodity)) {
-//			return 1.0;
-//		}
-//		final Double avgDemand_ton = this.logisticChoiceDataProvider.getCommodity2mode2avgTotalDemand_ton()
-//				.get(commodity).get(mode);
-//		final Double freightFactor = this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().get(commodity)
-//				.get(mode);
-//		if (avgDemand_ton == null || freightFactor == null) {
-//			return 1.0;
-//		}
-//		return Math.max(this.minFreightFactor,
-//				Math.min(this.maxFreightFactor, freightFactor * Math.sqrt(avgDemand_ton / demand_ton)));
-//	}
-
-//	public double computeFreightOffset_ton(Commodity commodity, TransportMode mode, double demand_ton) {
-//		if (!this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().containsKey(commodity)) {
-//			return 1.0;
-//		}
-//		final Double freightFactor = this.logisticChoiceDataProvider.getCommodity2mode2freightFactor().get(commodity)
-//				.get(mode);
-//		if (freightFactor == null) {
-//			return 1.0;
-//		}
-//		final double a_ton = Math.max(freightFactor, 1e-8); // TODO Not really a factor
-//		return a_ton * Math.exp(-demand_ton / a_ton);
-//	}
-
 }

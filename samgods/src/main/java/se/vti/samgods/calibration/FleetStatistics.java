@@ -55,21 +55,16 @@ public class FleetStatistics {
 		this.workThreshold_tonKm = workThreshold_tonKm;
 		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
 				.entrySet()) {
-//			final ConsolidationUnit consolidationUnit = entry.getKey();
-//			if (networkData.getDomesticNodeIds().contains(consolidationUnit.nodeIds.get(0))
-//					&& networkData.getDomesticNodeIds()
-//							.contains(consolidationUnit.nodeIds.get(consolidationUnit.nodeIds.size() - 1))) {
-				final FleetAssignment fleetAssignment = entry.getValue();
-				final double transportWork_tonKm = fleetAssignment.realDemand_ton * 0.5
-						* fleetAssignment.domesticLoopLength_km;
-				if (transportWork_tonKm >= this.workThreshold_tonKm) {
-					this.vehicleType2domesticTonKm.compute(fleetAssignment.vehicleType,
-							(vt, tk) -> tk == null ? transportWork_tonKm : tk + transportWork_tonKm);
-					final double cost = fleetAssignment.unitCost_1_tonKm * transportWork_tonKm;
-					this.vehicleType2domesticCostSum.compute(fleetAssignment.vehicleType,
-							(vt, cs) -> cs == null ? cost : cs + cost);
-				}
-//			}
+			final FleetAssignment fleetAssignment = entry.getValue();
+			final double transportWork_tonKm = fleetAssignment.realDemand_ton * 0.5
+					* fleetAssignment.domesticLoopLength_km;
+			if (transportWork_tonKm >= this.workThreshold_tonKm) {
+				this.vehicleType2domesticTonKm.compute(fleetAssignment.vehicleType,
+						(vt, tk) -> tk == null ? transportWork_tonKm : tk + transportWork_tonKm);
+				final double cost = fleetAssignment.unitCost_1_tonKm * transportWork_tonKm;
+				this.vehicleType2domesticCostSum.compute(fleetAssignment.vehicleType,
+						(vt, cs) -> cs == null ? cost : cs + cost);
+			}
 		}
 	}
 

@@ -29,6 +29,7 @@ import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.calibration.FleetCostCalibrator;
 
 /**
  * 
@@ -77,14 +78,20 @@ public class FleetDataProvider {
 
 	// ---------- THREAD-SAFE LOCALLY CACHED VEHICLE COST FACTORS ----------
 
-	private ConcurrentMap<VehicleType, Double> vehicleType2asc;
+	private ConcurrentMap<VehicleType, Double> vehicleType2asc = new ConcurrentHashMap<>();
+	private ConcurrentMap<TransportMode, Double> mode2asc = new ConcurrentHashMap<>();
 
-	public void setVehicleType2asc(ConcurrentMap<VehicleType, Double> vehicleType2asc) {
-		this.vehicleType2asc = vehicleType2asc;
+	public void updateAscs(FleetCostCalibrator calibrator) {
+		this.vehicleType2asc = calibrator.createConcurrentVehicleType2asc();
+		this.mode2asc = calibrator.createConcurrentMode2asc();
 	}
 
 	ConcurrentMap<VehicleType, Double> getVehicleType2asc() {
 		return this.vehicleType2asc;
+	}
+
+	ConcurrentMap<TransportMode, Double> getMode2asc() {
+		return this.mode2asc;
 	}
 
 }

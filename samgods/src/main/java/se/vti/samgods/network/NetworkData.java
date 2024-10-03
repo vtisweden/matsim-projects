@@ -63,15 +63,11 @@ public class NetworkData {
 	public Set<Id<Node>> getDomesticNodeIds() {
 		return this.dataProvider.getDomesticNodeIds();
 	}
-//
-//	public Set<Id<Link>> getDomesticLinkIds() {
-//		return this.dataProvider.getDomesticLinkIds();
-//	}
 
-	public Map<Id<Link>, Double> getLinkId2domesticWeight() {
-		return this.dataProvider.getLinkId2domesticWeight();
+	public Set<Id<Link>> getDomesticLinkIds() {
+		return this.dataProvider.getDomesticLinkIds();
 	}
-	
+
 	public Set<Id<Link>> getFerryLinkIds() {
 		return this.dataProvider.getFerryLinkIds();
 	}

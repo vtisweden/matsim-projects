@@ -19,12 +19,8 @@
  */
 package se.vti.samgods.calibration;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 /**
@@ -34,35 +30,38 @@ import java.util.function.Function;
  */
 public class ASCTuner<A> {
 
+	// -------------------- CONSTANTS --------------------
+
 	private final double relativeSlack = 0.1;
 
 	private final double minProba = 1e-3;
 
 	private final Double targetTotal;
 
-	private final double eta;
+	private final double updateStepSize;
 
-	private final ConcurrentMap<A, Double> alternative2asc = new ConcurrentHashMap<>();
+	// -------------------- MEMBERS --------------------
+
+	private final Map<A, Double> alternative2asc = new LinkedHashMap<>();
 
 	private final Map<A, Double> alternative2target = new LinkedHashMap<>();
 
-//	private A referenceAlternative = null;
+	// -------------------- CONSTRUCTION --------------------
 
-	public Set<A> getAlternativesView() {
-		return Collections.unmodifiableSet(this.alternative2target.keySet());
-	}
-	
-	public ASCTuner(Double targetTotal, double eta) {
+	public ASCTuner(Double targetTotal, double updateStepSize) {
 		this.targetTotal = targetTotal;
-		this.eta = eta;
+		this.updateStepSize = updateStepSize;
 	}
+
+	// -------------------- IMPLEMENTATION --------------------
 
 	public void setTarget(A alternative, Double target) {
-//		if (this.referenceAlternative == null) {
-//			this.referenceAlternative = alternative;
-//		}
 		this.alternative2target.put(alternative, target);
 		this.alternative2asc.put(alternative, 0.0);
+	}
+
+	public Map<A, Double> getAlternative2asc() {
+		return this.alternative2asc;
 	}
 
 	public void update(Function<A, Double> alternative2realized) {
@@ -89,20 +88,7 @@ public class ASCTuner<A> {
 			final double lnT = Math.log(Math.max(this.minProba, e.getValue()));
 			final double lnP = Math.log(Math.max(this.minProba, alternative2realized.apply(alternative)));
 			final double deltaASC = (lnT - lnP) - (lnT0 - lnP0);
-			this.alternative2asc.compute(alternative, (alt, asc) -> asc + this.eta * deltaASC);
+			this.alternative2asc.compute(alternative, (alt, asc) -> asc + this.updateStepSize * deltaASC);
 		}
 	}
-
-	public ConcurrentMap<A, Double> getAlternative2asc() {
-		return this.alternative2asc;
-	}
-
-//	public Double getTarget(A alternative) {
-//		if (this.alternative2lnTargetProba.containsKey(alternative)) {
-//			return Math.exp(this.alternative2lnTargetProba.get(alternative));
-//		} else {
-//			return null;
-//		}
-//	}
-
 }

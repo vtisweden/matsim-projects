@@ -37,6 +37,23 @@ import se.vti.samgods.utils.MiscUtils;
  */
 public class TransportDemandStatsTable {
 
+	
+	// TODO
+//	log.info("commodity\tinland[gTon]\ttotal[gTon]");
+//	final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
+//	for (Map.Entry<Commodity, Map<OD, List<AnnualShipment>>> od2xEntry : this.transportDemand
+//			.getCommodity2od2annualShipments().entrySet()) {
+//		final Commodity commodity = od2xEntry.getKey();
+//		final Map<OD, List<AnnualShipment>> od2shipments = od2xEntry.getValue();
+//		final double inlandAmount_gTon = 1e-9 * od2shipments.entrySet().stream()
+//				.filter(e -> networkData.getDomesticNodeIds().contains(e.getKey().origin)
+//						&& networkData.getDomesticNodeIds().contains(e.getKey().destination))
+//				.flatMap(e -> e.getValue().stream()).mapToDouble(as -> as.getTotalAmount_ton()).sum();
+//		final double totalAmount_gTon = 1e-9 * od2shipments.entrySet().stream().flatMap(e -> e.getValue().stream())
+//				.mapToDouble(as -> as.getTotalAmount_ton()).sum();
+//		log.info(commodity + "\t" + inlandAmount_gTon + "\t" + totalAmount_gTon);
+//	}
+
 	private List<SamgodsConstants.TransportMode> getTransportModeSequence(TransportChain chain) {
 		return chain.getEpisodes().stream().map(e -> e.getMode()).toList();
 	}

@@ -19,16 +19,22 @@
  */
 package se.vti.samgods.logistics.choice;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import org.matsim.vehicles.VehicleType;
+
+import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
+import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
+import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
+import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -39,46 +45,75 @@ public class LogisticChoiceDataProvider {
 
 	// -------------------- CONSTANTS --------------------
 
+	private final double initialTransportEfficiency = 0.7;
+
+	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
+
+	private final NetworkData internalNetworkData;
+
 	private final FleetDataProvider fleetDataProvider;
+	private final FleetData internalFleetData;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public LogisticChoiceDataProvider(
-			ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost,
-			ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedDomesticCost,
-			FleetDataProvider fleetDataProvider) {
-		this.consolidationUnit2realizedCost = consolidationUnit2realizedCost;
-		this.consolidationUnit2realizedDomesticCost = consolidationUnit2realizedDomesticCost;
+	public LogisticChoiceDataProvider(NetworkDataProvider networkDataProvider, FleetDataProvider fleetDataProvider) {
+		this.internalNetworkData = networkDataProvider.createNetworkData();
 		this.fleetDataProvider = fleetDataProvider;
+		this.internalFleetData = fleetDataProvider.createFleetData();
 	}
 
 	public LogisticChoiceData createLogisticChoiceData() {
 		return new LogisticChoiceData(this, this.fleetDataProvider.createFleetData());
 	}
 
-	// -------------------- INTERNALS --------------------
+	// -------------------- THREAD SAFE CONSOLIDATION COSTS --------------------
 
-	private ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> concurrentDeepCopy(
-			Map<Commodity, Map<TransportMode, Double>> commodity2mode2double) {
-		ConcurrentHashMap<Commodity, ConcurrentMap<TransportMode, Double>> copy = new ConcurrentHashMap<>(
-				commodity2mode2double.size());
-		for (Map.Entry<Commodity, Map<TransportMode, Double>> c2m2dEntry : commodity2mode2double.entrySet()) {
-			copy.put(c2m2dEntry.getKey(), new ConcurrentHashMap<>(c2m2dEntry.getValue()));
+	// TODO Might not need to be concurrent.
+	private ConcurrentMap<ConsolidationUnit, FleetAssignment> consolidationUnit2fleetAssignment = null;
+
+	public void update(ConcurrentMap<ConsolidationUnit, FleetAssignment> consolidationUnit2fleetAssignment) {
+		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
+	}
+
+	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2inVehicleTransportCost = new ConcurrentHashMap<>();
+
+	private synchronized DetailedTransportCost createInVehicleTransportCost(ConsolidationUnit consolidationUnit) {
+		if (this.consolidationUnit2fleetAssignment != null) {
+			final FleetAssignment assignment = this.consolidationUnit2fleetAssignment.get(consolidationUnit);
+			if (assignment != null && assignment.payload_ton >= 1e-3) { // WHY?
+				try {
+					final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData
+							.getVehicleType2attributes().get(assignment.vehicleType);
+					return this.realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton,
+							consolidationUnit, this.internalNetworkData.getLinkId2unitCost(assignment.vehicleType),
+							this.internalNetworkData.getFerryLinkIds());
+				} catch (InsufficientDataException e1) {
+					throw new RuntimeException(e1);
+				}
+			}
 		}
-		return copy;
+		final VehicleType vehicleType = this.internalFleetData.getRepresentativeVehicleType(consolidationUnit.commodity,
+				consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
+		if (vehicleType != null) {
+			final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData.getVehicleType2attributes()
+					.get(vehicleType);
+			try {
+				return this.realizedInVehicleCost.compute(vehicleAttributes,
+						this.initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
+						this.internalNetworkData.getLinkId2unitCost(vehicleType),
+						this.internalNetworkData.getFerryLinkIds());
+			} catch (InsufficientDataException e) {
+				throw new RuntimeException(
+						"could not initialize unit cost for consolidation unit " + consolidationUnit);
+			}
+		} else {
+			throw new RuntimeException("could not initialize unit cost for consolidation unit " + consolidationUnit);
+		}
 	}
 
-	// ---------- THREAD SAFE CONSOLIDATION UNIT UNIT COST ACCESS ----------
-
-	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedCost;
-	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedDomesticCost;
-
-	DetailedTransportCost getRealizedCost(ConsolidationUnit consolidationUnit) {
-		return this.consolidationUnit2realizedCost.get(consolidationUnit);
-	}
-
-	DetailedTransportCost getRealizedDomesticCost(ConsolidationUnit consolidationUnit) {
-		return this.consolidationUnit2realizedDomesticCost.get(consolidationUnit);
+	public DetailedTransportCost getInVehicleTransportCost(ConsolidationUnit consolidationUnit) {
+		return this.consolidationUnit2inVehicleTransportCost.computeIfAbsent(consolidationUnit,
+				cu -> this.createInVehicleTransportCost(cu));
 	}
 
 	// --------------- THREAD SAFE EPISODE UNIT COST ACCESS ---------------
@@ -88,29 +123,4 @@ public class LogisticChoiceDataProvider {
 	ConcurrentMap<TransportEpisode, DetailedTransportCost> getEpisode2unitCost_1_ton() {
 		return this.episode2unitCost_1_ton;
 	}
-
-	// --------------- THREAD SAFE BACKGROUND TRANSPORT CALIBRATION ---------------
-
-//	private ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2freightFactor = new ConcurrentHashMap<>();
-//
-//	public void setCommodity2mode2freightFactor(
-//			Map<Commodity, Map<TransportMode, Double>> commodity2mode2freightFactor) {
-//		this.commodity2mode2freightFactor = this.concurrentDeepCopy(commodity2mode2freightFactor);
-//	}
-//
-//	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2freightFactor() {
-//		return this.commodity2mode2freightFactor;
-//	}
-
-//	public ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> commodity2mode2avgTotalDemand_ton = new ConcurrentHashMap<>();
-//
-//	public void setCommodity2mode2avgTotalDemand_ton(
-//			Map<Commodity, Map<TransportMode, Double>> commodity2mode2avgTotalDemand_ton) {
-//		this.commodity2mode2avgTotalDemand_ton = this.concurrentDeepCopy(commodity2mode2avgTotalDemand_ton);
-//	}
-//
-//	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, Double>> getCommodity2mode2avgTotalDemand_ton() {
-//		return this.commodity2mode2avgTotalDemand_ton;
-//	}
-
 }

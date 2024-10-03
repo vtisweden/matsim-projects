@@ -40,166 +40,140 @@ public class FleetCostCalibrator {
 
 	// -------------------- CONSTANTS --------------------
 
-	public static enum Group {
+	public static enum VehicleGroup {
 		MGV16_X, MGV24_X, HGV40_X, HGV60_X, RAIL_COMBI, RAIL_SYSTEM, RAIL_WAGON, SEA
-//		, CV5, CV16, CV27, CV100, OV1, OV2, OV3, OV5, OV10, OV20, OV40, OV80, OV100, OV250, RO3, RO6, RO10, OTHER
 	};
 
 	private final Vehicles vehicles;
-	private final Map<VehicleType, Group> vehicleType2group;
-	private final Map<Group, TransportMode> group2mode;
-
-//	final Map<Group, Double> group2normalizedTarget;
-//	final Map<TransportMode, Double> mode2normalizedTarget;
+	private final Map<VehicleType, VehicleGroup> vehicleType2group;
+	private final Map<VehicleGroup, TransportMode> group2mode;
 
 	private final ASCTuner<TransportMode> modeAscTuner;
-	private final Map<TransportMode, ASCTuner<Group>> mode2groupAscTuner;
+	private final Map<TransportMode, ASCTuner<VehicleGroup>> mode2groupAscTuner;
 
 	// -------------------- MEMBERS --------------------
 
-//	Map<Group, Double> group2lastNormalizedRealized = null;
-//	Map<TransportMode, Double> mode2lastNormalizedRealized = null;
-
-	final Map<Group, Double> group2targetDomesticGTonKm;
-	Map<Group, Double> group2lastRealizedDomesticGTonKm = null;
+	final Map<VehicleGroup, Double> group2targetDomesticGTonKm;
+	Map<VehicleGroup, Double> group2lastRealizedDomesticGTonKm = null;
 
 	final Map<TransportMode, Double> mode2targetDomesticGTonKm;
 	Map<TransportMode, Double> mode2lastRealizedDomesticGTonKm = null;
 
+	private FleetStatistics lastFleetStatistics = null;
+	
 	// -------------------- CONSTRUCTION --------------------
 
 	public FleetCostCalibrator(Vehicles vehicles, double eta) {
 
 		this.vehicles = vehicles;
-
 		this.vehicleType2group = new LinkedHashMap<>(vehicles.getVehicleTypes().size());
 		this.group2mode = new LinkedHashMap<>();
-
 		this.group2targetDomesticGTonKm = new LinkedHashMap<>();
 
 		/*
 		 * ROAD
 		 */
 
-		this.vehicleType2group.put(this.name2type("MGV16"), Group.MGV16_X);
-		this.vehicleType2group.put(this.name2type("MGV16_CONTAINER"), Group.MGV16_X);
-		this.vehicleType2group.put(this.name2type("MGV24"), Group.MGV24_X);
-		this.vehicleType2group.put(this.name2type("MGV24_CONTAINER"), Group.MGV24_X);
-		this.vehicleType2group.put(this.name2type("HGV40"), Group.HGV40_X);
-		this.vehicleType2group.put(this.name2type("HGV40_CONTAINER"), Group.HGV40_X);
-		this.vehicleType2group.put(this.name2type("HGV60"), Group.HGV60_X);
-		this.vehicleType2group.put(this.name2type("HGV60_CONTAINER"), Group.HGV60_X);
-//		for (VehicleType type : vehicles.getVehicleTypes().values()) {
-//			SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) type.getAttributes()
-//					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-//			if (TransportMode.Road.equals(attrs.samgodsMode) && !this.vehicleType2group.keySet().contains(type)) {
-//				this.vehicleType2group.put(type, Group.ROAD_OTHER);
-//			}
-//		}
-//		assert(this.vehicleType2group.values().stream().filter(g -> g.equals(Group.ROAD_OTHER)).count() > 0);
+		this.vehicleType2group.put(this.name2type("MGV16"), VehicleGroup.MGV16_X);
+		this.vehicleType2group.put(this.name2type("MGV16_CONTAINER"), VehicleGroup.MGV16_X);
+		this.vehicleType2group.put(this.name2type("MGV24"), VehicleGroup.MGV24_X);
+		this.vehicleType2group.put(this.name2type("MGV24_CONTAINER"), VehicleGroup.MGV24_X);
+		this.vehicleType2group.put(this.name2type("HGV40"), VehicleGroup.HGV40_X);
+		this.vehicleType2group.put(this.name2type("HGV40_CONTAINER"), VehicleGroup.HGV40_X);
+		this.vehicleType2group.put(this.name2type("HGV60"), VehicleGroup.HGV60_X);
+		this.vehicleType2group.put(this.name2type("HGV60_CONTAINER"), VehicleGroup.HGV60_X);
 
-		this.group2mode.put(Group.MGV16_X, TransportMode.Road);
-		this.group2mode.put(Group.MGV24_X, TransportMode.Road);
-		this.group2mode.put(Group.HGV40_X, TransportMode.Road);
-		this.group2mode.put(Group.HGV60_X, TransportMode.Road);
+		this.group2mode.put(VehicleGroup.MGV16_X, TransportMode.Road);
+		this.group2mode.put(VehicleGroup.MGV24_X, TransportMode.Road);
+		this.group2mode.put(VehicleGroup.HGV40_X, TransportMode.Road);
+		this.group2mode.put(VehicleGroup.HGV60_X, TransportMode.Road);
 
-		this.group2targetDomesticGTonKm.put(Group.MGV16_X, 0.3);
-		this.group2targetDomesticGTonKm.put(Group.MGV24_X, 0.4);
-		this.group2targetDomesticGTonKm.put(Group.HGV40_X, 12.2);
-		this.group2targetDomesticGTonKm.put(Group.HGV60_X, 39.1);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.MGV16_X, 0.3);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.MGV24_X, 0.4);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.HGV40_X, 12.2);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.HGV60_X, 39.1);
 
 		/*
 		 * RAIL
 		 */
 
-		this.vehicleType2group.put(this.name2type("KOMBI"), Group.RAIL_COMBI);
-		this.vehicleType2group.put(this.name2type("KOMBI_CONTAINER"), Group.RAIL_COMBI);
-		this.vehicleType2group.put(this.name2type("SYS22"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("SYS22_CONTAINER"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("SYS25"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("SYS25_CONTAINER"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("SYS30"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("SYS30_CONTAINER"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("WG550"), Group.RAIL_WAGON);
-		this.vehicleType2group.put(this.name2type("WG550_CONTAINER"), Group.RAIL_WAGON);
-		this.vehicleType2group.put(this.name2type("WG750"), Group.RAIL_WAGON);
-		this.vehicleType2group.put(this.name2type("WG750_CONTAINER"), Group.RAIL_WAGON);
-//		for (VehicleType type : vehicles.getVehicleTypes().values()) {
-//			SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) type.getAttributes()
-//					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-//			if (TransportMode.Rail.equals(attrs.samgodsMode) && !this.vehicleType2group.keySet().contains(type)) {
-//				this.vehicleType2group.put(type, Group.RAIL_OTHER);
-//			}
-//		}
-//		assert(this.vehicleType2group.values().stream().filter(g -> g.equals(Group.RAIL_OTHER)).count() == 0);
+		this.vehicleType2group.put(this.name2type("KOMBI"), VehicleGroup.RAIL_COMBI);
+		this.vehicleType2group.put(this.name2type("KOMBI_CONTAINER"), VehicleGroup.RAIL_COMBI);
+		this.vehicleType2group.put(this.name2type("SYS22"), VehicleGroup.RAIL_SYSTEM);
+		this.vehicleType2group.put(this.name2type("SYS22_CONTAINER"), VehicleGroup.RAIL_SYSTEM);
+		this.vehicleType2group.put(this.name2type("SYS25"), VehicleGroup.RAIL_SYSTEM);
+		this.vehicleType2group.put(this.name2type("SYS25_CONTAINER"), VehicleGroup.RAIL_SYSTEM);
+		this.vehicleType2group.put(this.name2type("SYS30"), VehicleGroup.RAIL_SYSTEM);
+		this.vehicleType2group.put(this.name2type("SYS30_CONTAINER"), VehicleGroup.RAIL_SYSTEM);
+		this.vehicleType2group.put(this.name2type("WG550"), VehicleGroup.RAIL_WAGON);
+		this.vehicleType2group.put(this.name2type("WG550_CONTAINER"), VehicleGroup.RAIL_WAGON);
+		this.vehicleType2group.put(this.name2type("WG750"), VehicleGroup.RAIL_WAGON);
+		this.vehicleType2group.put(this.name2type("WG750_CONTAINER"), VehicleGroup.RAIL_WAGON);
 
-		this.group2mode.put(Group.RAIL_COMBI, TransportMode.Rail);
-		this.group2mode.put(Group.RAIL_SYSTEM, TransportMode.Rail);
-		this.group2mode.put(Group.RAIL_WAGON, TransportMode.Rail);
+		this.group2mode.put(VehicleGroup.RAIL_COMBI, TransportMode.Rail);
+		this.group2mode.put(VehicleGroup.RAIL_SYSTEM, TransportMode.Rail);
+		this.group2mode.put(VehicleGroup.RAIL_WAGON, TransportMode.Rail);
 
-		this.group2targetDomesticGTonKm.put(Group.RAIL_COMBI, 5.96);
-		this.group2targetDomesticGTonKm.put(Group.RAIL_SYSTEM, 8.61);
-		this.group2targetDomesticGTonKm.put(Group.RAIL_WAGON, 8.25);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.RAIL_COMBI, 5.96);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.RAIL_SYSTEM, 8.61);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.RAIL_WAGON, 8.25);
 
 		/*
 		 * SEA
 		 */
 
-		this.vehicleType2group.put(this.name2type("CV5"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("CV5_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("CV16"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("CV16_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("CV27"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("CV27_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("CV100"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("CV100_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV1"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV1_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV2"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV2_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV3"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV3_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV5"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV5_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV10"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV10_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV20"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV20_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV40"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV40_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV80"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV80_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV100"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV100_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV250"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("OV250_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("RO3"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("RO3_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("RO6"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("RO6_CONTAINER"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("RO10"), Group.SEA);
-		this.vehicleType2group.put(this.name2type("RO10_CONTAINER"), Group.SEA);
+		this.vehicleType2group.put(this.name2type("CV5"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("CV5_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("CV16"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("CV16_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("CV27"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("CV27_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("CV100"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("CV100_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV1"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV1_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV2"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV2_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV3"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV3_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV5"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV5_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV10"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV10_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV20"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV20_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV40"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV40_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV80"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV80_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV100"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV100_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV250"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("OV250_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("RO3"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("RO3_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("RO6"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("RO6_CONTAINER"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("RO10"), VehicleGroup.SEA);
+		this.vehicleType2group.put(this.name2type("RO10_CONTAINER"), VehicleGroup.SEA);
 
-		this.group2mode.put(Group.SEA, TransportMode.Sea);
+		this.group2mode.put(VehicleGroup.SEA, TransportMode.Sea);
 
-		this.group2targetDomesticGTonKm.put(Group.SEA, 29.61);
+		this.group2targetDomesticGTonKm.put(VehicleGroup.SEA, 29.61);
 
-		//
+		/*
+		 * TARGETS AND ASC TUNERS.
+		 */
 
 		this.mode2targetDomesticGTonKm = new LinkedHashMap<>();
-		for (Map.Entry<Group, Double> e : this.group2targetDomesticGTonKm.entrySet()) {
-			final Group group = e.getKey();
+		for (Map.Entry<VehicleGroup, Double> e : this.group2targetDomesticGTonKm.entrySet()) {
+			final VehicleGroup group = e.getKey();
 			final double groupTarget = e.getValue();
 			this.mode2targetDomesticGTonKm.compute(this.group2mode.get(group),
 					(m, t) -> t == null ? groupTarget : t + groupTarget);
 		}
 
-//		this.group2normalizedTarget = this.createNormalized(this.group2targetDomesticGTonKm);
-//		this.mode2normalizedTarget = this.createNormalized(this.mode2targetDomesticGTonKm);
-
-		this.modeAscTuner = new ASCTuner<>(
-//				this.mode2targetDomesticGTonKm.values().stream().mapToDouble(t -> t).sum(),
-				null, eta);
+		this.modeAscTuner = new ASCTuner<>(null, eta);
 		for (Map.Entry<TransportMode, Double> e : this.mode2targetDomesticGTonKm.entrySet()) {
 			final TransportMode mode = e.getKey();
 			final Double target_GTonKm = e.getValue();
@@ -207,13 +181,12 @@ public class FleetCostCalibrator {
 		}
 
 		this.mode2groupAscTuner = new LinkedHashMap<>();
-		for (Map.Entry<Group, Double> e : this.group2targetDomesticGTonKm.entrySet()) {
-			final Group group = e.getKey();
+		for (Map.Entry<VehicleGroup, Double> e : this.group2targetDomesticGTonKm.entrySet()) {
+			final VehicleGroup group = e.getKey();
 			final Double target_GTonKm = e.getValue();
 			final TransportMode mode = this.group2mode.get(group);
-			this.mode2groupAscTuner.computeIfAbsent(mode, m -> new ASCTuner<>(
-//							this.mode2targetDomesticGTonKm.get(m), 
-					null, eta)).setTarget(group, target_GTonKm);
+			this.mode2groupAscTuner.computeIfAbsent(mode, m -> new ASCTuner<>(null, eta)).setTarget(group,
+					target_GTonKm);
 		}
 	}
 
@@ -225,75 +198,44 @@ public class FleetCostCalibrator {
 		return type;
 	}
 
-//	private <K> Map<K, Double> createNormalized(Map<K, Double> group2value) {
-//		final double minValue = 1e-8;
-//		final double sum = group2value.values().stream().mapToDouble(v -> Math.max(minValue, v)).sum();
-//		return group2value.entrySet().stream()
-//				.collect(Collectors.toMap(e -> e.getKey(), e -> Math.max(minValue, e.getValue()) / sum));
-//	}
-
 	// -------------------- IMPLEMENTATION --------------------
 
-	// TODO for test-logging
-	FleetStatistics lastFleetStatistics;
+	FleetStatistics getLastFleetStatistics() {
+		return this.lastFleetStatistics;
+	}
 
 	public void updateInternally(FleetStatistics fleetStats) {
 		this.lastFleetStatistics = fleetStats;
 
 		this.group2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
 		this.mode2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
-//		for (Map.Entry<VehicleType, Group> entry : this.vehicleType2group.entrySet()) {
-//			final VehicleType vehicleType = entry.getKey();
-//			final Group group = entry.getValue();
-//			final TransportMode mode = this.group2mode.get(group);
-//			final double realized_GTonKm = 1e-9
-//					* fleetStats.getVehicleType2domesticTonKm().getOrDefault(vehicleType, 0.0);
-//			this.group2lastRealizedDomesticGTonKm.compute(group,
-//					(g, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
-//			this.mode2lastRealizedDomesticGTonKm.compute(mode,
-//					(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
-//		}
-
 		for (VehicleType vehicleType : this.vehicles.getVehicleTypes().values()) {
 			final double realized_GTonKm = 1e-9
 					* fleetStats.getVehicleType2domesticTonKm().getOrDefault(vehicleType, 0.0);
-
 			final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
 					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-			if (this.modeAscTuner.getAlternativesView().contains(attrs.samgodsMode)) {
+			if (this.modeAscTuner.getAlternative2asc().containsKey(attrs.samgodsMode)) {
 				this.mode2lastRealizedDomesticGTonKm.compute(attrs.samgodsMode,
 						(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
 			}
-
-			final Group group = this.vehicleType2group.get(vehicleType);
+			final VehicleGroup group = this.vehicleType2group.get(vehicleType);
 			if (group != null) {
 				this.group2lastRealizedDomesticGTonKm.compute(group,
 						(g, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
 			}
 		}
-
 		this.modeAscTuner.update(m -> this.mode2lastRealizedDomesticGTonKm.getOrDefault(m, 0.0));
-
-//		for (Map.Entry<Group, Double> e : this.group2lastRealizedDomesticGTonKm.entrySet()) {
-//			final Group group = e.getKey();
-//			final TransportMode mode = this.group2mode.get(group);
-//			this.mode2groupAscTuner.get(mode).update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
-//		}
-		for (ASCTuner<Group> groupAscTuner : this.mode2groupAscTuner.values()) {
+		for (ASCTuner<VehicleGroup> groupAscTuner : this.mode2groupAscTuner.values()) {
 			groupAscTuner.update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
 		}
 
 	}
 
-	public ConcurrentMap<Group, Double> createConcurrentGroup2asc() {
-		final ConcurrentMap<Group, Double> group2asc = new ConcurrentHashMap<>();
-		for (ASCTuner<Group> ascTuner : this.mode2groupAscTuner.values()) {
+	public ConcurrentMap<VehicleGroup, Double> createConcurrentGroup2asc() {
+		final ConcurrentMap<VehicleGroup, Double> group2asc = new ConcurrentHashMap<>();
+		for (ASCTuner<VehicleGroup> ascTuner : this.mode2groupAscTuner.values()) {
 			group2asc.putAll(ascTuner.getAlternative2asc());
 		}
-
-		// TODO!!!
-//		 group2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
-
 		return group2asc;
 	}
 
@@ -302,10 +244,6 @@ public class FleetCostCalibrator {
 		for (TransportMode mode : TransportMode.values()) {
 			mode2asc.put(mode, this.modeAscTuner.getAlternative2asc().getOrDefault(mode, 0.0));
 		}
-
-		// TODO!!!
-//		 mode2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
-
 		return mode2asc;
 	}
 
@@ -313,7 +251,7 @@ public class FleetCostCalibrator {
 		final ConcurrentMap<VehicleType, Double> vehicleType2asc = new ConcurrentHashMap<>(
 				this.vehicles.getVehicleTypes().size());
 		for (VehicleType vehicleType : this.vehicles.getVehicleTypes().values()) {
-			final Group group = this.vehicleType2group.get(vehicleType);
+			final VehicleGroup group = this.vehicleType2group.get(vehicleType);
 			if (group == null) {
 				vehicleType2asc.put(vehicleType, 0.0);
 			} else {
@@ -321,10 +259,6 @@ public class FleetCostCalibrator {
 						.getAlternative2asc().getOrDefault(group, 0.0));
 			}
 		}
-
-		// TODO!!!
-//		vehicleType2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
-
 		return vehicleType2asc;
 	}
 }

@@ -54,13 +54,13 @@ public class FleetCalibrationLogger {
 
 				@Override
 				public String value(FleetCostCalibrator fleetCalibrator) {
-					return LogEntry.toString(fleetCalibrator.lastFleetStatistics.getVehicleType2domesticTonKm().get(vehicleType));
+					return LogEntry.toString(fleetCalibrator.getLastFleetStatistics().getVehicleType2domesticTonKm().get(vehicleType));
 				}
 			});
 		}
 		
 		
-		for (FleetCostCalibrator.Group group : FleetCostCalibrator.Group.values()) {
+		for (FleetCostCalibrator.VehicleGroup group : FleetCostCalibrator.VehicleGroup.values()) {
 //			this.groupErrorWriter.addEntry(new LogEntry<>() {
 //				@Override
 //				public String label() {
