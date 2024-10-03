@@ -38,12 +38,14 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
 public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShipmentSizeUtilityFunction {
 
 	private final Map<TransportMode, Double> mode2meanASC;
+	private final Map<Commodity, Double> commodity2railASC;
 	private final Map<Commodity, Double> commodity2scale;
 
 	public MonetaryChainAndShipmentSizeUtilityFunction(Map<Commodity, Double> commodity2scale,
-			Map<TransportMode, Double> mode2meanASC) {
+			Map<TransportMode, Double> mode2meanASC, Map<Commodity, Double> commodity2railASC) {
 		this.commodity2scale = commodity2scale;
 		this.mode2meanASC = mode2meanASC;
+		this.commodity2railASC = commodity2railASC;
 	}
 
 	public double totalASC(TransportChain transportChain) {
@@ -51,10 +53,15 @@ public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShip
 			return 0.0;
 		} else {
 			final Set<TransportMode> modes = new LinkedHashSet<>();
+			final Set<Commodity> railCommodities = new LinkedHashSet<>();
 			for (TransportEpisode episode : transportChain.getEpisodes()) {
 				modes.add(episode.getMode());
+				if (TransportMode.Rail.equals(episode.getMode())) {
+					railCommodities.add(episode.getCommodity());
+				}
 			}
-			return modes.stream().mapToDouble(m -> this.mode2meanASC.getOrDefault(m, 0.0)).sum();
+			return modes.stream().mapToDouble(m -> this.mode2meanASC.getOrDefault(m, 0.0)).sum()
+					+ railCommodities.stream().mapToDouble(c -> this.commodity2railASC.getOrDefault(c, 0.0)).sum();
 		}
 	}
 

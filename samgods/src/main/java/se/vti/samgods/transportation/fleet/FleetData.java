@@ -130,4 +130,8 @@ public class FleetData {
 		return this.dataProvider.getMode2asc();
 	}
 
+	public ConcurrentMap<Commodity, Double> getRailCommodity2asc() {
+		return this.dataProvider.getRailCommodity2asc();
+	}
+
 }

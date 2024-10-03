@@ -23,11 +23,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
+import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
@@ -50,6 +52,7 @@ public class FleetCostCalibrator {
 
 	private final ASCTuner<TransportMode> modeAscTuner;
 	private final Map<TransportMode, ASCTuner<VehicleGroup>> mode2groupAscTuner;
+	private final ASCTuner<Commodity> commodityRailAscTuner;
 
 	// -------------------- MEMBERS --------------------
 
@@ -59,8 +62,11 @@ public class FleetCostCalibrator {
 	final Map<TransportMode, Double> mode2targetDomesticGTonKm;
 	Map<TransportMode, Double> mode2lastRealizedDomesticGTonKm = null;
 
+	final Map<Commodity, Double> commodity2railTargetDomesticGTonKm;
+	Map<Commodity, Double> commodity2lastRealizedRailDomesticGTonKm = null;
+
 	private FleetStatistics lastFleetStatistics = null;
-	
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public FleetCostCalibrator(Vehicles vehicles, double eta) {
@@ -188,6 +194,34 @@ public class FleetCostCalibrator {
 			this.mode2groupAscTuner.computeIfAbsent(mode, m -> new ASCTuner<>(null, eta)).setTarget(group,
 					target_GTonKm);
 		}
+
+		/*
+		 * RAIL TARGETS BY COMMODITY
+		 */
+
+		this.commodity2railTargetDomesticGTonKm = new LinkedHashMap<>();
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.AGRICULTURE, 0.356);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.COAL, 0.071);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.METAL, 5.195);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.FOOD, 2.307);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.TEXTILES, 0.001 /* null */);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.WOOD, 4.345);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.COKE, 0.345);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.CHEMICALS, 1.001);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.OTHERMINERAL, 0.297);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.BASICMETALS, 3.156);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.MACHINERY, 0.037);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.TRANSPORT, 2.028);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.FURNITURE, 0.001 /* null */);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.SECONDARYRAW, 1.118);
+		this.commodity2railTargetDomesticGTonKm.put(Commodity.TIMBER, 2.321);
+
+		this.commodityRailAscTuner = new ASCTuner<>(null, eta);
+		for (Map.Entry<Commodity, Double> e : this.commodity2railTargetDomesticGTonKm.entrySet()) {
+			final Commodity commodity = e.getKey();
+			final Double target_GTonKm = e.getValue();
+			this.commodityRailAscTuner.setTarget(commodity, target_GTonKm);
+		}
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -229,6 +263,9 @@ public class FleetCostCalibrator {
 			groupAscTuner.update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
 		}
 
+		this.commodity2lastRealizedRailDomesticGTonKm = fleetStats.getCommodity2domesticRailTonKm().entrySet().stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> 1e-9 * e.getValue()));
+		this.commodityRailAscTuner.update(c -> this.commodity2lastRealizedRailDomesticGTonKm.getOrDefault(c, 0.0));
 	}
 
 	public ConcurrentMap<VehicleGroup, Double> createConcurrentGroup2asc() {
@@ -260,5 +297,14 @@ public class FleetCostCalibrator {
 			}
 		}
 		return vehicleType2asc;
+	}
+
+	public ConcurrentMap<Commodity, Double> createConcurrentCommodityRailAsc() {
+		final ConcurrentMap<Commodity, Double> railCommodity2asc = new ConcurrentHashMap<>();
+		for (Commodity commodity : Commodity.values()) {
+			railCommodity2asc.put(commodity,
+					this.commodityRailAscTuner.getAlternative2asc().getOrDefault(commodity, 0.0));
+		}
+		return railCommodity2asc;
 	}
 }

@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
@@ -47,6 +49,8 @@ public class FleetStatistics {
 
 	private final Map<VehicleType, Double> vehicleType2domesticCostSum = new LinkedHashMap<>();
 
+	private final Map<Commodity, Double> commodity2domesticRailTonKm = new LinkedHashMap<>();
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public FleetStatistics(
@@ -55,6 +59,7 @@ public class FleetStatistics {
 		this.workThreshold_tonKm = workThreshold_tonKm;
 		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
 				.entrySet()) {
+			final ConsolidationUnit consolidationUnit = entry.getKey();
 			final FleetAssignment fleetAssignment = entry.getValue();
 			final double transportWork_tonKm = fleetAssignment.realDemand_ton * 0.5
 					* fleetAssignment.domesticLoopLength_km;
@@ -64,6 +69,10 @@ public class FleetStatistics {
 				final double cost = fleetAssignment.unitCost_1_tonKm * transportWork_tonKm;
 				this.vehicleType2domesticCostSum.compute(fleetAssignment.vehicleType,
 						(vt, cs) -> cs == null ? cost : cs + cost);
+				if (TransportMode.Rail.equals(consolidationUnit.samgodsMode)) {
+					this.commodity2domesticRailTonKm.compute(consolidationUnit.commodity,
+							(c, s) -> s == null ? transportWork_tonKm : s + transportWork_tonKm);
+				}
 			}
 		}
 	}
@@ -88,6 +97,10 @@ public class FleetStatistics {
 		return this.vehicleType2domesticTonKm.entrySet().stream().filter(e -> e.getValue() >= this.workThreshold_tonKm)
 				.collect(Collectors.toMap(e -> e.getKey(),
 						e -> this.vehicleType2domesticCostSum.get(e.getKey()) / e.getValue()));
+	}
+
+	public Map<Commodity, Double> getCommodity2domesticRailTonKm() {
+		return this.commodity2domesticRailTonKm;
 	}
 
 }

@@ -478,10 +478,11 @@ public class SamgodsRunner {
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
 					for (int i = 0; i < threadCnt; i++) {
+						final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
 						final NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						final ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
-								new LinkedHashMap<>(this.commodity2scale),
-								this.getOrCreateFleetDataProvider().createFleetData().getMode2asc());
+								new LinkedHashMap<>(this.commodity2scale), fleetData.getMode2asc(),
+								fleetData.getRailCommodity2asc());
 						final ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(
 								logisticChoiceDataProvider.createLogisticChoiceData(), nonTransportCostModel,
 								utilityFunction, jobQueue, allChoices);

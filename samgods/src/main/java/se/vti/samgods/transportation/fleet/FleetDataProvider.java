@@ -80,10 +80,12 @@ public class FleetDataProvider {
 
 	private ConcurrentMap<VehicleType, Double> vehicleType2asc = new ConcurrentHashMap<>();
 	private ConcurrentMap<TransportMode, Double> mode2asc = new ConcurrentHashMap<>();
+	private ConcurrentMap<Commodity, Double> railCommodity2asc = new ConcurrentHashMap<>();
 
 	public void updateAscs(FleetCostCalibrator calibrator) {
 		this.vehicleType2asc = calibrator.createConcurrentVehicleType2asc();
 		this.mode2asc = calibrator.createConcurrentMode2asc();
+		this.railCommodity2asc = calibrator.createConcurrentCommodityRailAsc();
 	}
 
 	ConcurrentMap<VehicleType, Double> getVehicleType2asc() {
@@ -92,6 +94,10 @@ public class FleetDataProvider {
 
 	ConcurrentMap<TransportMode, Double> getMode2asc() {
 		return this.mode2asc;
+	}
+	
+	ConcurrentMap<Commodity, Double> getRailCommodity2asc() {
+		return this.railCommodity2asc;
 	}
 
 }
