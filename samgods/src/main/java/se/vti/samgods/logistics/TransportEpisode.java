@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
@@ -63,6 +65,10 @@ public class TransportEpisode {
 
 	public void setConsolidationUnits(List<ConsolidationUnit> consolidationUnits) {
 		this.consolidationUnits = consolidationUnits;
+	}
+	
+	public List<? extends Link> allLinks(Network network) {
+		return this.consolidationUnits.stream().map(cu -> cu.allLinks(network)).flatMap(list -> list.stream()).toList();
 	}
 
 	// -------------------- IMPLEMENTATION --------------------

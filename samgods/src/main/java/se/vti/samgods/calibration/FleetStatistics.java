@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
@@ -42,48 +43,56 @@ public class FleetStatistics {
 
 	// -------------------- MEMBERS --------------------
 
-	private final Map<VehicleType, Double> vehicleType2tonKm = new LinkedHashMap<>();
+	private final Map<VehicleType, Double> vehicleType2domesticTonKm = new LinkedHashMap<>();
 
-	private final Map<VehicleType, Double> vehicleType2costSum = new LinkedHashMap<>();
+	private final Map<VehicleType, Double> vehicleType2domesticCostSum = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public FleetStatistics(
 			Map<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
-			double workThreshold_tonKm) {
+			double workThreshold_tonKm, NetworkData networkData) {
 		this.workThreshold_tonKm = workThreshold_tonKm;
 		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
 				.entrySet()) {
-			final FleetAssignment fleetAssignment = entry.getValue();
-			final double transportWork_tonKm = fleetAssignment.realDemand_ton * 0.5 * fleetAssignment.domesticLoopLength_km;
-			if (transportWork_tonKm >= this.workThreshold_tonKm) {
-				this.vehicleType2tonKm.compute(fleetAssignment.vehicleType,
-						(vt, tk) -> tk == null ? transportWork_tonKm : tk + transportWork_tonKm);
-				final double cost = fleetAssignment.unitCost_1_tonKm * transportWork_tonKm;
-				this.vehicleType2costSum.compute(fleetAssignment.vehicleType,
-						(vt, cs) -> cs == null ? cost : cs + cost);
-			}
+//			final ConsolidationUnit consolidationUnit = entry.getKey();
+//			if (networkData.getDomesticNodeIds().contains(consolidationUnit.nodeIds.get(0))
+//					&& networkData.getDomesticNodeIds()
+//							.contains(consolidationUnit.nodeIds.get(consolidationUnit.nodeIds.size() - 1))) {
+				final FleetAssignment fleetAssignment = entry.getValue();
+				final double transportWork_tonKm = fleetAssignment.realDemand_ton * 0.5
+						* fleetAssignment.domesticLoopLength_km;
+				if (transportWork_tonKm >= this.workThreshold_tonKm) {
+					this.vehicleType2domesticTonKm.compute(fleetAssignment.vehicleType,
+							(vt, tk) -> tk == null ? transportWork_tonKm : tk + transportWork_tonKm);
+					final double cost = fleetAssignment.unitCost_1_tonKm * transportWork_tonKm;
+					this.vehicleType2domesticCostSum.compute(fleetAssignment.vehicleType,
+							(vt, cs) -> cs == null ? cost : cs + cost);
+				}
+//			}
 		}
 	}
 
 	public FleetStatistics(
-			Map<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment) {
-		this(consolidationUnit2fleetAssignment, 1e-6);
+			Map<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
+			NetworkData networkData) {
+		this(consolidationUnit2fleetAssignment, 1e-6, networkData);
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
 	public Map<VehicleType, Double> getVehicleType2domesticTonKm() {
-		return this.vehicleType2tonKm;
+		return this.vehicleType2domesticTonKm;
 	}
 
 	public Map<VehicleType, Double> getVehicleType2domesticCostSum() {
-		return this.vehicleType2costSum;
+		return this.vehicleType2domesticCostSum;
 	}
 
 	public Map<VehicleType, Double> computeVehicleType2domesticUnitCost_1_tonKm() {
-		return this.vehicleType2tonKm.entrySet().stream().filter(e -> e.getValue() >= this.workThreshold_tonKm).collect(
-				Collectors.toMap(e -> e.getKey(), e -> this.vehicleType2costSum.get(e.getKey()) / e.getValue()));
+		return this.vehicleType2domesticTonKm.entrySet().stream().filter(e -> e.getValue() >= this.workThreshold_tonKm)
+				.collect(Collectors.toMap(e -> e.getKey(),
+						e -> this.vehicleType2domesticCostSum.get(e.getKey()) / e.getValue()));
 	}
 
 }

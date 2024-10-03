@@ -19,6 +19,9 @@
  */
 package se.vti.samgods.calibration;
 
+import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.Vehicles;
+
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.utils.misc.iterationlogging.LogEntry;
 import se.vti.utils.misc.iterationlogging.LogWriter;
@@ -33,13 +36,30 @@ public class FleetCalibrationLogger {
 //	private final LogWriter<FleetCostCalibrator> groupErrorWriter;
 	private final LogWriter<FleetCostCalibrator> groupASCWriter;
 	private final LogWriter<FleetCostCalibrator> gTonKmWriter;
+	private final LogWriter<FleetCostCalibrator> gTonKmWriterDetail;
 
-	public FleetCalibrationLogger() {
+	public FleetCalibrationLogger(Vehicles vehicles) {
 
 //		this.groupErrorWriter = new LogWriter<>("vehicleGroupErrors.txt", false);
 		this.groupASCWriter = new LogWriter<>("vehicleGroupASCs.txt", false);
 		this.gTonKmWriter = new LogWriter<>("GTonKm.txt", false);
 
+		this.gTonKmWriterDetail = new LogWriter<>("GTonKmDetail.txt", false);
+		for (VehicleType vehicleType : vehicles.getVehicleTypes().values()) {
+			this.gTonKmWriterDetail.addEntry(new LogEntry<>() {
+				@Override
+				public String label() {
+					return vehicleType.getId().toString();
+				}
+
+				@Override
+				public String value(FleetCostCalibrator fleetCalibrator) {
+					return LogEntry.toString(fleetCalibrator.lastFleetStatistics.getVehicleType2domesticTonKm().get(vehicleType));
+				}
+			});
+		}
+		
+		
 		for (FleetCostCalibrator.Group group : FleetCostCalibrator.Group.values()) {
 //			this.groupErrorWriter.addEntry(new LogEntry<>() {
 //				@Override
@@ -190,5 +210,6 @@ public class FleetCalibrationLogger {
 //		this.groupErrorWriter.writeToFile(fleetCalibr);
 		this.groupASCWriter.writeToFile(fleetCalibr);
 		this.gTonKmWriter.writeToFile(fleetCalibr);
+		this.gTonKmWriterDetail.writeToFile(fleetCalibr);
 	}
 }

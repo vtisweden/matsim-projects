@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.transportation.consolidation;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -38,6 +40,7 @@ import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.utils.ChoiceModelUtils;
 
 /**
  * 
@@ -238,19 +241,34 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		// Identify optimal fleet assigment.
 		final double scale = this.commodity2scale.get(job.consolidationUnit.commodity);
-		FleetAssignment bestAssignment = null;
-		Double bestUtility = null;
+		
+		final List<FleetAssignment> assignments = new ArrayList<>(compatibleVehicleTypes.size());
+		final Map<FleetAssignment, Double> assignment2utility = new LinkedHashMap<>(compatibleVehicleTypes.size());
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			final FleetAssignment candidateAssignment = this.dimensionFleetAssignment(realDemand_ton,
+			final FleetAssignment assignment = this.dimensionFleetAssignment(realDemand_ton,
 					vehicleType, job, serviceIntervalActiveProba);
-			final double candidateUtility = (-1.0) * scale * candidateAssignment.unitCost_1_tonKm * 0.5
-					* candidateAssignment.loopLength_km * realDemand_ton
+			final double utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5
+					* assignment.loopLength_km * realDemand_ton
 					+ this.fleetData.getVehicleType2asc().get(vehicleType);
-			if ((bestAssignment == null) || (candidateUtility > bestUtility)) {
-				bestAssignment = candidateAssignment;
-				bestUtility = candidateUtility;
-			}
+			assignments.add(assignment);
+			assignment2utility.put(assignment, utility);
 		}
-		return bestAssignment;
+
+		return new ChoiceModelUtils().choose(assignments, a -> assignment2utility.get(a));
+
+//		FleetAssignment bestAssignment = null;
+//		Double bestUtility = null;
+//		for (VehicleType vehicleType : compatibleVehicleTypes) {
+//			final FleetAssignment candidateAssignment = this.dimensionFleetAssignment(realDemand_ton,
+//					vehicleType, job, serviceIntervalActiveProba);
+//			final double candidateUtility = (-1.0) * scale * candidateAssignment.unitCost_1_tonKm * 0.5
+//					* candidateAssignment.loopLength_km * realDemand_ton
+//					+ this.fleetData.getVehicleType2asc().get(vehicleType);
+//			if ((bestAssignment == null) || (candidateUtility > bestUtility)) {
+//				bestAssignment = candidateAssignment;
+//				bestUtility = candidateUtility;
+//			}
+//		}
+//		return bestAssignment;
 	}
 }

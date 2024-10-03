@@ -25,9 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
+import org.jfree.util.Log;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
@@ -49,10 +51,10 @@ public class NetworkDataProvider {
 		this.multimodalNetwork = multimodalNetwork;
 		this.allLinks.addAll(multimodalNetwork.getLinks().values());
 		
-//		this.domesticNodeIds.addAll(multimodalNetwork.getNodes().values().stream()
-//				.filter(l -> ((SamgodsNodeAttributes) l.getAttributes()
-//						.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME)).isDomestic)
-//				.map(l -> l.getId()).collect(Collectors.toSet()));
+		this.domesticNodeIds.addAll(multimodalNetwork.getNodes().values().stream()
+				.filter(l -> ((SamgodsNodeAttributes) l.getAttributes()
+						.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME)).isDomestic)
+				.map(l -> l.getId()).collect(Collectors.toSet()));
 //		this.domesticLinkIds.addAll(multimodalNetwork.getLinks().values().stream()
 //				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
 //						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).isDomestic)
@@ -83,19 +85,20 @@ public class NetworkDataProvider {
 				}
 			}
 		}
-		new NetworkCleaner().run(unimodalNetwork);
+		Log.warn("Not cleaning unimodal network");
+//		new NetworkCleaner().run(unimodalNetwork);
 		return unimodalNetwork;
 	}
 
 	// --------------- THREAD-SAFE, LOCALLY CACHED DOMESTIC LINK IDS ---------------
 
-//	private final Set<Id<Node>> domesticNodeIds = ConcurrentHashMap.newKeySet();
+	private final Set<Id<Node>> domesticNodeIds = ConcurrentHashMap.newKeySet();
 //	private final Set<Id<Link>> domesticLinkIds = ConcurrentHashMap.newKeySet();
 //
-//	Set<Id<Node>> getDomesticNodeIds() {
-//		return this.domesticNodeIds;
-//	}
-//
+	Set<Id<Node>> getDomesticNodeIds() {
+		return this.domesticNodeIds;
+	}
+
 //	Set<Id<Link>> getDomesticLinkIds() {
 //		return this.domesticLinkIds;
 //	}

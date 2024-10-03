@@ -23,8 +23,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -34,6 +37,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.algorithms.NetworkCleaner;
 
 import floetteroed.utilities.Tuple;
 
@@ -53,51 +57,59 @@ public class LinkRegionsReader {
 
 	private final Network network;
 
-
 	public LinkRegionsReader(Network network) {
 		this.network = network;
 	}
 
 	public Map<Id<Link>, Double> read(String fileName) throws IOException {
 
-		final Map<Id<Link>, Double> linkId2domesticWeightSum = new LinkedHashMap<>();
+		final Map<Id<Link>, Double> linkId2domesticWeightSumUpToRegion2584 = new LinkedHashMap<>();
+		final Map<Id<Link>, Double> linkId2domesticWeightSumFromRegion2585 = new LinkedHashMap<>();
+		final Map<Id<Link>, Double> linkId2domesticWeightSumWithoutRegion = new LinkedHashMap<>();
 
 		List<Tuple<Id<Node>, Id<Node>>> missingLinkNodeIds = new ArrayList<>();
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(fileName))) {
 
-			final String regionStr = record.get(REGION);
-			if (!"NA".equals(regionStr)) { // TODO replace by NULL value!!!
+			final Id<Node> fromNodeId = Id.createNodeId(record.get(From));
+			final Id<Node> toNodeId = Id.createNodeId(record.get(To));
+			final Node fromNode = network.getNodes().get(fromNodeId);
+			final Node toNode = network.getNodes().get(toNodeId);
+			final Link link;
+			if (fromNode != null && toNode != null) {
+				link = NetworkUtils.getConnectingLink(fromNode, toNode);
+			} else {
+				link = null;
+			}
 
-				final Id<Node> fromNodeId = Id.createNodeId(record.get(From));
-				final Id<Node> toNodeId = Id.createNodeId(record.get(To));
-
-				final Node fromNode = network.getNodes().get(fromNodeId);
-				final Node toNode = network.getNodes().get(toNodeId);
-				if (fromNode != null && toNode != null) {
-
-					final Link link = NetworkUtils.getConnectingLink(fromNode, toNode);
-					if (link != null) {
-						// final Long regionId = Long.parseLong(record.get(REGION));
-						final Double weight = Double.parseDouble(record.get(WEIGHT)) / 100.0;
-						linkId2domesticWeightSum.compute(link.getId(), (l, s) -> s == null ? weight : s + weight);
-
+			if (link == null) {
+				missingLinkNodeIds.add(new Tuple<>(fromNodeId, toNodeId));
+			} else {
+				final Double weight = Double.parseDouble(record.get(WEIGHT)) / 100.0;
+				final String regionStr = record.get(REGION);
+				if ("NA".equals(regionStr)) {
+					linkId2domesticWeightSumWithoutRegion.put(link.getId(), weight);
+				} else {
+					final long regionCode = Long.parseLong(regionStr);
+					if (regionCode < 2585) { // TODO magic number!!!
+						linkId2domesticWeightSumUpToRegion2584.compute(link.getId(),
+								(l, s) -> s == null ? weight : s + weight);
 					} else {
-						missingLinkNodeIds.add(new Tuple<>(fromNodeId, toNodeId));
+						linkId2domesticWeightSumFromRegion2585.put(link.getId(), weight);
 					}
 				}
 			}
 		}
 
-		log.info(linkId2domesticWeightSum.values().stream().filter(s -> s > 0.0).count()
+		log.info(linkId2domesticWeightSumUpToRegion2584.values().stream().filter(s -> s > 0.0).count()
 				+ " links with positive weights.");
-		log.warn(linkId2domesticWeightSum.values().stream().filter(s -> s > 1.001).count()
+		log.warn(linkId2domesticWeightSumUpToRegion2584.values().stream().filter(s -> s > 1.001).count()
 				+ " links with weights larger than one.");
 		log.warn(missingLinkNodeIds.size() + " node pairs without links: " + missingLinkNodeIds);
 
 		int i = 0;
 		StringBuffer txt = new StringBuffer("Links with weights > 1:\n");
-		for (Map.Entry<Id<Link>, Double> e : linkId2domesticWeightSum.entrySet()) {
+		for (Map.Entry<Id<Link>, Double> e : linkId2domesticWeightSumUpToRegion2584.entrySet()) {
 			if (e.getValue() > 1.0) {
 				txt.append(e + "\t");
 				if (++i % 10 == 0) {
@@ -106,8 +118,64 @@ public class LinkRegionsReader {
 			}
 		}
 		log.warn(txt);
+		this.writeMATSimNetwork(linkId2domesticWeightSumUpToRegion2584.keySet(), "./input_2024/network_regionUpTo2584.xml");
+		this.writeMATSimNetwork(linkId2domesticWeightSumFromRegion2585.keySet(), "./input_2024/network_regionFrom2585.xml");
+		this.writeMATSimNetwork(linkId2domesticWeightSumWithoutRegion.keySet(), "./input_2024/network_regionNone.xml");
+
+		final Set<Id<Link>> linkIdsWithTwoDomesticNodes = new LinkedHashSet<>();
+		final Set<Id<Link>> linkIdsWithOneDomesticNode = new LinkedHashSet<>();
+		for (Link link : this.network.getLinks().values()) {
+			int domesticNodeCnt = 0;
+			final SamgodsNodeAttributes fromNodeAttrs = (SamgodsNodeAttributes) link.getFromNode().getAttributes()
+					.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME);
+			if (fromNodeAttrs != null && fromNodeAttrs.isDomestic) {
+				domesticNodeCnt++;
+			}
+			final SamgodsNodeAttributes toNodeAttrs = (SamgodsNodeAttributes) link.getToNode().getAttributes()
+					.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME);
+			if (toNodeAttrs != null && toNodeAttrs.isDomestic) {
+				domesticNodeCnt++;
+			}
+			if (domesticNodeCnt == 2) {
+				linkIdsWithTwoDomesticNodes.add(link.getId());
+			} else if (domesticNodeCnt == 1) {
+				linkIdsWithOneDomesticNode.add(link.getId());
+			}
+		}
+		this.writeMATSimNetwork(linkIdsWithTwoDomesticNodes, "./input_2024/network_twoDomesticNodes.xml");
+		this.writeMATSimNetwork(linkIdsWithOneDomesticNode, "./input_2024/network_oneDomesticNode.xml");
 		
-		return linkId2domesticWeightSum;
+		NetworkUtils.writeNetwork(this.network, "./input_2024/entire_network.xml");
+
+//		NetworkUtils.runNetworkCleaner(this.network);
+//		NetworkUtils.writeNetwork(this.network, "./input_2024/entire_network_cleaned.xml");
+//		throw new RuntimeException();		
+		 return linkIdsWithTwoDomesticNodes.stream().collect(Collectors.toMap(id -> id, id -> 1.0));
+	}
+
+	private void writeMATSimNetwork(Set<Id<Link>> linkIds, String fileName) {
+
+		final Network subnet = NetworkUtils.createNetwork();
+
+		final Set<Node> nodes = new LinkedHashSet<>();
+		for (Id<Link> linkId : linkIds) {
+			Link link = this.network.getLinks().get(linkId);
+			nodes.add(link.getFromNode());
+			nodes.add(link.getToNode());
+		}
+		for (Node node : nodes) {
+			NetworkUtils.createAndAddNode(subnet, node.getId(), node.getCoord());
+		}
+
+		final Set<Link> links = linkIds.stream().map(id -> this.network.getLinks().get(id)).collect(Collectors.toSet());
+		for (Link link : links) {
+			Link newLink = NetworkUtils.createAndAddLink(subnet, link.getId(), subnet.getNodes().get(link.getFromNode().getId()),
+					subnet.getNodes().get(link.getToNode().getId()), link.getLength(), link.getFreespeed(),
+					link.getCapacity(), link.getNumberOfLanes());
+			newLink.setAllowedModes(link.getAllowedModes());
+		}
+
+		NetworkUtils.writeNetwork(subnet, fileName);
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -117,7 +185,7 @@ public class LinkRegionsReader {
 		Network network = new NetworkReader().load("./input_2024/node_parameters.csv",
 				"./input_2024/link_parameters.csv");
 
-		new LinkRegionsReader(network).read("./input_2024/link_regions.csv");
+		new LinkRegionsReader(network).read("./input_2024/link_regions_domestic.csv");
 
 		System.out.println("DONE");
 

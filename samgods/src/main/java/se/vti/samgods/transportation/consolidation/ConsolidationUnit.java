@@ -75,6 +75,7 @@ public class ConsolidationUnit {
 	public Double length_km = null;
 	public Boolean containsFerry = null;
 	public Double domesticLength_km = null;
+//	public Boolean isDomestic = null;
 
 	// --------------------CONSTRUCTION --------------------
 
@@ -117,12 +118,40 @@ public class ConsolidationUnit {
 
 	// -------------------- IMPLEMENTATION --------------------
 
+//	private boolean computeDomestic(CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>> routes,
+//			NetworkData networkData) {
+//
+//		Id<Link> firstLinkId = null;
+//		for (int i = 0; (i < routes.size()) && (firstLinkId == null); i++) {
+//			if (routes.get(i).size() > 0) {
+//				firstLinkId = routes.get(i).get(0);
+//			}
+//		}
+//		if (firstLinkId == null) {
+//			return false;
+//		}
+//
+//		Id<Link> lastLinkId = null;
+//		for (int i = (routes.size() - 1); (i >= 0) && (lastLinkId == null); i--) {
+//			if (routes.get(i).size() > 0) {
+//				lastLinkId = routes.get(i).get(routes.get(i).size() - 1);
+//			}
+//		}
+//		if (lastLinkId == null) {
+//			return false;
+//		}
+//
+//		return (networkData.getLinkId2domesticWeight().getOrDefault(firstLinkId, 0.0) >= 0.5)
+//				&& (networkData.getLinkId2domesticWeight().getOrDefault(lastLinkId, 0.0) >= 0.5);
+//	}
+
 	public void setRoutes(List<List<Link>> routes, NetworkData networkData) {
 		if (routes == null) {
 			this.linkIds = null;
 			this.length_km = null;
 			this.containsFerry = null;
 			this.domesticLength_km = null;
+//			this.isDomestic = null;
 		} else {
 			final List<CopyOnWriteArrayList<Id<Link>>> tmpLinkIds = new ArrayList<>(routes.size());
 			double length_m = 0.0;
@@ -139,6 +168,7 @@ public class ConsolidationUnit {
 			this.linkIds = new CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>>(tmpLinkIds);
 			this.length_km = Units.KM_PER_M * length_m;
 			this.domesticLength_km = Units.KM_PER_M * domesticLength_m;
+//			this.isDomestic = this.computeDomestic(this.linkIds, networkData);
 		}
 	}
 
@@ -146,6 +176,7 @@ public class ConsolidationUnit {
 		this.length_km = null;
 		this.containsFerry = null;
 		this.domesticLength_km = null;
+//		this.isDomestic = null;
 		if (routeIds == null) {
 			this.linkIds = null;
 		} else {
@@ -167,6 +198,11 @@ public class ConsolidationUnit {
 		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.anyMatch(l -> ((SamgodsLinkAttributes) network.getLinks().get(l).getAttributes()
 						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
+//		this.isDomestic = this.computeDomestic(this.linkIds, networkData);
+	}
+
+	public List<? extends Link> allLinks(Network network) {
+		return this.linkIds.stream().flatMap(list -> list.stream()).map(lid -> network.getLinks().get(lid)).toList();
 	}
 
 	// -------------------- OVERRIDING Object --------------------

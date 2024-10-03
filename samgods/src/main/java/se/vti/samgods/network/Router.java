@@ -35,12 +35,12 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.router.AStarLandmarksFactory;
 import org.matsim.core.router.util.LeastCostPathCalculator;
+import org.matsim.core.router.util.LeastCostPathCalculator.Path;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
-import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -195,7 +195,8 @@ public class Router {
 					final Node from = network.getNodes().get(fromId);
 					final Node to = network.getNodes().get(toId);
 					if ((from != null) && (to != null) && (router != null)) {
-						List<Link> links = router.calcLeastCostPath(from, to, 0, null, null).links;
+						Path path = router.calcLeastCostPath(from, to, 0, null, null);
+						List<Link> links = (path == null ? null : path.links);
 						routes.add(links);
 						if (links == null) {
 							if (logProgress) {

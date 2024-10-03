@@ -29,6 +29,7 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -74,6 +75,12 @@ public class FleetCostCalibrator {
 		this.vehicleType2group = new LinkedHashMap<>(vehicles.getVehicleTypes().size());
 		this.group2mode = new LinkedHashMap<>();
 
+		this.group2targetDomesticGTonKm = new LinkedHashMap<>();
+
+		/*
+		 * ROAD
+		 */
+
 		this.vehicleType2group.put(this.name2type("MGV16"), Group.MGV16_X);
 		this.vehicleType2group.put(this.name2type("MGV16_CONTAINER"), Group.MGV16_X);
 		this.vehicleType2group.put(this.name2type("MGV24"), Group.MGV24_X);
@@ -82,34 +89,61 @@ public class FleetCostCalibrator {
 		this.vehicleType2group.put(this.name2type("HGV40_CONTAINER"), Group.HGV40_X);
 		this.vehicleType2group.put(this.name2type("HGV60"), Group.HGV60_X);
 		this.vehicleType2group.put(this.name2type("HGV60_CONTAINER"), Group.HGV60_X);
+//		for (VehicleType type : vehicles.getVehicleTypes().values()) {
+//			SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) type.getAttributes()
+//					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+//			if (TransportMode.Road.equals(attrs.samgodsMode) && !this.vehicleType2group.keySet().contains(type)) {
+//				this.vehicleType2group.put(type, Group.ROAD_OTHER);
+//			}
+//		}
+//		assert(this.vehicleType2group.values().stream().filter(g -> g.equals(Group.ROAD_OTHER)).count() > 0);
+
 		this.group2mode.put(Group.MGV16_X, TransportMode.Road);
 		this.group2mode.put(Group.MGV24_X, TransportMode.Road);
 		this.group2mode.put(Group.HGV40_X, TransportMode.Road);
 		this.group2mode.put(Group.HGV60_X, TransportMode.Road);
 
+		this.group2targetDomesticGTonKm.put(Group.MGV16_X, 0.3);
+		this.group2targetDomesticGTonKm.put(Group.MGV24_X, 0.4);
+		this.group2targetDomesticGTonKm.put(Group.HGV40_X, 12.2);
+		this.group2targetDomesticGTonKm.put(Group.HGV60_X, 39.1);
+
+		/*
+		 * RAIL
+		 */
+
 		this.vehicleType2group.put(this.name2type("KOMBI"), Group.RAIL_COMBI);
 		this.vehicleType2group.put(this.name2type("KOMBI_CONTAINER"), Group.RAIL_COMBI);
-		this.vehicleType2group.put(this.name2type("KOMXL"), Group.RAIL_COMBI);
-		this.vehicleType2group.put(this.name2type("KOMXL_CONTAINER"), Group.RAIL_COMBI);
 		this.vehicleType2group.put(this.name2type("SYS22"), Group.RAIL_SYSTEM);
 		this.vehicleType2group.put(this.name2type("SYS22_CONTAINER"), Group.RAIL_SYSTEM);
 		this.vehicleType2group.put(this.name2type("SYS25"), Group.RAIL_SYSTEM);
 		this.vehicleType2group.put(this.name2type("SYS25_CONTAINER"), Group.RAIL_SYSTEM);
 		this.vehicleType2group.put(this.name2type("SYS30"), Group.RAIL_SYSTEM);
 		this.vehicleType2group.put(this.name2type("SYS30_CONTAINER"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("SYSXL"), Group.RAIL_SYSTEM);
-		this.vehicleType2group.put(this.name2type("SYSXL_CONTAINER"), Group.RAIL_SYSTEM);
 		this.vehicleType2group.put(this.name2type("WG550"), Group.RAIL_WAGON);
 		this.vehicleType2group.put(this.name2type("WG550_CONTAINER"), Group.RAIL_WAGON);
 		this.vehicleType2group.put(this.name2type("WG750"), Group.RAIL_WAGON);
 		this.vehicleType2group.put(this.name2type("WG750_CONTAINER"), Group.RAIL_WAGON);
-		this.vehicleType2group.put(this.name2type("WG950"), Group.RAIL_WAGON);
-		this.vehicleType2group.put(this.name2type("WG950_CONTAINER"), Group.RAIL_WAGON);
-		this.vehicleType2group.put(this.name2type("WGEXL"), Group.RAIL_WAGON);
-		this.vehicleType2group.put(this.name2type("WGEXL_CONTAINER"), Group.RAIL_WAGON);
+//		for (VehicleType type : vehicles.getVehicleTypes().values()) {
+//			SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) type.getAttributes()
+//					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+//			if (TransportMode.Rail.equals(attrs.samgodsMode) && !this.vehicleType2group.keySet().contains(type)) {
+//				this.vehicleType2group.put(type, Group.RAIL_OTHER);
+//			}
+//		}
+//		assert(this.vehicleType2group.values().stream().filter(g -> g.equals(Group.RAIL_OTHER)).count() == 0);
+
 		this.group2mode.put(Group.RAIL_COMBI, TransportMode.Rail);
 		this.group2mode.put(Group.RAIL_SYSTEM, TransportMode.Rail);
 		this.group2mode.put(Group.RAIL_WAGON, TransportMode.Rail);
+
+		this.group2targetDomesticGTonKm.put(Group.RAIL_COMBI, 5.96);
+		this.group2targetDomesticGTonKm.put(Group.RAIL_SYSTEM, 8.61);
+		this.group2targetDomesticGTonKm.put(Group.RAIL_WAGON, 8.25);
+
+		/*
+		 * SEA
+		 */
 
 		this.vehicleType2group.put(this.name2type("CV5"), Group.SEA);
 		this.vehicleType2group.put(this.name2type("CV5_CONTAINER"), Group.SEA);
@@ -145,17 +179,12 @@ public class FleetCostCalibrator {
 		this.vehicleType2group.put(this.name2type("RO6_CONTAINER"), Group.SEA);
 		this.vehicleType2group.put(this.name2type("RO10"), Group.SEA);
 		this.vehicleType2group.put(this.name2type("RO10_CONTAINER"), Group.SEA);
+
 		this.group2mode.put(Group.SEA, TransportMode.Sea);
 
-		this.group2targetDomesticGTonKm = new LinkedHashMap<>();
-		this.group2targetDomesticGTonKm.put(Group.MGV16_X, 0.3);
-		this.group2targetDomesticGTonKm.put(Group.MGV24_X, 0.4);
-		this.group2targetDomesticGTonKm.put(Group.HGV40_X, 12.2);
-		this.group2targetDomesticGTonKm.put(Group.HGV60_X, 39.1);
-		this.group2targetDomesticGTonKm.put(Group.RAIL_COMBI, 5.96);
-		this.group2targetDomesticGTonKm.put(Group.RAIL_SYSTEM, 8.61);
-		this.group2targetDomesticGTonKm.put(Group.RAIL_WAGON, 8.25);
 		this.group2targetDomesticGTonKm.put(Group.SEA, 29.61);
+
+		//
 
 		this.mode2targetDomesticGTonKm = new LinkedHashMap<>();
 		for (Map.Entry<Group, Double> e : this.group2targetDomesticGTonKm.entrySet()) {
@@ -168,8 +197,9 @@ public class FleetCostCalibrator {
 //		this.group2normalizedTarget = this.createNormalized(this.group2targetDomesticGTonKm);
 //		this.mode2normalizedTarget = this.createNormalized(this.mode2targetDomesticGTonKm);
 
-		this.modeAscTuner = new ASCTuner<>(this.mode2targetDomesticGTonKm.values().stream().mapToDouble(t -> t).sum(),
-				eta);
+		this.modeAscTuner = new ASCTuner<>(
+//				this.mode2targetDomesticGTonKm.values().stream().mapToDouble(t -> t).sum(),
+				null, eta);
 		for (Map.Entry<TransportMode, Double> e : this.mode2targetDomesticGTonKm.entrySet()) {
 			final TransportMode mode = e.getKey();
 			final Double target_GTonKm = e.getValue();
@@ -181,9 +211,9 @@ public class FleetCostCalibrator {
 			final Group group = e.getKey();
 			final Double target_GTonKm = e.getValue();
 			final TransportMode mode = this.group2mode.get(group);
-			this.mode2groupAscTuner
-					.computeIfAbsent(mode, m -> new ASCTuner<>(this.mode2targetDomesticGTonKm.get(m), eta))
-					.setTarget(group, target_GTonKm);
+			this.mode2groupAscTuner.computeIfAbsent(mode, m -> new ASCTuner<>(
+//							this.mode2targetDomesticGTonKm.get(m), 
+					null, eta)).setTarget(group, target_GTonKm);
 		}
 	}
 
@@ -204,29 +234,55 @@ public class FleetCostCalibrator {
 
 	// -------------------- IMPLEMENTATION --------------------
 
+	// TODO for test-logging
+	FleetStatistics lastFleetStatistics;
+
 	public void updateInternally(FleetStatistics fleetStats) {
+		this.lastFleetStatistics = fleetStats;
+
 		this.group2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
 		this.mode2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
-		for (Map.Entry<VehicleType, Group> entry : this.vehicleType2group.entrySet()) {
-			final VehicleType vehicleType = entry.getKey();
-			final Group group = entry.getValue();
-			final TransportMode mode = this.group2mode.get(group);
+//		for (Map.Entry<VehicleType, Group> entry : this.vehicleType2group.entrySet()) {
+//			final VehicleType vehicleType = entry.getKey();
+//			final Group group = entry.getValue();
+//			final TransportMode mode = this.group2mode.get(group);
+//			final double realized_GTonKm = 1e-9
+//					* fleetStats.getVehicleType2domesticTonKm().getOrDefault(vehicleType, 0.0);
+//			this.group2lastRealizedDomesticGTonKm.compute(group,
+//					(g, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
+//			this.mode2lastRealizedDomesticGTonKm.compute(mode,
+//					(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
+//		}
+
+		for (VehicleType vehicleType : this.vehicles.getVehicleTypes().values()) {
 			final double realized_GTonKm = 1e-9
 					* fleetStats.getVehicleType2domesticTonKm().getOrDefault(vehicleType, 0.0);
-			this.group2lastRealizedDomesticGTonKm.compute(group,
-					(g, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
-			this.mode2lastRealizedDomesticGTonKm.compute(mode,
-					(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
+
+			final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+			if (this.modeAscTuner.getAlternativesView().contains(attrs.samgodsMode)) {
+				this.mode2lastRealizedDomesticGTonKm.compute(attrs.samgodsMode,
+						(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
+			}
+
+			final Group group = this.vehicleType2group.get(vehicleType);
+			if (group != null) {
+				this.group2lastRealizedDomesticGTonKm.compute(group,
+						(g, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
+			}
 		}
-//		this.group2lastNormalizedRealized = this.createNormalized(this.group2lastRealizedDomesticGTonKm);
-//		this.mode2lastNormalizedRealized = this.createNormalized(this.mode2lastRealizedDomesticGTonKm);
 
 		this.modeAscTuner.update(m -> this.mode2lastRealizedDomesticGTonKm.getOrDefault(m, 0.0));
-		for (Map.Entry<Group, Double> e : this.group2lastRealizedDomesticGTonKm.entrySet()) {
-			final Group group = e.getKey();
-			final TransportMode mode = this.group2mode.get(group);
-			this.mode2groupAscTuner.get(mode).update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
+
+//		for (Map.Entry<Group, Double> e : this.group2lastRealizedDomesticGTonKm.entrySet()) {
+//			final Group group = e.getKey();
+//			final TransportMode mode = this.group2mode.get(group);
+//			this.mode2groupAscTuner.get(mode).update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
+//		}
+		for (ASCTuner<Group> groupAscTuner : this.mode2groupAscTuner.values()) {
+			groupAscTuner.update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
 		}
+
 	}
 
 	public ConcurrentMap<Group, Double> createConcurrentGroup2asc() {
@@ -236,7 +292,7 @@ public class FleetCostCalibrator {
 		}
 
 		// TODO!!!
-		 group2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
+//		 group2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
 
 		return group2asc;
 	}
@@ -267,7 +323,7 @@ public class FleetCostCalibrator {
 		}
 
 		// TODO!!!
-		vehicleType2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
+//		vehicleType2asc.entrySet().stream().forEach(e -> e.setValue(0.0));
 
 		return vehicleType2asc;
 	}

@@ -60,9 +60,9 @@ public class NetworkData {
 
 	// --------------- PASS-THROUGH FROM NetworkDataProvider ---------------
 
-//	public Set<Id<Node>> getDomesticNodeIds() {
-//		return this.dataProvider.getDomesticNodeIds();
-//	}
+	public Set<Id<Node>> getDomesticNodeIds() {
+		return this.dataProvider.getDomesticNodeIds();
+	}
 //
 //	public Set<Id<Link>> getDomesticLinkIds() {
 //		return this.dataProvider.getDomesticLinkIds();

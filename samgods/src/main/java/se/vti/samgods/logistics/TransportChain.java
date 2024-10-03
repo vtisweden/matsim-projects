@@ -20,6 +20,10 @@
 package se.vti.samgods.logistics;
 
 import java.util.LinkedList;
+import java.util.List;
+
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
@@ -51,6 +55,21 @@ public class TransportChain {
 		this.episodes.add(episode);
 	}
 
+	public List<? extends Link> allLinks(Network network) {
+		return this.episodes.stream().map(e -> e.allLinks(network)).flatMap(list -> list.stream()).toList();
+	}
+	
+	public boolean isConnected(Network network) {
+		Link previousLink = null;
+		for (Link currentLink : this.allLinks(network)) {
+			if (previousLink != null && previousLink.getToNode() != currentLink.getFromNode()) {
+				return false;
+			}
+			previousLink = currentLink;
+		}
+		return true;		
+	}
+	
 	// -------------------- IMPLEMENTATION --------------------
 
 	public LinkedList<TransportEpisode> getEpisodes() {

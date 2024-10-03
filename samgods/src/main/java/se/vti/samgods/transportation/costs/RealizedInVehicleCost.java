@@ -49,7 +49,7 @@ public class RealizedInVehicleCost {
 			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
 				for (Id<Link> linkId : linkIds) {
 					final double weight = linkId2weight == null ? 1.0
-							: Math.max(1.0, linkId2weight.getOrDefault(linkId, 0.0));
+							: Math.max(0.0, linkId2weight.getOrDefault(linkId, 0.0));
 					BasicTransportCost unitCost = link2unitCost.get(linkId);
 					builder.addMoveDuration_h(weight * unitCost.duration_h);
 					builder.addDistance_km(weight * unitCost.length_km);

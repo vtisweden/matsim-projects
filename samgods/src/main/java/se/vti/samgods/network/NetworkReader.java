@@ -151,7 +151,7 @@ public class NetworkReader {
 			assert (fromNode != null);
 			assert (toNode != null);
 			final double nodeDist_m = NetworkUtils.getEuclideanDistance(fromNode.getCoord(), toNode.getCoord());
-			final boolean isDomestic = domesticNodes.contains(fromNode) || domesticNodes.contains(toNode);
+			final boolean isDomestic = domesticNodes.contains(fromNode) && domesticNodes.contains(toNode);
 
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
 			final SamgodsConstants.TransportMode mode = SamgodsConstants.TransportMode.valueOf(record.get(LINK_MODE));

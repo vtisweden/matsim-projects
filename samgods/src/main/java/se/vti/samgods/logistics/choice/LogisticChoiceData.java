@@ -106,13 +106,13 @@ public class LogisticChoiceData {
 				e -> this.createEpisodeUnitCost_1_ton(e));
 	}
 
-	public DetailedTransportCost getRealizedCost(ConsolidationUnit consolidationUnit) {
-		return this.logisticChoiceDataProvider.getRealizedCost(consolidationUnit);
-	}
-
-	public DetailedTransportCost getRealizedDomesticCost(ConsolidationUnit consolidationUnit) {
-		return this.logisticChoiceDataProvider.getRealizedDomesticCost(consolidationUnit);
-	}
+//	public DetailedTransportCost getRealizedCost(ConsolidationUnit consolidationUnit) {
+//		return this.logisticChoiceDataProvider.getRealizedCost(consolidationUnit);
+//	}
+//
+//	public DetailedTransportCost getRealizedDomesticCost(ConsolidationUnit consolidationUnit) {
+//		return this.logisticChoiceDataProvider.getRealizedDomesticCost(consolidationUnit);
+//	}
 	
 	// -------------------- TRANSPORT CHAIN UNIT COSTS --------------------
 

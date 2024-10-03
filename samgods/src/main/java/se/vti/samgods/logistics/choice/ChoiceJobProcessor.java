@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.ShipmentSize;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
@@ -113,11 +112,11 @@ public class ChoiceJobProcessor implements Runnable {
 						}
 					}
 				}
-				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
+//				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
 					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
 					assert (choice != null);
 					this.allChoices.put(choice);
-				}
+//				}
 			}
 		} else {
 			InsufficientDataException.log(new InsufficientDataException(this.getClass(),

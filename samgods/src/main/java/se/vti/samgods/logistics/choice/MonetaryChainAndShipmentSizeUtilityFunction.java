@@ -28,6 +28,7 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.costs.NonTransportCost;
+import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 
 /**
@@ -67,8 +68,18 @@ public class MonetaryChainAndShipmentSizeUtilityFunction implements ChainAndShip
 	@Override
 	public double computeUtility(TransportChain transportChain, double amount_ton,
 			DetailedTransportCost transportUnitCost_1_ton, NonTransportCost totalNonTransportCost) {
+
 		return (-1.0) * this.commodity2scale.get(transportChain.getCommodity())
 				* this.totalMonetaryCost(amount_ton, transportUnitCost_1_ton, totalNonTransportCost)
 				+ this.totalASC(transportChain);
+
+		// TODO TESTING
+//		double length_km = 0.0;
+//		for (TransportEpisode episode : transportChain.getEpisodes()) {
+//			for (ConsolidationUnit cu : episode.getConsolidationUnits()) {
+//				length_km += cu.length_km;
+//			}
+//		}		
+//		return -length_km;
 	}
 }

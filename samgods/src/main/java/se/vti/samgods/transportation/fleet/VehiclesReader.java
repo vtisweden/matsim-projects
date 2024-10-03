@@ -91,10 +91,17 @@ public class VehiclesReader {
 
 	private final Vehicles vehicles;
 
+	private Set<String> excludedIds = new LinkedHashSet<>();
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public VehiclesReader(Vehicles vehicles) {
 		this.vehicles = vehicles;
+	}
+
+	public VehiclesReader addExcludedId(String excludedId) {
+		this.excludedIds.add(excludedId);
+		return this;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
@@ -104,39 +111,48 @@ public class VehiclesReader {
 		final Map<String, SamgodsVehicleAttributes.Builder> vehicleNr2builder = new LinkedHashMap<>();
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(vehicleTypeFile))) {
-			for (boolean container : new boolean[] { false, true }) {
-				final SamgodsVehicleAttributes.Builder builder = new SamgodsVehicleAttributes.Builder(
-						record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""));
-				vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
-				builder.setDescription(record.get(VEH_DESCRIPTION)).setMode(transportMode)
-						.setCost_1_km(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_KM)))
-						.setCost_1_h(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_H)))
-						.setCapacity_ton(ParseNumberUtils.parseDoubleOrNull(record.get(CAPACITY_TON)))
-						.setOnFerryCost_1_km(ParseNumberUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_KM)))
-						.setOnFerryCost_1_h(ParseNumberUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_H)))
-						.setSpeed_km_h(ParseNumberUtils.parseDoubleOrNull(record.get(SPEED_KM_H)));
+			final String vehLabel = record.get(VEH_LABEL);
+			if (!this.excludedIds.contains(vehLabel)) {
+				for (boolean container : new boolean[] { false, true }) {
+					final SamgodsVehicleAttributes.Builder builder = new SamgodsVehicleAttributes.Builder(
+							record.get(VEH_LABEL) + (container ? SUFFIX_INDICATING_CONTAINER : ""));
+					vehicleNr2builder.put(record.get(VEH_NR) + (container ? SUFFIX_INDICATING_CONTAINER : ""), builder);
+					builder.setDescription(record.get(VEH_DESCRIPTION)).setMode(transportMode)
+							.setCost_1_km(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_KM)))
+							.setCost_1_h(ParseNumberUtils.parseDoubleOrNull(record.get(COST_1_H)))
+							.setCapacity_ton(ParseNumberUtils.parseDoubleOrNull(record.get(CAPACITY_TON)))
+							.setOnFerryCost_1_km(ParseNumberUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_KM)))
+							.setOnFerryCost_1_h(ParseNumberUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_H)))
+							.setSpeed_km_h(ParseNumberUtils.parseDoubleOrNull(record.get(SPEED_KM_H)));
+				}
 			}
 		}
 
 		for (CSVRecord record : CSVFormat.EXCEL.withFirstRecordAsHeader().parse(new FileReader(costFile))) {
 			final SamgodsConstants.Commodity commodity = SamgodsConstants.Commodity
 					.values()[ParseNumberUtils.parseIntOrNull(record.get(COMMODITY_ID)) - 1];
-			vehicleNr2builder.get(record.get(VEH_NR)).setContainer(false)
-					.setLoadCost_1_ton(commodity,
-							ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_COST_1_TON)))
-					.setLoadTime_h(commodity, ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_TIME_H)))
-					.setTransferCost_1_ton(commodity,
-							ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_COST_1_TON)))
-					.setTransferTime_h(commodity,
-							ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_TIME_H)));
-			vehicleNr2builder.get(record.get(VEH_NR) + SUFFIX_INDICATING_CONTAINER).setContainer(true)
-					.setLoadCost_1_ton(commodity,
-							ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_COST_1_TON)))
-					.setLoadTime_h(commodity, ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_TIME_H)))
-					.setTransferCost_1_ton(commodity,
-							ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_COST_1_TON)))
-					.setTransferTime_h(commodity,
-							ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_TIME_H)));
+			final String vehNr = record.get(VEH_NR);
+			if (vehicleNr2builder.containsKey(vehNr)) {
+				vehicleNr2builder.get(record.get(VEH_NR)).setContainer(false)
+						.setLoadCost_1_ton(commodity,
+								ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_COST_1_TON)))
+						.setLoadTime_h(commodity,
+								ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_LOAD_TIME_H)))
+						.setTransferCost_1_ton(commodity,
+								ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_COST_1_TON)))
+						.setTransferTime_h(commodity,
+								ParseNumberUtils.parseDoubleOrNull(record.get(NO_CONTAINER_TRANSFER_TIME_H)));
+			}
+			if (vehicleNr2builder.containsKey(vehNr + SUFFIX_INDICATING_CONTAINER)) {
+				vehicleNr2builder.get(record.get(VEH_NR) + SUFFIX_INDICATING_CONTAINER).setContainer(true)
+						.setLoadCost_1_ton(commodity,
+								ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_COST_1_TON)))
+						.setLoadTime_h(commodity, ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_LOAD_TIME_H)))
+						.setTransferCost_1_ton(commodity,
+								ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_COST_1_TON)))
+						.setTransferTime_h(commodity,
+								ParseNumberUtils.parseDoubleOrNull(record.get(CONTAINER_TRANSFER_TIME_H)));
+			}
 		}
 
 		for (SamgodsVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
@@ -146,7 +162,7 @@ public class VehiclesReader {
 				{ // This block is just for logging.
 					final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
 							.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-					
+
 					if (attrs.onFerryCost_1_h == null) {
 						log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
 					}
@@ -187,7 +203,8 @@ public class VehiclesReader {
 					}
 				}
 			} catch (InsufficientDataException e) {
-				InsufficientDataException.log(e, new InsufficientDataException(this.getClass(), "failed to build vehicle type " + builder.id));
+				InsufficientDataException.log(e,
+						new InsufficientDataException(this.getClass(), "failed to build vehicle type " + builder.id));
 			}
 		}
 	}
