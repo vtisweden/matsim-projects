@@ -40,6 +40,7 @@ import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
@@ -79,6 +80,7 @@ import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehiclesReader;
 
 /**
@@ -243,6 +245,38 @@ public class SamgodsRunner {
 		return this.networkDataProvider;
 	}
 
+	public SamgodsRunner checkAvailableVehicles() {
+		FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
+		System.out.println("commodity\tmode\tisContainer\tcontainsFerry");
+		for (Commodity commodity : Commodity.values()) {
+			for (TransportMode mode : TransportMode.values()) {
+				for (Boolean isContainer : Arrays.asList(false, true)) {
+					for (Boolean containsFerry : Arrays.asList(false, true)) {
+						List<VehicleType> compatibleVehicleTypes = fleetData.getCompatibleVehicleTypes(commodity, mode,
+								isContainer, containsFerry);
+						if (compatibleVehicleTypes.size() > 0) {
+							VehicleType type = fleetData.getRepresentativeVehicleType(commodity, mode, isContainer,
+									containsFerry);
+							if (type == null) {
+								throw new RuntimeException(
+										"No representative type although compatibleVehicleTypes != null");
+							}
+							SamgodsVehicleAttributes attrs = fleetData.getVehicleType2attributes().get(type);
+							if (attrs == null) {
+								throw new RuntimeException("No attributes although compatibleVehicleTypes != null");
+							}
+						} else {
+							System.out.println(commodity + "\t" + mode + "\t" + isContainer + "\t" + containsFerry);
+						}
+					}
+				}
+			}
+		}
+		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
+		return this;
+	}
+
 	// -------------------- PREPARE CONSOLIDATION UNITS --------------------
 
 	public void createOrLoadConsolidationUnits(String consolidationUnitsFileName) throws IOException {
@@ -404,7 +438,6 @@ public class SamgodsRunner {
 	public void run() {
 
 		final FleetCalibrationLogger fleetCalibrationLogger = new FleetCalibrationLogger(this.vehicles);
-//		final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2realizedMoveCost = new ConcurrentHashMap<>();
 
 		final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
 		for (SamgodsConstants.Commodity commodity : this.consideredCommodities) {
@@ -415,32 +448,6 @@ public class SamgodsRunner {
 						.forEach(e -> allConsolidationUnits.addAll(e.getConsolidationUnits()));
 			}
 		}
-
-//		{
-//			final double initialTransportEfficiency = 0.7; // TODO magic number
-//			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
-//			final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-//			final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
-//			log.info("Computing consolidation costs for " + allConsolidationUnits.size() + " consolidation units");
-//			for (ConsolidationUnit consolidationUnit : allConsolidationUnits) {
-//				final VehicleType vehicleType = fleetData.getRepresentativeVehicleType(consolidationUnit.commodity,
-//						consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
-//				if (vehicleType != null) {
-//					final SamgodsVehicleAttributes vehicleAttributes = fleetData.getVehicleType2attributes()
-//							.get(vehicleType);
-//					try {
-//						consolidationUnit2realizedMoveCost.put(consolidationUnit,
-//								realizedInVehicleCost.compute(vehicleAttributes,
-//										initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
-//										networkData.getLinkId2unitCost(vehicleType), networkData.getFerryLinkIds()));
-//					} catch (InsufficientDataException e) {
-//						log.warn("could not initialize unit cost for consolidation unit " + consolidationUnit);
-//					}
-//				} else {
-//					log.warn("could not initialize unit cost for consolidation unit " + consolidationUnit);
-//				}
-//			}
-//		}
 
 		if (this.checkChainConnectivity) {
 			for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains()
@@ -463,7 +470,6 @@ public class SamgodsRunner {
 			 */
 
 			final LogisticChoiceDataProvider logisticChoiceDataProvider = new LogisticChoiceDataProvider(
-//					consolidationUnit2realizedMoveCost, 
 					this.getOrCreateNetworkDataProvider(), this.getOrCreateFleetDataProvider());
 			logisticChoiceDataProvider.update(null);
 

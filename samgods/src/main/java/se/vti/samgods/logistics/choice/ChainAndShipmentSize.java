@@ -42,16 +42,20 @@ public class ChainAndShipmentSize {
 
 	public final TransportChain transportChain;
 
-	public final double utility;
+	public final double singleInstanceUtility;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public ChainAndShipmentSize(AnnualShipment annualShipment, final SamgodsConstants.ShipmentSize sizeClass,
-			final TransportChain transportChain, final double utility) {
+			final TransportChain transportChain, final double singleInstanceUtility) {
 		this.annualShipment = annualShipment;
 		this.sizeClass = sizeClass;
 		this.transportChain = transportChain;
-		this.utility = utility;
+		this.singleInstanceUtility = singleInstanceUtility;
 	}
 
+	public ChainAndShipmentSize createSingleInstance() {
+		return new ChainAndShipmentSize(this.annualShipment.createSingleInstance(), this.sizeClass, this.transportChain, this.singleInstanceUtility);
+	}
+	
 }

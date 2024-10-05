@@ -61,13 +61,11 @@
 
 	<dependencies>
 
-		<!--
-	    <dependency>
-			<groupId>se.vti.matsim-projects-playgrounds</groupId>
-			<artifactId>gfd</artifactId>
+		<dependency>
+			<groupId>se.vti.matsim-projects</groupId>
+			<artifactId>utils</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-		-->
 
 		<!-- This is the matsim "core": -->
 		<dependency>

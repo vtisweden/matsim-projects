@@ -113,11 +113,19 @@ public class ChoiceJobProcessor implements Runnable {
 						}
 					}
 				}
-//				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
-				final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
-				assert (choice != null);
-				this.allChoices.put(choice);
-//				}
+
+////				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
+//				final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
+//				assert (choice != null);
+//				this.allChoices.put(choice);
+////				}
+
+				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
+					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.singleInstanceUtility);
+					assert (choice != null);
+					this.allChoices.put(choice.createSingleInstance());
+				}
+
 			}
 		} else {
 			Log.warn("Cannot compute choices for choice job: " + job);

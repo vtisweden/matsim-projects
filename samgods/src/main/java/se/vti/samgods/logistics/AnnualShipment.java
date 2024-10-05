@@ -52,6 +52,10 @@ public class AnnualShipment {
 		this.numberOfInstances = numberOfInstances;
 	}
 
+	public AnnualShipment createSingleInstance() {
+		return new AnnualShipment(this.commodity, this.od, this.singleInstanceAnnualAmount_ton, 1);
+	}
+
 	// -------------------- GETTERS --------------------
 
 	public SamgodsConstants.Commodity getCommodity() {

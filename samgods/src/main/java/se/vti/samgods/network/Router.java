@@ -133,18 +133,21 @@ public class Router {
 			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
 					job.samgodsMode, job.isContainer, containsFerry);
 			if (representativeVehicleType == null) {
-				log.warn("No representative vehicle type available. " + job);
+				log.warn("No representative vehicle type available. Override:containsFerry=" + containsFerry
+						+ ", consolidationUnit: " + job);
 				return null;
 			}
 
 			final TravelDisutility travelDisutility = this.networkData.getTravelDisutility(representativeVehicleType);
 			if (travelDisutility == null) {
-				log.warn("No TravelDisutility available. " + job);
+				log.warn("No TravelDisutility available. Override:containsFerry=" + containsFerry
+						+ ", consolidationUnit: " + job);
 				return null;
 			}
 			final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
 			if (travelTime == null) {
-				log.warn("No TravelTime available. " + job);
+				log.warn("No TravelTime available. Override:containsFerry=" + containsFerry + ", consolidationUnit: "
+						+ job);
 				return null;
 			}
 			final LeastCostPathCalculator router = this.mode2isContainer2containsFerry2router
@@ -154,7 +157,8 @@ public class Router {
 									this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry),
 									travelDisutility, travelTime));
 			if (router == null) {
-				log.warn("No Router available. " + job);
+				log.warn("No Router available.  Override:containsFerry=" + containsFerry + ", consolidationUnit: "
+						+ job);
 				return null;
 			}
 
