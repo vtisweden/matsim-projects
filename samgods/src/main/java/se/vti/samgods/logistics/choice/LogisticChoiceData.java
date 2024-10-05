@@ -21,10 +21,8 @@ package se.vti.samgods.logistics.choice;
 
 import java.util.List;
 
-import org.jfree.util.Log;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -55,42 +53,34 @@ public class LogisticChoiceData {
 	// -------------------- TRANSPORT EPISODE UNIT COSTS --------------------
 
 	private DetailedTransportCost createEpisodeUnitCost_1_ton(TransportEpisode episode) {
-		try {
-			final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),
-					episode.getMode(), episode.isContainer(),
-					episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
-			final SamgodsVehicleAttributes vehicleAttributes = this.fleetData.getVehicleType2attributes()
-					.get(vehicleType);
-			final double payload_ton = episode.getConsolidationUnits().stream()
-					.mapToDouble(cu -> this.logisticChoiceDataProvider.getInVehicleTransportCost(cu).amount_ton)
-					.average().getAsDouble();
+		final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),
+				episode.getMode(), episode.isContainer(),
+				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
+		final SamgodsVehicleAttributes vehicleAttributes = this.fleetData.getVehicleType2attributes().get(vehicleType);
+		final double payload_ton = episode.getConsolidationUnits().stream()
+				.mapToDouble(cu -> this.logisticChoiceDataProvider.getInVehicleTransportCost(cu).amount_ton).average()
+				.getAsDouble();
 
-			final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
-					.addAmount_ton(payload_ton);
-			builder.addLoadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
-			builder.addLoadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
+		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
+				.addAmount_ton(payload_ton);
+		builder.addLoadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
+		builder.addLoadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
 
-			final int transferCnt = episode.getConsolidationUnits().size() - 1;
-			if (transferCnt > 0) {
-				builder.addTransferDuration_h(
-						transferCnt * vehicleAttributes.transferTime_h.get(episode.getCommodity()));
-				builder.addTransferCost(
-						transferCnt * vehicleAttributes.transferCost_1_ton.get(episode.getCommodity()) * payload_ton);
-			}
-
-			builder.addUnloadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
-			builder.addUnloadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
-
-			final List<ConsolidationUnit> consolidationUnits = episode.getConsolidationUnits();
-			for (ConsolidationUnit consolidationUnit : consolidationUnits) {
-				builder.add(this.logisticChoiceDataProvider.getInVehicleTransportCost(consolidationUnit), true);
-			}
-			return builder.build().createUnitCost_1_ton();
-
-		} catch (InsufficientDataException e) {
-			Log.warn("Cannot compute unit cost for episode: " + episode);
-			return null;
+		final int transferCnt = episode.getConsolidationUnits().size() - 1;
+		if (transferCnt > 0) {
+			builder.addTransferDuration_h(transferCnt * vehicleAttributes.transferTime_h.get(episode.getCommodity()));
+			builder.addTransferCost(
+					transferCnt * vehicleAttributes.transferCost_1_ton.get(episode.getCommodity()) * payload_ton);
 		}
+
+		builder.addUnloadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
+		builder.addUnloadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
+
+		final List<ConsolidationUnit> consolidationUnits = episode.getConsolidationUnits();
+		for (ConsolidationUnit consolidationUnit : consolidationUnits) {
+			builder.add(this.logisticChoiceDataProvider.getInVehicleTransportCost(consolidationUnit), true);
+		}
+		return builder.build().createUnitCost_1_ton();
 	}
 
 	public DetailedTransportCost getEpisodeUnitCost_1_ton(TransportEpisode episode) {
@@ -101,16 +91,10 @@ public class LogisticChoiceData {
 	// -------------------- TRANSPORT CHAIN UNIT COSTS --------------------
 
 	public DetailedTransportCost computeChain2transportUnitCost_1_ton(TransportChain transportChain) {
-		try {
-			final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder()
-					.addAmount_ton(1.0);
-			for (TransportEpisode episode : transportChain.getEpisodes()) {
-				chainCostBuilder.add(this.getEpisodeUnitCost_1_ton(episode), false);
-			}
-			return chainCostBuilder.build();
-		} catch (InsufficientDataException e) {
-			Log.warn("Cannot compute unit cost for chain " + transportChain);
-			return null;
+		final DetailedTransportCost.Builder chainCostBuilder = new DetailedTransportCost.Builder().addAmount_ton(1.0);
+		for (TransportEpisode episode : transportChain.getEpisodes()) {
+			chainCostBuilder.add(this.getEpisodeUnitCost_1_ton(episode), false);
 		}
+		return chainCostBuilder.build();
 	}
 }

@@ -40,7 +40,6 @@ import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
@@ -129,44 +128,24 @@ public class Router {
 			this.jobQueue = jobQueue;
 		}
 
-//		private LeastCostPathCalculator getRouter(TransportMode mode, boolean isContainer, boolean containsFerry)
-//				throws InsufficientDataException {
-//			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
-//					mode, isContainer, containsFerry);
-//			if (representativeVehicleType != null) {
-//				final TravelDisutility travelDisutility = this.networkData
-//						.getTravelDisutility(representativeVehicleType);
-//				final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
-//				return this.mode2isContainer2containsFerry2router.computeIfAbsent(mode, m -> new LinkedHashMap<>())
-//						.computeIfAbsent(isContainer, ic -> new LinkedHashMap<>()).computeIfAbsent(containsFerry,
-//								cf -> this.routerFactory.createPathCalculator(
-//										this.networkData.getUnimodalNetwork(mode, containsFerry), travelDisutility,
-//										travelTime));
-//			} else {
-//				throw new InsufficientDataException(this.getClass(), "no representative vehicle type available",
-//						this.commodity, null, mode, isContainer, containsFerry);
-//			}
-//		}
-
-		private List<List<Link>> computeRoutes(ConsolidationUnit job, boolean containsFerry)
-				throws InsufficientDataException {
+		private List<List<Link>> computeRoutes(ConsolidationUnit job, boolean containsFerry) {
 
 			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
 					job.samgodsMode, job.isContainer, containsFerry);
 			if (representativeVehicleType == null) {
-				throw new InsufficientDataException(this.getClass(), "no representative vehicle type available",
-						this.commodity, null, job.samgodsMode, job.isContainer, containsFerry);
+				log.warn("No representative vehicle type available. " + job);
+				return null;
 			}
 
 			final TravelDisutility travelDisutility = this.networkData.getTravelDisutility(representativeVehicleType);
 			if (travelDisutility == null) {
-				throw new InsufficientDataException(this.getClass(), "no TravelDisutility available", this.commodity,
-						null, job.samgodsMode, job.isContainer, containsFerry);
+				log.warn("No TravelDisutility available. " + job);
+				return null;
 			}
 			final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
 			if (travelTime == null) {
-				throw new InsufficientDataException(this.getClass(), "no TravelTime available", this.commodity, null,
-						job.samgodsMode, job.isContainer, containsFerry);
+				log.warn("No TravelTime available. " + job);
+				return null;
 			}
 			final LeastCostPathCalculator router = this.mode2isContainer2containsFerry2router
 					.computeIfAbsent(job.samgodsMode, m -> new LinkedHashMap<>())
@@ -175,8 +154,8 @@ public class Router {
 									this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry),
 									travelDisutility, travelTime));
 			if (router == null) {
-				throw new InsufficientDataException(this.getClass(), "could not create router, reason unknown",
-						this.commodity, null, job.samgodsMode, job.isContainer, containsFerry);
+				log.warn("No Router available. " + job);
+				return null;
 			}
 
 			final Network network = this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry);
@@ -220,26 +199,19 @@ public class Router {
 			if (routes.stream().noneMatch(r -> r == null)) {
 				return routes;
 			} else {
-				// Not finding a route does not necessarily mean insufficient data.
 				return null;
 			}
 		}
 
 		private void process(ConsolidationUnit consolidationUnit) {
 
-			List<List<Link>> withFerryRoutes;
-			try {
-				withFerryRoutes = this.computeRoutes(consolidationUnit, true);
-			} catch (InsufficientDataException e) {
-				log.warn("Could not find a route (ferrys allowed) for " + consolidationUnit);
-				withFerryRoutes = null;
-			}
+			final List<List<Link>> withFerryRoutes = this.computeRoutes(consolidationUnit, true);
 			final Double withFerryCost;
 			final Boolean withFerryContainsFerry;
 			if (withFerryRoutes != null) {
 				final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
-						.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity, consolidationUnit.samgodsMode,
-								consolidationUnit.isContainer, true));
+						.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
+								consolidationUnit.samgodsMode, consolidationUnit.isContainer, true));
 				withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
 						.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
 				withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
@@ -252,13 +224,7 @@ public class Router {
 				consolidationUnit.setRoutes(withFerryRoutes, networkData);
 			} else {
 
-				List<List<Link>> withoutFerryRoutes;
-				try {
-					withoutFerryRoutes = this.computeRoutes(consolidationUnit, false);
-				} catch (InsufficientDataException e) {
-					log.warn("Could not find a route (ferrys not allowed) for " + consolidationUnit);
-					withoutFerryRoutes = null;
-				}
+				final List<List<Link>> withoutFerryRoutes = this.computeRoutes(consolidationUnit, false);
 				final Double withoutFerryCost;
 				if (withoutFerryRoutes != null) {
 					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this.networkData
@@ -280,6 +246,7 @@ public class Router {
 					if (withoutFerryRoutes != null) {
 						consolidationUnit.setRoutes(withoutFerryRoutes, networkData);
 					} else {
+						log.warn("Could not route all segments. " + consolidationUnit);
 						consolidationUnit.setRoutes(null, networkData);
 					}
 				}

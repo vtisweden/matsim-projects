@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.network.NetworkDataProvider;
@@ -81,34 +80,20 @@ public class LogisticChoiceDataProvider {
 		if (this.consolidationUnit2fleetAssignment != null) {
 			final FleetAssignment assignment = this.consolidationUnit2fleetAssignment.get(consolidationUnit);
 			if (assignment != null && assignment.payload_ton >= 1e-3) { // WHY?
-				try {
-					final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData
-							.getVehicleType2attributes().get(assignment.vehicleType);
-					return this.realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton,
-							consolidationUnit, this.internalNetworkData.getLinkId2unitCost(assignment.vehicleType),
-							this.internalNetworkData.getFerryLinkIds());
-				} catch (InsufficientDataException e1) {
-					throw new RuntimeException(e1);
-				}
+				final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData.getVehicleType2attributes()
+						.get(assignment.vehicleType);
+				return this.realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton, consolidationUnit,
+						this.internalNetworkData.getLinkId2unitCost(assignment.vehicleType),
+						this.internalNetworkData.getFerryLinkIds());
 			}
 		}
 		final VehicleType vehicleType = this.internalFleetData.getRepresentativeVehicleType(consolidationUnit.commodity,
 				consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
-		if (vehicleType != null) {
-			final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData.getVehicleType2attributes()
-					.get(vehicleType);
-			try {
-				return this.realizedInVehicleCost.compute(vehicleAttributes,
-						this.initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
-						this.internalNetworkData.getLinkId2unitCost(vehicleType),
-						this.internalNetworkData.getFerryLinkIds());
-			} catch (InsufficientDataException e) {
-				throw new RuntimeException(
-						"could not initialize unit cost for consolidation unit " + consolidationUnit);
-			}
-		} else {
-			throw new RuntimeException("could not initialize unit cost for consolidation unit " + consolidationUnit);
-		}
+		final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData.getVehicleType2attributes()
+				.get(vehicleType);
+		return this.realizedInVehicleCost.compute(vehicleAttributes,
+				this.initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
+				this.internalNetworkData.getLinkId2unitCost(vehicleType), this.internalNetworkData.getFerryLinkIds());
 	}
 
 	public DetailedTransportCost getInVehicleTransportCost(ConsolidationUnit consolidationUnit) {

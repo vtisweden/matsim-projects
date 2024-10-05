@@ -138,15 +138,10 @@ public class SamgodsVehicleAttributes {
 			this.id = Id.create(name, VehicleType.class);
 		}
 
-		private SamgodsVehicleAttributes buildVehicleAttributes() throws InsufficientDataException {
-			try {
-				return new SamgodsVehicleAttributes(this.id, this.samgodsMode, this.cost_1_km, this.cost_1_h,
-						this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
-						this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
-			} catch (Exception e /* Arises when assigning null Double object to primitive double. */) {
-				throw new InsufficientDataException(this.getClass(),
-						"Insufficient parameter data to build vehicle type " + this.id + ".");
-			}
+		private SamgodsVehicleAttributes buildVehicleAttributes() {
+			return new SamgodsVehicleAttributes(this.id, this.samgodsMode, this.cost_1_km, this.cost_1_h,
+					this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
+					this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 		}
 
 		public VehicleType buildVehicleType() throws InsufficientDataException {

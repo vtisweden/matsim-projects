@@ -42,7 +42,7 @@ public class RealizedInVehicleCost {
 
 	public DetailedTransportCost compute(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
 			ConsolidationUnit consolidationUnit, Map<Id<Link>, BasicTransportCost> link2unitCost,
-			Set<Id<Link>> ferryLinks) throws InsufficientDataException {
+			Set<Id<Link>> ferryLinks) {
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
 				.addAmount_ton(payload_ton);
 		if (consolidationUnit.linkIds.size() > 0) {

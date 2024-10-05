@@ -92,57 +92,57 @@ public class InsufficientDataException extends Exception {
 
 	// -------------------- MEMBERS --------------------
 
-	public final Class<?> clazz;
-	public final Commodity commodity;
-	public final OD od;
-	public final TransportMode samgodsMode;
-	public final Boolean isContainer;
-	public final Boolean containsFerry;
+//	public final Class<?> clazz;
+//	public final Commodity commodity;
+//	public final OD od;
+//	public final TransportMode samgodsMode;
+//	public final Boolean isContainer;
+//	public final Boolean containsFerry;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public InsufficientDataException(Class<?> clazz, String message, SamgodsConstants.Commodity commodity, OD od,
-			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
-		super(message);
-		this.clazz = clazz;
-		this.commodity = commodity;
-		this.od = od;
-		this.samgodsMode = mode;
-		this.isContainer = isContainer;
-		this.containsFerry = containsFerry;
-	}
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage, ConsolidationUnit consolidationUnit) {
-		this(throwClass, throwMessage, consolidationUnit.commodity,
-				new OD(consolidationUnit.nodeIds.get(0),
-						consolidationUnit.nodeIds.get(consolidationUnit.nodeIds.size() - 1)),
-				consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
-	}
-
-	public InsufficientDataException(Class<?> throwClass, String throwMessage) {
-		this(throwClass, throwMessage, null, null, null, null, null);
-	}
+//	public InsufficientDataException(Class<?> clazz, String message, SamgodsConstants.Commodity commodity, OD od,
+//			SamgodsConstants.TransportMode mode, Boolean isContainer, Boolean containsFerry) {
+//		super(message);
+//		this.clazz = clazz;
+//		this.commodity = commodity;
+//		this.od = od;
+//		this.samgodsMode = mode;
+//		this.isContainer = isContainer;
+//		this.containsFerry = containsFerry;
+//	}
+//
+//	public InsufficientDataException(Class<?> throwClass, String throwMessage, ConsolidationUnit consolidationUnit) {
+//		this(throwClass, throwMessage, consolidationUnit.commodity,
+//				new OD(consolidationUnit.nodeIds.get(0),
+//						consolidationUnit.nodeIds.get(consolidationUnit.nodeIds.size() - 1)),
+//				consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
+//	}
+//
+//	public InsufficientDataException(Class<?> throwClass, String throwMessage) {
+//		this(throwClass, throwMessage, null, null, null, null, null);
+//	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public String toString() {
-		final List<String> contextList = new LinkedList<>();
-		if (this.commodity != null) {
-			contextList.add("commodity=" + this.commodity);
-		}
-		if (this.od != null) {
-			contextList.add("od=" + this.od);
-		}
-		if (this.samgodsMode != null) {
-			contextList.add("mode=" + this.samgodsMode);
-		}
-		if (this.isContainer != null) {
-			contextList.add("isContainer=" + this.isContainer);
-		}
-		if (this.containsFerry != null) {
-			contextList.add("containsFerry=" + this.containsFerry);
-		}
-		return this.getMessage() + " in " + this.clazz.getSimpleName()
-				+ (contextList.size() > 0 ? ", context: " + contextList.stream().collect(Collectors.joining(",")) : "");
-	}
+//	public String toString() {
+//		final List<String> contextList = new LinkedList<>();
+//		if (this.commodity != null) {
+//			contextList.add("commodity=" + this.commodity);
+//		}
+//		if (this.od != null) {
+//			contextList.add("od=" + this.od);
+//		}
+//		if (this.samgodsMode != null) {
+//			contextList.add("mode=" + this.samgodsMode);
+//		}
+//		if (this.isContainer != null) {
+//			contextList.add("isContainer=" + this.isContainer);
+//		}
+//		if (this.containsFerry != null) {
+//			contextList.add("containsFerry=" + this.containsFerry);
+//		}
+//		return this.getMessage() + " in " + this.clazz.getSimpleName()
+//				+ (contextList.size() > 0 ? ", context: " + contextList.stream().collect(Collectors.joining(",")) : "");
+//	}
 }

@@ -49,4 +49,10 @@ public class ConsolidationJob {
 		this.serviceInterval_days = serviceInterval_days;
 	}
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + "[" + this.consolidationUnit + ",numberOfChoices="
+				+ (this.choices != null ? choices.size() : null) + "]";
+	}
+
 }

@@ -36,7 +36,6 @@ import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
@@ -145,7 +144,7 @@ public class NetworkData {
 		};
 	}
 
-	public TravelDisutility getTravelDisutility(VehicleType vehicleType) throws InsufficientDataException {
+	public TravelDisutility getTravelDisutility(VehicleType vehicleType) {
 		return this.vehicleType2travelDisutility.computeIfAbsent(vehicleType, vt -> this.createTravelDisutility(vt));
 	}
 
@@ -168,7 +167,7 @@ public class NetworkData {
 		};
 	}
 
-	public TravelTime getTravelTime(VehicleType vehicleType) throws InsufficientDataException {
+	public TravelTime getTravelTime(VehicleType vehicleType) {
 		return this.vehicleType2travelTime.computeIfAbsent(vehicleType, vt -> this.createTravelTime(vehicleType));
 	}
 }

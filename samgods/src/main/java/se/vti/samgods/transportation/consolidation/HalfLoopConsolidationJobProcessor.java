@@ -86,15 +86,11 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				if (job == ConsolidationJob.TERMINATE) {
 					break;
 				}
-				FleetAssignment fleetAssignment;
-				try {
-					fleetAssignment = this.computeOptimalFleetAssignment(job);
-				} catch (InsufficientDataException e) {
-					fleetAssignment = null;
-					log.warn("Could not consolidate consolidationUnit: " + job.consolidationUnit);
-				}
+				final FleetAssignment fleetAssignment = this.computeOptimalFleetAssignment(job);
 				if (fleetAssignment != null) {
 					this.consolidationUnit2fleetAssignment.put(job.consolidationUnit, fleetAssignment);
+				} else {
+					log.warn("Could not compute fleet assignment. " + job);
 				}
 			}
 		} catch (InterruptedException e) {
@@ -172,7 +168,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	}
 
 	private FleetAssignment dimensionFleetAssignment(double realDemand_ton, VehicleType vehicleType,
-			ConsolidationJob job, double serviceIntervalActiveProba) throws InsufficientDataException {
+			ConsolidationJob job, double serviceIntervalActiveProba) {
 		final SamgodsVehicleAttributes vehicleAttrs = this.fleetData.getVehicleType2attributes().get(vehicleType);
 		FleetAssignment result = new FleetAssignment(realDemand_ton, vehicleType, vehicleAttrs.capacity_ton,
 				this.realizedInVehicleCost.compute(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, job.consolidationUnit,
@@ -201,7 +197,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		return result;
 	}
 
-	public FleetAssignment computeOptimalFleetAssignment(ConsolidationJob job) throws InsufficientDataException {
+	public FleetAssignment computeOptimalFleetAssignment(ConsolidationJob job) {
 
 		// Compute real and background demand.
 		final double realDemand_ton = job.choices.stream().mapToDouble(c -> c.annualShipment.getTotalAmount_ton())
@@ -227,8 +223,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		final List<VehicleType> compatibleVehicleTypes = this.fleetData
 				.getCompatibleVehicleTypes(job.consolidationUnit);
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
-			throw new InsufficientDataException(this.getClass(), "No compatible vehicle type found.",
-					job.consolidationUnit);
+			log.warn("No compatible vehicle types found. " + job);
+			return null;
 		}
 
 		if (job.consolidationUnit.isContainer

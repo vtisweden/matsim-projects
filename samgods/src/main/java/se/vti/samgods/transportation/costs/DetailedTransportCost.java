@@ -191,16 +191,11 @@ public class DetailedTransportCost extends BasicTransportCost {
 			return this;
 		}
 
-		public DetailedTransportCost build() throws InsufficientDataException {
-			try {
-				// Null values intentionally raise exception when cast to primitive double.
-				return new DetailedTransportCost(this.amount_ton, this.loadingCost, this.unloadingCost,
-						this.transferCost, this.moveCost, this.loadingDuration_h, this.unloadingDuration_h,
-						this.transferDuration_h, this.moveDuration_h, this.distance_km);
-			} catch (Exception e) {
-				throw new InsufficientDataException(this.getClass(),
-						"Insufficent data to build detailed transport cost.");
-			}
+		public DetailedTransportCost build() {
+			// Null values intentionally raise exception when cast to primitive double.
+			return new DetailedTransportCost(this.amount_ton, this.loadingCost, this.unloadingCost, this.transferCost,
+					this.moveCost, this.loadingDuration_h, this.unloadingDuration_h, this.transferDuration_h,
+					this.moveDuration_h, this.distance_km);
 		}
 	}
 }
