@@ -21,6 +21,7 @@ package se.vti.samgods.logistics;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -58,7 +59,7 @@ public class TransportChain {
 	public List<? extends Link> allLinks(Network network) {
 		return this.episodes.stream().map(e -> e.allLinks(network)).flatMap(list -> list.stream()).toList();
 	}
-	
+
 	public boolean isConnected(Network network) {
 		Link previousLink = null;
 		for (Link currentLink : this.allLinks(network)) {
@@ -67,21 +68,21 @@ public class TransportChain {
 			}
 			previousLink = currentLink;
 		}
-		return true;		
+		return true;
 	}
-	
+
 	// -------------------- IMPLEMENTATION --------------------
 
-	public LinkedList<TransportEpisode> getEpisodes() {
-		return this.episodes;
+	public Commodity getCommodity() {
+		return this.commodity;
 	}
 
 	public boolean isContainer() {
 		return this.isContainer;
 	}
 
-	public Commodity getCommodity() {
-		return this.commodity;
+	public LinkedList<TransportEpisode> getEpisodes() {
+		return this.episodes;
 	}
 
 	public OD getOD() {
@@ -100,4 +101,18 @@ public class TransportChain {
 		}
 		return true;
 	}
+
+	// -------------------- OVERRIDING OF OBJECT --------------------
+
+	@Override
+	public String toString() {
+		final List<String> content = new LinkedList<>();
+		content.add("commodity=" + this.commodity);
+		content.add("isContainer=" + this.isContainer);
+		content.add("numberOfEpisodes=" + (this.getEpisodes() != null ? this.getEpisodes().size() : null));
+		content.add("od=" + this.getOD());
+		content.add("isRouted=" + this.isRouted());
+		return this.getClass().getSimpleName() + "[" + content.stream().collect(Collectors.joining(",")) + "]";
+	}
+
 }

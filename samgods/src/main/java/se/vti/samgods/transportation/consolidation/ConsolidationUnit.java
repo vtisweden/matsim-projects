@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -197,7 +198,18 @@ public class ConsolidationUnit {
 
 	@Override
 	public String toString() {
-		return this.createAsList().toString();
+		final List<String> content = new LinkedList<>();
+		content.add("commodity=" + this.commodity);
+		content.add("isContainer=" + this.isContainer);
+		content.add("mode=" + this.samgodsMode);
+		content.add("containsFerry=" + this.containsFerry);
+		content.add("nodes=" + this.nodeIds);
+		content.add("length=" + this.length_km + "km");
+		content.add("domesticLength=" + this.domesticLength_km + "km");
+		content.add("numberOfRouteLinks="
+				+ (this.linkIds != null ? this.linkIds.stream().filter(r -> r != null).flatMap(r -> r.stream()).count()
+						: null));
+		return this.getClass().getSimpleName() + "[" + content.stream().collect(Collectors.joining(",")) + "]";
 	}
 
 	// -------------------- Json Serializer --------------------

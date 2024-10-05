@@ -21,6 +21,7 @@ package se.vti.samgods.logistics;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -66,7 +67,7 @@ public class TransportEpisode {
 	public void setConsolidationUnits(List<ConsolidationUnit> consolidationUnits) {
 		this.consolidationUnits = consolidationUnits;
 	}
-	
+
 	public List<? extends Link> allLinks(Network network) {
 		return this.consolidationUnits.stream().map(cu -> cu.allLinks(network)).flatMap(list -> list.stream()).toList();
 	}
@@ -125,4 +126,23 @@ public class TransportEpisode {
 		return (this.hasSignatures()
 				&& (this.consolidationUnits.stream().allMatch(s -> (s != null) && (s.linkIds != null))));
 	}
+
+	// -------------------- OVERRIDING OF OBJECT --------------------
+
+	@Override
+	public String toString() {
+		final List<String> content = new LinkedList<>();
+		content.add("mode=" + this.mode);
+		content.add("numberOfConsolidationUnits="
+				+ (this.getConsolidationUnits() != null ? this.getConsolidationUnits().size() : null));
+		content.add("loadingNode=" + this.getLoadingNodeId());
+		content.add("unloadingNode=" + this.getUnloadingNodeId());
+		content.add("isRouted=" + this.isRouted());
+		content.add("consolidationUnits=" + (this.consolidationUnits != null
+				? "{" + this.consolidationUnits.stream().map(cu -> cu.toString()).collect(Collectors.joining(",")) + "}"
+				: null));
+		return this.getClass().getSimpleName() + "[" + content.stream().collect(Collectors.joining(",")) + "]"
+				+ ", parent=" + (this.parent != null ? this.parent.toString() : null);
+	}
+
 }
