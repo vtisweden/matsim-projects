@@ -88,16 +88,16 @@ public class ConsolidationUnit {
 	}
 
 	public static List<ConsolidationUnit> createUnrouted(TransportEpisode episode) {
-		if (episode.getLegODs() == null) {
+		if (episode.getSegmentODs() == null) {
 			return Collections.emptyList();
 		} else {
-			if (episode.getMode().equals(TransportMode.Rail) && (episode.getLegODs().size() > 1)) {
+			if (episode.getMode().equals(TransportMode.Rail) && (episode.getSegmentODs().size() > 1)) {
 				return episode
-						.getLegODs().stream().map(od -> new ConsolidationUnit(extractNodes(Arrays.asList(od)),
+						.getSegmentODs().stream().map(od -> new ConsolidationUnit(extractNodes(Arrays.asList(od)),
 								episode.getCommodity(), episode.getMode(), episode.isContainer()))
 						.collect(Collectors.toList());
 			} else {
-				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getLegODs()), episode.getCommodity(),
+				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getSegmentODs()), episode.getCommodity(),
 						episode.getMode(), episode.isContainer()));
 			}
 		}

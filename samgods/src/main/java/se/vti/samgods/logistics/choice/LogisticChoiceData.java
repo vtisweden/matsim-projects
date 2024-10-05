@@ -21,6 +21,7 @@ package se.vti.samgods.logistics.choice;
 
 import java.util.List;
 
+import org.jfree.util.Log;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.InsufficientDataException;
@@ -87,8 +88,7 @@ public class LogisticChoiceData {
 			return builder.build().createUnitCost_1_ton();
 
 		} catch (InsufficientDataException e) {
-			InsufficientDataException.log(e,
-					new InsufficientDataException(this.getClass(), "cannot create episode unit cost"));
+			Log.warn("Cannot compute unit cost for episode: " + episode);
 			return null;
 		}
 	}
@@ -109,8 +109,7 @@ public class LogisticChoiceData {
 			}
 			return chainCostBuilder.build();
 		} catch (InsufficientDataException e) {
-			InsufficientDataException.log(e, new InsufficientDataException(this.getClass(),
-					"No transport cost data for at least one episode in this transport chain."));
+			Log.warn("Cannot compute unit cost for chain " + transportChain);
 			return null;
 		}
 	}

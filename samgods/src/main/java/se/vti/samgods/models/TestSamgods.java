@@ -59,8 +59,8 @@ public class TestSamgods {
 
 		log.info("STARTED ...");
 
-		InsufficientDataException.setLogDuringRuntime(false);
-		InsufficientDataException.setLogUponShutdown(false);
+//		InsufficientDataException.setLogDuringRuntime(false);
+//		InsufficientDataException.setLogUponShutdown(false);
 
 		List<Commodity> allWithoutAir = new ArrayList<>(Arrays.asList(Commodity.values()));
 		allWithoutAir.remove(Commodity.AIR);

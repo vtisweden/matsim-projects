@@ -65,12 +65,10 @@ import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.choice.ChoiceJob;
 import se.vti.samgods.logistics.choice.ChoiceJobProcessor;
-import se.vti.samgods.logistics.choice.LogisticChoiceData;
 import se.vti.samgods.logistics.choice.LogisticChoiceDataProvider;
 import se.vti.samgods.logistics.choice.MonetaryChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.logistics.costs.NonTransportCostModel_v1_22;
-import se.vti.samgods.models.TestSamgods;
 import se.vti.samgods.network.LinkRegionsReader;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.network.NetworkDataProvider;
@@ -502,10 +500,7 @@ public class SamgodsRunner {
 							if (transportChains.size() > 0) {
 								jobQueue.put(new ChoiceJob(commodity, od, transportChains, annualShipments));
 							} else {
-								InsufficientDataException.log(
-										new InsufficientDataException(TestSamgods.class,
-												"No transport chains available.", commodity, od, null, null, null),
-										null);
+								log.warn("No transport chains available for commodity=" + commodity + ",od=" + od);
 							}
 						}
 					}
@@ -567,9 +562,8 @@ public class SamgodsRunner {
 					for (int i = 0; i < threadCnt; i++) {
 						NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
 						FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-						LogisticChoiceData choiceData = logisticChoiceDataProvider.createLogisticChoiceData();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								networkData, fleetData, choiceData, jobQueue, consolidationUnit2assignment,
+								networkData, fleetData, jobQueue, consolidationUnit2assignment,
 								new LinkedHashMap<>(this.commodity2scale));
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
@@ -590,11 +584,7 @@ public class SamgodsRunner {
 								jobQueue.put(job);
 							}
 						} else {
-							InsufficientDataException.log(
-									new InsufficientDataException(TestSamgods.class, "No transport chains available.",
-											consolidationUnit.commodity, null, consolidationUnit.samgodsMode,
-											consolidationUnit.isContainer, consolidationUnit.containsFerry),
-									null);
+							log.warn("No transport chains available for consolidation: " + consolidationUnit);
 						}
 					}
 

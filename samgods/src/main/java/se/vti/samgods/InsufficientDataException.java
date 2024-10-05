@@ -40,55 +40,55 @@ public class InsufficientDataException extends Exception {
 
 	// -------------------- STATIC INTERNALS --------------------
 
-	private static final Logger log = Logger.getLogger(InsufficientDataException.class);
-
-	private static boolean logDuringRuntime = true;
-	private static boolean logUponShutdown = true;
-
-	private static List<InsufficientDataException> originalExceptions = new ArrayList<>();
-	private static List<InsufficientDataException> resultingExceptions = new ArrayList<>();
-
-	private static String logMsg(InsufficientDataException originalException,
-			InsufficientDataException resultingException) {
-		return (resultingException != null ? resultingException + " CAUSED BY " : "") + originalException;
-	}
-
-	static {
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-			@Override
-			public void run() {
-				if (logUponShutdown) {
-					StringBuffer msg = new StringBuffer(
-							"\n--------------------------------------------------------------------------------------------------------------------------------------------\n");
-					for (int i = 0; i < originalExceptions.size(); i++) {
-						msg.append(logMsg(originalExceptions.get(i), resultingExceptions.get(i)) + "\n");
-					}
-					msg.append(
-							"--------------------------------------------------------------------------------------------------------------------------------------------");
-					System.err.println(msg.toString());
-				}
-			}
-		}));
-	}
+//	private static final Logger log = Logger.getLogger(InsufficientDataException.class);
+//
+//	private static boolean logDuringRuntime = true;
+//	private static boolean logUponShutdown = true;
+//
+//	private static List<InsufficientDataException> originalExceptions = new ArrayList<>();
+//	private static List<InsufficientDataException> resultingExceptions = new ArrayList<>();
+//
+//	private static String logMsg(InsufficientDataException originalException,
+//			InsufficientDataException resultingException) {
+//		return (resultingException != null ? resultingException + " CAUSED BY " : "") + originalException;
+//	}
+//
+//	static {
+//		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+//			@Override
+//			public void run() {
+//				if (logUponShutdown) {
+//					StringBuffer msg = new StringBuffer(
+//							"\n--------------------------------------------------------------------------------------------------------------------------------------------\n");
+//					for (int i = 0; i < originalExceptions.size(); i++) {
+//						msg.append(logMsg(originalExceptions.get(i), resultingExceptions.get(i)) + "\n");
+//					}
+//					msg.append(
+//							"--------------------------------------------------------------------------------------------------------------------------------------------");
+//					System.err.println(msg.toString());
+//				}
+//			}
+//		}));
+//	}
 
 	// -------------------- GLOBAL STATIC --------------------
 
-	public static void setLogDuringRuntime(boolean log) {
-		logDuringRuntime = log;
-	}
-
-	public static void setLogUponShutdown(boolean log) {
-		logUponShutdown = log;
-	}
-
-	public static synchronized void log(InsufficientDataException originalException,
-			InsufficientDataException resultingException) {
-		originalExceptions.add(originalException);
-		resultingExceptions.add(resultingException);
-		if (logDuringRuntime) {
-			log.warn(logMsg(originalException, resultingException));
-		}
-	}
+//	public static void setLogDuringRuntime(boolean log) {
+//		logDuringRuntime = log;
+//	}
+//
+//	public static void setLogUponShutdown(boolean log) {
+//		logUponShutdown = log;
+//	}
+//
+//	public static synchronized void log(InsufficientDataException originalException,
+//			InsufficientDataException resultingException) {
+//		originalExceptions.add(originalException);
+//		resultingExceptions.add(resultingException);
+//		if (logDuringRuntime) {
+//			log.warn(logMsg(originalException, resultingException));
+//		}
+//	}
 
 	// -------------------- MEMBERS --------------------
 

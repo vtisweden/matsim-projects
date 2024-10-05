@@ -51,13 +51,12 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final Logger log = Logger.getLogger(HalfLoopConsolidationJobProcessor.class);
+	private static final Logger log = Logger.getLogger(HalfLoopConsolidationJobProcessor.class);
 
 	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 
 	private final NetworkData networkData;
 	private final FleetData fleetData;
-	private final LogisticChoiceData logisticChoiceData;
 
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
@@ -67,12 +66,11 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidationJobProcessor(NetworkData networkData, FleetData fleetData,
-			LogisticChoiceData logisticChoiceData, BlockingQueue<ConsolidationJob> jobQueue,
+			BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
 			final Map<Commodity, Double> commodity2scale) {
 		this.networkData = networkData;
 		this.fleetData = fleetData;
-		this.logisticChoiceData = logisticChoiceData;
 		this.jobQueue = jobQueue;
 		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
 		this.commodity2scale = commodity2scale;
@@ -93,8 +91,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 					fleetAssignment = this.computeOptimalFleetAssignment(job);
 				} catch (InsufficientDataException e) {
 					fleetAssignment = null;
-					InsufficientDataException.log(e,
-							new InsufficientDataException(this.getClass(), "could not consolidate"));
+					log.warn("Could not consolidate consolidationUnit: " + job.consolidationUnit);
 				}
 				if (fleetAssignment != null) {
 					this.consolidationUnit2fleetAssignment.put(job.consolidationUnit, fleetAssignment);
@@ -241,15 +238,14 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		// Identify optimal fleet assigment.
 		final double scale = this.commodity2scale.get(job.consolidationUnit.commodity);
-		
+
 		final List<FleetAssignment> assignments = new ArrayList<>(compatibleVehicleTypes.size());
 		final Map<FleetAssignment, Double> assignment2utility = new LinkedHashMap<>(compatibleVehicleTypes.size());
 		for (VehicleType vehicleType : compatibleVehicleTypes) {
-			final FleetAssignment assignment = this.dimensionFleetAssignment(realDemand_ton,
-					vehicleType, job, serviceIntervalActiveProba);
-			final double utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5
-					* assignment.loopLength_km * realDemand_ton
-					+ this.fleetData.getVehicleType2asc().get(vehicleType);
+			final FleetAssignment assignment = this.dimensionFleetAssignment(realDemand_ton, vehicleType, job,
+					serviceIntervalActiveProba);
+			final double utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5 * assignment.loopLength_km
+					* realDemand_ton + this.fleetData.getVehicleType2asc().get(vehicleType);
 			assignments.add(assignment);
 			assignment2utility.put(assignment, utility);
 		}

@@ -48,4 +48,12 @@ public class ChoiceJob {
 		this.transportChains = transportChains;
 		this.annualShipments = annualShipments;
 	}
+
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + "[commodity=" + this.commodity + ",od=" + this.od
+				+ ",numberOfTransportChains=" + (this.transportChains != null ? this.transportChains.size() : null)
+				+ ",numberOfAnnualShipments=" + (this.annualShipments != null ? this.annualShipments.size() : null)
+				+ "]";
+	}
 }

@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
-import se.vti.samgods.InsufficientDataException;
+import org.jfree.util.Log;
+
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.ShipmentSize;
 import se.vti.samgods.logistics.AnnualShipment;
@@ -113,15 +114,13 @@ public class ChoiceJobProcessor implements Runnable {
 					}
 				}
 //				for (int instance = 0; instance < annualShipment.getNumberOfInstances(); instance++) {
-					final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
-					assert (choice != null);
-					this.allChoices.put(choice);
+				final ChainAndShipmentSize choice = this.choiceModel.choose(alternatives, a -> a.utility);
+				assert (choice != null);
+				this.allChoices.put(choice);
 //				}
 			}
 		} else {
-			InsufficientDataException.log(new InsufficientDataException(this.getClass(),
-					"No transport chains with transport cost available.", job.commodity, job.od, null, null, null),
-					null);
+			Log.warn("Cannot compute choices for choice job: " + job);
 		}
 	}
 }

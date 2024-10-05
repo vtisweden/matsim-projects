@@ -44,7 +44,7 @@ public class TransportEpisode {
 
 	private final TransportMode mode;
 
-	private final LinkedList<OD> legODs = new LinkedList<>();
+	private final LinkedList<OD> segmentODs = new LinkedList<>();
 
 	private TransportChain parent;
 
@@ -60,8 +60,8 @@ public class TransportEpisode {
 		this.parent = parent;
 	}
 
-	public void addLegOD(OD od) {
-		this.legODs.add(od);
+	public void addSegmentOD(OD od) {
+		this.segmentODs.add(od);
 	}
 
 	public void setConsolidationUnits(List<ConsolidationUnit> consolidationUnits) {
@@ -78,23 +78,23 @@ public class TransportEpisode {
 		return this.mode;
 	}
 
-	public LinkedList<OD> getLegODs() {
-		return this.legODs;
+	public LinkedList<OD> getSegmentODs() {
+		return this.segmentODs;
 	}
 
 	public Id<Node> getLoadingNodeId() {
-		if (this.legODs.size() == 0) {
+		if (this.segmentODs.size() == 0) {
 			return null;
 		} else {
-			return this.legODs.getFirst().origin;
+			return this.segmentODs.getFirst().origin;
 		}
 	}
 
 	public Id<Node> getUnloadingNodeId() {
-		if (this.legODs.size() == 0) {
+		if (this.segmentODs.size() == 0) {
 			return null;
 		} else {
-			return this.legODs.getLast().destination;
+			return this.segmentODs.getLast().destination;
 		}
 	}
 
@@ -133,11 +133,10 @@ public class TransportEpisode {
 	public String toString() {
 		final List<String> content = new LinkedList<>();
 		content.add("mode=" + this.mode);
-		content.add("numberOfConsolidationUnits="
-				+ (this.getConsolidationUnits() != null ? this.getConsolidationUnits().size() : null));
-		content.add("loadingNode=" + this.getLoadingNodeId());
-		content.add("unloadingNode=" + this.getUnloadingNodeId());
 		content.add("isRouted=" + this.isRouted());
+		content.add("segmentOds={" + (this.segmentODs != null
+				? this.segmentODs.stream().map(od -> od.toString()).collect(Collectors.joining(",")) + "}"
+				: null));
 		content.add("consolidationUnits=" + (this.consolidationUnits != null
 				? "{" + this.consolidationUnits.stream().map(cu -> cu.toString()).collect(Collectors.joining(",")) + "}"
 				: null));

@@ -203,8 +203,7 @@ public class VehiclesReader {
 					}
 				}
 			} catch (InsufficientDataException e) {
-				InsufficientDataException.log(e,
-						new InsufficientDataException(this.getClass(), "failed to build vehicle type " + builder.id));
+				log.warn("Failed to build vehicle type " + builder.id);
 			}
 		}
 	}

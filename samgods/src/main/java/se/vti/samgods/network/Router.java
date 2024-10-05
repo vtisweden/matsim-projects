@@ -106,8 +106,6 @@ public class Router {
 
 	private class RouteProcessor implements Runnable {
 
-		private final Logger log = Logger.getLogger(Router.RouteProcessor.class);
-
 		private final String name;
 
 		private final Commodity commodity;
@@ -227,22 +225,21 @@ public class Router {
 			}
 		}
 
-		private void process(ConsolidationUnit job) {
+		private void process(ConsolidationUnit consolidationUnit) {
 
 			List<List<Link>> withFerryRoutes;
 			try {
-				withFerryRoutes = this.computeRoutes(job, true);
+				withFerryRoutes = this.computeRoutes(consolidationUnit, true);
 			} catch (InsufficientDataException e) {
-				InsufficientDataException.log(e,
-						new InsufficientDataException(this.getClass(), "could not find with-ferry routes"));
+				log.warn("Could not find a route (ferrys allowed) for " + consolidationUnit);
 				withFerryRoutes = null;
 			}
 			final Double withFerryCost;
 			final Boolean withFerryContainsFerry;
 			if (withFerryRoutes != null) {
 				final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
-						.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity, job.samgodsMode,
-								job.isContainer, true));
+						.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity, consolidationUnit.samgodsMode,
+								consolidationUnit.isContainer, true));
 				withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
 						.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
 				withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
@@ -252,22 +249,21 @@ public class Router {
 				withFerryContainsFerry = null;
 			}
 			if ((withFerryRoutes != null) && !withFerryContainsFerry) {
-				job.setRoutes(withFerryRoutes, networkData);
+				consolidationUnit.setRoutes(withFerryRoutes, networkData);
 			} else {
 
 				List<List<Link>> withoutFerryRoutes;
 				try {
-					withoutFerryRoutes = this.computeRoutes(job, false);
+					withoutFerryRoutes = this.computeRoutes(consolidationUnit, false);
 				} catch (InsufficientDataException e) {
-					InsufficientDataException.log(e,
-							new InsufficientDataException(this.getClass(), "could not find without-ferry routes"));
+					log.warn("Could not find a route (ferrys not allowed) for " + consolidationUnit);
 					withoutFerryRoutes = null;
 				}
 				final Double withoutFerryCost;
 				if (withoutFerryRoutes != null) {
 					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this.networkData
 							.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
-									job.samgodsMode, job.isContainer, false));
+									consolidationUnit.samgodsMode, consolidationUnit.isContainer, false));
 					withoutFerryCost = withoutFerryRoutes.stream().flatMap(list -> list.stream())
 							.mapToDouble(l -> link2withoutFerryUnitCost.get(l.getId()).monetaryCost).sum();
 				} else {
@@ -276,15 +272,15 @@ public class Router {
 
 				if (withFerryRoutes != null) {
 					if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
-						job.setRoutes(withoutFerryRoutes, networkData);
+						consolidationUnit.setRoutes(withoutFerryRoutes, networkData);
 					} else {
-						job.setRoutes(withFerryRoutes, networkData);
+						consolidationUnit.setRoutes(withFerryRoutes, networkData);
 					}
 				} else {
 					if (withoutFerryRoutes != null) {
-						job.setRoutes(withoutFerryRoutes, networkData);
+						consolidationUnit.setRoutes(withoutFerryRoutes, networkData);
 					} else {
-						job.setRoutes(null, networkData);
+						consolidationUnit.setRoutes(null, networkData);
 					}
 				}
 			}
