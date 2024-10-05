@@ -23,11 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.math3.exception.InsufficientDataException;
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 
 /**

@@ -37,7 +37,6 @@ import org.apache.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsRunner;
@@ -58,9 +57,6 @@ public class TestSamgods {
 	public static void main(String[] args) throws IOException {
 
 		log.info("STARTED ...");
-
-//		InsufficientDataException.setLogDuringRuntime(false);
-//		InsufficientDataException.setLogUponShutdown(false);
 
 		List<Commodity> allWithoutAir = new ArrayList<>(Arrays.asList(Commodity.values()));
 		allWithoutAir.remove(Commodity.AIR);
@@ -85,8 +81,7 @@ public class TestSamgods {
 //				.setMaxIterations(2).setEnforceReroute(true);
 		final SamgodsRunner runner = new SamgodsRunner().setServiceInterval_days(7)
 				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(1.0)
-				.setMaxThreads(Integer.MAX_VALUE)
-				.setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
+				.setMaxThreads(Integer.MAX_VALUE).setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
 				.setScale(Commodity.COAL, scaleFactor * 0.0000001).setScale(Commodity.METAL, scaleFactor * 0.0000001
 				/* METAL: using coal parameter because, estimated has wrong sign */)
 				.setScale(Commodity.FOOD, scaleFactor * 0.00006).setScale(Commodity.TEXTILES, scaleFactor * 0.0003)
@@ -100,12 +95,6 @@ public class TestSamgods {
 				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
 				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
 				.setMaxIterations(1000).setEnforceReroute(false);
-
-//		runner.setBackgroundTransportWork(new BackgroundTransportWork().setStepSize(1.0)
-//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Road, 1.5)
-//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Rail, 0.5)
-//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Sea, 0.2)
-//				.setTargetUnitCost_1_tonKm(SamgodsConstants.TransportMode.Air, 10.0));
 
 		runner.loadVehicles("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
 				SamgodsConstants.TransportMode.Rail, "WG950", "KOMXL", "SYSXL", "WGEXL")
@@ -126,177 +115,4 @@ public class TestSamgods {
 
 		log.info("DONE");
 	}
-
-	// ====================================================================================================
-	// ====================================================================================================
-	// ====================================================================================================
-
-	// LOGGING/TESTING BELOW
-
-	public static void logEfficiency(Map<SamgodsConstants.TransportMode, Double> mode2realizedEfficiency, int iteration,
-			String fileName) {
-		if (iteration == 0) {
-			String headerLine = "";
-			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				headerLine += "efficiency(" + mode + ")\t";
-			}
-			try {
-				FileUtils.write(new File(fileName), headerLine + "\n", false);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		String dataLine = "";
-		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			if (mode2realizedEfficiency.containsKey(mode)) {
-				dataLine += mode2realizedEfficiency.get(mode) + "\t";
-			} else {
-				dataLine += "\t";
-			}
-		}
-		try {
-			FileUtils.write(new File(fileName), dataLine + "\n", true);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static void logCost(Map<SamgodsConstants.TransportMode, Double> mode2unitCost_1_tonKm, int iteration,
-			String fileName) {
-		if (iteration == 0) {
-			String headerLine = "";
-			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				headerLine += "unitCost(" + mode + ")[SEK/tonKm]\t";
-			}
-			try {
-				FileUtils.write(new File(fileName), headerLine + "\n", false);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		String dataLine = "";
-		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			if (mode2unitCost_1_tonKm.containsKey(mode)) {
-				dataLine += mode2unitCost_1_tonKm.get(mode) + "\t";
-			} else {
-				dataLine += "\t";
-			}
-		}
-		try {
-			FileUtils.write(new File(fileName), dataLine + "\n", true);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static void logFleet(Map<VehicleType, Double> vehType2cnt, int iteration, Vehicles vehicles) {
-
-		Map<SamgodsConstants.TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
-		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			mode2types.put(mode,
-					vehicles.getVehicleTypes().values().stream()
-							.filter(t -> mode.equals(((SamgodsVehicleAttributes) t.getAttributes()
-									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).samgodsMode))
-							.collect(Collectors.toList()));
-			Collections.sort(mode2types.get(mode), new Comparator<VehicleType>() {
-				@Override
-				public int compare(VehicleType t1, VehicleType t2) {
-					return Double.compare(
-							((SamgodsVehicleAttributes) t1.getAttributes()
-									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton,
-							((SamgodsVehicleAttributes) t2.getAttributes()
-									.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton);
-				}
-			});
-		}
-
-		if (iteration == 0) {
-			String headerLine = "";
-			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				for (VehicleType type : mode2types.get(mode)) {
-					headerLine += type.getId().toString() + "\t";
-				}
-				headerLine += "\t";
-			}
-			try {
-				FileUtils.write(new File("fleet.txt"), headerLine + "\n", false);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-
-			headerLine = "";
-			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-				for (VehicleType type : mode2types.get(mode)) {
-					headerLine += ((SamgodsVehicleAttributes) type.getAttributes()
-							.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME)).capacity_ton + "\t";
-				}
-				headerLine += "\t";
-			}
-			try {
-				FileUtils.write(new File("fleet.txt"), headerLine + "\n", true);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-
-		}
-
-		double totalCnt = vehType2cnt.values().stream().mapToDouble(c -> c).sum();
-
-		String dataLine = "";
-		for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
-			for (VehicleType type : mode2types.get(mode)) {
-				dataLine += (vehType2cnt.getOrDefault(type, 0.0) / totalCnt) + "\t";
-			}
-			dataLine += "\t";
-		}
-		try {
-			FileUtils.write(new File("fleet.txt"), dataLine + "\n", true);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static class EfficiencyLogger {
-
-		final String file;
-
-		Double binSize = null;
-
-		EfficiencyLogger(String file) {
-			this.file = file;
-		}
-
-		void log(Collection<Double> efficiencies) {
-
-			double maxEff = efficiencies.stream().mapToDouble(e -> e).max().getAsDouble();
-
-			if (this.binSize == null) {
-				this.binSize = maxEff / 20;
-				try {
-					FileUtils.write(new File(this.file),
-							IntStream.range(0, 25).boxed().map(b -> Double.toString((0.5 + b) * this.binSize))
-									.collect(Collectors.joining("\t")) + "\n",
-							false);
-				} catch (IOException e1) {
-					throw new RuntimeException();
-				}
-			}
-
-			int[] cnt = new int[1 + (int) Math.ceil(maxEff / this.binSize)];
-			for (Double eff : efficiencies) {
-				cnt[(int) (eff / this.binSize)]++;
-			}
-
-			try {
-				FileUtils.write(new File(this.file),
-						Arrays.stream(cnt).boxed().map(c -> "" + c).collect(Collectors.joining("\t")) + "\n", true);
-			} catch (IOException e1) {
-				throw new RuntimeException();
-			}
-		}
-
-	}
-
 }

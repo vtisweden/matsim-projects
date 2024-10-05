@@ -19,8 +19,6 @@
  */
 package se.vti.samgods.transportation.costs;
 
-import se.vti.samgods.InsufficientDataException;
-
 /**
  * 
  * @author GunnarF

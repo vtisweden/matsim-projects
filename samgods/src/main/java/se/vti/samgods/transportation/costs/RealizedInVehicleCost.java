@@ -26,7 +26,6 @@ import java.util.Set;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 

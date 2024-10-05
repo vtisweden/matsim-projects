@@ -30,11 +30,9 @@ import org.apache.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.InsufficientDataException;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
-import se.vti.samgods.logistics.choice.LogisticChoiceData;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
