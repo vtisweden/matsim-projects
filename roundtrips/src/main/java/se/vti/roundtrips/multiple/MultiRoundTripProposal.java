@@ -31,16 +31,22 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRoundTrip<R>>
-		implements MHProposal<M> {
+public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRoundTrip<R>> implements MHProposal<M> {
 
 	private final Random rnd;
 
 	private final RoundTripProposal<R> singleProposal;
 
+	private Double flipProba = null;
+
 	public MultiRoundTripProposal(Random rnd, RoundTripProposal<R> singleProposal) {
 		this.rnd = rnd;
 		this.singleProposal = singleProposal;
+	}
+
+	public MultiRoundTripProposal<R, M> setFlipProbability(double flipProbability) {
+		this.flipProba = flipProbability;
+		return this;
 	}
 
 	// IMPLEMENTATION OF INTERFACE
@@ -52,7 +58,11 @@ public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRound
 
 	@Override
 	public MHTransition<M> newTransition(M state) {
-		final double flipProba = 1.0 / (state.size() + 1);
+//		final double minFlipProba = 1.0 / (state.size() + 1);
+//		final double flipProba = 1.0 / (state.size() + 1);
+		final double minFlipProba = 1.0 / Math.max(1.0, state.size());
+		final double flipProba = (this.flipProba != null ? Math.max(this.flipProba, minFlipProba) : minFlipProba);
+
 		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, state.size());
 
 		M newState = (M) state.clone();
