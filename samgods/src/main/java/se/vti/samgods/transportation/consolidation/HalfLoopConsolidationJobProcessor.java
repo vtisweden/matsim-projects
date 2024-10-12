@@ -239,7 +239,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			final FleetAssignment assignment = this.dimensionFleetAssignment(realDemand_ton, vehicleType, job,
 					serviceIntervalActiveProba);
 			final double utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5 * assignment.loopLength_km
-					* realDemand_ton + this.fleetData.getVehicleType2asc().get(vehicleType);
+					* realDemand_ton + this.fleetData.getVehicleType2asc().getOrDefault(vehicleType, 0.0);
 			assignments.add(assignment);
 			assignment2utility.put(assignment, utility);
 		}

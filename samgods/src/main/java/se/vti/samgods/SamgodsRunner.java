@@ -53,9 +53,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.calibration.FleetCalibrationLogger;
 import se.vti.samgods.calibration.FleetCostCalibrator;
-import se.vti.samgods.calibration.FleetStatistics;
+import se.vti.samgods.calibration.ascs.ASCs;
+import se.vti.samgods.external.gis.NetworkFlows;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
@@ -82,6 +82,7 @@ import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.VehiclesReader;
+import se.vti.samgods.utils.MiscUtils;
 
 /**
  * TODO public members only while moving this into TestSamgods.
@@ -136,18 +137,25 @@ public class SamgodsRunner {
 	private TransportDemand transportDemand = null;
 
 	private FleetCostCalibrator fleetCalibrator = null;
+	private ASCs ascs = null;
 
 	private boolean checkChainConnectivity = false;
+
+	private String networkFlowsFileName = null;
+
+	private final SamgodsConfigGroup config;
+
+	public SamgodsRunner setNetworkFlowsFileName(String networkFlowsFileName) {
+		this.networkFlowsFileName = networkFlowsFileName;
+		return this;
+	}
 
 	public void setCheckChainConnecivity(boolean checkChainConnectivity) {
 		this.checkChainConnectivity = checkChainConnectivity;
 	}
 
-	public void setFleetCostCalibrator(FleetCostCalibrator fleetCostCalibrator) {
-		this.fleetCalibrator = fleetCostCalibrator;
-	}
-
-	public SamgodsRunner() {
+	public SamgodsRunner(SamgodsConfigGroup config) {
+		this.config = config;
 		this.setRandomSeed(this.defaultSeed);
 		this.setConsideredCommodities(this.defaultConsideredCommodities);
 		this.setMaxThreads(this.defaultMaxThreads);
@@ -198,7 +206,7 @@ public class SamgodsRunner {
 		return this;
 	}
 
-	public SamgodsRunner loadVehicles(String vehicleParametersFileName, String transferParametersFileName,
+	private SamgodsRunner loadVehicles(String vehicleParametersFileName, String transferParametersFileName,
 			TransportMode samgodsMode, String... excludedIds) throws IOException {
 		if (this.vehicles == null) {
 			this.vehicles = VehicleUtils.createVehiclesContainer();
@@ -211,8 +219,29 @@ public class SamgodsRunner {
 		return this;
 	}
 
-	public SamgodsRunner loadNetwork(String nodesFile, String linksFile) throws IOException {
-		this.network = new NetworkReader().load(nodesFile, linksFile);
+	public SamgodsRunner loadVehiclesOtherThan(String... excludedIds) throws IOException {
+		if (this.config.getRailVehicleParametersFileName() != null
+				&& this.config.getRailTransferParametersFileName() != null) {
+			this.loadVehicles("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
+					SamgodsConstants.TransportMode.Rail, excludedIds);
+		}
+		if (this.config.getRoadVehicleParametersFileName() != null
+				&& this.config.getRoadTransferParametersFileName() != null) {
+			this.loadVehicles("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
+					SamgodsConstants.TransportMode.Road, excludedIds);
+		}
+		if (this.config.getSeaVehicleParametersFileName() != null
+				&& this.config.getSeaTransferParametersFileName() != null) {
+			this.loadVehicles("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
+					SamgodsConstants.TransportMode.Sea, excludedIds);
+
+		}
+		return this;
+	}
+
+	public SamgodsRunner loadNetwork() throws IOException {
+		this.network = new NetworkReader().load(this.config.getNetworkNodesFileName(),
+				this.config.getNetworkLinksFileName());
 		return this;
 	}
 
@@ -279,9 +308,9 @@ public class SamgodsRunner {
 
 	// -------------------- PREPARE CONSOLIDATION UNITS --------------------
 
-	public void createOrLoadConsolidationUnits(String consolidationUnitsFileName) throws IOException {
+	public void createOrLoadConsolidationUnits() throws IOException {
 
-		if (this.enforceReroute || !(new File(consolidationUnitsFileName).exists())) {
+		if (this.enforceReroute || !(new File(this.config.getConsolidationUnitsFileName()).exists())) {
 
 			/*
 			 * Several episodes may have consolidation units with the same routes. To reduce
@@ -327,7 +356,7 @@ public class SamgodsRunner {
 			ObjectMapper mapper = new ObjectMapper();
 			mapper.enable(SerializationFeature.INDENT_OUTPUT);
 			mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, true);
-			FileOutputStream fos = new FileOutputStream(new File(consolidationUnitsFileName));
+			FileOutputStream fos = new FileOutputStream(new File(this.config.getConsolidationUnitsFileName()));
 			JsonGenerator gen = mapper.getFactory().createGenerator(fos);
 			for (ConsolidationUnit consolidationUnit : consolidationUnitPattern2representativeUnit.values()) {
 				if (consolidationUnit.linkIds != null) {
@@ -340,7 +369,7 @@ public class SamgodsRunner {
 			fos.flush();
 			fos.close();
 			log.info("Wrote " + routedCnt + " (out of in total " + consolidationUnitPattern2representativeUnit.size()
-					+ ") routed consolidation units to file " + consolidationUnitsFileName);
+					+ ") routed consolidation units to file " + this.config.getConsolidationUnitsFileName());
 
 			/*
 			 * Attach representative consolidation units to the episodes. This means that
@@ -373,7 +402,7 @@ public class SamgodsRunner {
 			/*
 			 * Load (routed!) consolidation units.
 			 */
-			log.info("Loading consolidation units from file " + consolidationUnitsFileName);
+			log.info("Loading consolidation units from file " + this.config.getConsolidationUnitsFileName());
 			ObjectMapper mapper = new ObjectMapper();
 			// TODO >>> can do without this? >>>
 			SimpleModule module = (new SimpleModule()).addDeserializer(ConsolidationUnit.class,
@@ -381,7 +410,7 @@ public class SamgodsRunner {
 			mapper.registerModule(module);
 			// TODO <<< can do without this? <<<
 			ObjectReader reader = mapper.readerFor(ConsolidationUnit.class);
-			JsonParser parser = mapper.getFactory().createParser(new File(consolidationUnitsFileName));
+			JsonParser parser = mapper.getFactory().createParser(new File(this.config.getConsolidationUnitsFileName()));
 			Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			while (parser.nextToken() != null) {
 				ConsolidationUnit unit = reader.readValue(parser);
@@ -437,7 +466,24 @@ public class SamgodsRunner {
 
 	public void run() {
 
-		final FleetCalibrationLogger fleetCalibrationLogger = new FleetCalibrationLogger(this.vehicles);
+		MiscUtils.ensureEmptyFolder("./results");
+
+		if (this.config.getAscSourceFileName() != null) {
+			try {
+				this.ascs = ASCs.createFromFile(this.config.getAscSourceFileName(), this.vehicles);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+			this.ascs = new ASCs();
+		}
+		this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
+
+		if (this.config.getAscCalibrationStepSize() != null) {
+			this.fleetCalibrator = new FleetCostCalibrator(this.vehicles, this.config.getAscCalibrationStepSize());
+		} else {
+			this.fleetCalibrator = null;
+		}
 
 		final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
 		for (SamgodsConstants.Commodity commodity : this.consideredCommodities) {
@@ -620,12 +666,9 @@ public class SamgodsRunner {
 			logisticChoiceDataProvider.update(consolidationUnit2assignment);
 
 			log.info("Collecting fleet statistics");
-			final FleetStatistics fleetStats = new FleetStatistics(consolidationUnit2assignment,
-					this.getOrCreateNetworkDataProvider().createNetworkData());
 			if (this.fleetCalibrator != null) {
-				this.fleetCalibrator.updateInternally(fleetStats);
-				this.fleetDataProvider.updateAscs(this.fleetCalibrator);
-				fleetCalibrationLogger.log(this.fleetCalibrator);
+				this.fleetCalibrator.updateInternally(consolidationUnit2assignment, iteration);
+				this.ascs = this.fleetCalibrator.createASCs();
 			}
 
 //			log.info("Computing transport efficiency and unit cost per consolidation unit.");
@@ -651,6 +694,17 @@ public class SamgodsRunner {
 //					}
 //				}
 //			}
+
+			this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
+
+			if ((iteration == this.maxIterations - 1)) {
+
+				if (this.networkFlowsFileName != null) {
+					new NetworkFlows().add(consolidationUnit2assignment).writeToFile(this.networkFlowsFileName);
+				}
+
+			}
+
 		}
 	}
 

@@ -19,12 +19,16 @@
  */
 package se.vti.samgods.utils;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.apache.commons.io.FileUtils;
 
 /**
  * 
@@ -34,6 +38,21 @@ import java.util.Map.Entry;
 public class MiscUtils {
 
 	private MiscUtils() {
+	}
+	
+	public static void ensureEmptyFolder(String folderName) {
+		File folder = new File(folderName);
+		if (folder.exists()) {
+			try {
+				FileUtils.deleteDirectory(folder);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		boolean created = folder.mkdirs();
+		if (!created) {
+			throw new RuntimeException("Could not create folder " + folder);
+		}
 	}
 
 	private static <K, N extends Number> List<Map.Entry<K, N>> getSortedEntryList(Map<K, N> map, int sortCompSgn) {
