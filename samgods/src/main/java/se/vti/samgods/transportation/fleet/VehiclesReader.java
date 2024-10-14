@@ -67,6 +67,9 @@ public class VehiclesReader {
 
 	private static final String SPEED_KM_H = "SPEED";
 
+	private static final String MODE_1 = "MODE_1";
+	private static final String MODE_2 = "MODE_2";
+
 	private static final String COMMODITY_ID = "ID_COM";
 
 	private static final String NO_CONTAINER_LOAD_COST_1_TON = "NC_LCO";
@@ -123,7 +126,8 @@ public class VehiclesReader {
 							.setCapacity_ton(ParseNumberUtils.parseDoubleOrNull(record.get(CAPACITY_TON)))
 							.setOnFerryCost_1_km(ParseNumberUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_KM)))
 							.setOnFerryCost_1_h(ParseNumberUtils.parseDoubleOrNull(record.get(ON_FERRY_COST_1_H)))
-							.setSpeed_km_h(ParseNumberUtils.parseDoubleOrNull(record.get(SPEED_KM_H)));
+							.setSpeed_km_h(ParseNumberUtils.parseDoubleOrNull(record.get(SPEED_KM_H)))
+							.addNetworkModeIfNotNull(record.get(MODE_1)).addNetworkModeIfNotNull(record.get(MODE_2));
 				}
 			}
 		}

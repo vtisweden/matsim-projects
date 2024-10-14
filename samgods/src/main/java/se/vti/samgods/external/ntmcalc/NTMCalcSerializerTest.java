@@ -118,12 +118,12 @@ public class NTMCalcSerializerTest {
 								double speed1_km_h = Arrays.asList(30, 50, 70, 90, 110).get(rnd.nextInt(5));
 								link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
 										new SamgodsLinkAttributes(SamgodsConstants.TransportMode.Road, speed1_km_h,
-												null, true));
+												null, true, new String[] {}));
 							} else {
 								double speed1_km_h = Arrays.asList(5, 10, 15, 20, 25).get(rnd.nextInt(5));
 								link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
 										new SamgodsLinkAttributes(SamgodsConstants.TransportMode.Ferry, speed1_km_h,
-												null, true));
+												null, true, new String[] {}));
 							}
 
 						}

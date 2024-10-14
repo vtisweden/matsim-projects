@@ -88,19 +88,22 @@ public class TestSamgods {
 				.setScale(Commodity.FURNITURE, scaleFactor * 0.0002)
 				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
 				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
-				.setMaxIterations(1000).setEnforceReroute(false);
+				.setMaxIterations(50).setEnforceReroute(false);
+
+		runner.loadNetwork();
 
 		runner.loadVehiclesOtherThan("WG950", "KOMXL", "SYSXL", "WGEXL", "HGV74", "ROF7", "RAF5", "INW", "ROF2", "ROF5");
 //		runner.checkAvailableVehicles();
 		
 		runner.setNetworkFlowsFileName("linkId2commodity2annualAmount_ton.json");
 		
-		runner.loadNetwork();
 		runner.loadLinkRegionalWeights("./input_2024/link_regions_domestic.csv");
 
 		runner.loadTransportDemand("./input_2024/ChainChoi", "XTD.out");
-		runner.createOrLoadConsolidationUnits();
 
+		runner.createOrLoadConsolidationUnits();
+		runner.checkVehicleAvailabilityForConsolidationUnits();
+		
 		runner.run();
 
 		log.info("DONE");

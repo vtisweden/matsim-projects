@@ -82,6 +82,7 @@ import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProce
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleUtils;
 import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.utils.MiscUtils;
 
@@ -263,7 +264,7 @@ public class SamgodsRunner {
 
 	public FleetDataProvider getOrCreateFleetDataProvider() {
 		if (this.fleetDataProvider == null) {
-			this.fleetDataProvider = new FleetDataProvider(this.vehicles);
+			this.fleetDataProvider = new FleetDataProvider(this.network, this.vehicles);
 		}
 		return this.fleetDataProvider;
 	}
@@ -465,6 +466,66 @@ public class SamgodsRunner {
 		}
 	}
 
+	public void checkVehicleAvailabilityForConsolidationUnits() {
+
+		FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+
+		final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
+		for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains().values()) {
+			for (List<TransportChain> chains : od2chain.values()) {
+				for (TransportChain chain : chains) {
+					for (TransportEpisode episode : chain.getEpisodes()) {
+						allConsolidationUnits.addAll(episode.getConsolidationUnits());
+					}
+				}
+			}
+		}
+
+		long consideredConsolidationUnits = 0l;
+		long consolidationUnitsWithoutVehicles = 0l;
+		final Map<VehicleType, Long> vehicleType2allowedInConsolidationUnit = new LinkedHashMap<>();
+		final Map<VehicleType, Long> vehicleType2allowedOnAllLinks = new LinkedHashMap<>();
+		for (ConsolidationUnit consolidationUnit : allConsolidationUnits) {
+			consideredConsolidationUnits++;
+			final Set<VehicleType> allowedOnAllLinks = new LinkedHashSet<>(
+					fleetData.getCompatibleVehicleTypes(consolidationUnit));
+			for (VehicleType type : allowedOnAllLinks) {
+				vehicleType2allowedInConsolidationUnit.compute(type, (t, c) -> c == null ? 1 : c + 1);
+			}
+			for (List<Id<Link>> route : consolidationUnit.linkIds) {
+				for (Id<Link> linkId : route) {
+					allowedOnAllLinks.retainAll(fleetData.getLinkId2allowedVehicleTypes().get(linkId));
+				}
+			}
+			for (VehicleType type : allowedOnAllLinks) {
+				vehicleType2allowedOnAllLinks.compute(type, (t, c) -> c == null ? 1 : c + 1);
+				if (vehicleType2allowedOnAllLinks.size() == 0) {
+					consolidationUnitsWithoutVehicles++;
+				}
+			}
+		}
+		log.info("NO VEHICLES AVAILABLE for " + consolidationUnitsWithoutVehicles + " out of " + consideredConsolidationUnits
+				+ " consolidation units, i.e. "
+				+ (100.0 * consolidationUnitsWithoutVehicles / consideredConsolidationUnits) + " percent.");
+
+		final Map<TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
+		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
+			mode2types.computeIfAbsent(SamgodsVehicleUtils.getMode(type), l -> new ArrayList<>()).add(type);
+		}
+
+		for (Map.Entry<TransportMode, List<VehicleType>> e : mode2types.entrySet()) {
+			log.info(e.getKey().toString().toUpperCase());
+			for (VehicleType type : e.getValue()) {
+				final long unitCnt = vehicleType2allowedInConsolidationUnit.getOrDefault(type, 0l);
+				if (unitCnt > 0) {
+					final long linkCnt = vehicleType2allowedOnAllLinks.getOrDefault(type, 0l);
+					log.info("  " + type.getId() + " is link-compatible on " + linkCnt + " out of " + unitCnt
+							+ " consolidation units, i.e. " + (100.0 * linkCnt / unitCnt) + " percent.");
+				}
+			}
+		}
+	}
+
 	public void run() {
 
 		MiscUtils.ensureEmptyFolder("./results");
@@ -483,7 +544,8 @@ public class SamgodsRunner {
 		this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
 
 		if (this.config.getAscCalibrationStepSize() != null) {
-			this.fleetCalibrator = new TransportWorkAscCalibrator(this.vehicles, this.config.getAscCalibrationStepSize());
+			this.fleetCalibrator = new TransportWorkAscCalibrator(this.vehicles,
+					this.config.getAscCalibrationStepSize());
 		} else {
 			this.fleetCalibrator = null;
 		}

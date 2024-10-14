@@ -67,6 +67,8 @@ public class NetworkReader {
 	private static final String LINK_LANES = "NLANES";
 	private static final String LINK_MODE = "GENERAL_MO";
 	private static final String LINK_CAPACITY_TRAINS_DAY = "ORIGCAP";
+	
+	private static final String LINK_MODESTR = "MODESTR";
 
 	// -------------------- MEMBERS --------------------
 
@@ -164,6 +166,8 @@ public class NetworkReader {
 				}
 				length_m = nodeDist_m;
 			}
+			
+			final String[] networkModes = record.get(LINK_MODESTR).split("");
 
 			final Double speed1_km_h = ParseNumberUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
 			final Double speed2_km_h = ParseNumberUtils.parseDoubleOrNull(record.get(LINK_SPEED_2));
@@ -197,7 +201,7 @@ public class NetworkReader {
 							Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
 					link.setAllowedModes(mode.matsimModes);
 					link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
-							new SamgodsLinkAttributes(mode, speed1_km_h, speed2_km_h, isDomestic));
+							new SamgodsLinkAttributes(mode, speed1_km_h, speed2_km_h, isDomestic, networkModes));
 				}
 			}
 		}

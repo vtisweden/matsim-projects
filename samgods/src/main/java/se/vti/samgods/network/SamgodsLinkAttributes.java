@@ -19,6 +19,10 @@
  */
 package se.vti.samgods.network;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import se.vti.samgods.SamgodsConstants;
 
 /**
@@ -40,13 +44,16 @@ public class SamgodsLinkAttributes {
 
 	public final boolean isDomestic;
 
+	public final Set<String> networkModes;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public SamgodsLinkAttributes(SamgodsConstants.TransportMode samgodsMode, Double speed1_km_h, Double speed2_km_h,
-			boolean isDomestic) {
+			boolean isDomestic, String[] networkModes) {
 		this.samgodsMode = samgodsMode;
 		this.speed1_km_h = speed1_km_h;
 		this.speed2_km_h = speed2_km_h;
 		this.isDomestic = isDomestic;
+		this.networkModes = Arrays.stream(networkModes).collect(Collectors.toSet());
 	}
 }

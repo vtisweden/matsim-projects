@@ -20,8 +20,11 @@
 package se.vti.samgods.transportation.fleet;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.math3.exception.InsufficientDataException;
 import org.matsim.api.core.v01.Id;
@@ -60,6 +63,8 @@ public class SamgodsVehicleAttributes {
 	// may be null, in which case link speed limit is used
 	public final Double speed_km_h;
 
+	public final CopyOnWriteArrayList<String> networkModes;
+
 	public final boolean isContainer;
 
 	// contains entries only for compatible commodities
@@ -72,7 +77,7 @@ public class SamgodsVehicleAttributes {
 
 	private SamgodsVehicleAttributes(Id<VehicleType> id, SamgodsConstants.TransportMode samgodsMode, double cost_1_km,
 			double cost_1_h, double capacity_ton, Double onFerryCost_1_km, Double onFerryCost_1_h, Double speed_km_h,
-			boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
+			Set<String> networkModes, boolean container, Map<SamgodsConstants.Commodity, Double> loadCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> loadTime_h,
 			Map<SamgodsConstants.Commodity, Double> transferCost_1_ton,
 			Map<SamgodsConstants.Commodity, Double> transferTime_h) {
@@ -84,6 +89,7 @@ public class SamgodsVehicleAttributes {
 		this.onFerryCost_1_km = onFerryCost_1_km;
 		this.onFerryCost_1_h = onFerryCost_1_h;
 		this.speed_km_h = speed_km_h;
+		this.networkModes = new CopyOnWriteArrayList<>(networkModes);
 		this.isContainer = container;
 		this.loadCost_1_ton = new ConcurrentHashMap<>(loadCost_1_ton);
 		this.loadTime_h = new ConcurrentHashMap<>(loadTime_h);
@@ -124,6 +130,8 @@ public class SamgodsVehicleAttributes {
 
 		private Double speed_km_h = null;
 
+		private Set<String> networkModes = new LinkedHashSet<>(2);
+
 		private Boolean container = null;
 
 		private Map<SamgodsConstants.Commodity, Double> loadCost_1_ton = new LinkedHashMap<>();
@@ -140,8 +148,8 @@ public class SamgodsVehicleAttributes {
 
 		private SamgodsVehicleAttributes buildVehicleAttributes() {
 			return new SamgodsVehicleAttributes(this.id, this.samgodsMode, this.cost_1_km, this.cost_1_h,
-					this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.container,
-					this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
+					this.capacity_ton, this.onFerryCost_1_km, this.onFerryCost_1_h, this.speed_km_h, this.networkModes,
+					this.container, this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 		}
 
 		public VehicleType buildVehicleType() throws InsufficientDataException {
@@ -188,6 +196,13 @@ public class SamgodsVehicleAttributes {
 
 		public Builder setSpeed_km_h(Double speed_km_h) {
 			this.speed_km_h = speed_km_h;
+			return this;
+		}
+
+		public Builder addNetworkModeIfNotNull(String mode) {
+			if (mode != null) {
+				this.networkModes.add(mode);
+			}
 			return this;
 		}
 
