@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.calibration;
+package se.vti.samgods.calibration.ascs;
 
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
@@ -32,23 +32,17 @@ import se.vti.utils.misc.iterationlogging.LogWriter;
  * @author GunnarF
  *
  */
-class FleetCalibrationLogger {
+class ASCLogger {
 
-	private final LogWriter<FleetCostCalibrator> vehicleASCWriter;
-	private final LogWriter<FleetCostCalibrator> railCommodityASCWriter;
-	private final LogWriter<FleetCostCalibrator> modeASCWriter;
+	private final LogWriter<TransportWorkAscCalibrator> vehicleASCWriter;
+	private final LogWriter<TransportWorkAscCalibrator> railCommodityASCWriter;
+	private final LogWriter<TransportWorkAscCalibrator> modeASCWriter;
 
-	private final LogWriter<FleetCostCalibrator> vehicleGroupGTonKmWriter;
-	private final LogWriter<FleetCostCalibrator> railCommodityGTonKmWriter;
-
-	FleetCalibrationLogger(Vehicles vehicles) {
+	ASCLogger(Vehicles vehicles) {
 
 		this.vehicleASCWriter = new LogWriter<>("./results/calibratedASCs/vehicleGroupASCs.txt", false);
 		this.railCommodityASCWriter = new LogWriter<>("./results/calibratedASCs/railASCs.txt", false);
 		this.modeASCWriter = new LogWriter<>("./results/calibratedASCs/modeASCs.txt", false);
-
-		this.vehicleGroupGTonKmWriter = new LogWriter<>("./results/calibratedASCs/vehicleGroupGTonKm.txt", false);
-		this.railCommodityGTonKmWriter = new LogWriter<>("./results/calibratedASCs/railCommodityGTonKm.txt", false);
 
 		for (VehicleType vehicleType : vehicles.getVehicleTypes().values()) {
 			this.vehicleASCWriter.addEntry(new LogEntry<>() {
@@ -58,7 +52,7 @@ class FleetCalibrationLogger {
 				}
 
 				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
+				public String value(TransportWorkAscCalibrator fleetCalibrator) {
 					return LogEntry
 							.toString(fleetCalibrator.createASCs().getVehicleTyp2ASC().getOrDefault(vehicleType, 0.0));
 				}
@@ -73,36 +67,12 @@ class FleetCalibrationLogger {
 				}
 
 				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
+				public String value(TransportWorkAscCalibrator fleetCalibrator) {
 					return LogEntry
 							.toString(fleetCalibrator.createASCs().getRailCommodity2ASC().getOrDefault(commodity, 0.0));
 				}
 			});
-			this.railCommodityGTonKmWriter.addEntry(new LogEntry<>() {
-				@Override
-				public String label() {
-					return commodity.toString() + "_realized";
-				}
-
-				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
-					return LogEntry.toString(
-							fleetCalibrator.commodity2lastRealizedRailDomesticGTonKm.getOrDefault(commodity, 0.0));
-				}
-			});
-			this.railCommodityGTonKmWriter.addEntry(new LogEntry<>() {
-				@Override
-				public String label() {
-					return commodity.toString() + "_target";
-				}
-
-				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
-					return LogEntry.toString(fleetCalibrator.commodity2railTargetDomesticGTonKm.get(commodity));
-				}
-			});
 		}
-
 		for (TransportMode mode : TransportMode.values()) {
 			this.modeASCWriter.addEntry(new LogEntry<>() {
 				@Override
@@ -111,43 +81,17 @@ class FleetCalibrationLogger {
 				}
 
 				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
+				public String value(TransportWorkAscCalibrator fleetCalibrator) {
 					return LogEntry.toString(fleetCalibrator.createASCs().getMode2ASC().getOrDefault(mode, 0.0));
 				}
 			});
 		}
 
-		for (FleetCostCalibrator.VehicleGroup group : FleetCostCalibrator.VehicleGroup.values()) {
-			this.vehicleGroupGTonKmWriter.addEntry(new LogEntry<>() {
-				@Override
-				public String label() {
-					return group.toString() + "_real";
-				}
-
-				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
-					return LogEntry.toString(fleetCalibrator.group2lastRealizedDomesticGTonKm.getOrDefault(group, 0.0));
-				}
-			});
-			this.vehicleGroupGTonKmWriter.addEntry(new LogEntry<>() {
-				@Override
-				public String label() {
-					return group.toString() + "_target";
-				}
-
-				@Override
-				public String value(FleetCostCalibrator fleetCalibrator) {
-					return LogEntry.toString(fleetCalibrator.group2targetDomesticGTonKm.get(group));
-				}
-			});
-		}
 	}
 
-	public void log(FleetCostCalibrator fleetCalibr) {
+	public void log(TransportWorkAscCalibrator fleetCalibr) {
 		this.vehicleASCWriter.writeToFile(fleetCalibr);
 		this.railCommodityASCWriter.writeToFile(fleetCalibr);
 		this.modeASCWriter.writeToFile(fleetCalibr);
-		this.vehicleGroupGTonKmWriter.writeToFile(fleetCalibr);
-		this.railCommodityGTonKmWriter.writeToFile(fleetCalibr);
 	}
 }

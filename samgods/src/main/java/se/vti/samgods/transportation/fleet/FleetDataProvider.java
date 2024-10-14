@@ -29,8 +29,8 @@ import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.calibration.FleetCostCalibrator;
 import se.vti.samgods.calibration.ascs.ASCs;
+import se.vti.samgods.calibration.ascs.TransportWorkAscCalibrator;
 
 /**
  * 

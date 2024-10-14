@@ -53,8 +53,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.calibration.FleetCostCalibrator;
 import se.vti.samgods.calibration.ascs.ASCs;
+import se.vti.samgods.calibration.ascs.TransportWorkAscCalibrator;
+import se.vti.samgods.calibration.ascs.TransportWorkMonitor;
 import se.vti.samgods.external.gis.NetworkFlows;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
@@ -136,7 +137,7 @@ public class SamgodsRunner {
 
 	private TransportDemand transportDemand = null;
 
-	private FleetCostCalibrator fleetCalibrator = null;
+	private TransportWorkAscCalibrator fleetCalibrator = null;
 	private ASCs ascs = null;
 
 	private boolean checkChainConnectivity = false;
@@ -468,6 +469,8 @@ public class SamgodsRunner {
 
 		MiscUtils.ensureEmptyFolder("./results");
 
+		final TransportWorkMonitor transportWorkMonitor = new TransportWorkMonitor(this.vehicles);
+
 		if (this.config.getAscSourceFileName() != null) {
 			try {
 				this.ascs = ASCs.createFromFile(this.config.getAscSourceFileName(), this.vehicles);
@@ -480,7 +483,7 @@ public class SamgodsRunner {
 		this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
 
 		if (this.config.getAscCalibrationStepSize() != null) {
-			this.fleetCalibrator = new FleetCostCalibrator(this.vehicles, this.config.getAscCalibrationStepSize());
+			this.fleetCalibrator = new TransportWorkAscCalibrator(this.vehicles, this.config.getAscCalibrationStepSize());
 		} else {
 			this.fleetCalibrator = null;
 		}
@@ -666,8 +669,11 @@ public class SamgodsRunner {
 			logisticChoiceDataProvider.update(consolidationUnit2assignment);
 
 			log.info("Collecting fleet statistics");
+			transportWorkMonitor.update(consolidationUnit2assignment);
 			if (this.fleetCalibrator != null) {
-				this.fleetCalibrator.updateInternally(consolidationUnit2assignment, iteration);
+				this.fleetCalibrator.update(transportWorkMonitor.getVehicleType2lastRealizedDomesticGTonKm(),
+						transportWorkMonitor.getMode2lastRealizedDomesticGTonKm(),
+						transportWorkMonitor.getCommodity2lastRealizedRailDomesticGTonKm(), iteration);
 				this.ascs = this.fleetCalibrator.createASCs();
 			}
 

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.calibration;
+package se.vti.samgods.calibration.ascs;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -29,11 +29,6 @@ import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.calibration.ascs.ASCs;
-import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
-import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
-import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.utils.MiscUtils;
 
 /**
@@ -41,7 +36,7 @@ import se.vti.samgods.utils.MiscUtils;
  * @author GunnarF
  *
  */
-public class FleetCostCalibrator {
+public class TransportWorkAscCalibrator {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -57,24 +52,24 @@ public class FleetCostCalibrator {
 	private final Map<TransportMode, ASCTuner<VehicleGroup>> mode2groupAscTuner;
 	private final ASCTuner<Commodity> commodityRailAscTuner;
 
-	private final FleetCalibrationLogger logger;
+	private final ASCLogger ascLogger;
 
 	// -------------------- MEMBERS --------------------
 
 	final Map<VehicleGroup, Double> group2targetDomesticGTonKm;
-	Map<VehicleGroup, Double> group2lastRealizedDomesticGTonKm = null;
+//	Map<VehicleGroup, Double> group2lastRealizedDomesticGTonKm = null;
 
 	final Map<TransportMode, Double> mode2targetDomesticGTonKm;
-	Map<TransportMode, Double> mode2lastRealizedDomesticGTonKm = null;
+//	Map<TransportMode, Double> mode2lastRealizedDomesticGTonKm = null;
 
 	final Map<Commodity, Double> commodity2railTargetDomesticGTonKm;
-	Map<Commodity, Double> commodity2lastRealizedRailDomesticGTonKm = null;
+//	Map<Commodity, Double> commodity2lastRealizedRailDomesticGTonKm = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public FleetCostCalibrator(Vehicles vehicles, double eta) {
+	public TransportWorkAscCalibrator(Vehicles vehicles, double eta) {
 
-		this.logger = new FleetCalibrationLogger(vehicles);
+		this.ascLogger = new ASCLogger(vehicles);
 
 		this.vehicles = vehicles;
 		this.vehicleType2group = new LinkedHashMap<>(vehicles.getVehicleTypes().size());
@@ -272,73 +267,74 @@ public class FleetCostCalibrator {
 
 	boolean updated = false;
 
-	public void updateInternally(
-			Map<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
-			int iteration) {
+	public void update(
+//			Map<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
+			Map<VehicleType, Double> vehicleType2lastRealizedDomesticGTonKm,
+			Map<TransportMode, Double> mode2lastRealizedDomesticGTonKm,
+			Map<Commodity, Double> commodity2lastRealizedRailDomesticGTonKm, int iteration) {
 		if (!this.updated) {
 			MiscUtils.ensureEmptyFolder("./results/calibratedASCs");
 			this.updated = true;
 		}
 
-		final Map<VehicleType, Double> vehicleType2domesticGTonKm = new LinkedHashMap<>();
-		this.commodity2lastRealizedRailDomesticGTonKm = new LinkedHashMap<>();
-		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
-				.entrySet()) {
-			final ConsolidationUnit consolidationUnit = entry.getKey();
-			final FleetAssignment fleetAssignment = entry.getValue();
-			final double transportWork_gTonKm = 1e-9 * fleetAssignment.realDemand_ton * 0.5
-					* fleetAssignment.domesticLoopLength_km;
-			vehicleType2domesticGTonKm.compute(fleetAssignment.vehicleType,
-					(vt, tk) -> tk == null ? transportWork_gTonKm : tk + transportWork_gTonKm);
-			if (TransportMode.Rail.equals(consolidationUnit.samgodsMode)) {
-				this.commodity2lastRealizedRailDomesticGTonKm.compute(consolidationUnit.commodity,
-						(c, s) -> s == null ? transportWork_gTonKm : s + transportWork_gTonKm);
-			}
-		}
+//		final Map<VehicleType, Double> vehicleType2domesticGTonKm = new LinkedHashMap<>();
+//		this.commodity2lastRealizedRailDomesticGTonKm = new LinkedHashMap<>();
+//		for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> entry : consolidationUnit2fleetAssignment
+//				.entrySet()) {
+//			final ConsolidationUnit consolidationUnit = entry.getKey();
+//			final FleetAssignment fleetAssignment = entry.getValue();
+//			final double transportWork_gTonKm = 1e-9 * fleetAssignment.realDemand_ton * 0.5
+//					* fleetAssignment.domesticLoopLength_km;
+//			vehicleType2domesticGTonKm.compute(fleetAssignment.vehicleType,
+//					(vt, tk) -> tk == null ? transportWork_gTonKm : tk + transportWork_gTonKm);
+//			if (TransportMode.Rail.equals(consolidationUnit.samgodsMode)) {
+//				this.commodity2lastRealizedRailDomesticGTonKm.compute(consolidationUnit.commodity,
+//						(c, s) -> s == null ? transportWork_gTonKm : s + transportWork_gTonKm);
+//			}
+//		}
 
-		this.group2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
-		this.mode2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
+		final Map<VehicleGroup, Double> group2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
+//		this.mode2lastRealizedDomesticGTonKm = new LinkedHashMap<>();
 		for (VehicleType vehicleType : this.vehicles.getVehicleTypes().values()) {
-			final double realized_GTonKm = vehicleType2domesticGTonKm.getOrDefault(vehicleType, 0.0);
-			final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
-					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-			if (this.modeAscTuner.getAlternative2asc().containsKey(attrs.samgodsMode)) {
-				this.mode2lastRealizedDomesticGTonKm.compute(attrs.samgodsMode,
-						(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
-			}
+			final double realized_GTonKm = vehicleType2lastRealizedDomesticGTonKm.getOrDefault(vehicleType, 0.0);
+//			final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+//					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+//			if (this.modeAscTuner.getAlternative2asc().containsKey(attrs.samgodsMode)) {
+//				this.mode2lastRealizedDomesticGTonKm.compute(attrs.samgodsMode,
+//						(m, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
+//			}
 			final VehicleGroup group = this.vehicleType2group.get(vehicleType);
 			if (group != null) {
-				this.group2lastRealizedDomesticGTonKm.compute(group,
+				group2lastRealizedDomesticGTonKm.compute(group,
 						(g, r) -> r == null ? realized_GTonKm : r + realized_GTonKm);
 			}
 		}
 
-		this.modeAscTuner.update(m -> this.mode2lastRealizedDomesticGTonKm.getOrDefault(m, 0.0));
+		this.modeAscTuner.update(m -> mode2lastRealizedDomesticGTonKm.getOrDefault(m, 0.0));
 		for (ASCTuner<VehicleGroup> groupAscTuner : this.mode2groupAscTuner.values()) {
-			groupAscTuner.update(g -> this.group2lastRealizedDomesticGTonKm.get(g));
+			groupAscTuner.update(g -> group2lastRealizedDomesticGTonKm.get(g));
 		}
-		this.commodityRailAscTuner.update(c -> this.commodity2lastRealizedRailDomesticGTonKm.getOrDefault(c, 0.0));
+		this.commodityRailAscTuner.update(c -> commodity2lastRealizedRailDomesticGTonKm.getOrDefault(c, 0.0));
 
 		try {
 			this.createASCs().writeToFile("./results/calibratedASCs/" + iteration + ".ascs.json");
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-
-		this.logger.log(this);
+		this.ascLogger.log(this);
 	}
 
 	public ASCs createASCs() {
 		return new ASCs(this.createVehicleType2asc(), this.createMode2asc(), this.createRailCommodity2asc());
 	}
 
-	public Map<VehicleGroup, Double> createGroup2asc() {
-		final Map<VehicleGroup, Double> group2asc = new LinkedHashMap<>();
-		for (ASCTuner<VehicleGroup> ascTuner : this.mode2groupAscTuner.values()) {
-			group2asc.putAll(ascTuner.getAlternative2asc());
-		}
-		return group2asc;
-	}
+//	public Map<VehicleGroup, Double> createGroup2asc() {
+//		final Map<VehicleGroup, Double> group2asc = new LinkedHashMap<>();
+//		for (ASCTuner<VehicleGroup> ascTuner : this.mode2groupAscTuner.values()) {
+//			group2asc.putAll(ascTuner.getAlternative2asc());
+//		}
+//		return group2asc;
+//	}
 
 //	public ConcurrentMap<TransportMode, Double> createConcurrentMode2asc() {
 //		return new ConcurrentHashMap<>(this.createMode2asc());
