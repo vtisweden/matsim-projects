@@ -38,7 +38,7 @@ public class Scenario<L extends Location> {
 
 	private final Random rnd = new Random();
 
-	private final LocationFactory<L> locationFactory;
+	private final LocationFactory locationFactory;
 
 	private int timeBinCnt = 24;
 	private int maxParkingEpisodes = 4;
@@ -52,7 +52,7 @@ public class Scenario<L extends Location> {
 
 	private List<L> locationsView = Collections.unmodifiableList(new ArrayList<>(0));
 
-	public Scenario(LocationFactory<L> locationFactory) {
+	public Scenario(LocationFactory locationFactory) {
 		this.locationFactory = locationFactory;
 	}
 
@@ -63,7 +63,7 @@ public class Scenario<L extends Location> {
 	}
 
 	public L createAndAddLocation(String name) {
-		L result = this.locationFactory.createLocation(name);
+		L result = (L) this.locationFactory.createLocation(name);
 //		this.name2location.put(name, result);
 //		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
 		this.addLocation(result);

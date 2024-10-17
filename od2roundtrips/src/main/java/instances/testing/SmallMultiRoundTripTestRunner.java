@@ -23,19 +23,20 @@ import java.util.Arrays;
 import java.util.Random;
 
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.OD2RoundtripsScenario;
-import se.vti.od2roundtrips.model.SingleToMultiComponent;
-import se.vti.od2roundtrips.model.TAZ;
 import se.vti.od2roundtrips.targets.ODTarget;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
+import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.model.Simulator;
 import se.vti.roundtrips.model.VehicleState;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.multiple.MultiRoundTripProposal;
 import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
 import se.vti.roundtrips.preferences.Preferences;
+import se.vti.roundtrips.preferences.SingleToMultiComponent;
 import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.roundtrips.preferences.UniformOverLocationCount;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.PossibleTransitionsWithAlternatingLocations;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripDepartureProposal;
@@ -53,11 +54,11 @@ public class SmallMultiRoundTripTestRunner {
 	public static void main(String[] args) {
 		System.out.println("STARTED ...");
 
-		OD2RoundtripsScenario scenario = new OD2RoundtripsScenario();
+		Scenario<Location> scenario = new Scenario<>(name -> new Location(name));
 
-		TAZ a = scenario.createAndAddLocation("A");
-		TAZ b = scenario.createAndAddLocation("B");
-		TAZ c = scenario.createAndAddLocation("C");
+		Location a = scenario.createAndAddLocation("A");
+		Location b = scenario.createAndAddLocation("B");
+		Location c = scenario.createAndAddLocation("C");
 
 		scenario.setSymmetricDistance_km(a, b, 10.0);
 		scenario.setSymmetricDistance_km(a, c, 10.0);
@@ -70,17 +71,18 @@ public class SmallMultiRoundTripTestRunner {
 		scenario.setMaxParkingEpisodes(4);
 		scenario.setTimeBinCnt(24);
 
-		final Preferences<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> allPreferences = new Preferences<>();
+		final Preferences<MultiRoundTrip<Location>> allPreferences = new Preferences<>();
 
 		// Consistency preferences
 
-		allPreferences.addComponent(new SingleToMultiComponent(new UniformOverLocationCount<>(scenario)));
-		allPreferences.addComponent(new SingleToMultiComponent(new AllDayTimeConstraintPreference<>()));
-		allPreferences.addComponent(new SingleToMultiComponent(new StrategyRealizationConsistency<>(scenario)));
+		allPreferences.addComponent(new SingleToMultiComponent<Location>(new UniformOverLocationCount<>(scenario)));
+		allPreferences.addComponent(new SingleToMultiComponent<Location>(new AllDayTimeConstraintPreference<>()));
+		allPreferences
+				.addComponent(new SingleToMultiComponent<Location>(new StrategyRealizationConsistency<>(scenario)));
 
 		// Modeling preferences
 
-		ODTarget odPreference = new ODTarget();
+		ODTarget<Location> odPreference = new ODTarget<>();
 		odPreference.setODEntry(a, b, 1.0);
 		odPreference.setODEntry(b, a, 2.0);
 		odPreference.setODEntry(a, c, 3.0);
@@ -91,7 +93,7 @@ public class SmallMultiRoundTripTestRunner {
 
 		// Default physical simulator
 
-		Simulator<TAZ, VehicleState, RoundTrip<TAZ>> simulator = new Simulator<>(scenario, () -> new VehicleState());
+		Simulator<Location> simulator = new Simulator<>(scenario, () -> new VehicleState());
 		simulator.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario, () -> new VehicleState()));
 		simulator.setParkingSimulator(new DefaultParkingSimulator<>(scenario, () -> new VehicleState()));
 
@@ -101,19 +103,19 @@ public class SmallMultiRoundTripTestRunner {
 		double locationProposalWeight = 0.5;
 		double departureProposalWeight = 0.5;
 
-		RoundTripProposal<RoundTrip<TAZ>> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
-		proposal.addProposal(new RoundTripLocationProposal<RoundTrip<TAZ>, TAZ>(scenario,
-				(state, scen) -> new PossibleTransitionsWithAlternatingLocations<TAZ>(state, scen)), locationProposalWeight);
+		RoundTripProposal<Location> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
+		proposal.addProposal(
+				new RoundTripLocationProposal<RoundTrip<Location>, Location>(scenario,
+						(state, scen) -> new PossibleTransitionsWithAlternatingLocations<Location>(state, scen)),
+				locationProposalWeight);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
-		MultiRoundTripProposal<RoundTrip<TAZ>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> proposalMulti = new MultiRoundTripProposal<>(
-				scenario.getRandom(), proposal);
+		MultiRoundTripProposal<Location> proposalMulti = new MultiRoundTripProposal<>(scenario.getRandom(), proposal);
 
-		MHAlgorithm<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> algo = new MHAlgorithm<>(proposalMulti, allPreferences,
-				new Random());
+		MHAlgorithm<MultiRoundTrip<Location>> algo = new MHAlgorithm<>(proposalMulti, allPreferences, new Random());
 
-		final MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> initialStateMulti = new MultiRoundTripWithOD<>(roundTripCnt);
+		final MultiRoundTrip<Location> initialStateMulti = new MultiRoundTripWithOD<>(roundTripCnt);
 		for (int i = 0; i < initialStateMulti.size(); i++) {
-			RoundTrip<TAZ> initialStateSingle = new RoundTrip<TAZ>(Arrays.asList(a, b), Arrays.asList(6, 18));
+			RoundTrip<Location> initialStateSingle = new RoundTrip<Location>(Arrays.asList(a, b), Arrays.asList(6, 18));
 			initialStateSingle.setEpisodes(simulator.simulate(initialStateSingle));
 			initialStateMulti.setRoundTrip(i, initialStateSingle);
 		}

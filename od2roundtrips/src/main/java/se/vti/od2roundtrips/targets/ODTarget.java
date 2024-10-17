@@ -24,33 +24,33 @@ import java.util.Map;
 
 import floetteroed.utilities.Tuple;
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.TAZ;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ODTarget extends Target {
+public class ODTarget<L extends Location> extends Target<L> {
 
-	private final Map<Tuple<TAZ, TAZ>, Double> targetODMatrix = new LinkedHashMap<>();
+	private final Map<Tuple<L, L>, Double> targetODMatrix = new LinkedHashMap<>();
 
 	public ODTarget() {
 	}
 
-	public void setODEntry(TAZ origin, TAZ destination, double value) {
+	public void setODEntry(L origin, L destination, double value) {
 		this.targetODMatrix.put(new Tuple<>(origin, destination), value);
 	}
 
-	public Map<Tuple<TAZ, TAZ>, Double> getTargetOdMatrix() {
+	public Map<Tuple<L, L>, Double> getTargetOdMatrix() {
 		return this.targetODMatrix;
 	}
 
-	private double[] od2array(Map<Tuple<TAZ, TAZ>, ? extends Number> od) {
+	private double[] od2array(Map<Tuple<L, L>, ? extends Number> od) {
 		double[] result = new double[this.targetODMatrix.size()];
 		int i = 0;
-		for (Map.Entry<Tuple<TAZ, TAZ>, Double> targetEntry : this.targetODMatrix.entrySet()) {
+		for (Map.Entry<Tuple<L, L>, Double> targetEntry : this.targetODMatrix.entrySet()) {
 			if (od.containsKey(targetEntry.getKey())) {
 				result[i++] = od.get(targetEntry.getKey()).doubleValue();
 			} else {
@@ -66,15 +66,15 @@ public class ODTarget extends Target {
 	}
 
 	@Override
-	public double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
-		return this.od2array(multiRoundTrip.getODView());
+	public double[] computeSample(MultiRoundTrip<L> multiRoundTrip) {
+		return this.od2array(((MultiRoundTripWithOD<L>) multiRoundTrip).getODView());
 	}
 
 	@Override
 	public String[] createLabels() {
 		String[] result = new String[this.targetODMatrix.size()];
 		int i = 0;
-		for (Tuple<TAZ, TAZ> od : this.targetODMatrix.keySet()) {
+		for (Tuple<L, L> od : this.targetODMatrix.keySet()) {
 			result[i++] = od.getA() + "->" + od.getB();
 		}
 		return result;

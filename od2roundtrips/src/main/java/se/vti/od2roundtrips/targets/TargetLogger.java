@@ -23,9 +23,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 
-import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.TAZ;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
 /**
@@ -33,11 +32,11 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
+public class TargetLogger<L extends Location> implements MHStateProcessor<MultiRoundTrip<L>> {
 
 	private final String fileName;
 
-	private final Target target;
+	private final Target<L> target;
 
 	private final int interval;
 
@@ -45,7 +44,7 @@ public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, 
 
 	private boolean overwrite = false;
 
-	public TargetLogger(int interval, Target target, String fileName) {
+	public TargetLogger(int interval, Target<L> target, String fileName) {
 		this.interval = interval;
 		this.target = target;
 		this.fileName = fileName;
@@ -62,7 +61,7 @@ public class TargetLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, 
 	}
 
 	@Override
-	public void processState(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+	public void processState(MultiRoundTrip<L> multiRoundTrip) {
 
 		multiRoundTrip = this.target.filter(multiRoundTrip);
 

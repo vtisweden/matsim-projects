@@ -26,8 +26,8 @@ import se.vti.roundtrips.single.Location;
  * @author GunnarF
  *
  */
-public interface LocationFactory<L extends Location> {
+public interface LocationFactory {
 
-	L createLocation(String name);
+	Location createLocation(String name);
 
 }

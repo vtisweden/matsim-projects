@@ -22,17 +22,16 @@ package se.vti.od2roundtrips.targets;
 import java.util.Arrays;
 import java.util.function.Function;
 
-import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.TAZ;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.preferences.PreferenceComponent;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.Location;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
+public abstract class Target<L extends Location> extends PreferenceComponent<MultiRoundTrip<L>> {
 
 	private double lastDeviationError;
 	private double lastDiscretizationError;
@@ -40,13 +39,12 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 	private double[] target;
 	private double targetSize;
 
-	private Function<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> filter = m -> m;
+	private Function<MultiRoundTrip<L>, MultiRoundTrip<L>> filter = m -> m;
 
 	public Target() {
 	}
 
-	public void setFilter(
-			Function<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> filter) {
+	public void setFilter(Function<MultiRoundTrip<L>, MultiRoundTrip<L>> filter) {
 		this.filter = filter;
 	}
 
@@ -58,12 +56,12 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 		return this.lastDiscretizationError;
 	}
 
-	public MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> filter(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+	public MultiRoundTrip<L> filter(MultiRoundTrip<L> multiRoundTrip) {
 		return this.filter.apply(multiRoundTrip);
 	}
 
 	@Override
-	public double logWeight(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+	public double logWeight(MultiRoundTrip<L> multiRoundTrip) {
 
 		multiRoundTrip = this.filter(multiRoundTrip);
 
@@ -89,6 +87,6 @@ public abstract class Target extends PreferenceComponent<MultiRoundTripWithOD<TA
 
 	public abstract double[] computeTarget();
 
-	public abstract double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> filteredMultiRoundTrip);
+	public abstract double[] computeSample(MultiRoundTrip<L> filteredMultiRoundTrip);
 
 }

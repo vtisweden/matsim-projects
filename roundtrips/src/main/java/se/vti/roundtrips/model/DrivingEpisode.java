@@ -26,7 +26,7 @@ import se.vti.roundtrips.single.Location;
  * @author GunnarF
  *
  */
-public final class DrivingEpisode<L extends Location, S extends VehicleState> extends Episode<S> {
+public final class DrivingEpisode<L extends Location> extends Episode {
 
 	private final L origin;
 	private final L destination;

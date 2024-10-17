@@ -26,10 +26,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import floetteroed.utilities.Tuple;
-import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.TAZ;
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -37,9 +37,9 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class AtMainActivityTarget extends Target {
+public class AtMainActivityTarget<L extends Location> extends Target<L> {
 
-	private final Map<TAZ, Double> location2target = new LinkedHashMap<>();
+	private final Map<L, Double> location2target = new LinkedHashMap<>();
 
 	private final double targetDuration_h;
 	private final List<Tuple<Double, Double>> targetIntervals;
@@ -49,7 +49,7 @@ public class AtMainActivityTarget extends Target {
 		this.targetIntervals = Collections.unmodifiableList(Episode.effectiveIntervals(intervalDuration_h, endTime_h));
 	}
 
-	public void setTarget(TAZ location, double target) {
+	public void setTarget(L location, double target) {
 		this.location2target.put(location, target);
 	}
 
@@ -58,7 +58,7 @@ public class AtMainActivityTarget extends Target {
 		// solve this with a stream
 		String[] result = new String[this.location2target.size()];
 		int i = 0;
-		for (TAZ taz : this.location2target.keySet()) {
+		for (L taz : this.location2target.keySet()) {
 			result[i++] = taz.toString();
 		}
 		return result;
@@ -70,18 +70,18 @@ public class AtMainActivityTarget extends Target {
 	}
 
 	@Override
-	public double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> filteredMultiRoundTrip) {
-		Map<TAZ, Integer> loc2cnt = this.location2target.entrySet().stream()
+	public double[] computeSample(MultiRoundTrip<L> filteredMultiRoundTrip) {
+		Map<L, Integer> loc2cnt = this.location2target.entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> 0)); // ensure ordering;
-		for (RoundTrip<TAZ> roundTrip : filteredMultiRoundTrip) {
+		for (RoundTrip<L> roundTrip : filteredMultiRoundTrip) {
 			double bestOverlap_h = Double.NEGATIVE_INFINITY;
-			TAZ bestLocation = null;
+			L bestLocation = null;
 			List<?> episodes = roundTrip.getEpisodes();
 			for (int i = 2; i < episodes.size(); i += 2) {
-				ParkingEpisode<?, ?> episode = (ParkingEpisode<?, ?>) episodes.get(i);
+				ParkingEpisode<L> episode = (ParkingEpisode<L>) episodes.get(i);
 				double overlap_h = episode.overlap_h(this.targetIntervals);
 				if (overlap_h > bestOverlap_h) {
-					bestLocation = (TAZ) episode.getLocation();
+					bestLocation = episode.getLocation();
 					bestOverlap_h = overlap_h;
 				}
 			}

@@ -44,7 +44,7 @@ public class StrategyRealizationConsistency<R extends RoundTrip<L>, L extends Lo
 		} else {
 			double discrepancy_h = 0.0;
 			for (int i = 0; i < simulatedRoundTrip.locationCnt(); i++) {
-				ParkingEpisode<?, ?> parking = (ParkingEpisode<?, ?>) simulatedRoundTrip.getEpisodes().get(2 * i);
+				ParkingEpisode<?> parking = (ParkingEpisode<?>) simulatedRoundTrip.getEpisodes().get(2 * i);
 				assert (parking.getEndTime_h() >= 0.0);
 				discrepancy_h += Math.abs(
 						this.scenario.getBinSize_h() * simulatedRoundTrip.getDeparture(i) - parking.getEndTime_h());

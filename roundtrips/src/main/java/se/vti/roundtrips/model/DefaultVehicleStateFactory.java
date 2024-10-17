@@ -24,7 +24,7 @@ package se.vti.roundtrips.model;
  * @author GunnarF
  *
  */
-public class DefaultVehicleStateFactory implements VehicleStateFactory<VehicleState> {
+public class DefaultVehicleStateFactory implements VehicleStateFactory {
 
 	@Override
 	public VehicleState createVehicleState() {

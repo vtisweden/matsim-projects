@@ -28,24 +28,24 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class DefaultParkingSimulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>>
-		implements ParkingSimulator<L, S, R> {
+public class DefaultParkingSimulator<L extends Location> implements ParkingSimulator<L> {
 
 	protected final Scenario<L> scenario;
-	protected final VehicleStateFactory<S> stateFactory;
+	protected final VehicleStateFactory stateFactory;
 
-	public DefaultParkingSimulator(Scenario<L> scenario, VehicleStateFactory<S> stateFactory) {
+	public DefaultParkingSimulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
 		this.scenario = scenario;
 		this.stateFactory = stateFactory;
 	}
 
-	public S computeFinalState(R roundTrip, int roundTripIndex, ParkingEpisode<L, S> parking) {
+	public VehicleState computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, ParkingEpisode<L> parking) {
 		return this.stateFactory.createVehicleState();
 	}
 
 	@Override
-	public ParkingEpisode<L, S> newParkingEpisode(R roundTrip, int roundTripIndex, double time_h, S initialState) {
-		final ParkingEpisode<L, S> parking = new ParkingEpisode<>(roundTrip.getLocation(roundTripIndex));
+	public ParkingEpisode<L> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
+			VehicleState initialState) {
+		final ParkingEpisode<L> parking = new ParkingEpisode<>(roundTrip.getLocation(roundTripIndex));
 		parking.setInitialState(initialState);
 
 		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * roundTrip.getDeparture(roundTripIndex)));

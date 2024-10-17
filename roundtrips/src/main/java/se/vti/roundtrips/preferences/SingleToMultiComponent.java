@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.od2roundtrips.model;
+package se.vti.roundtrips.preferences;
 
-import se.vti.roundtrips.preferences.PreferenceComponent;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -27,18 +28,18 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class SingleToMultiComponent extends PreferenceComponent<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
+public class SingleToMultiComponent<L extends Location> extends PreferenceComponent<MultiRoundTrip<L>> {
 
-	private final PreferenceComponent<RoundTrip<TAZ>> singleComponent;
+	private final PreferenceComponent<RoundTrip<L>> singleComponent;
 
-	public SingleToMultiComponent(PreferenceComponent<RoundTrip<TAZ>> singleComponent) {
+	public SingleToMultiComponent(PreferenceComponent<RoundTrip<L>> singleComponent) {
 		this.singleComponent = singleComponent;
 	}
 
 	@Override
-	public double logWeight(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+	public double logWeight(MultiRoundTrip<L> multiRoundTrip) {
 		double logWeight = 0.0;
-		for (RoundTrip<TAZ> roundTrip : multiRoundTrip) {
+		for (RoundTrip<L> roundTrip : multiRoundTrip) {
 			logWeight += this.singleComponent.logWeight(roundTrip);
 		}
 		return logWeight;

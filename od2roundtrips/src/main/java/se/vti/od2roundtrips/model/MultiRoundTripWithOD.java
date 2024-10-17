@@ -25,6 +25,7 @@ import java.util.Map;
 
 import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -33,7 +34,7 @@ import se.vti.roundtrips.single.RoundTrip;
  *
  * @param <L>
  */
-public class MultiRoundTripWithOD<L, R extends RoundTrip<L>> extends MultiRoundTrip<R> {
+public class MultiRoundTripWithOD<L extends Location> extends MultiRoundTrip<L> {
 
 	private final Map<Tuple<L, L>, Integer> odMatrix = new LinkedHashMap<>();
 
@@ -54,11 +55,11 @@ public class MultiRoundTripWithOD<L, R extends RoundTrip<L>> extends MultiRoundT
 	}
 
 	@Override
-	public void setRoundTrip(int i, R newRoundTrip) {
+	public void setRoundTrip(int i, RoundTrip<L> newRoundTrip) {
 		this.setRoundTrip(i, newRoundTrip, true);
 	}
 
-	private void setRoundTrip(int i, R newRoundTrip, boolean updateOd) {
+	private void setRoundTrip(int i, RoundTrip<L> newRoundTrip, boolean updateOd) {
 
 		if (updateOd) {
 
@@ -70,7 +71,7 @@ public class MultiRoundTripWithOD<L, R extends RoundTrip<L>> extends MultiRoundT
 				}
 			}
 
-			final R oldRoundTrip = this.getRoundTrip(i);
+			final RoundTrip<L> oldRoundTrip = this.getRoundTrip(i);
 			if ((oldRoundTrip != null) && (oldRoundTrip.locationCnt() > 1)) {
 				this.singleTripCnt -= oldRoundTrip.locationCnt();
 				for (int l = 0; l < oldRoundTrip.locationCnt(); l++) {
@@ -97,10 +98,10 @@ public class MultiRoundTripWithOD<L, R extends RoundTrip<L>> extends MultiRoundT
 	}
 
 	@Override
-	public MultiRoundTripWithOD<L, R> clone() {
-		MultiRoundTripWithOD<L, R> result = new MultiRoundTripWithOD<L, R>(this.size());
+	public MultiRoundTrip<L> clone() {
+		MultiRoundTripWithOD<L> result = new MultiRoundTripWithOD<L>(this.size());
 		for (int i = 0; i < this.size(); i++) {
-			result.setRoundTrip(i, (R) this.getRoundTrip(i).clone(), false);
+			result.setRoundTrip(i, this.getRoundTrip(i).clone(), false);
 		}
 		result.odMatrix.putAll(this.odMatrix);
 		result.singleTripCnt = this.singleTripCnt;

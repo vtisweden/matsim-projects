@@ -23,10 +23,10 @@ import java.util.Collections;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
-import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.TAZ;
 import se.vti.roundtrips.model.Episode;
 import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -34,7 +34,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class AtHomeOverNightTarget extends Target {
+public class AtHomeOverNightTarget<L extends Location> extends Target<L> {
 
 	private final double targetDuration_h;
 	private final List<Tuple<Double, Double>> targetIntervals;
@@ -57,12 +57,12 @@ public class AtHomeOverNightTarget extends Target {
 	}
 
 	@Override
-	public double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> filteredMultiRoundTrip) {
+	public double[] computeSample(MultiRoundTrip<L> filteredMultiRoundTrip) {
 		double total = 0.0;
 		double cnt = 0.0;
-		for (RoundTrip<TAZ> roundTrip : filteredMultiRoundTrip) {
+		for (RoundTrip<L> roundTrip : filteredMultiRoundTrip) {
 			total++;
-			final ParkingEpisode<?, ?> home = (ParkingEpisode<?, ?>) roundTrip.getEpisodes().get(0);
+			final ParkingEpisode<L> home = (ParkingEpisode<L>) roundTrip.getEpisodes().get(0);
 			if (home.overlap_h(this.targetIntervals) >= this.targetDuration_h) {
 				cnt++;
 			}

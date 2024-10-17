@@ -31,33 +31,33 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class Simulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> implements se.vti.roundtrips.single.Simulator<R> {
+public class Simulator<L extends Location> implements se.vti.roundtrips.single.Simulator<L> {
 
 	// -------------------- INTERFACES --------------------
 
-	public interface ParkingSimulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> {
+	public interface ParkingSimulator<L extends Location> {
 
-		ParkingEpisode<L, S> newParkingEpisode(R roundTrip, int roundTripIndex, double initialTime_h,
-				S initialState);
+		ParkingEpisode<L> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double initialTime_h,
+				VehicleState initialState);
 	}
 
-	public interface DrivingSimulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>> {
+	public interface DrivingSimulator<L extends Location> {
 
-		DrivingEpisode<L, S> newDrivingEpisode(R roundTrip, int roundTripStartIndex, double initialTime_h,
-				S initialState);
+		DrivingEpisode<L> newDrivingEpisode(RoundTrip<L> roundTrip, int roundTripStartIndex, double initialTime_h,
+				VehicleState initialState);
 	}
 
 	// -------------------- MEMBERS --------------------
 
 	protected final Scenario<L> scenario;
-	private final VehicleStateFactory<S> stateFactory;
+	private final VehicleStateFactory stateFactory;
 
-	private DrivingSimulator<L, S, R> drivingSimulator = null;
-	private ParkingSimulator<L, S, R> parkingSimulator = null;
+	private DrivingSimulator<L> drivingSimulator = null;
+	private ParkingSimulator<L> parkingSimulator = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Simulator(Scenario<L> scenario, VehicleStateFactory<S> stateFactory) {
+	public Simulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
 		this.scenario = scenario;
 		this.stateFactory = stateFactory;
 	}
@@ -68,22 +68,22 @@ public class Simulator<L extends Location, S extends VehicleState, R extends Rou
 		return this.scenario;
 	}
 
-	public void setDrivingSimulator(DrivingSimulator<L, S, R> drivingSimulator) {
+	public void setDrivingSimulator(DrivingSimulator<L> drivingSimulator) {
 		this.drivingSimulator = drivingSimulator;
 	}
 
-	public void setParkingSimulator(ParkingSimulator<L, S, R> parkingSimulator) {
+	public void setParkingSimulator(ParkingSimulator<L> parkingSimulator) {
 		this.parkingSimulator = parkingSimulator;
 	}
 
 	// -------------------- HOOKS FOR SUBCLASSING --------------------
 
-	public S createAndInitializeState() {
+	public VehicleState createAndInitializeState() {
 		return this.stateFactory.createVehicleState();
 	}
 
-	public ParkingEpisode<L, S> createHomeOnlyEpisode(R roundTrip) {
-		ParkingEpisode<L, S> home = new ParkingEpisode<>(roundTrip.getLocation(0));
+	public ParkingEpisode<L> createHomeOnlyEpisode(RoundTrip<L> roundTrip) {
+		ParkingEpisode<L> home = new ParkingEpisode<>(roundTrip.getLocation(0));
 		home.setDuration_h(24.0);
 		home.setEndTime_h(24.0 - 1e-8); // wraparound
 		home.setInitialState(this.createAndInitializeState());
@@ -91,57 +91,57 @@ public class Simulator<L extends Location, S extends VehicleState, R extends Rou
 		return home;
 	}
 
-	public S keepOrChangeInitialState(S oldInitialState, S newInitialState) {
+	public VehicleState keepOrChangeInitialState(VehicleState oldInitialState, VehicleState newInitialState) {
 		return oldInitialState;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
 	@Override
-	public List<Episode<S>> simulate(R roundTrip) {
+	public List<? extends Episode> simulate(RoundTrip<L> roundTrip) {
 
 		if (roundTrip.locationCnt() == 1) {
 			return Collections.singletonList(this.createHomeOnlyEpisode(roundTrip));
 		}
 
 		final double initialTime_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
-		S initialState = this.createAndInitializeState();
+		VehicleState initialState = this.createAndInitializeState();
 
-		List<Episode<S>> episodes = null;
+		List<Episode> episodes = null;
 		do {
 
 			episodes = new ArrayList<>(2 * roundTrip.locationCnt() - 1);
 			episodes.add(null); // placeholder for home episode
 
 			double time_h = initialTime_h;
-			S currentState = initialState;
+			VehicleState currentState = initialState;
 
 			for (int index = 0; index < roundTrip.locationCnt() - 1; index++) {
 
-				final DrivingEpisode<L, S> driving = this.drivingSimulator.newDrivingEpisode(roundTrip, index, time_h,
+				final DrivingEpisode<L> driving = this.drivingSimulator.newDrivingEpisode(roundTrip, index, time_h,
 						currentState);
 				episodes.add(driving);
 				time_h = driving.getEndTime_h();
 				currentState = driving.getFinalState();
 
-				final ParkingEpisode<L, S> parking = this.parkingSimulator.newParkingEpisode(roundTrip, index + 1,
+				final ParkingEpisode<L> parking = this.parkingSimulator.newParkingEpisode(roundTrip, index + 1,
 						time_h, currentState);
 				episodes.add(parking);
 				time_h = parking.getEndTime_h();
 				currentState = parking.getFinalState();
 			}
 
-			final DrivingEpisode<L, S> driving = this.drivingSimulator.newDrivingEpisode(roundTrip,
+			final DrivingEpisode<L> driving = this.drivingSimulator.newDrivingEpisode(roundTrip,
 					roundTrip.locationCnt() - 1, time_h, currentState);
 			episodes.add(driving);
 			time_h = driving.getEndTime_h();
 			currentState = driving.getFinalState();
 
-			final ParkingEpisode<L, S> home = this.parkingSimulator.newParkingEpisode(roundTrip, 0, time_h - 24.0,
+			final ParkingEpisode<L> home = this.parkingSimulator.newParkingEpisode(roundTrip, 0, time_h - 24.0,
 					currentState);
 			episodes.set(0, home);
 
-			final S newInitialState = this.keepOrChangeInitialState(initialState, home.getFinalState());
+			final VehicleState newInitialState = this.keepOrChangeInitialState(initialState, home.getFinalState());
 			if (newInitialState == initialState) {
 				// accept wrap-around
 				home.setFinalState(initialState);

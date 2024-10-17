@@ -45,8 +45,8 @@ public class AllDayTimeConstraintPreference<R extends RoundTrip<L>, L extends Lo
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
-			final ParkingEpisode<?,?> home = (ParkingEpisode<?,?>) roundTrip.getEpisodes().get(0);
-			final DrivingEpisode<?,?> leaveHome = (DrivingEpisode<?,?>) roundTrip.getEpisodes().get(1);
+			final ParkingEpisode<?> home = (ParkingEpisode<?>) roundTrip.getEpisodes().get(0);
+			final DrivingEpisode<?> leaveHome = (DrivingEpisode<?>) roundTrip.getEpisodes().get(1);
 			final double earliestLeaveHome_h = home.getEndTime_h() - 24.0 + this.minHomeDuration_h;
 			final double realizedLeaveHome_h = leaveHome.getEndTime_h() - leaveHome.getDuration_h();
 			return Math.max(0.0, earliestLeaveHome_h - realizedLeaveHome_h);

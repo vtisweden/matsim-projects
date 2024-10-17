@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import se.vti.roundtrips.model.Episode;
+
 /**
  * 
  * @author GunnarF
@@ -39,12 +41,11 @@ public class RoundTrip<L> {
 
 	// -------------------- MEMBERS --------------------
 
-	// TODO not typesafe
-	private List<?> episodes = null;
-
 	private List<L> locations;
 
 	private List<Integer> departures;
+
+	private List<? extends Episode> episodes = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -123,6 +124,10 @@ public class RoundTrip<L> {
 		return this.departures.contains(bin);
 	}
 
+	public List<Integer> getDeparturesView() {
+		return Collections.unmodifiableList(this.departures);
+	}
+
 	public void addAndEnsureSortedDepartures(int i, L location, Integer departureBin) {
 		this.locations.add(i, location);
 		this.departures.add(i, departureBin);
@@ -146,11 +151,11 @@ public class RoundTrip<L> {
 		return new ArrayList<>(this.departures);
 	}
 
-	public List<?> getEpisodes() {
+	public List<? extends Episode> getEpisodes() {
 		return episodes;
 	}
 
-	public void setEpisodes(List<?> episodes) {
+	public void setEpisodes(List<? extends Episode> episodes) {
 		this.episodes = episodes;
 	}
 	// -------------------- OVERRIDING OF Object --------------------

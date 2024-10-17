@@ -21,8 +21,15 @@ package se.vti.roundtrips.single;
 
 import java.util.List;
 
-public interface Simulator<R extends RoundTrip<?>> {
+import se.vti.roundtrips.model.Episode;
 
-	List<?> simulate(R roundTrip);
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public interface Simulator<L extends Location> {
+
+	List<? extends Episode> simulate(RoundTrip<L> roundTrip);
 
 }

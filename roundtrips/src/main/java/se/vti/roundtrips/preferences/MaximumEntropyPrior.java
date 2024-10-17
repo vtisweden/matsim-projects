@@ -6,6 +6,7 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -13,7 +14,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class MaximumEntropyPrior<L> extends PreferenceComponent<RoundTrip<L>> {
+public class MaximumEntropyPrior<L extends Location> extends PreferenceComponent<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -134,7 +135,7 @@ public class MaximumEntropyPrior<L> extends PreferenceComponent<RoundTrip<L>> {
 				double meanJ = 4;
 				{
 
-					System.out.println(new MaximumEntropyPrior(_L, _K, meanJ).createTable());
+					System.out.println(new MaximumEntropyPrior<>(_L, _K, meanJ).createTable());
 
 				}
 			}

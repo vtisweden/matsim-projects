@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 
 import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -35,7 +36,7 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public class SimpleStatsLogger implements MHStateProcessor<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> {
+public class SimpleStatsLogger implements MHStateProcessor<MultiRoundTrip<?>> {
 
 	final String errorsFile = "errors.log";
 	final String locationsFile = "locationCounts.log";
@@ -69,16 +70,18 @@ public class SimpleStatsLogger implements MHStateProcessor<MultiRoundTripWithOD<
 	}
 
 	@Override
-	public void processState(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> state) {
+	public void processState(MultiRoundTrip<?> state) {
+
+		final MultiRoundTripWithOD<?> stateWithOD = (MultiRoundTripWithOD<?>) state;
 
 		if (this.iteration++ % this.interval == 0) {
 
 			//
-			this.append("" + state.getODReproductionError(), this.errorsFile);
+			this.append("" + stateWithOD.getODReproductionError(), this.errorsFile);
 
 			//
 			final int[] lengths = new int[scenario.getMaxParkingEpisodes()];
-			for (RoundTrip<TAZ> r : state) {
+			for (RoundTrip<?> r : state) {
 				lengths[r.locationCnt() - 1]++;
 			}
 			this.append(Arrays.stream(lengths).mapToObj(l -> "" + l).collect(Collectors.joining("\t")),
@@ -86,7 +89,7 @@ public class SimpleStatsLogger implements MHStateProcessor<MultiRoundTripWithOD<
 
 			//
 			final int[] departures = new int[scenario.getBinCnt()];
-			for (RoundTrip<TAZ> r : state) {
+			for (RoundTrip<?> r : state) {
 				if (r.locationCnt() > 1) {
 					for (int i = 0; i < r.locationCnt(); i++) {
 						departures[r.getDeparture(i)]++;
@@ -95,7 +98,6 @@ public class SimpleStatsLogger implements MHStateProcessor<MultiRoundTripWithOD<
 			}
 			this.append(Arrays.stream(departures).mapToObj(l -> "" + l).collect(Collectors.joining("\t")),
 					this.departuresFile);
-
 
 		}
 	}

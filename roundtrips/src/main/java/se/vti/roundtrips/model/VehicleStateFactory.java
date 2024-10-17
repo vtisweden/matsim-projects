@@ -24,8 +24,8 @@ package se.vti.roundtrips.model;
  * @author GunnarF
  *
  */
-public interface VehicleStateFactory<S extends VehicleState> {
+public interface VehicleStateFactory {
 
-	S createVehicleState();
+	VehicleState createVehicleState();
 	
 }

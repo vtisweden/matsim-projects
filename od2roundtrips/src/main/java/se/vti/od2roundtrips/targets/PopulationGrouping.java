@@ -27,9 +27,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.TAZ;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 
 /**
  * 
@@ -71,15 +70,15 @@ public class PopulationGrouping {
 				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().stream().mapToInt(i -> i).toArray()));
 	}
 
-	public Function<MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>, MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>>> createFilter(
+	public <L extends Location> Function<MultiRoundTrip<L>, MultiRoundTrip<L>> createFilter(
 			String group) {
 		this.ensureIndexing();
 		return new Function<>() {
 			@Override
-			public MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> apply(
-					MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
+			public MultiRoundTrip<L> apply(
+					MultiRoundTrip<L> multiRoundTrip) {
 				final int[] indices = group2indices.get(group);
-				MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> result = new MultiRoundTripWithOD<>(indices.length);
+				MultiRoundTrip<L> result = new MultiRoundTrip<>(indices.length);
 				for (int i = 0; i < indices.length; i++) {
 					result.setRoundTrip(i, multiRoundTrip.getRoundTrip(indices[i]));
 				}

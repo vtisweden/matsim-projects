@@ -21,6 +21,7 @@ package se.vti.roundtrips.multiple;
 
 import java.util.Random;
 
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripProposal;
 import se.vti.utils.misc.metropolishastings.MHProposal;
@@ -31,20 +32,20 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRoundTrip<R>> implements MHProposal<M> {
+public class MultiRoundTripProposal<L extends Location> implements MHProposal<MultiRoundTrip<L>> {
 
 	private final Random rnd;
 
-	private final RoundTripProposal<R> singleProposal;
+	private final RoundTripProposal<L> singleProposal;
 
 	private Double flipProba = null;
 
-	public MultiRoundTripProposal(Random rnd, RoundTripProposal<R> singleProposal) {
+	public MultiRoundTripProposal(Random rnd, RoundTripProposal<L> singleProposal) {
 		this.rnd = rnd;
 		this.singleProposal = singleProposal;
 	}
 
-	public MultiRoundTripProposal<R, M> setFlipProbability(double flipProbability) {
+	public MultiRoundTripProposal<L> setFlipProbability(double flipProbability) {
 		this.flipProba = flipProbability;
 		return this;
 	}
@@ -52,12 +53,12 @@ public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRound
 	// IMPLEMENTATION OF INTERFACE
 
 	@Override
-	public M newInitialState() {
+	public MultiRoundTrip<L> newInitialState() {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public MHTransition<M> newTransition(M state) {
+	public MHTransition<MultiRoundTrip<L>> newTransition(MultiRoundTrip<L> state) {
 //		final double minFlipProba = 1.0 / (state.size() + 1);
 //		final double flipProba = 1.0 / (state.size() + 1);
 		final double minFlipProba = 1.0 / Math.max(1.0, state.size());
@@ -65,7 +66,7 @@ public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRound
 
 		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, state.size());
 
-		M newState = (M) state.clone();
+		MultiRoundTrip<L> newState = state.clone();
 		boolean flipped = false;
 		double fwdLogProba;
 		double bwdLogProba;
@@ -74,7 +75,7 @@ public class MultiRoundTripProposal<R extends RoundTrip<?>, M extends MultiRound
 			bwdLogProba = 0.0;
 			for (int i = 0; i < state.size(); i++) {
 				if (this.rnd.nextDouble() < flipProba) {
-					MHTransition<R> transition = this.singleProposal.newTransition(state.getRoundTrip(i));
+					MHTransition<RoundTrip<L>> transition = this.singleProposal.newTransition(state.getRoundTrip(i));
 					newState.setRoundTrip(i, transition.getNewState());
 					fwdLogProba += Math.log(flipProba) + transition.getFwdLogProb();
 					bwdLogProba += Math.log(flipProba) + transition.getBwdLogProb();

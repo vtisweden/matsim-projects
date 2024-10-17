@@ -33,47 +33,47 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  *
  * @param <L> the location type
  */
-public class RoundTripProposal<R extends RoundTrip<?>> implements MHProposal<R> {
+public class RoundTripProposal<L extends Location> implements MHProposal<RoundTrip<L>> {
 
-	private final Simulator<R> simulator;
+	private final Simulator<L> simulator;
 
 	private final Random rnd;
 
-	private final Map<MHProposal<R>, Double> proposal2weight = new LinkedHashMap<>();
+	private final Map<MHProposal<RoundTrip<L>>, Double> proposal2weight = new LinkedHashMap<>();
 
-	public RoundTripProposal(Simulator<R> simulator, Random rnd) {
+	public RoundTripProposal(Simulator<L> simulator, Random rnd) {
 		this.simulator = simulator;
 		this.rnd = rnd;
 	}
 
-	public void addProposal(MHProposal<R> proposal, double weight) {
+	public void addProposal(MHProposal<RoundTrip<L>> proposal, double weight) {
 		this.proposal2weight.put(proposal, weight);
 	}
 
-	public Simulator<R> getSimulator() {
+	public Simulator<L> getSimulator() {
 		return this.simulator;
 	}
 
 	// IMPLEMENTATION OF INTERFACE
 
 	@Override
-	public R newInitialState() {
+	public RoundTrip<L> newInitialState() {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public MHTransition<R> newTransition(R state) {
+	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
 		final double randomNumber = this.rnd.nextDouble();
 		final double allWeightSum = this.proposal2weight.values().stream().mapToDouble(w -> w).sum();
 		double weightSum = 0.0;
 
-		for (Map.Entry<MHProposal<R>, Double> entry : this.proposal2weight.entrySet()) {
+		for (Map.Entry<MHProposal<RoundTrip<L>>, Double> entry : this.proposal2weight.entrySet()) {
 			weightSum += entry.getValue();
 			if (randomNumber < weightSum / allWeightSum) {
-				MHTransition<R> transition = entry.getKey().newTransition(state);
+				MHTransition<RoundTrip<L>> transition = entry.getKey().newTransition(state);
 
-				R newRoundTrip = transition.getNewState();
+				RoundTrip<L> newRoundTrip = transition.getNewState();
 				newRoundTrip.setEpisodes(this.simulator.simulate(newRoundTrip));
 
 				transition = new MHTransition<>(transition.getOldState(), transition.getNewState(),

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -32,9 +33,9 @@ import se.vti.roundtrips.single.RoundTrip;
  *
  * @param <L>
  */
-public class MultiRoundTrip<R extends RoundTrip<?>> implements Iterable<R> {
+public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>> {
 
-	private final List<R> roundTrips;
+	private final List<RoundTrip<L>> roundTrips;
 
 	public MultiRoundTrip(int size) {
 		this.roundTrips = new ArrayList<>(size);
@@ -43,11 +44,11 @@ public class MultiRoundTrip<R extends RoundTrip<?>> implements Iterable<R> {
 		}
 	}
 
-	public R getRoundTrip(int i) {
+	public RoundTrip<L> getRoundTrip(int i) {
 		return this.roundTrips.get(i);
 	}
 
-	public void setRoundTrip(int i, R roundTrip) {
+	public void setRoundTrip(int i, RoundTrip<L> roundTrip) {
 		this.roundTrips.set(i, roundTrip);
 	}
 
@@ -60,16 +61,16 @@ public class MultiRoundTrip<R extends RoundTrip<?>> implements Iterable<R> {
 	}
 
 	@Override
-	public MultiRoundTrip<R> clone() {
-		MultiRoundTrip<R> result = new MultiRoundTrip<R>(this.size());
+	public MultiRoundTrip<L> clone() {
+		MultiRoundTrip<L> result = new MultiRoundTrip<L>(this.size());
 		for (int i = 0; i < this.size(); i++) {
-			result.setRoundTrip(i, (R) this.getRoundTrip(i).clone());
+			result.setRoundTrip(i, this.getRoundTrip(i).clone());
 		}
 		return result;
 	}
 
 	@Override
-	public Iterator<R> iterator() {
+	public Iterator<RoundTrip<L>> iterator() {
 		return this.roundTrips.iterator();
 	}
 

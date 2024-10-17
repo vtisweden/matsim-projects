@@ -28,27 +28,27 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class DefaultDrivingSimulator<L extends Location, S extends VehicleState, R extends RoundTrip<L>>
-		implements DrivingSimulator<L, S, R> {
+public class DefaultDrivingSimulator<L extends Location> implements DrivingSimulator<L> {
 
 	protected final Scenario<L> scenario;
-	protected final VehicleStateFactory<S> stateFactory;
+	protected final VehicleStateFactory stateFactory;
 
-	public DefaultDrivingSimulator(Scenario<L> scenario, VehicleStateFactory<S> stateFactory) {
+	public DefaultDrivingSimulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
 		this.scenario = scenario;
 		this.stateFactory = stateFactory;
 	}
 
-	public S computeFinalState(R roundTrip, int roundTripIndex, DrivingEpisode<L, S> driving) {
+	public VehicleState computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, DrivingEpisode<L> driving) {
 		return this.stateFactory.createVehicleState();
 	}
 
 	@Override
-	public DrivingEpisode<L, S> newDrivingEpisode(R roundTrip, int roundTripIndex, double time_h, S initialState) {
+	public DrivingEpisode<L> newDrivingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
+			VehicleState initialState) {
 		L origin = roundTrip.getLocation(roundTripIndex);
 		L destination = roundTrip.getSuccessorLocation(roundTripIndex);
 
-		final DrivingEpisode<L, S> driving = new DrivingEpisode<>(origin, destination);
+		final DrivingEpisode<L> driving = new DrivingEpisode<>(origin, destination);
 		driving.setInitialState(initialState);
 
 		driving.setDuration_h(this.scenario.getTime_h(origin, destination));

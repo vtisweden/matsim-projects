@@ -23,8 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
-import se.vti.od2roundtrips.model.TAZ;
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -32,14 +32,14 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class HomeLocationTarget extends Target {
+public class HomeLocationTarget<L extends Location> extends Target<L> {
 
-	private final Map<TAZ, Double> home2target = new LinkedHashMap<>();
+	private final Map<L, Double> home2target = new LinkedHashMap<>();
 
 	public HomeLocationTarget() {
 	}
 
-	public void setTarget(TAZ home, double target) {
+	public void setTarget(L home, double target) {
 		this.home2target.put(home, target);
 	}
 
@@ -49,10 +49,10 @@ public class HomeLocationTarget extends Target {
 	}
 
 	@Override
-	public double[] computeSample(MultiRoundTripWithOD<TAZ, RoundTrip<TAZ>> multiRoundTrip) {
-		Map<TAZ, Integer> home2sample = this.home2target.entrySet().stream()
+	public double[] computeSample(MultiRoundTrip<L> multiRoundTrip) {
+		Map<L, Integer> home2sample = this.home2target.entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> 0)); // ensure ordering
-		for (RoundTrip<TAZ> roundTrip : multiRoundTrip) {
+		for (RoundTrip<L> roundTrip : multiRoundTrip) {
 			home2sample.compute(roundTrip.getLocation(0), (l, c) -> c == null ? 1 : c + 1);
 		}
 		return home2sample.values().stream().mapToDouble(c -> c).toArray();
@@ -62,7 +62,7 @@ public class HomeLocationTarget extends Target {
 	public String[] createLabels() {
 		String[] result = new String[this.home2target.size()];
 		int i = 0;
-		for (TAZ taz : this.home2target.keySet()) {
+		for (L taz : this.home2target.keySet()) {
 			result[i++] = taz.toString();
 		}
 		return result;
