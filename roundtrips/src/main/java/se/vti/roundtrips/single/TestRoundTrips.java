@@ -47,7 +47,7 @@ public class TestRoundTrips {
 		final double locationProba = 0.1;
 		final double departureProba = 0.9;
 
-		final Scenario<Location> scenario = new Scenario<>(s -> new Location(s));
+		final Scenario<Location> scenario = new Scenario<>();
 		for (int i = 1; i <= 3; i++) {
 			scenario.createAndAddLocation("" + i);
 		}
@@ -125,7 +125,7 @@ public class TestRoundTrips {
 		final double locationProba = 0.1;
 		final double departureProba = 0.9;
 
-		final Scenario<Location> scenario = new Scenario<>(s -> new Location(s));
+		final Scenario<Location> scenario = new Scenario<>();
 		for (int i = 1; i <= 3; i++) {
 			scenario.createAndAddLocation("" + i);
 		}

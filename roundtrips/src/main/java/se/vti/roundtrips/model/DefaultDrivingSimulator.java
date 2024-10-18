@@ -31,20 +31,18 @@ import se.vti.roundtrips.single.RoundTrip;
 public class DefaultDrivingSimulator<L extends Location> implements DrivingSimulator<L> {
 
 	protected final Scenario<L> scenario;
-	protected final VehicleStateFactory stateFactory;
 
-	public DefaultDrivingSimulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
+	public DefaultDrivingSimulator(Scenario<L> scenario) {
 		this.scenario = scenario;
-		this.stateFactory = stateFactory;
 	}
 
-	public VehicleState computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, DrivingEpisode<L> driving) {
-		return this.stateFactory.createVehicleState();
+	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, DrivingEpisode<L> driving) {
+		return null;
 	}
 
 	@Override
 	public DrivingEpisode<L> newDrivingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
-			VehicleState initialState) {
+			Object initialState) {
 		L origin = roundTrip.getLocation(roundTripIndex);
 		L destination = roundTrip.getSuccessorLocation(roundTripIndex);
 

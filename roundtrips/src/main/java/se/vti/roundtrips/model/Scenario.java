@@ -56,6 +56,10 @@ public class Scenario<L extends Location> {
 		this.locationFactory = locationFactory;
 	}
 
+	public Scenario() {
+		this(name -> new Location(name));
+	}
+	
 	// TODO NEW
 	public void addLocation(L location) {
 		this.name2location.put(location.getName(), location);

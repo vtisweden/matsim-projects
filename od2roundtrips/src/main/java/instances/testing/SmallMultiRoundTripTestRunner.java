@@ -24,11 +24,8 @@ import java.util.Random;
 
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
 import se.vti.od2roundtrips.targets.ODTarget;
-import se.vti.roundtrips.model.DefaultDrivingSimulator;
-import se.vti.roundtrips.model.DefaultParkingSimulator;
-import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.model.DefaultSimulator;
-import se.vti.roundtrips.model.VehicleState;
+import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.multiple.MultiRoundTripProposal;
 import se.vti.roundtrips.preferences.AllDayTimeConstraintPreference;
@@ -37,9 +34,6 @@ import se.vti.roundtrips.preferences.SingleToMultiComponent;
 import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.roundtrips.preferences.UniformOverLocationCount;
 import se.vti.roundtrips.single.Location;
-import se.vti.roundtrips.single.PossibleTransitionFactory;
-import se.vti.roundtrips.single.PossibleTransitions;
-import se.vti.roundtrips.single.PossibleTransitionsWithAlternatingLocations;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripDepartureProposal;
 import se.vti.roundtrips.single.RoundTripLocationProposal;
@@ -56,7 +50,7 @@ public class SmallMultiRoundTripTestRunner {
 	public static void main(String[] args) {
 		System.out.println("STARTED ...");
 
-		Scenario<Location> scenario = new Scenario<>(name -> new Location(name));
+		Scenario<Location> scenario = new Scenario<>();
 
 		Location a = scenario.createAndAddLocation("A");
 		Location b = scenario.createAndAddLocation("B");
@@ -65,10 +59,16 @@ public class SmallMultiRoundTripTestRunner {
 		scenario.setSymmetricDistance_km(a, b, 10.0);
 		scenario.setSymmetricDistance_km(a, c, 10.0);
 		scenario.setSymmetricDistance_km(b, c, 10.0);
+		scenario.setSymmetricDistance_km(a, a, 0.0);
+		scenario.setSymmetricDistance_km(b, b, 0.0);
+		scenario.setSymmetricDistance_km(c, c, 0.0);
 
 		scenario.setSymmetricTime_h(a, b, 0.1);
 		scenario.setSymmetricTime_h(a, c, 0.1);
 		scenario.setSymmetricTime_h(b, c, 0.1);
+		scenario.setSymmetricTime_h(a, a, 0.0);
+		scenario.setSymmetricTime_h(b, b, 0.0);
+		scenario.setSymmetricTime_h(c, c, 0.0);
 
 		scenario.setMaxParkingEpisodes(4);
 		scenario.setTimeBinCnt(24);
@@ -95,9 +95,7 @@ public class SmallMultiRoundTripTestRunner {
 
 		// Default physical simulator
 
-		DefaultSimulator<Location> simulator = new DefaultSimulator<>(scenario, () -> new VehicleState());
-		simulator.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario, () -> new VehicleState()));
-		simulator.setParkingSimulator(new DefaultParkingSimulator<>(scenario, () -> new VehicleState()));
+		DefaultSimulator<Location> simulator = new DefaultSimulator<>(scenario);
 
 		// Create MH algorithm
 
@@ -106,9 +104,7 @@ public class SmallMultiRoundTripTestRunner {
 		double departureProposalWeight = 0.5;
 
 		RoundTripProposal<Location> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
-		proposal.addProposal(
-				new RoundTripLocationProposal<>(scenario),
-				locationProposalWeight);
+		proposal.addProposal(new RoundTripLocationProposal<>(scenario), locationProposalWeight);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
 		MultiRoundTripProposal<Location> proposalMulti = new MultiRoundTripProposal<>(scenario.getRandom(), proposal);
 

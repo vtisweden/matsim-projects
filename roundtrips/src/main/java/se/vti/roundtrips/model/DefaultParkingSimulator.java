@@ -31,20 +31,18 @@ import se.vti.roundtrips.single.RoundTrip;
 public class DefaultParkingSimulator<L extends Location> implements ParkingSimulator<L> {
 
 	protected final Scenario<L> scenario;
-	protected final VehicleStateFactory stateFactory;
 
-	public DefaultParkingSimulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
+	public DefaultParkingSimulator(Scenario<L> scenario) {
 		this.scenario = scenario;
-		this.stateFactory = stateFactory;
 	}
 
-	public VehicleState computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, ParkingEpisode<L> parking) {
-		return this.stateFactory.createVehicleState();
+	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, ParkingEpisode<L> parking) {
+		return null;
 	}
 
 	@Override
 	public ParkingEpisode<L> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
-			VehicleState initialState) {
+			Object initialState) {
 		final ParkingEpisode<L> parking = new ParkingEpisode<>(roundTrip.getLocation(roundTripIndex));
 		parking.setInitialState(initialState);
 

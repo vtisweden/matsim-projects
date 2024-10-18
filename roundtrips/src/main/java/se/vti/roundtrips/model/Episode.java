@@ -37,8 +37,8 @@ public class Episode {
 	private Double duration_h = null;
 	private Double end_h = null;
 
-	private VehicleState initialState = null;
-	private VehicleState finalState = null;
+	private Object initialState = null;
+	private Object finalState = null;
 
 	public Episode() {
 	}
@@ -59,19 +59,19 @@ public class Episode {
 		this.duration_h = duration_h;
 	}
 
-	public VehicleState getInitialState() {
+	public Object getInitialState() {
 		return initialState;
 	}
 
-	public void setInitialState(VehicleState initialState) {
+	public void setInitialState(Object initialState) {
 		this.initialState = initialState;
 	}
 
-	public VehicleState getFinalState() {
+	public Object getFinalState() {
 		return finalState;
 	}
 
-	public void setFinalState(VehicleState finalState) {
+	public void setFinalState(Object finalState) {
 		this.finalState = finalState;
 	}
 

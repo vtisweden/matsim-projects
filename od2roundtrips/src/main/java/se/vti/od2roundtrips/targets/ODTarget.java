@@ -26,6 +26,7 @@ import floetteroed.utilities.Tuple;
 import se.vti.od2roundtrips.model.MultiRoundTripWithOD;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.targets.Target;
 
 /**
  * 

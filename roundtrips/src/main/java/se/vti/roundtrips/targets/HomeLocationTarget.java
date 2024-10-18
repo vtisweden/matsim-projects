@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.od2roundtrips.targets;
+package se.vti.roundtrips.targets;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

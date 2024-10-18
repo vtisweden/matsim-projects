@@ -17,10 +17,13 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.od2roundtrips.targets;
+package se.vti.roundtrips.targets;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.model.Episode;
@@ -34,39 +37,61 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class AtHomeOverNightTarget<L extends Location> extends Target<L> {
+public class AtMainActivityTarget<L extends Location> extends Target<L> {
+
+	private final Map<L, Double> location2target = new LinkedHashMap<>();
 
 	private final double targetDuration_h;
 	private final List<Tuple<Double, Double>> targetIntervals;
-	private final double target;
 
-	public AtHomeOverNightTarget(double targetDuration_h, double intervalDuration_h, double endTime_h, double target) {
+	public AtMainActivityTarget(double targetDuration_h, double intervalDuration_h, double endTime_h) {
 		this.targetDuration_h = targetDuration_h;
 		this.targetIntervals = Collections.unmodifiableList(Episode.effectiveIntervals(intervalDuration_h, endTime_h));
-		this.target = target;
+	}
+
+	public void setTarget(L location, double target) {
+		this.location2target.put(location, target);
 	}
 
 	@Override
 	public String[] createLabels() {
-		return new String[] { "at home overnight", "NOT at home overnight" };
+		// solve this with a stream
+		String[] result = new String[this.location2target.size()];
+		int i = 0;
+		for (L taz : this.location2target.keySet()) {
+			result[i++] = taz.toString();
+		}
+		return result;
 	}
 
 	@Override
 	public double[] computeTarget() {
-		return new double[] { this.target, 0.0 }; 
+		return this.location2target.values().stream().mapToDouble(t -> t).toArray();
 	}
 
 	@Override
 	public double[] computeSample(MultiRoundTrip<L> filteredMultiRoundTrip) {
-		double total = 0.0;
-		double cnt = 0.0;
+		Map<L, Integer> loc2cnt = this.location2target.entrySet().stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> 0)); // ensure ordering;
 		for (RoundTrip<L> roundTrip : filteredMultiRoundTrip) {
-			total++;
-			final ParkingEpisode<L> home = (ParkingEpisode<L>) roundTrip.getEpisodes().get(0);
-			if (home.overlap_h(this.targetIntervals) >= this.targetDuration_h) {
-				cnt++;
+			double bestOverlap_h = Double.NEGATIVE_INFINITY;
+			L bestLocation = null;
+			List<?> episodes = roundTrip.getEpisodes();
+			for (int i = 2; i < episodes.size(); i += 2) {
+				ParkingEpisode<L> episode = (ParkingEpisode<L>) episodes.get(i);
+				double overlap_h = episode.overlap_h(this.targetIntervals);
+				if (overlap_h > bestOverlap_h) {
+					bestLocation = episode.getLocation();
+					bestOverlap_h = overlap_h;
+				}
+			}
+			if (bestOverlap_h >= this.targetDuration_h) {
+				Integer oldCnt = loc2cnt.get(bestLocation);
+				if (oldCnt != null /* otherwise not in target */) {
+					loc2cnt.put(bestLocation, oldCnt + 1);
+				}
 			}
 		}
-		return new double[] { cnt, total - cnt };
+		return loc2cnt.values().stream().mapToDouble(c -> c).toArray();
 	}
 }

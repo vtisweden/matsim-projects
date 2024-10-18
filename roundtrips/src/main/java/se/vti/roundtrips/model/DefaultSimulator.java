@@ -39,28 +39,28 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 	public interface ParkingSimulator<L extends Location> {
 
 		ParkingEpisode<L> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double initialTime_h,
-				VehicleState initialState);
+				Object initialState);
 	}
 
 	public interface DrivingSimulator<L extends Location> {
 
 		DrivingEpisode<L> newDrivingEpisode(RoundTrip<L> roundTrip, int roundTripStartIndex, double initialTime_h,
-				VehicleState initialState);
+				Object initialState);
 	}
 
 	// -------------------- MEMBERS --------------------
 
 	protected final Scenario<L> scenario;
-	private final VehicleStateFactory stateFactory;
 
 	private DrivingSimulator<L> drivingSimulator = null;
 	private ParkingSimulator<L> parkingSimulator = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public DefaultSimulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
+	public DefaultSimulator(Scenario<L> scenario) {
 		this.scenario = scenario;
-		this.stateFactory = stateFactory;
+		this.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario));
+		this.setParkingSimulator(new DefaultParkingSimulator<>(scenario));
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
@@ -79,8 +79,8 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 	// -------------------- HOOKS FOR SUBCLASSING --------------------
 
-	public VehicleState createAndInitializeState() {
-		return this.stateFactory.createVehicleState();
+	public Object createAndInitializeState() {
+		return null;
 	}
 
 	public ParkingEpisode<L> createHomeOnlyEpisode(RoundTrip<L> roundTrip) {
@@ -92,7 +92,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 		return home;
 	}
 
-	public VehicleState keepOrChangeInitialState(VehicleState oldInitialState, VehicleState newInitialState) {
+	public Object keepOrChangeInitialState(Object oldInitialState, Object newInitialState) {
 		return oldInitialState;
 	}
 
@@ -106,7 +106,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 		}
 
 		final double initialTime_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
-		VehicleState initialState = this.createAndInitializeState();
+		Object initialState = this.createAndInitializeState();
 
 		List<Episode> episodes = null;
 		do {
@@ -115,7 +115,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 			episodes.add(null); // placeholder for home episode
 
 			double time_h = initialTime_h;
-			VehicleState currentState = initialState;
+			Object currentState = initialState;
 
 			for (int index = 0; index < roundTrip.locationCnt() - 1; index++) {
 
@@ -125,8 +125,8 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 				time_h = driving.getEndTime_h();
 				currentState = driving.getFinalState();
 
-				final ParkingEpisode<L> parking = this.parkingSimulator.newParkingEpisode(roundTrip, index + 1,
-						time_h, currentState);
+				final ParkingEpisode<L> parking = this.parkingSimulator.newParkingEpisode(roundTrip, index + 1, time_h,
+						currentState);
 				episodes.add(parking);
 				time_h = parking.getEndTime_h();
 				currentState = parking.getFinalState();
@@ -142,7 +142,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 					currentState);
 			episodes.set(0, home);
 
-			final VehicleState newInitialState = this.keepOrChangeInitialState(initialState, home.getFinalState());
+			final Object newInitialState = this.keepOrChangeInitialState(initialState, home.getFinalState());
 			if (newInitialState == initialState) {
 				// accept wrap-around
 				home.setFinalState(initialState);
