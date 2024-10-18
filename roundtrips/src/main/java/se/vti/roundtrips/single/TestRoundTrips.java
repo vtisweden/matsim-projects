@@ -49,7 +49,7 @@ public class TestRoundTrips {
 
 		final Scenario<Location> scenario = new Scenario<>();
 		for (int i = 1; i <= 3; i++) {
-			scenario.createAndAddLocation("" + i);
+			scenario.getOrCreateLocationWithSameName(new Location("" + i));
 		}
 
 		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
@@ -127,7 +127,7 @@ public class TestRoundTrips {
 
 		final Scenario<Location> scenario = new Scenario<>();
 		for (int i = 1; i <= 3; i++) {
-			scenario.createAndAddLocation("" + i);
+			scenario.getOrCreateLocationWithSameName(new Location("" + i));
 		}
 
 		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());

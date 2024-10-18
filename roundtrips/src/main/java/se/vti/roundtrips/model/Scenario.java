@@ -38,8 +38,6 @@ public class Scenario<L extends Location> {
 
 	private final Random rnd = new Random();
 
-	private final LocationFactory locationFactory;
-
 	private int timeBinCnt = 24;
 	private int maxParkingEpisodes = 4;
 
@@ -52,27 +50,26 @@ public class Scenario<L extends Location> {
 
 	private List<L> locationsView = Collections.unmodifiableList(new ArrayList<>(0));
 
-	public Scenario(LocationFactory locationFactory) {
-		this.locationFactory = locationFactory;
-	}
-
 	public Scenario() {
-		this(name -> new Location(name));
-	}
-	
-	// TODO NEW
-	public void addLocation(L location) {
-		this.name2location.put(location.getName(), location);
-		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
 	}
 
-	public L createAndAddLocation(String name) {
-		L result = (L) this.locationFactory.createLocation(name);
-//		this.name2location.put(name, result);
-//		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
-		this.addLocation(result);
-		return result;
+	public L getOrCreateLocationWithSameName(L location) {
+		if (this.name2location.containsKey(location.getName())) {
+			return this.name2location.get(location.getName());
+		} else {
+			this.name2location.put(location.getName(), location);
+			this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
+			return location;			
+		}
 	}
+
+//	public L createAndAddLocation(String name) {
+//		L result = (L) this.locationFactory.createLocation(name);
+////		this.name2location.put(name, result);
+////		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
+//		this.addLocation(result);
+//		return result;
+//	}
 
 	public Random getRandom() {
 		return this.rnd;
@@ -91,13 +88,13 @@ public class Scenario<L extends Location> {
 		return this.name2location.get(name);
 	}
 
-	public L getOrCreateAndAddLocation(String name) {
-		L loc = this.name2location.get(name);
-		if (loc == null) {
-			loc = this.createAndAddLocation(name);
-		}
-		return loc;
-	}
+//	public L getOrCreateAndAddLocation(String name) {
+//		L loc = this.name2location.get(name);
+//		if (loc == null) {
+//			loc = this.createAndAddLocation(name);
+//		}
+//		return loc;
+//	}
 
 	public void setDistance_km(L from, L to, double dist_km) {
 		Tuple<L, L> od = new Tuple<>(from, to);
