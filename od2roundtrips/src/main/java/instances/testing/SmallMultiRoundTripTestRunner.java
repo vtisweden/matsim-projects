@@ -27,7 +27,7 @@ import se.vti.od2roundtrips.targets.ODTarget;
 import se.vti.roundtrips.model.DefaultDrivingSimulator;
 import se.vti.roundtrips.model.DefaultParkingSimulator;
 import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.model.Simulator;
+import se.vti.roundtrips.model.DefaultSimulator;
 import se.vti.roundtrips.model.VehicleState;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.multiple.MultiRoundTripProposal;
@@ -37,6 +37,8 @@ import se.vti.roundtrips.preferences.SingleToMultiComponent;
 import se.vti.roundtrips.preferences.StrategyRealizationConsistency;
 import se.vti.roundtrips.preferences.UniformOverLocationCount;
 import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.PossibleTransitionFactory;
+import se.vti.roundtrips.single.PossibleTransitions;
 import se.vti.roundtrips.single.PossibleTransitionsWithAlternatingLocations;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripDepartureProposal;
@@ -93,7 +95,7 @@ public class SmallMultiRoundTripTestRunner {
 
 		// Default physical simulator
 
-		Simulator<Location> simulator = new Simulator<>(scenario, () -> new VehicleState());
+		DefaultSimulator<Location> simulator = new DefaultSimulator<>(scenario, () -> new VehicleState());
 		simulator.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario, () -> new VehicleState()));
 		simulator.setParkingSimulator(new DefaultParkingSimulator<>(scenario, () -> new VehicleState()));
 
@@ -105,8 +107,7 @@ public class SmallMultiRoundTripTestRunner {
 
 		RoundTripProposal<Location> proposal = new RoundTripProposal<>(simulator, scenario.getRandom());
 		proposal.addProposal(
-				new RoundTripLocationProposal<RoundTrip<Location>, Location>(scenario,
-						(state, scen) -> new PossibleTransitionsWithAlternatingLocations<Location>(state, scen)),
+				new RoundTripLocationProposal<>(scenario),
 				locationProposalWeight);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProposalWeight);
 		MultiRoundTripProposal<Location> proposalMulti = new MultiRoundTripProposal<>(scenario.getRandom(), proposal);

@@ -33,7 +33,7 @@ import se.vti.roundtrips.model.Episode;
  * @param <L> the location type
  * 
  */
-public class RoundTrip<L> {
+public class RoundTrip<L extends Location> {
 
 	// -------------------- CONSTANTS --------------------
 

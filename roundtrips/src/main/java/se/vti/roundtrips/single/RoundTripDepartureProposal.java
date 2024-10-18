@@ -30,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class RoundTripDepartureProposal<R extends RoundTrip<L>, L extends Location> implements MHProposal<R> {
+public class RoundTripDepartureProposal<L extends Location> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -60,16 +60,16 @@ public class RoundTripDepartureProposal<R extends RoundTrip<L>, L extends Locati
 	// -------------------- IMPLEMENTATION OF MHProposal --------------------
 
 	@Override
-	public R newInitialState() {
+	public RoundTrip<L> newInitialState() {
 		// not to be used standalone
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public MHTransition<R> newTransition(R state) {
+	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
 		final Integer newDeparture = drawUnusedDeparture(state, this.scenario);
-		final R newState = (R) state.clone(); // TODO
+		final RoundTrip<L> newState = state.clone(); 
 		newState.setDepartureAndEnsureOrdering(this.scenario.getRandom().nextInt(state.locationCnt()), newDeparture);
 
 		final double fwdLogProba = -Math.log(state.locationCnt())

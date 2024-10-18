@@ -52,12 +52,8 @@ public class TestRoundTrips {
 			scenario.createAndAddLocation("" + i);
 		}
 
-		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null,
-				scenario.getRandom());
-		proposal.addProposal(
-				new RoundTripLocationProposal<>(scenario,
-						(state, scen) -> new PossibleTransitionsWithAlternatingLocations<Location>(state, scen)),
-				locationProba);
+		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
+		proposal.addProposal(new RoundTripLocationProposal<Location>(scenario), locationProba);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
@@ -134,12 +130,8 @@ public class TestRoundTrips {
 			scenario.createAndAddLocation("" + i);
 		}
 
-		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null,
-				scenario.getRandom());
-		proposal.addProposal(
-				new RoundTripLocationProposal<>(scenario,
-						(state, scen) -> new PossibleTransitionsWithoutLocationConstraints<Location>(state, scen)),
-				locationProba);
+		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
+		proposal.addProposal(new RoundTripLocationProposal<>(scenario), locationProba);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {

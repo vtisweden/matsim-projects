@@ -62,9 +62,7 @@ public class PossibleTransitionsWithoutLocationConstraints<L extends Location> i
 
 		for (int i = 0; i < state.locationCnt(); i++) {
 
-//			final L pred = state.getPredecessorLocation(i);
 			final L curr = state.getLocation(i);
-//			final L succ = state.getSuccessorLocation(i);
 
 			// analyze inserts
 
@@ -73,8 +71,6 @@ public class PossibleTransitionsWithoutLocationConstraints<L extends Location> i
 				localInserts = Collections.emptyList();
 			} else {
 				localInserts = new ArrayList<>(scenario.getLocationsView());
-//				localInserts.remove(pred);
-//				localInserts.remove(curr);
 			}
 			this.possibleInserts.add(localInserts);
 			if (localInserts.size() > 0) {
@@ -93,10 +89,6 @@ public class PossibleTransitionsWithoutLocationConstraints<L extends Location> i
 
 			final List<L> localFlips = new ArrayList<>(scenario.getLocationsView());
 			localFlips.remove(curr); // must change!
-//			if (state.locationCnt() > 1) {
-//				localFlips.remove(pred);
-//				localFlips.remove(succ);
-//			}
 			this.possibleFlips.add(localFlips);
 			if (localFlips.size() > 0) {
 				this.possibleFlipIndices.add(i);
@@ -111,8 +103,6 @@ public class PossibleTransitionsWithoutLocationConstraints<L extends Location> i
 			lastInserts = Collections.emptyList();
 		} else {
 			lastInserts = new ArrayList<>(scenario.getLocationsView());
-//			lastInserts.remove(state.getLocation(state.locationCnt() - 1));
-//			lastInserts.remove(state.getLocation(0));
 		}
 		this.possibleInserts.add(lastInserts);
 		if (lastInserts.size() > 0) {
@@ -159,15 +149,12 @@ public class PossibleTransitionsWithoutLocationConstraints<L extends Location> i
 	public double concreteInsertProba(int index) {
 		return this.insertProba // insert at all
 				* (1.0 / this.possibleInsertIndices.size() / this.possibleInserts.get(index).size()) // location
-				* (1.0 / (this.scenario.getBinCnt() - this.fromStateLength())) // new depature in unused time slot
-				* 1.0; // TODO CHARGING IS NO LONGER CONSIDERED HERE
-//				* 0.5; // charging
+				* (1.0 / (this.scenario.getBinCnt() - this.fromStateLength())); // new depature in unused time slot
 	}
 
 	public double concreteRemoveProba() {
 		return this.removeProba // remove at all
 				* (1.0 / this.possibleRemoveIndices.size()) // location
-				// removal is unconditional on charging
 				* (1.0 / this.fromStateLength()); // remove randomly selected departure
 	}
 
@@ -175,7 +162,6 @@ public class PossibleTransitionsWithoutLocationConstraints<L extends Location> i
 		return this.flipProba // flip at all
 				* (1.0 / this.possibleFlipIndices.size()) // location
 				* (1.0 / this.possibleFlips.get(index).size()); // new value
-		// flip is unconditional on departure or charging
 	}
 
 	@Override

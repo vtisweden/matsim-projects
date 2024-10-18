@@ -19,7 +19,7 @@
  */
 package se.vti.roundtrips.model;
 
-import se.vti.roundtrips.model.Simulator.DrivingSimulator;
+import se.vti.roundtrips.model.DefaultSimulator.DrivingSimulator;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 

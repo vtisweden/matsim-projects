@@ -26,8 +26,8 @@ import se.vti.roundtrips.model.Scenario;
  * @author GunnarF
  *
  */
-public interface PossibleTransitionFactory<L extends Location, R extends RoundTrip<L>> {
+public interface PossibleTransitionFactory {
 
-	public PossibleTransitions<L> createPossibleTransitions(R state, Scenario<L> scenario);
+	public <L extends Location> PossibleTransitions<L> createPossibleTransitions(RoundTrip<L> state, Scenario<L> scenario);
 	
 }

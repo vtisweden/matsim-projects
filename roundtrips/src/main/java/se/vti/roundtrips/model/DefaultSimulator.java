@@ -25,13 +25,14 @@ import java.util.List;
 
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.Simulator;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Simulator<L extends Location> implements se.vti.roundtrips.single.Simulator<L> {
+public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 	// -------------------- INTERFACES --------------------
 
@@ -57,7 +58,7 @@ public class Simulator<L extends Location> implements se.vti.roundtrips.single.S
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Simulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
+	public DefaultSimulator(Scenario<L> scenario, VehicleStateFactory stateFactory) {
 		this.scenario = scenario;
 		this.stateFactory = stateFactory;
 	}
