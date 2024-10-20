@@ -21,16 +21,26 @@ package se.vti.roundtrips.single;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+
+import se.vti.roundtrips.model.Scenario;
 
 /**
  * 
@@ -38,10 +48,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
  *
  */
 public class RoundTripJsonIO {
-	
-	public static class Serializer extends JsonSerializer<RoundTrip<? extends Location>> {
+
+	public static class Serializer extends JsonSerializer<RoundTrip<Location>> {
 		@Override
-		public void serialize(RoundTrip<? extends Location> value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+		public void serialize(RoundTrip<Location> value, JsonGenerator gen, SerializerProvider serializers)
+				throws IOException {
 			gen.writeStartObject();
 			gen.writeFieldName("nodes");
 			gen.writeStartArray();
@@ -59,7 +70,39 @@ public class RoundTripJsonIO {
 		}
 	}
 
-	public static void writeToFile(RoundTrip<? extends Location> roundTrip, String fileName)
+	public static class Deserializer extends JsonDeserializer<RoundTrip<Location>> {
+
+		private final Scenario<Location> scenario;
+
+		public Deserializer(Scenario<Location> scenario) {
+			this.scenario = scenario;
+		}
+
+		@Override
+		public RoundTrip<Location> deserialize(JsonParser p, DeserializationContext ctxt)
+				throws IOException, JsonProcessingException {
+
+			JsonNode node = p.getCodec().readTree(p);
+
+			List<Location> locations = new ArrayList<>();
+			JsonNode nodes = node.get("nodes");
+			for (JsonNode n : nodes) {
+				String name = n.asText();
+				locations.add(scenario.getOrCreateLocationWithSameName(new Location(name)));
+			}
+
+			List<Integer> departures = new ArrayList<>();
+			JsonNode dptBins = node.get("dptBins");
+			for (JsonNode dpt : dptBins) {
+				departures.add(dpt.asInt());
+			}
+
+			return new RoundTrip<>(locations, departures);
+		}
+
+	}
+
+	public static void writeToFile(RoundTrip<Location> roundTrip, String fileName)
 			throws JsonGenerationException, JsonMappingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -69,11 +112,28 @@ public class RoundTripJsonIO {
 		mapper.writeValue(new File(fileName), roundTrip);
 	}
 
+	public static RoundTrip<Location> readFromFile(Scenario<Location> scenario, String fileName)
+			throws JsonGenerationException, JsonMappingException, IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		SimpleModule module = new SimpleModule();
+		module.addDeserializer(RoundTrip.class, new Deserializer(scenario));
+		mapper.registerModule(module);
+		ObjectReader reader = mapper.readerFor(RoundTrip.class);
+		JsonParser parser = mapper.getFactory().createParser(new File(fileName));
+		RoundTrip<Location> result = reader.readValue(parser);
+		parser.close();
+		return result;
+	}
+
 	public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException {
-		RoundTrip<? extends Location> roundTrip = new RoundTrip<>(
-				Arrays.asList(new Location("home"), new Location("work")), Arrays.asList(7, 18));
+		Scenario<Location> scenario = new Scenario<>();
+		Location home = scenario.getOrCreateLocationWithSameName(new Location("home"));
+		Location work = scenario.getOrCreateLocationWithSameName(new Location("work"));
+		RoundTrip<Location> roundTrip = new RoundTrip<>(Arrays.asList(home, work), Arrays.asList(7, 18));
 		writeToFile(roundTrip, "test.json");
-		System.out.println("DONE");
+		roundTrip = null;
+		roundTrip = readFromFile(scenario, "test.json");
+		System.out.println(roundTrip);
 	}
 
 }
