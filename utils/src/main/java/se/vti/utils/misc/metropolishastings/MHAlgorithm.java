@@ -51,6 +51,8 @@ public class MHAlgorithm<S extends Object> {
 
 	private long lastCompTime_ms = 0;
 
+	private S finalState = null;
+	
 	// -------------------- CONSTRUCTION --------------------
 
 	public MHAlgorithm(final MHProposal<S> proposal, final MHWeight<S> weight, final Random rnd) {
@@ -76,6 +78,10 @@ public class MHAlgorithm<S extends Object> {
 
 	public S getInitialState() {
 		return this.initialState;
+	}
+
+	public S getFinalState() {
+		return this.finalState;
 	}
 
 	public void setMsgInterval(final long msgInterval) {
@@ -144,6 +150,7 @@ public class MHAlgorithm<S extends Object> {
 			double proposalLogWeight = this.weight.logWeight(proposalState);
 			final double logAlpha = (proposalLogWeight - currentLogWeight)
 					+ (proposalTransition.getBwdLogProb() - proposalTransition.getFwdLogProb());
+			
 			if (Math.log(this.rnd.nextDouble()) < logAlpha) {
 				currentState = proposalState;
 				currentLogWeight = proposalLogWeight;
@@ -158,8 +165,10 @@ public class MHAlgorithm<S extends Object> {
 		/*
 		 * wrap up
 		 */
+		this.finalState = currentState;
+
 		for (MHStateProcessor<S> processor : this.stateProcessors) {
 			processor.end();
-		}
+		}		
 	}
 }
