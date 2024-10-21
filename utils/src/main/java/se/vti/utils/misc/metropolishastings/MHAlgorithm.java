@@ -132,7 +132,7 @@ public class MHAlgorithm<S extends Object> {
 		 */
 		for (long i = 1; i <= iterations; i++) {
 
-			if (i % this.msgInterval == 0) {
+			if ((this.msgInterval >= 1) && (i % this.msgInterval == 0)) {
 				System.out.println("MH iteration " + i);
 				System.out.println("  state  = " + currentState);
 				System.out.println("  weight = " + Math.exp(currentLogWeight));
