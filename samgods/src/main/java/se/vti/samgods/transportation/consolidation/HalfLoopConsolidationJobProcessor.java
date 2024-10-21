@@ -61,6 +61,9 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	private final Map<Commodity, Double> commodity2scale;
 
+	private int noCompatibleVehicleTypeWarnings = 0;
+	private int couldNotComputeFleetAssignmentWarnings = 0;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	public HalfLoopConsolidationJobProcessor(NetworkData networkData, FleetData fleetData,
@@ -88,7 +91,12 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				if (fleetAssignment != null) {
 					this.consolidationUnit2fleetAssignment.put(job.consolidationUnit, fleetAssignment);
 				} else {
-					log.warn("Could not compute fleet assignment. " + job);
+					if (this.couldNotComputeFleetAssignmentWarnings < 10) {
+						log.warn("Could not compute fleet assignment: " + job);
+					}
+					if (++this.couldNotComputeFleetAssignmentWarnings == 10) {
+						log.warn("Suppressing further warnings of this type.");
+					}
 				}
 			}
 		} catch (InterruptedException e) {
@@ -218,10 +226,23 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 
 		// Identify compatible vehicles. If none, give up.
-		final List<VehicleType> compatibleVehicleTypes = this.fleetData
-				.getCompatibleVehicleTypes(job.consolidationUnit);
+//		final List<VehicleType> compatibleVehicleTypes = this.fleetData
+//				.getCompatibleVehicleTypes(job.consolidationUnit.commodity, job.consolidationUnit.samgodsMode,
+//						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry);
+		final List<VehicleType> compatibleVehicleTypes = new ArrayList<>(
+				job.consolidationUnit.linkCompatibleVehicleTypes);
+		assert (this.fleetData
+				.getCompatibleVehicleTypes(job.consolidationUnit.commodity, job.consolidationUnit.samgodsMode,
+						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry)
+				.containsAll(compatibleVehicleTypes));
+				
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
-			log.warn("No compatible vehicle types found. " + job);
+			if (this.noCompatibleVehicleTypeWarnings < 10) {
+				log.warn("No compatible vehicle types found: " + job);
+				if (++this.noCompatibleVehicleTypeWarnings == 10) {
+					log.warn("Suppressing further warnings of this type.");
+				}
+			}
 			return null;
 		}
 
@@ -245,20 +266,5 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 
 		return new ChoiceModelUtils().choose(assignments, a -> assignment2utility.get(a));
-
-//		FleetAssignment bestAssignment = null;
-//		Double bestUtility = null;
-//		for (VehicleType vehicleType : compatibleVehicleTypes) {
-//			final FleetAssignment candidateAssignment = this.dimensionFleetAssignment(realDemand_ton,
-//					vehicleType, job, serviceIntervalActiveProba);
-//			final double candidateUtility = (-1.0) * scale * candidateAssignment.unitCost_1_tonKm * 0.5
-//					* candidateAssignment.loopLength_km * realDemand_ton
-//					+ this.fleetData.getVehicleType2asc().get(vehicleType);
-//			if ((bestAssignment == null) || (candidateUtility > bestUtility)) {
-//				bestAssignment = candidateAssignment;
-//				bestUtility = candidateUtility;
-//			}
-//		}
-//		return bestAssignment;
 	}
 }

@@ -20,8 +20,10 @@
 package se.vti.samgods.transportation.fleet;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -51,12 +53,26 @@ public class FleetData {
 		this.dataProvider = dataProvider;
 	}
 
+	// -------------------- SINGLE-THREADED FUNCTIONALITY --------------------
+
+	public Set<VehicleType> computeLinkCompatibleVehicleTypes(ConsolidationUnit consolidationUnit) {
+		final LinkedHashSet<VehicleType> linkCompatibleVehicleTypes = new LinkedHashSet<>(
+				this.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
+						consolidationUnit.isContainer, consolidationUnit.containsFerry));
+		for (List<Id<Link>> segmentLinkIds : consolidationUnit.linkIds) {
+			for (Id<Link> linkId : segmentLinkIds) {
+				linkCompatibleVehicleTypes.retainAll(this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId));
+			}
+		}
+		return linkCompatibleVehicleTypes;
+	}
+
 	// -------------------- PASS-THROUGH FROM DATA PROVIDER --------------------
 
-	public Map <Id<Link>, CopyOnWriteArraySet<VehicleType>> getLinkId2allowedVehicleTypes() {
+	public Map<Id<Link>, CopyOnWriteArraySet<VehicleType>> getLinkId2allowedVehicleTypes() {
 		return this.dataProvider.getLinkId2allowedVehicleTypes();
 	}
-	
+
 	public Map<VehicleType, SamgodsVehicleAttributes> getVehicleType2attributes() {
 		return this.dataProvider.getVehicleType2attributes();
 	}
@@ -85,11 +101,6 @@ public class FleetData {
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
 				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
 						f -> this.createCompatibleVehicleTypes(commodity, mode, isContainer, f));
-	}
-
-	public List<VehicleType> getCompatibleVehicleTypes(ConsolidationUnit consolidationUnit) {
-		return this.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
-				consolidationUnit.isContainer, consolidationUnit.containsFerry);
 	}
 
 	// ----- THREAD SAFE ACCESS TO & UPDATE OF REPRESENTATIVE VEHICLE TYPE -----
@@ -132,7 +143,7 @@ public class FleetData {
 	public Map<VehicleType, Double> getVehicleType2asc() {
 		return this.dataProvider.getVehicleType2asc();
 	}
-	
+
 	public Map<TransportMode, Double> getMode2asc() {
 		return this.dataProvider.getMode2asc();
 	}

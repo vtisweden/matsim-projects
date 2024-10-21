@@ -26,12 +26,14 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
+import org.matsim.vehicles.VehicleType;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -55,6 +57,7 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.samgods.transportation.fleet.FleetData;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
 @JsonDeserialize(using = ConsolidationUnit.Deserializer.class)
@@ -77,6 +80,8 @@ public class ConsolidationUnit {
 	public Double domesticLength_km = null;
 	public Boolean containsFerry = null;
 
+	public CopyOnWriteArraySet<VehicleType> linkCompatibleVehicleTypes = null;
+
 	// --------------------CONSTRUCTION --------------------
 
 	private ConsolidationUnit(List<Id<Node>> nodes, SamgodsConstants.Commodity commodity,
@@ -97,8 +102,8 @@ public class ConsolidationUnit {
 								episode.getCommodity(), episode.getMode(), episode.isContainer()))
 						.collect(Collectors.toList());
 			} else {
-				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getSegmentODs()), episode.getCommodity(),
-						episode.getMode(), episode.isContainer()));
+				return Arrays.asList(new ConsolidationUnit(extractNodes(episode.getSegmentODs()),
+						episode.getCommodity(), episode.getMode(), episode.isContainer()));
 			}
 		}
 	}
@@ -118,12 +123,13 @@ public class ConsolidationUnit {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void setRoutes(List<List<Link>> routes, NetworkData networkData) {
+	public void setRoutes(List<List<Link>> routes, NetworkData networkData, FleetData fleetData) {
 		if (routes == null) {
 			this.linkIds = null;
 			this.length_km = null;
 			this.containsFerry = null;
 			this.domesticLength_km = null;
+			this.linkCompatibleVehicleTypes = null;
 		} else {
 			final List<CopyOnWriteArrayList<Id<Link>>> tmpLinkIds = new ArrayList<>(routes.size());
 			double length_m = 0.0;
@@ -141,6 +147,8 @@ public class ConsolidationUnit {
 			this.linkIds = new CopyOnWriteArrayList<CopyOnWriteArrayList<Id<Link>>>(tmpLinkIds);
 			this.length_km = Units.KM_PER_M * length_m;
 			this.domesticLength_km = Units.KM_PER_M * domesticLength_m;
+			this.linkCompatibleVehicleTypes = new CopyOnWriteArraySet<>(
+					fleetData.computeLinkCompatibleVehicleTypes(this));
 		}
 	}
 
@@ -148,6 +156,7 @@ public class ConsolidationUnit {
 		this.length_km = null;
 		this.containsFerry = null;
 		this.domesticLength_km = null;
+		this.linkCompatibleVehicleTypes = null;
 		if (routeIds == null) {
 			this.linkIds = null;
 		} else {
@@ -159,7 +168,7 @@ public class ConsolidationUnit {
 		}
 	}
 
-	public void computeNetworkCharacteristics(Network network, NetworkData networkData) {
+	public void computeNetworkCharacteristics(Network network, NetworkData networkData, FleetData fleetData) {
 		this.length_km = Units.KM_PER_M * this.linkIds.stream().flatMap(ll -> ll.stream())
 				.mapToDouble(l -> network.getLinks().get(l).getLength()).sum();
 		this.domesticLength_km = Units.KM_PER_M * this.linkIds.stream().flatMap(ll -> ll.stream())
@@ -168,6 +177,7 @@ public class ConsolidationUnit {
 		this.containsFerry = this.linkIds.stream().flatMap(ll -> ll.stream())
 				.anyMatch(l -> ((SamgodsLinkAttributes) network.getLinks().get(l).getAttributes()
 						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry());
+		this.linkCompatibleVehicleTypes = new CopyOnWriteArraySet<>(fleetData.computeLinkCompatibleVehicleTypes(this));
 	}
 
 	public List<? extends Link> allLinks(Network network) {

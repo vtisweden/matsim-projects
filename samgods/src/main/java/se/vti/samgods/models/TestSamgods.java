@@ -88,7 +88,7 @@ public class TestSamgods {
 				.setScale(Commodity.FURNITURE, scaleFactor * 0.0002)
 				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
 				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
-				.setMaxIterations(50).setEnforceReroute(false);
+				.setMaxIterations(5).setEnforceReroute(false);
 
 		runner.loadNetwork();
 
@@ -103,6 +103,7 @@ public class TestSamgods {
 
 		runner.createOrLoadConsolidationUnits();
 		runner.checkVehicleAvailabilityForConsolidationUnits();
+//		System.exit(0);
 		
 		runner.run();
 

@@ -24,11 +24,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -417,7 +420,8 @@ public class SamgodsRunner {
 			while (parser.nextToken() != null) {
 				ConsolidationUnit unit = reader.readValue(parser);
 				unit.computeNetworkCharacteristics(this.network,
-						this.getOrCreateNetworkDataProvider().createNetworkData());
+						this.getOrCreateNetworkDataProvider().createNetworkData(),
+						this.getOrCreateFleetDataProvider().createFleetData());
 				consolidationUnitPattern2representativeUnit.put(unit.createRoutingEquivalentTemplate(), unit);
 			}
 			parser.close();
@@ -468,7 +472,7 @@ public class SamgodsRunner {
 
 	public void checkVehicleAvailabilityForConsolidationUnits() {
 
-		FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+		final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
 
 		final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
 		for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains().values()) {
@@ -482,13 +486,15 @@ public class SamgodsRunner {
 		}
 
 		long consideredConsolidationUnits = 0l;
-		long consolidationUnitsWithoutVehicles = 0l;
+//		long consolidationUnitsWithoutVehicles = 0l;
+		Set<ConsolidationUnit> consolidationUnitsWithoutVehicles = new LinkedHashSet<>();
 		final Map<VehicleType, Long> vehicleType2allowedInConsolidationUnit = new LinkedHashMap<>();
 		final Map<VehicleType, Long> vehicleType2allowedOnAllLinks = new LinkedHashMap<>();
 		for (ConsolidationUnit consolidationUnit : allConsolidationUnits) {
 			consideredConsolidationUnits++;
 			final Set<VehicleType> allowedOnAllLinks = new LinkedHashSet<>(
-					fleetData.getCompatibleVehicleTypes(consolidationUnit));
+					fleetData.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
+							consolidationUnit.isContainer, consolidationUnit.containsFerry));
 			for (VehicleType type : allowedOnAllLinks) {
 				vehicleType2allowedInConsolidationUnit.compute(type, (t, c) -> c == null ? 1 : c + 1);
 			}
@@ -500,13 +506,18 @@ public class SamgodsRunner {
 			for (VehicleType type : allowedOnAllLinks) {
 				vehicleType2allowedOnAllLinks.compute(type, (t, c) -> c == null ? 1 : c + 1);
 				if (vehicleType2allowedOnAllLinks.size() == 0) {
-					consolidationUnitsWithoutVehicles++;
+					consolidationUnitsWithoutVehicles.add(consolidationUnit);
 				}
 			}
 		}
-		log.info("NO VEHICLES AVAILABLE for " + consolidationUnitsWithoutVehicles + " out of " + consideredConsolidationUnits
-				+ " consolidation units, i.e. "
-				+ (100.0 * consolidationUnitsWithoutVehicles / consideredConsolidationUnits) + " percent.");
+
+		log.info("NO VEHICLES AVAILABLE for " + consolidationUnitsWithoutVehicles.size() + " out of "
+				+ consideredConsolidationUnits + " consolidation units, i.e. "
+				+ (100.0 * consolidationUnitsWithoutVehicles.size() / consideredConsolidationUnits) + " percent.");
+		for (ConsolidationUnit consolidationUnit : consolidationUnitsWithoutVehicles) {
+			log.info("  " + consolidationUnit);
+		}
+		
 
 		final Map<TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
 		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
@@ -524,6 +535,31 @@ public class SamgodsRunner {
 				}
 			}
 		}
+
+		log.info("OCCURRENCES OF FEASIBLE VEHICLE SETS ON LINKS");
+		final Map<Set<VehicleType>, Long> feasibleVehicleTypes2cnt = new LinkedHashMap<>();
+		for (Id<Link> linkId : this.network.getLinks().keySet()) {
+			feasibleVehicleTypes2cnt.compute(fleetData.getLinkId2allowedVehicleTypes().get(linkId),
+					(f, c) -> c == null ? 1 : c + 1);
+		}
+		final List<Map.Entry<Set<VehicleType>, Long>> setAndCnt = new ArrayList<>(
+				feasibleVehicleTypes2cnt.entrySet());
+		Collections.sort(setAndCnt, new Comparator<>() {
+			@Override
+			public int compare(Entry<Set<VehicleType>, Long> o1, Entry<Set<VehicleType>, Long> o2) {
+				return o2.getValue().compareTo(o1.getValue());
+			}
+		});
+		for (TransportMode mode : TransportMode.values()) {
+			log.info(mode);
+			for (Map.Entry<Set<VehicleType>, Long> entry : setAndCnt) {
+				if (entry.getKey().size() > 0 && SamgodsVehicleUtils.getMode(entry.getKey().iterator().next()).equals(mode)) {
+					log.info("  " + entry.getValue() + "\ttimes\t"
+							+ entry.getKey().stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
+				}
+			}
+		}
+		log.info("Links without feasible vehicles: " + feasibleVehicleTypes2cnt.getOrDefault(new LinkedHashSet<>(), 0l));
 	}
 
 	public void run() {

@@ -225,7 +225,7 @@ public class Router {
 				withFerryContainsFerry = null;
 			}
 			if ((withFerryRoutes != null) && !withFerryContainsFerry) {
-				consolidationUnit.setRoutes(withFerryRoutes, networkData);
+				consolidationUnit.setRoutes(withFerryRoutes, this.networkData, this.fleetData);
 			} else {
 
 				final List<List<Link>> withoutFerryRoutes = this.computeRoutes(consolidationUnit, false);
@@ -242,16 +242,16 @@ public class Router {
 
 				if (withFerryRoutes != null) {
 					if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
-						consolidationUnit.setRoutes(withoutFerryRoutes, networkData);
+						consolidationUnit.setRoutes(withoutFerryRoutes, this.networkData, this.fleetData);
 					} else {
-						consolidationUnit.setRoutes(withFerryRoutes, networkData);
+						consolidationUnit.setRoutes(withFerryRoutes, this.networkData, this.fleetData);
 					}
 				} else {
 					if (withoutFerryRoutes != null) {
-						consolidationUnit.setRoutes(withoutFerryRoutes, networkData);
+						consolidationUnit.setRoutes(withoutFerryRoutes, this.networkData, this.fleetData);
 					} else {
 						log.warn("Could not route all segments. " + consolidationUnit);
-						consolidationUnit.setRoutes(null, networkData);
+						consolidationUnit.setRoutes(null, this.networkData, this.fleetData);
 					}
 				}
 			}
