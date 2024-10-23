@@ -85,9 +85,9 @@ public class MHAlgorithm<S extends Object> {
 	}
 
 	public void setMsgInterval(final long msgInterval) {
-		if (msgInterval < 1) {
-			throw new IllegalArgumentException("message interval < 1");
-		}
+//		if (msgInterval < 1) {
+//			throw new IllegalArgumentException("message interval < 1");
+//		}
 		this.msgInterval = msgInterval;
 	}
 
