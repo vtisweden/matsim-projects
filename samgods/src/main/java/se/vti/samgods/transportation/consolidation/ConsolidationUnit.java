@@ -216,6 +216,7 @@ public class ConsolidationUnit {
 		content.add("nodes=" + this.nodeIds);
 		content.add("length=" + this.length_km + "km");
 		content.add("domesticLength=" + this.domesticLength_km + "km");
+		content.add("number of route segments=" + (this.linkIds != null ? linkIds.size() : null));
 		content.add("numberOfRouteLinks="
 				+ (this.linkIds != null ? this.linkIds.stream().filter(r -> r != null).flatMap(r -> r.stream()).count()
 						: null));

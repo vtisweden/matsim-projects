@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +31,6 @@ import org.apache.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.network.NetworkData;
@@ -226,29 +226,29 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		}
 
 		// Identify compatible vehicles. If none, give up.
-//		final List<VehicleType> compatibleVehicleTypes = this.fleetData
-//				.getCompatibleVehicleTypes(job.consolidationUnit.commodity, job.consolidationUnit.samgodsMode,
-//						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry);
-		final List<VehicleType> compatibleVehicleTypes = new ArrayList<>(
-				job.consolidationUnit.linkCompatibleVehicleTypes);
-		assert (this.fleetData
+		final Set<VehicleType> compatibleVehicleTypes = this.fleetData
 				.getCompatibleVehicleTypes(job.consolidationUnit.commodity, job.consolidationUnit.samgodsMode,
-						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry)
-				.containsAll(compatibleVehicleTypes));
-				
+						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry);
+//		final List<VehicleType> compatibleVehicleTypes = new ArrayList<>(
+//				job.consolidationUnit.linkCompatibleVehicleTypes);
+//		assert (this.fleetData
+//				.getCompatibleVehicleTypes(job.consolidationUnit.commodity, job.consolidationUnit.samgodsMode,
+//						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry)
+//				.containsAll(compatibleVehicleTypes));
+
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
 			if (this.noCompatibleVehicleTypeWarnings < 10) {
 				log.warn("No compatible vehicle types found: " + job);
+				log.warn("  total links\t" + job.consolidationUnit.linkIds.stream().mapToInt(l -> l.size()).sum());
+				for (Map.Entry<VehicleType, Integer> e : fleetData
+						.computeLinkCompatibleVehicleTypeOccurrences(job.consolidationUnit).entrySet()) {
+					log.warn("  " + e.getKey().getId() + "\t" + e.getValue());
+				}
 				if (++this.noCompatibleVehicleTypeWarnings == 10) {
 					log.warn("Suppressing further warnings of this type.");
 				}
 			}
 			return null;
-		}
-
-		if (job.consolidationUnit.isContainer
-				&& SamgodsConstants.TransportMode.Rail.equals(job.consolidationUnit.samgodsMode)) {
-
 		}
 
 		// Identify optimal fleet assigment.

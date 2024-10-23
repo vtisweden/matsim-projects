@@ -19,6 +19,7 @@
  */
 package se.vti.samgods.transportation.fleet;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -62,7 +64,31 @@ public class FleetData {
 		return this.dataProvider.getVehicleType2attributes();
 	}
 
-	// ----- THREAD SAFE ACCESS TO & UPDATE OF COMPATIBLE VEHICLE TYPES -----
+	// TODO NEW
+	public Set<Set<VehicleType>> computeAllVehicleOnLinkGroups() {
+		final Set<Set<VehicleType>> allVehicleOnLinkGroups = new LinkedHashSet<>();
+		for (Set<VehicleType> vehicleOnLinkGroup : this.dataProvider.getLinkId2allowedVehicleTypes().values()) {
+			allVehicleOnLinkGroups.add(vehicleOnLinkGroup);
+		}
+		return allVehicleOnLinkGroups;
+	}
+
+	// TODO NEW
+	public Set<Set<VehicleType>> computeAlwaysJointVehicleGroups(Set<Set<VehicleType>> allLinkGroups) {
+		final Map<VehicleType, Set<VehicleType>> type2accompanyingGroup = new LinkedHashMap<>();
+		for (Set<VehicleType> linkGroup : allLinkGroups) {
+			for (VehicleType type : linkGroup) {
+				if (type2accompanyingGroup.containsKey(type)) {
+					type2accompanyingGroup.get(type).retainAll(linkGroup);
+				} else {
+					type2accompanyingGroup.put(type, new LinkedHashSet<>(linkGroup));
+				}
+			}
+		}
+		return type2accompanyingGroup.values().stream().collect(Collectors.toSet());
+	}
+
+	// ----- ACCESS TO & UPDATE OF COMPATIBLE VEHICLE TYPES -----
 
 	private Set<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
 			boolean containsFerry) {
@@ -101,6 +127,24 @@ public class FleetData {
 		return result;
 	}
 
+	// for testing
+	public Map<VehicleType, Integer> computeLinkCompatibleVehicleTypeOccurrences(ConsolidationUnit consolidationUnit) {
+		final Map<VehicleType, Integer> result = new LinkedHashMap<>(this
+				.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
+						consolidationUnit.isContainer, consolidationUnit.containsFerry)
+				.stream().collect(Collectors.toMap(t -> t, t -> 0)));
+		for (List<Id<Link>> segmentLinkIds : consolidationUnit.linkIds) {
+			for (Id<Link> linkId : segmentLinkIds) {
+				for (VehicleType feasibleType : this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId)) {
+					if (result.containsKey(feasibleType)) {
+						result.compute(feasibleType, (t, c) -> c + 1);
+					}
+				}
+			}
+		}
+		return result;
+	}
+
 	// -------------------- SINGLE-THREADED FUNCTIONALITY --------------------
 
 	private VehicleType computeRepresentativeVehicleType(Set<VehicleType> compatibleVehicleTypes) {
@@ -123,18 +167,16 @@ public class FleetData {
 		}
 	}
 
+	// Uses vehicle/link compatibility data, hence requires a routed consolidation
+	// untit. may be null.
 	public VehicleType computeRepresentativeVehicleType(ConsolidationUnit consolidationUnit) {
 		return this.computeRepresentativeVehicleType(this.computeLinkCompatibleVehicleTypes(consolidationUnit));
 	}
 
-	// may be null
+	// Does not use vehicle/link compatibility data, can hence be used when
+	// consolidation units routes are not yet there. may be null.
 	public VehicleType getRepresentativeVehicleType(final Commodity commodity, final TransportMode mode,
 			final boolean isContainer, final boolean containsFerry) {
-//		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleType()
-//				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
-//				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
-//				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
-//						cf -> this.createRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
 		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleType()
 				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
