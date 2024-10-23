@@ -19,7 +19,6 @@
  */
 package se.vti.samgods.transportation.fleet;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,20 +52,6 @@ public class FleetData {
 		this.dataProvider = dataProvider;
 	}
 
-	// -------------------- SINGLE-THREADED FUNCTIONALITY --------------------
-
-	public Set<VehicleType> computeLinkCompatibleVehicleTypes(ConsolidationUnit consolidationUnit) {
-		final LinkedHashSet<VehicleType> linkCompatibleVehicleTypes = new LinkedHashSet<>(
-				this.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
-						consolidationUnit.isContainer, consolidationUnit.containsFerry));
-		for (List<Id<Link>> segmentLinkIds : consolidationUnit.linkIds) {
-			for (Id<Link> linkId : segmentLinkIds) {
-				linkCompatibleVehicleTypes.retainAll(this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId));
-			}
-		}
-		return linkCompatibleVehicleTypes;
-	}
-
 	// -------------------- PASS-THROUGH FROM DATA PROVIDER --------------------
 
 	public Map<Id<Link>, CopyOnWriteArraySet<VehicleType>> getLinkId2allowedVehicleTypes() {
@@ -79,9 +64,9 @@ public class FleetData {
 
 	// ----- THREAD SAFE ACCESS TO & UPDATE OF COMPATIBLE VEHICLE TYPES -----
 
-	private List<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
+	private Set<VehicleType> createCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
 			boolean containsFerry) {
-		final List<VehicleType> result = new ArrayList<>(this.dataProvider.getVehicleType2attributes().size());
+		final Set<VehicleType> result = new LinkedHashSet<>(this.dataProvider.getVehicleType2attributes().size());
 		for (ConcurrentMap.Entry<VehicleType, SamgodsVehicleAttributes> e : this.dataProvider
 				.getVehicleType2attributes().entrySet()) {
 			VehicleType type = e.getKey();
@@ -94,27 +79,37 @@ public class FleetData {
 		return result;
 	}
 
-	public List<VehicleType> getCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
+	public Set<VehicleType> getCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer,
 			boolean containsFerry) {
 		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2compatibleVehicleTypes()
 				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
-				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
-						f -> this.createCompatibleVehicleTypes(commodity, mode, isContainer, f));
+				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>())
+				.computeIfAbsent(containsFerry, f -> new CopyOnWriteArraySet<>(
+						this.createCompatibleVehicleTypes(commodity, mode, isContainer, f)));
 	}
 
-	// ----- THREAD SAFE ACCESS TO & UPDATE OF REPRESENTATIVE VEHICLE TYPE -----
+	public Set<VehicleType> computeLinkCompatibleVehicleTypes(ConsolidationUnit consolidationUnit) {
+		final LinkedHashSet<VehicleType> result = new LinkedHashSet<>(
+				this.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
+						consolidationUnit.isContainer, consolidationUnit.containsFerry));
+		for (List<Id<Link>> segmentLinkIds : consolidationUnit.linkIds) {
+			for (Id<Link> linkId : segmentLinkIds) {
+				result.retainAll(this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId));
+			}
+		}
+		return result;
+	}
 
-	private VehicleType createRepresentativeVehicleType(Commodity commodity, TransportMode mode, boolean isContainer,
-			boolean containsFerry) {
-		final List<VehicleType> compatibleTypes = this.createCompatibleVehicleTypes(commodity, mode, isContainer,
-				containsFerry);
-		if (compatibleTypes.size() > 0) {
+	// -------------------- SINGLE-THREADED FUNCTIONALITY --------------------
+
+	private VehicleType computeRepresentativeVehicleType(Set<VehicleType> compatibleVehicleTypes) {
+		if (compatibleVehicleTypes.size() > 0) {
 			VehicleType result = null;
-			final double meanCapacity_ton = compatibleTypes.stream()
+			final double meanCapacity_ton = compatibleVehicleTypes.stream()
 					.mapToDouble(t -> this.getVehicleType2attributes().get(t).capacity_ton).average().getAsDouble();
 			double resultDeviation_ton = Double.POSITIVE_INFINITY;
-			for (VehicleType candidate : compatibleTypes) {
+			for (VehicleType candidate : compatibleVehicleTypes) {
 				final double candidateDeviation_ton = Math
 						.abs(this.getVehicleType2attributes().get(candidate).capacity_ton - meanCapacity_ton);
 				if (candidateDeviation_ton < resultDeviation_ton) {
@@ -128,14 +123,24 @@ public class FleetData {
 		}
 	}
 
+	public VehicleType computeRepresentativeVehicleType(ConsolidationUnit consolidationUnit) {
+		return this.computeRepresentativeVehicleType(this.computeLinkCompatibleVehicleTypes(consolidationUnit));
+	}
+
 	// may be null
 	public VehicleType getRepresentativeVehicleType(final Commodity commodity, final TransportMode mode,
 			final boolean isContainer, final boolean containsFerry) {
+//		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleType()
+//				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
+//				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
+//				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
+//						cf -> this.createRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
 		return this.dataProvider.getCommodity2transportMode2isContainer2isFerry2representativeVehicleType()
 				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
-				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>()).computeIfAbsent(containsFerry,
-						cf -> this.createRepresentativeVehicleType(commodity, mode, isContainer, containsFerry));
+				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>())
+				.computeIfAbsent(containsFerry, cf -> this.computeRepresentativeVehicleType(
+						this.getCompatibleVehicleTypes(commodity, mode, isContainer, containsFerry)));
 	}
 
 	// -------------------- THREAD SAFE ACCESS TO ASCs --------------------

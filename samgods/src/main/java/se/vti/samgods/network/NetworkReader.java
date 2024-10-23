@@ -67,7 +67,7 @@ public class NetworkReader {
 	private static final String LINK_LANES = "NLANES";
 	private static final String LINK_MODE = "GENERAL_MO";
 	private static final String LINK_CAPACITY_TRAINS_DAY = "ORIGCAP";
-	
+
 	private static final String LINK_MODESTR = "MODESTR";
 
 	// -------------------- MEMBERS --------------------
@@ -156,7 +156,8 @@ public class NetworkReader {
 			final boolean isDomestic = domesticNodes.contains(fromNode) && domesticNodes.contains(toNode);
 
 			final double lanes = Double.parseDouble(record.get(LINK_LANES));
-			final SamgodsConstants.TransportMode mode = SamgodsConstants.TransportMode.valueOf(record.get(LINK_MODE));
+			final SamgodsConstants.TransportMode samgodsMode = SamgodsConstants.TransportMode
+					.valueOf(record.get(LINK_MODE));
 			double length_m = Double.parseDouble(record.get(LINK_LENGTH_M));
 			if (length_m < nodeDist_m) {
 				// do not log mm-deviations
@@ -166,7 +167,7 @@ public class NetworkReader {
 				}
 				length_m = nodeDist_m;
 			}
-			
+
 			final String[] networkModes = record.get(LINK_MODESTR).split("");
 
 			final Double speed1_km_h = ParseNumberUtils.parseDoubleOrNull(record.get(LINK_SPEED_1));
@@ -182,7 +183,7 @@ public class NetworkReader {
 				if (speed2_km_h != null) {
 					speed_km_h = speed2_km_h;
 				} else {
-					speed_km_h = this.mode2fallbackSpeed_km_h.get(mode);
+					speed_km_h = this.mode2fallbackSpeed_km_h.get(samgodsMode);
 				}
 			}
 			assert (Double.isFinite(speed_km_h));
@@ -199,9 +200,10 @@ public class NetworkReader {
 				} else {
 					final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,
 							Units.M_S_PER_KM_H * speed_km_h, capacity_veh_h, lanes, null, null);
-					link.setAllowedModes(mode.matsimModes);
-					link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME,
-							new SamgodsLinkAttributes(mode, speed1_km_h, speed2_km_h, isDomestic, networkModes));
+					final SamgodsLinkAttributes linkAttributes = new SamgodsLinkAttributes(samgodsMode, speed1_km_h,
+							speed2_km_h, isDomestic, networkModes);
+					link.setAllowedModes(TransportModeMatching.computeMatsimModes(linkAttributes));
+					link.getAttributes().putAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME, linkAttributes);
 				}
 			}
 		}

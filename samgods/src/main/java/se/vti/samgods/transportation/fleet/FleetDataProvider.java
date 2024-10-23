@@ -50,6 +50,7 @@ public class FleetDataProvider {
 	// -------------------- CONSTRUCTION --------------------
 
 	public FleetDataProvider(Network network, Vehicles vehicles) {
+
 		this.vehicleType2attributes = new ConcurrentHashMap<>(vehicles.getVehicleTypes().values().stream()
 				.collect(Collectors.toMap(t -> t, t -> (SamgodsVehicleAttributes) t.getAttributes()
 						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))));
@@ -57,21 +58,45 @@ public class FleetDataProvider {
 				vehicles.getVehicleTypes().values().stream().collect(Collectors.toMap(t -> t, t -> 0.0)));
 
 		final Map<String, Set<VehicleType>> networkMode2vehicleTypes = new LinkedHashMap<>();
-		for (VehicleType type : vehicles.getVehicleTypes().values()) {
-			final SamgodsVehicleAttributes vehicleAttributes = (SamgodsVehicleAttributes) type.getAttributes()
-					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-			for (String networkMode : vehicleAttributes.networkModes) {
-				networkMode2vehicleTypes.computeIfAbsent(networkMode, m -> new LinkedHashSet<>()).add(type);
+		final Set<VehicleType> ferryCompatibleRoadVehicleTypes = new LinkedHashSet<>();
+		final Set<VehicleType> ferryCompatibleRailVehicleTypes = new LinkedHashSet<>();
+		for (Map.Entry<VehicleType, SamgodsVehicleAttributes> e : this.vehicleType2attributes.entrySet()) {
+			final VehicleType vehicleType = e.getKey();
+			final SamgodsVehicleAttributes vehicleAttrs = e.getValue();
+			for (String networkMode : vehicleAttrs.networkModes) {
+				networkMode2vehicleTypes.computeIfAbsent(networkMode, m -> new LinkedHashSet<>()).add(vehicleType);
+			}
+			if (vehicleAttrs.isFerryCompatible()) {
+				if (TransportMode.Road.equals(vehicleAttrs.samgodsMode)) {
+					ferryCompatibleRoadVehicleTypes.add(vehicleType);
+				} else if (TransportMode.Rail.equals(vehicleAttrs.samgodsMode)) {
+					ferryCompatibleRailVehicleTypes.add(vehicleType);
+				} else {
+					throw new RuntimeException(
+							"Unexpected ferry compatible samgods main mode " + vehicleAttrs.samgodsMode);
+				}
 			}
 		}
+
 		this.linkId2allowedVehicleTypes = new ConcurrentHashMap<>();
 		for (Link link : network.getLinks().values()) {
 			final SamgodsLinkAttributes linkAttributes = (SamgodsLinkAttributes) link.getAttributes()
 					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
 			final Set<VehicleType> allowedTypes = new LinkedHashSet<>();
-			for (String networkMode : linkAttributes.networkModes) {
-				if (networkMode2vehicleTypes.containsKey(networkMode)) {
-					allowedTypes.addAll(networkMode2vehicleTypes.get(networkMode));
+			if (TransportMode.Ferry.equals(linkAttributes.samgodsMode)) {
+				if (linkAttributes.isRoadFerryLink()) {
+					allowedTypes.addAll(ferryCompatibleRoadVehicleTypes);
+				} else if (linkAttributes.isRailFerryLink()) {
+					allowedTypes.addAll(ferryCompatibleRailVehicleTypes);
+				} else {
+					throw new RuntimeException("Link has transport mode " + TransportMode.Ferry
+							+ " but is neither a road ferry link nor a rail ferry link.");
+				}
+			} else {
+				for (String networkMode : linkAttributes.networkModes) {
+					if (networkMode2vehicleTypes.containsKey(networkMode)) {
+						allowedTypes.addAll(networkMode2vehicleTypes.get(networkMode));
+					}
 				}
 			}
 			this.linkId2allowedVehicleTypes.put(link.getId(), new CopyOnWriteArraySet<>(allowedTypes));
@@ -100,9 +125,9 @@ public class FleetDataProvider {
 
 	// ---------- THREAD-SAFE LOCALLY CACHED COMPATIBLE VEHICLE TYPES ----------
 
-	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, List<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2compatibleVehicleTypes = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, CopyOnWriteArraySet<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2compatibleVehicleTypes = new ConcurrentHashMap<>();
 
-	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, List<VehicleType>>>>> getCommodity2transportMode2isContainer2isFerry2compatibleVehicleTypes() {
+	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, CopyOnWriteArraySet<VehicleType>>>>> getCommodity2transportMode2isContainer2isFerry2compatibleVehicleTypes() {
 		return this.commodity2transportMode2isContainer2isFerry2compatibleVehicleTypes;
 	}
 

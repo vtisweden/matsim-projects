@@ -20,10 +20,12 @@
 package se.vti.samgods.network;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
@@ -36,6 +38,9 @@ public class SamgodsLinkAttributes {
 
 	public static final String ATTRIBUTE_NAME = "freight";
 
+	private static final String roadFerryNetworkMode = "p";
+	private static final String railFerryNetworkMode = "q";
+	
 	public SamgodsConstants.TransportMode samgodsMode;
 
 	public final Double speed1_km_h;
@@ -55,5 +60,25 @@ public class SamgodsLinkAttributes {
 		this.speed2_km_h = speed2_km_h;
 		this.isDomestic = isDomestic;
 		this.networkModes = Arrays.stream(networkModes).collect(Collectors.toSet());
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
+
+	public boolean isRoadFerryLink() {
+		final boolean result = this.networkModes.contains(roadFerryNetworkMode);
+		assert(!result || TransportMode.Ferry.equals(this.samgodsMode));
+		return result;
+	}
+	
+	public boolean isRailFerryLink() {
+		final boolean result = this.networkModes.contains(railFerryNetworkMode);
+		assert(!result || TransportMode.Ferry.equals(this.samgodsMode));
+		return result;
+	}	
+	
+	public boolean isFerryLink() {
+		final boolean result = (this.isRoadFerryLink() || this.isRailFerryLink());
+		assert(!result || TransportMode.Ferry.equals(this.samgodsMode));
+		return result;
 	}
 }

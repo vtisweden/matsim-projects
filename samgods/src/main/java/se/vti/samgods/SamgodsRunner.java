@@ -287,7 +287,7 @@ public class SamgodsRunner {
 			for (TransportMode mode : TransportMode.values()) {
 				for (Boolean isContainer : Arrays.asList(false, true)) {
 					for (Boolean containsFerry : Arrays.asList(false, true)) {
-						List<VehicleType> compatibleVehicleTypes = fleetData.getCompatibleVehicleTypes(commodity, mode,
+						Set<VehicleType> compatibleVehicleTypes = fleetData.getCompatibleVehicleTypes(commodity, mode,
 								isContainer, containsFerry);
 						if (compatibleVehicleTypes.size() > 0) {
 							VehicleType type = fleetData.getRepresentativeVehicleType(commodity, mode, isContainer,

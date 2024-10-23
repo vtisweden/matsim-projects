@@ -34,13 +34,33 @@ public class SamgodsConstants {
 
 	// -------------------- TRANSPORT MODES --------------------
 
+//	public static enum TransportMode {
+//
+//		Road(org.matsim.api.core.v01.TransportMode.car), Rail(org.matsim.api.core.v01.TransportMode.train),
+//		Sea(org.matsim.api.core.v01.TransportMode.ship), Air(org.matsim.api.core.v01.TransportMode.airplane),
+//		Ferry(org.matsim.api.core.v01.TransportMode.car, org.matsim.api.core.v01.TransportMode.train);
+//
+//		public final Set<String> matsimModes;
+//
+//		public boolean isFerry() {
+//			return Ferry.equals(this);
+//		}
+//
+//		public boolean isRail() {
+//			return Rail.equals(this);
+//		}
+//
+//		private TransportMode(String... matsimModes) {
+//			this.matsimModes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(matsimModes)));
+//		}
+//		
+//		public static Set<String> allMatsimModes() {
+//			return Arrays.stream(TransportMode.values()).map(m -> m.matsimModes).flatMap(s -> s.stream()).collect(Collectors.toSet());
+//		}
+
 	public static enum TransportMode {
 
-		Road(org.matsim.api.core.v01.TransportMode.car), Rail(org.matsim.api.core.v01.TransportMode.train),
-		Sea(org.matsim.api.core.v01.TransportMode.ship), Air(org.matsim.api.core.v01.TransportMode.airplane),
-		Ferry(org.matsim.api.core.v01.TransportMode.car, org.matsim.api.core.v01.TransportMode.train);
-
-		public final Set<String> matsimModes;
+		Road, Rail, Sea, Air, Ferry;
 
 		public boolean isFerry() {
 			return Ferry.equals(this);
@@ -49,15 +69,6 @@ public class SamgodsConstants {
 		public boolean isRail() {
 			return Rail.equals(this);
 		}
-
-		private TransportMode(String... matsimModes) {
-			this.matsimModes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(matsimModes)));
-		}
-		
-		public static Set<String> allMatsimModes() {
-			return Arrays.stream(TransportMode.values()).map(m -> m.matsimModes).flatMap(s -> s.stream()).collect(Collectors.toSet());
-		}
-
 	}
 
 	// -------------------- COMMODITIES --------------------
@@ -90,7 +101,7 @@ public class SamgodsConstants {
 			return (this.code < 10) ? ("0" + this.code) : ("" + this.code);
 		}
 	};
-	
+
 	public static int commodityCnt() {
 		return Commodity.values().length;
 	}
@@ -130,7 +141,7 @@ public class SamgodsConstants {
 			return ShipmentSize.values()[0];
 		}
 	}
-	
+
 	public static int shipmentSizeCnt() {
 		return ShipmentSize.values().length;
 	}

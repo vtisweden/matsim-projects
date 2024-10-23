@@ -19,6 +19,8 @@
  */
 package se.vti.samgods.network;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -70,22 +72,19 @@ public class NetworkDataProvider {
 
 	private final Network multimodalNetwork;
 
-	synchronized Network createMATSimNetwork(SamgodsConstants.TransportMode samgodsMode, boolean containsFerry) {
+	synchronized Network createMATSimNetwork(SamgodsConstants.TransportMode samgodsModeNotFerry, boolean allowFerry) {
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
-		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork, samgodsMode.matsimModes);
-		if (!containsFerry) {
-			for (Id<Link> ferryLinkId : this.getFerryLinkIds()) {
-				if (unimodalNetwork.getLinks().containsKey(ferryLinkId)) {
-					unimodalNetwork.removeLink(ferryLinkId);
-				}
-			}
+		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork,
+				Collections.singleton(TransportModeMatching.getMatsimModeIgnoreFerry(samgodsModeNotFerry)));
+		if (!allowFerry) {
+			this.ferryLinkIds.forEach(id -> unimodalNetwork.removeLink(id));
 		}
 		Log.warn("Not cleaning unimodal network.");
 		// new NetworkCleaner().run(unimodalNetwork);
 		return unimodalNetwork;
 	}
 
-	// --------------- THREAD-SAFE, LOCALLY CACHED DOMESTIC NODE AND LINK IDS ---------------
+	// ---------- THREAD-SAFE, LOCALLY CACHED DOMESTIC NODE AND LINK IDS ----------
 
 	private final Set<Id<Node>> domesticNodeIds = ConcurrentHashMap.newKeySet();
 	private final Set<Id<Link>> domesticLinkIds = ConcurrentHashMap.newKeySet();
