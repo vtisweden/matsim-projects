@@ -24,14 +24,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -404,6 +401,9 @@ public class SamgodsRunner {
 
 		} else {
 
+			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
+			final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+
 			/*
 			 * Load (routed!) consolidation units.
 			 */
@@ -419,9 +419,7 @@ public class SamgodsRunner {
 			Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			while (parser.nextToken() != null) {
 				ConsolidationUnit unit = reader.readValue(parser);
-				unit.computeNetworkCharacteristics(this.network,
-						this.getOrCreateNetworkDataProvider().createNetworkData(),
-						this.getOrCreateFleetDataProvider().createFleetData());
+				unit.computeNetworkCharacteristics(networkData, fleetData);
 				consolidationUnitPattern2representativeUnit.put(unit.createRoutingEquivalentTemplate(), unit);
 			}
 			parser.close();
@@ -610,11 +608,12 @@ public class SamgodsRunner {
 		}
 
 		if (this.checkChainConnectivity) {
+			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
 			for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains()
 					.values()) {
 				for (List<TransportChain> chains : od2chain.values()) {
 					for (TransportChain chain : chains) {
-						if (!chain.isConnected(this.network)) {
+						if (!chain.isConnected(networkData)) {
 							throw new RuntimeException("TODO");
 						}
 					}

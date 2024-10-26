@@ -239,7 +239,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
 			if (this.noCompatibleVehicleTypeWarnings < 10) {
 				log.warn("No compatible vehicle types found: " + job);
-				log.warn("  total links\t" + job.consolidationUnit.linkIds.stream().mapToInt(l -> l.size()).sum());
+				log.warn("  total links\t" + job.consolidationUnit.linkIds.size());
 				for (Map.Entry<VehicleType, Integer> e : fleetData
 						.computeLinkCompatibleVehicleTypeOccurrences(job.consolidationUnit).entrySet()) {
 					log.warn("  " + e.getKey().getId() + "\t" + e.getValue());

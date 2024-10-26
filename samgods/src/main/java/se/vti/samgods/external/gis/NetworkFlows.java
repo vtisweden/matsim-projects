@@ -22,7 +22,6 @@ package se.vti.samgods.external.gis;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
@@ -51,13 +50,10 @@ public class NetworkFlows {
 		for (Map.Entry<ConsolidationUnit, FleetAssignment> entry : consolidationUnit2assignment.entrySet()) {
 			final ConsolidationUnit consolidationUnit = entry.getKey();
 			final FleetAssignment fleetAssignment = entry.getValue();
-			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
-				for (Id<Link> linkId : linkIds) {
-					this.id2commodity2flow_ton
-							.computeIfAbsent(linkId, id -> new LinkedHashMap<>(Commodity.values().length))
-							.compute(consolidationUnit.commodity, (c, q) -> q == null ? fleetAssignment.realDemand_ton
-									: q + fleetAssignment.realDemand_ton);
-				}
+			for (Id<Link> linkId : consolidationUnit.linkIds) {
+				this.id2commodity2flow_ton.computeIfAbsent(linkId, id -> new LinkedHashMap<>(Commodity.values().length))
+						.compute(consolidationUnit.commodity, (c, q) -> q == null ? fleetAssignment.realDemand_ton
+								: q + fleetAssignment.realDemand_ton);
 			}
 		}
 		return this;

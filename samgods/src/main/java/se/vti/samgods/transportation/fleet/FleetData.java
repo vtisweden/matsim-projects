@@ -21,7 +21,6 @@ package se.vti.samgods.transportation.fleet;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -119,10 +118,8 @@ public class FleetData {
 		final LinkedHashSet<VehicleType> result = new LinkedHashSet<>(
 				this.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
 						consolidationUnit.isContainer, consolidationUnit.containsFerry));
-		for (List<Id<Link>> segmentLinkIds : consolidationUnit.linkIds) {
-			for (Id<Link> linkId : segmentLinkIds) {
-				result.retainAll(this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId));
-			}
+		for (Id<Link> linkId : consolidationUnit.linkIds) {
+			result.retainAll(this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId));
 		}
 		return result;
 	}
@@ -133,12 +130,10 @@ public class FleetData {
 				.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
 						consolidationUnit.isContainer, consolidationUnit.containsFerry)
 				.stream().collect(Collectors.toMap(t -> t, t -> 0)));
-		for (List<Id<Link>> segmentLinkIds : consolidationUnit.linkIds) {
-			for (Id<Link> linkId : segmentLinkIds) {
-				for (VehicleType feasibleType : this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId)) {
-					if (result.containsKey(feasibleType)) {
-						result.compute(feasibleType, (t, c) -> c + 1);
-					}
+		for (Id<Link> linkId : consolidationUnit.linkIds) {
+			for (VehicleType feasibleType : this.dataProvider.getLinkId2allowedVehicleTypes().get(linkId)) {
+				if (result.containsKey(feasibleType)) {
+					result.compute(feasibleType, (t, c) -> c + 1);
 				}
 			}
 		}

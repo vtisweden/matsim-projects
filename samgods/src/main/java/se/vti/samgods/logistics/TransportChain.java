@@ -28,6 +28,7 @@ import org.matsim.api.core.v01.network.Network;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.network.NetworkData;
 
 /**
  * 
@@ -56,13 +57,13 @@ public class TransportChain {
 		this.episodes.add(episode);
 	}
 
-	public List<? extends Link> allLinks(Network network) {
-		return this.episodes.stream().map(e -> e.allLinks(network)).flatMap(list -> list.stream()).toList();
+	public List<? extends Link> allLinks(NetworkData networkData) {
+		return this.episodes.stream().map(e -> e.allLinks(networkData)).flatMap(list -> list.stream()).toList();
 	}
 
-	public boolean isConnected(Network network) {
+	public boolean isConnected(NetworkData networkData) {
 		Link previousLink = null;
-		for (Link currentLink : this.allLinks(network)) {
+		for (Link currentLink : this.allLinks(networkData)) {
 			if (previousLink != null && previousLink.getToNode() != currentLink.getFromNode()) {
 				return false;
 			}

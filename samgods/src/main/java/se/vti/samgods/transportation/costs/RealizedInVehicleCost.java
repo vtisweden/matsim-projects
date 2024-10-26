@@ -19,7 +19,6 @@
  */
 package se.vti.samgods.transportation.costs;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,20 +43,16 @@ public class RealizedInVehicleCost {
 			Set<Id<Link>> ferryLinks) {
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
 				.addAmount_ton(payload_ton);
-		if (consolidationUnit.linkIds.size() > 0) {
-			for (List<Id<Link>> linkIds : consolidationUnit.linkIds) {
-				for (Id<Link> linkId : linkIds) {
-					BasicTransportCost unitCost = link2unitCost.get(linkId);
-					builder.addMoveDuration_h(unitCost.duration_h);
-					builder.addDistance_km(unitCost.length_km);
-					if (ferryLinks.contains(linkId)) {
-						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
-						builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
-					} else {
-						builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
-						builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
-					}
-				}
+		for (Id<Link> linkId : consolidationUnit.linkIds) {
+			BasicTransportCost unitCost = link2unitCost.get(linkId);
+			builder.addMoveDuration_h(unitCost.duration_h);
+			builder.addDistance_km(unitCost.length_km);
+			if (ferryLinks.contains(linkId)) {
+				builder.addMoveCost(unitCost.duration_h * vehicleAttrs.onFerryCost_1_h);
+				builder.addMoveCost(unitCost.length_km * vehicleAttrs.onFerryCost_1_km);
+			} else {
+				builder.addMoveCost(unitCost.duration_h * vehicleAttrs.cost_1_h);
+				builder.addMoveCost(unitCost.length_km * vehicleAttrs.cost_1_km);
 			}
 		}
 		return builder.build();

@@ -20,7 +20,6 @@
 package se.vti.samgods.network;
 
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -62,6 +61,7 @@ public class NetworkDataProvider {
 				.filter(l -> ((SamgodsLinkAttributes) l.getAttributes()
 						.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME)).samgodsMode.isFerry())
 				.map(l -> l.getId()).collect(Collectors.toSet()));
+		this.links = new ConcurrentHashMap<>(multimodalNetwork.getLinks());
 	}
 
 	public NetworkData createNetworkData() {
@@ -88,6 +88,7 @@ public class NetworkDataProvider {
 
 	private final Set<Id<Node>> domesticNodeIds = ConcurrentHashMap.newKeySet();
 	private final Set<Id<Link>> domesticLinkIds = ConcurrentHashMap.newKeySet();
+	private final ConcurrentMap<Id<Link>, Link> links;
 
 	Set<Id<Node>> getDomesticNodeIds() {
 		return this.domesticNodeIds;
@@ -95,6 +96,10 @@ public class NetworkDataProvider {
 
 	Set<Id<Link>> getDomesticLinkIds() {
 		return this.domesticLinkIds;
+	}
+	
+	ConcurrentMap<Id<Link>, Link> getLinks() {
+		return this.links;
 	}
 
 	// --------------- THREAD-SAFE, LOCALLY CACHED FERRY LINK IDS ---------------

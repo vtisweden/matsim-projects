@@ -128,7 +128,7 @@ public class Router {
 			this.jobQueue = jobQueue;
 		}
 
-		private List<List<Link>> computeRoutes(ConsolidationUnit job, boolean containsFerry) {
+		private List<Link> computeRoute(ConsolidationUnit job, boolean containsFerry) {
 
 			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
 					job.samgodsMode, job.isContainer, containsFerry);
@@ -163,92 +163,84 @@ public class Router {
 			}
 
 			final Network network = this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry);
-			final List<List<Link>> routes = new ArrayList<>(job.nodeIds.size() - 1);
-			for (int i = 0; i < job.nodeIds.size() - 1; i++) {
-				final Id<Node> fromId = job.nodeIds.get(i);
-				final Id<Node> toId = job.nodeIds.get(i + 1);
-				if (fromId.equals(toId)) {
-					routes.add(new ArrayList<>());
-					if (logProgress) {
+			final Id<Node> fromId = job.od.origin;
+			final Id<Node> toId = job.od.destination;
+			if (fromId.equals(toId)) {
+				if (logProgress) {
+					registerFoundRoute(this);
+				}
+				return (new ArrayList<>());
+			} else {
+				final Node from = network.getNodes().get(fromId);
+				final Node to = network.getNodes().get(toId);
+				if ((from != null) && (to != null) && (router != null)) {
+					Path path = router.calcLeastCostPath(from, to, 0, null, null);
+					if (path == null) {
+						if (logProgress) {
+							registerFailedRouteNoConnection(this);
+						}
+					} else if (logProgress) {
 						registerFoundRoute(this);
 					}
+					return (path == null ? null : path.links);
 				} else {
-					final Node from = network.getNodes().get(fromId);
-					final Node to = network.getNodes().get(toId);
-					if ((from != null) && (to != null) && (router != null)) {
-						Path path = router.calcLeastCostPath(from, to, 0, null, null);
-						List<Link> links = (path == null ? null : path.links);
-						routes.add(links);
-						if (links == null) {
-							if (logProgress) {
-								registerFailedRouteNoConnection(this);
-							}
-						} else if (logProgress) {
-							registerFoundRoute(this);
-						}
-					} else {
-						routes.add(null);
-						if (logProgress) {
-							if (from == null || to == null) {
-								registerFailedRouteNoOD(this);
-							} else if (router == null) {
-								registerFailedRouteNoRouter(this);
-							} else {
-								throw new RuntimeException("impossible");
-							}
+					if (logProgress) {
+						if (from == null || to == null) {
+							registerFailedRouteNoOD(this);
+						} else if (router == null) {
+							registerFailedRouteNoRouter(this);
+						} else {
+							throw new RuntimeException("impossible");
 						}
 					}
+					return null;
 				}
-			}
-			if (routes.stream().noneMatch(r -> r == null)) {
-				return routes;
-			} else {
-				return null;
 			}
 		}
 
 		private void process(ConsolidationUnit consolidationUnit) {
 
-			final List<List<Link>> withFerryRoutes = this.computeRoutes(consolidationUnit, true);
+			final List<Link> withFerryRoute = this.computeRoute(consolidationUnit, true);
 			final Double withFerryCost;
 			final Boolean withFerryContainsFerry;
-			if (withFerryRoutes != null) {
+			if (withFerryRoute != null) {
 				final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
 						.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
 								consolidationUnit.samgodsMode, consolidationUnit.isContainer, true));
-				withFerryCost = withFerryRoutes.stream().flatMap(list -> list.stream())
+				withFerryCost = withFerryRoute.stream()
 						.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
-				withFerryContainsFerry = withFerryRoutes.stream().flatMap(list -> list.stream())
+				withFerryContainsFerry = withFerryRoute.stream()
 						.anyMatch(l -> this.networkData.getFerryLinkIds().contains(l.getId()));
 			} else {
 				withFerryCost = null;
 				withFerryContainsFerry = null;
 			}
-			if ((withFerryRoutes != null) && !withFerryContainsFerry) {
-				consolidationUnit.setRoutes(withFerryRoutes, this.networkData, this.fleetData);
+			
+			if ((withFerryRoute != null) && !withFerryContainsFerry) {
+				consolidationUnit.setRoutes(withFerryRoute, this.networkData, this.fleetData);
 			} else {
 
-				final List<List<Link>> withoutFerryRoutes = this.computeRoutes(consolidationUnit, false);
+				final List<Link> withoutFerryRoute = this.computeRoute(consolidationUnit, false);
 				final Double withoutFerryCost;
-				if (withoutFerryRoutes != null) {
+				if (withoutFerryRoute != null) {
 					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this.networkData
 							.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
 									consolidationUnit.samgodsMode, consolidationUnit.isContainer, false));
-					withoutFerryCost = withoutFerryRoutes.stream().flatMap(list -> list.stream())
+					withoutFerryCost = withoutFerryRoute.stream()
 							.mapToDouble(l -> link2withoutFerryUnitCost.get(l.getId()).monetaryCost).sum();
 				} else {
 					withoutFerryCost = null;
 				}
 
-				if (withFerryRoutes != null) {
-					if ((withoutFerryRoutes != null) && (withoutFerryCost < withFerryCost)) {
-						consolidationUnit.setRoutes(withoutFerryRoutes, this.networkData, this.fleetData);
+				if (withFerryRoute != null) {
+					if ((withoutFerryRoute != null) && (withoutFerryCost < withFerryCost)) {
+						consolidationUnit.setRoutes(withoutFerryRoute, this.networkData, this.fleetData);
 					} else {
-						consolidationUnit.setRoutes(withFerryRoutes, this.networkData, this.fleetData);
+						consolidationUnit.setRoutes(withFerryRoute, this.networkData, this.fleetData);
 					}
 				} else {
-					if (withoutFerryRoutes != null) {
-						consolidationUnit.setRoutes(withoutFerryRoutes, this.networkData, this.fleetData);
+					if (withoutFerryRoute != null) {
+						consolidationUnit.setRoutes(withoutFerryRoute, this.networkData, this.fleetData);
 					} else {
 						log.warn("Could not route all segments. " + consolidationUnit);
 						consolidationUnit.setRoutes(null, this.networkData, this.fleetData);

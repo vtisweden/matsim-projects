@@ -71,6 +71,10 @@ public class NetworkData {
 		return this.dataProvider.getFerryLinkIds();
 	}
 
+	public ConcurrentMap<Id<Link>, Link> getLinks() {
+		return this.dataProvider.getLinks();
+	}
+
 	// --------------- PASS-THROUGH FROM NetworkDataProvider ---------------
 
 	private ConcurrentMap<Id<Link>, BasicTransportCost> createLinkId2unitCost(VehicleType vehicleType) {

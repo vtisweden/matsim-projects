@@ -36,18 +36,19 @@ import org.matsim.core.population.routes.RouteUtils;
 
 import floetteroed.utilities.Units;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.samgods.network.NetworkData;
+import se.vti.samgods.network.NetworkDataProvider;
 
 public class ShipmentPopulationCreator {
 
 	private long id = 0;
 
-	private Network network;
-
 	private Population population;
+	
+	private NetworkData networkData;
 
 	public ShipmentPopulationCreator(Network network) {
-		this.network = network;
+		this.networkData = new NetworkDataProvider(network).createNetworkData();
 		this.population = PopulationUtils.createPopulation(ConfigUtils.createConfig());
 	}
 
@@ -57,7 +58,7 @@ public class ShipmentPopulationCreator {
 //		for (TransportEpisode episode : chain.getEpisodes()) {
 			Plan plan = population.getFactory().createPlan();
 			
-			List<? extends Link> links = chain.allLinks(this.network);
+			List<? extends Link> links = chain.allLinks(this.networkData);
 			if (links.size() > 1) {
 
 				Activity load = population.getFactory().createActivityFromLinkId("START", links.get(0).getId());
