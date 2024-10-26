@@ -56,7 +56,7 @@ public class TestSamgods {
 		Config config = ConfigUtils.loadConfig("config.xml");
 		SamgodsConfigGroup samgodsConfig = ConfigUtils.addOrGetModule(config, SamgodsConfigGroup.class);
 		
-		final double scaleFactor = 1.0;
+		final double scaleFactor = 1.0; 
 //		final SamgodsRunner runner = new SamgodsRunner(samgodsConfig).setServiceInterval_days(7)
 //				.setConsideredCommodities(Commodity.AGRICULTURE, Commodity.COAL).setSamplingRate(0.001)
 //				.setMaxThreads(1).setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
