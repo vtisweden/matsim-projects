@@ -21,7 +21,6 @@ package se.vti.samgods.transportation.fleet;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,6 +100,21 @@ public class FleetDataProvider {
 			}
 			this.linkId2allowedVehicleTypes.put(link.getId(), new CopyOnWriteArraySet<>(allowedTypes));
 		}
+
+		// TODO NEW BELOW
+
+		this.vehicleType2group = new ConcurrentHashMap<>(vehicles.getVehicleTypes().size());
+		for (Set<VehicleType> group : this.getLinkId2allowedVehicleTypes().values()) {
+			for (VehicleType type : group) {
+				if (this.vehicleType2group.containsKey(type)) {
+					this.vehicleType2group.get(type).retainAll(group);
+				} else {
+					final Set<VehicleType> set = ConcurrentHashMap.newKeySet(group.size());
+					set.addAll(group);
+					this.vehicleType2group.put(type, set);
+				}
+			}
+		}
 	}
 
 	public FleetData createFleetData() {
@@ -113,6 +127,12 @@ public class FleetDataProvider {
 
 	ConcurrentMap<Id<Link>, CopyOnWriteArraySet<VehicleType>> getLinkId2allowedVehicleTypes() {
 		return this.linkId2allowedVehicleTypes;
+	}
+
+	private final ConcurrentMap<VehicleType, Set<VehicleType>> vehicleType2group;
+
+	ConcurrentMap<VehicleType, Set<VehicleType>> getVehicleType2group() {
+		return this.vehicleType2group;
 	}
 
 	// ---------- THREAD-SAFE LOCALLY CACHED SamgodsVehicleAttributes ----------

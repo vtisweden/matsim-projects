@@ -63,28 +63,8 @@ public class FleetData {
 		return this.dataProvider.getVehicleType2attributes();
 	}
 
-	// TODO NEW
-	public Set<Set<VehicleType>> computeAllVehicleOnLinkGroups() {
-		final Set<Set<VehicleType>> allVehicleOnLinkGroups = new LinkedHashSet<>();
-		for (Set<VehicleType> vehicleOnLinkGroup : this.dataProvider.getLinkId2allowedVehicleTypes().values()) {
-			allVehicleOnLinkGroups.add(vehicleOnLinkGroup);
-		}
-		return allVehicleOnLinkGroups;
-	}
-
-	// TODO NEW
-	public Set<Set<VehicleType>> computeAlwaysJointVehicleGroups(Set<Set<VehicleType>> allLinkGroups) {
-		final Map<VehicleType, Set<VehicleType>> type2accompanyingGroup = new LinkedHashMap<>();
-		for (Set<VehicleType> linkGroup : allLinkGroups) {
-			for (VehicleType type : linkGroup) {
-				if (type2accompanyingGroup.containsKey(type)) {
-					type2accompanyingGroup.get(type).retainAll(linkGroup);
-				} else {
-					type2accompanyingGroup.put(type, new LinkedHashSet<>(linkGroup));
-				}
-			}
-		}
-		return type2accompanyingGroup.values().stream().collect(Collectors.toSet());
+	public Map<VehicleType, Set<VehicleType>> getVehicleType2group() {
+		return this.dataProvider.getVehicleType2group();
 	}
 
 	// ----- ACCESS TO & UPDATE OF COMPATIBLE VEHICLE TYPES -----
@@ -112,6 +92,15 @@ public class FleetData {
 				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>())
 				.computeIfAbsent(containsFerry, f -> new CopyOnWriteArraySet<>(
 						this.createCompatibleVehicleTypes(commodity, mode, isContainer, f)));
+	}
+
+	public Set<Set<VehicleType>> computeCompatibleVehicleGroups(Commodity commodity, TransportMode mode,
+			boolean isContainer, boolean containsFerry) {
+		final Set<Set<VehicleType>> result = new LinkedHashSet<>();
+		for (VehicleType type : this.getCompatibleVehicleTypes(commodity, mode, isContainer, containsFerry)) {
+			result.add(this.getVehicleType2group().get(type));
+		}
+		return result;
 	}
 
 	public Set<VehicleType> computeLinkCompatibleVehicleTypes(ConsolidationUnit consolidationUnit) {
@@ -142,7 +131,8 @@ public class FleetData {
 
 	// -------------------- SINGLE-THREADED FUNCTIONALITY --------------------
 
-	private VehicleType computeRepresentativeVehicleType(Set<VehicleType> compatibleVehicleTypes) {
+	// TODO cache this
+	public VehicleType selectRepresentativeVehicleType(Set<VehicleType> compatibleVehicleTypes) {
 		if (compatibleVehicleTypes.size() > 0) {
 			VehicleType result = null;
 			final double meanCapacity_ton = compatibleVehicleTypes.stream()
@@ -165,7 +155,7 @@ public class FleetData {
 	// Uses vehicle/link compatibility data, hence requires a routed consolidation
 	// untit. may be null.
 	public VehicleType computeRepresentativeVehicleType(ConsolidationUnit consolidationUnit) {
-		return this.computeRepresentativeVehicleType(this.computeLinkCompatibleVehicleTypes(consolidationUnit));
+		return this.selectRepresentativeVehicleType(this.computeLinkCompatibleVehicleTypes(consolidationUnit));
 	}
 
 	// Does not use vehicle/link compatibility data, can hence be used when
@@ -176,7 +166,7 @@ public class FleetData {
 				.computeIfAbsent(commodity, c -> new ConcurrentHashMap<>())
 				.computeIfAbsent(mode, m -> new ConcurrentHashMap<>())
 				.computeIfAbsent(isContainer, ic -> new ConcurrentHashMap<>())
-				.computeIfAbsent(containsFerry, cf -> this.computeRepresentativeVehicleType(
+				.computeIfAbsent(containsFerry, cf -> this.selectRepresentativeVehicleType(
 						this.getCompatibleVehicleTypes(commodity, mode, isContainer, containsFerry)));
 	}
 

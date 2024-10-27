@@ -229,25 +229,37 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 		final Set<VehicleType> compatibleVehicleTypes = this.fleetData
 				.getCompatibleVehicleTypes(job.consolidationUnit.commodity, job.consolidationUnit.samgodsMode,
 						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry);
-//		final List<VehicleType> compatibleVehicleTypes = new ArrayList<>(
-//				job.consolidationUnit.linkCompatibleVehicleTypes);
-//		assert (this.fleetData
-//				.getCompatibleVehicleTypes(job.consolidationUnit.commodity, job.consolidationUnit.samgodsMode,
-//						job.consolidationUnit.isContainer, job.consolidationUnit.containsFerry)
-//				.containsAll(compatibleVehicleTypes));
-
-		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
-			if (this.noCompatibleVehicleTypeWarnings < 10) {
-				log.warn("No compatible vehicle types found: " + job);
-				log.warn("  total links\t" + job.consolidationUnit.linkIds.size());
-				for (Map.Entry<VehicleType, Integer> e : fleetData
-						.computeLinkCompatibleVehicleTypeOccurrences(job.consolidationUnit).entrySet()) {
-					log.warn("  " + e.getKey().getId() + "\t" + e.getValue());
-				}
-				if (++this.noCompatibleVehicleTypeWarnings == 10) {
-					log.warn("Suppressing further warnings of this type.");
+		
+		if (compatibleVehicleTypes.size() > 0 ) {
+		final List<VehicleType> compatibleVehicleTypes2 = new ArrayList<>(
+				job.consolidationUnit.linkCompatibleVehicleTypes);
+			if (compatibleVehicleTypes2.size() == 0) {
+				if (this.noCompatibleVehicleTypeWarnings < 10) {
+					log.warn("No LINK compatible vehicle types found: " + job);
+					log.warn("  total links\t" + job.consolidationUnit.linkIds.size());
+					for (Map.Entry<VehicleType, Integer> e : fleetData
+							.computeLinkCompatibleVehicleTypeOccurrences(job.consolidationUnit).entrySet()) {
+						log.warn("  " + e.getKey().getId() + "\t" + e.getValue());
+					}
+					if (++this.noCompatibleVehicleTypeWarnings == 10) {
+						log.warn("Suppressing further warnings of this type.");
+					}
 				}
 			}
+		}
+			
+		if ((compatibleVehicleTypes == null) || (compatibleVehicleTypes.size() == 0)) {
+//			if (this.noCompatibleVehicleTypeWarnings < 10) {
+//				log.warn("No compatible vehicle types found: " + job);
+//				log.warn("  total links\t" + job.consolidationUnit.linkIds.size());
+//				for (Map.Entry<VehicleType, Integer> e : fleetData
+//						.computeLinkCompatibleVehicleTypeOccurrences(job.consolidationUnit).entrySet()) {
+//					log.warn("  " + e.getKey().getId() + "\t" + e.getValue());
+//				}
+//				if (++this.noCompatibleVehicleTypeWarnings == 10) {
+//					log.warn("Suppressing further warnings of this type.");
+//				}
+//			}
 			return null;
 		}
 

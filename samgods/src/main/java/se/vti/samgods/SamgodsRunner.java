@@ -472,13 +472,13 @@ public class SamgodsRunner {
 
 		final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
 
-		final Set<Set<VehicleType>> allLinkGroups = fleetData.computeAllVehicleOnLinkGroups();
-		log.info("VEHICLE ON LINK GROUPS");
-		for (Set<VehicleType> group : allLinkGroups) {
-			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
-		}
+//		final Set<Set<VehicleType>> allLinkGroups = fleetData.computeAllVehicleOnLinkGroups();
+//		log.info("VEHICLE ON LINK GROUPS");
+//		for (Set<VehicleType> group : allLinkGroups) {
+//			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
+//		}
 
-		final Set<Set<VehicleType>> allConnectedGroups = fleetData.computeAlwaysJointVehicleGroups(allLinkGroups);
+		final Set<Set<VehicleType>> allConnectedGroups = new LinkedHashSet<>(fleetData.getVehicleType2group().values());
 		log.info("ALWAYS JOINT VEHICLE GROUPS");
 		for (Set<VehicleType> group : allConnectedGroups) {
 			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")) + "; modes="

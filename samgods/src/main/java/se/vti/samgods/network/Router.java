@@ -115,7 +115,8 @@ public class Router {
 
 		private final AStarLandmarksFactory routerFactory = new AStarLandmarksFactory(4);
 
-		private final Map<TransportMode, Map<Boolean, Map<Boolean, LeastCostPathCalculator>>> mode2isContainer2containsFerry2router = new LinkedHashMap<>();
+//		private final Map<TransportMode, Map<Boolean, Map<Boolean, LeastCostPathCalculator>>> mode2isContainer2containsFerry2router = new LinkedHashMap<>();
+		private final Map<Set<VehicleType>, LeastCostPathCalculator> group2router = new LinkedHashMap<>();
 
 		private final BlockingQueue<ConsolidationUnit> jobQueue;
 
@@ -128,43 +129,41 @@ public class Router {
 			this.jobQueue = jobQueue;
 		}
 
-		private List<Link> computeRoute(ConsolidationUnit job, boolean containsFerry) {
+		private List<Link> computeRoute(ConsolidationUnit consolidationUnit, Set<VehicleType> vehicleGroup) {
 
-			final VehicleType representativeVehicleType = this.fleetData.getRepresentativeVehicleType(this.commodity,
-					job.samgodsMode, job.isContainer, containsFerry);
+			final VehicleType representativeVehicleType = this.fleetData.selectRepresentativeVehicleType(vehicleGroup);
 			if (representativeVehicleType == null) {
-				log.warn("No representative vehicle type available. Override:containsFerry=" + containsFerry
-						+ ", consolidationUnit: " + job);
+				log.warn("No representative vehicle type available. ConsolidationUnit: " + consolidationUnit
+						+ ", vehicleGroup: " + vehicleGroup);
 				return null;
 			}
 
 			final TravelDisutility travelDisutility = this.networkData.getTravelDisutility(representativeVehicleType);
 			if (travelDisutility == null) {
-				log.warn("No TravelDisutility available. Override:containsFerry=" + containsFerry
-						+ ", consolidationUnit: " + job);
-				return null;
-			}
-			final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
-			if (travelTime == null) {
-				log.warn("No TravelTime available. Override:containsFerry=" + containsFerry + ", consolidationUnit: "
-						+ job);
-				return null;
-			}
-			final LeastCostPathCalculator router = this.mode2isContainer2containsFerry2router
-					.computeIfAbsent(job.samgodsMode, m -> new LinkedHashMap<>())
-					.computeIfAbsent(job.isContainer, ic -> new LinkedHashMap<>()).computeIfAbsent(containsFerry,
-							cf -> this.routerFactory.createPathCalculator(
-									this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry),
-									travelDisutility, travelTime));
-			if (router == null) {
-				log.warn("No Router available.  Override:containsFerry=" + containsFerry + ", consolidationUnit: "
-						+ job);
+				log.warn("No TravelDisutility available. ConsolidationUnit: " + consolidationUnit + ", vehicleGroup: "
+						+ vehicleGroup);
 				return null;
 			}
 
-			final Network network = this.networkData.getUnimodalNetwork(job.samgodsMode, containsFerry);
-			final Id<Node> fromId = job.od.origin;
-			final Id<Node> toId = job.od.destination;
+			final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
+			if (travelTime == null) {
+				log.warn("No TravelTime available. ConsolidationUnit: " + consolidationUnit + ", vehicleGroup: "
+						+ vehicleGroup);
+				return null;
+			}
+
+			final LeastCostPathCalculator router = this.group2router.computeIfAbsent(vehicleGroup,
+					g -> this.routerFactory.createPathCalculator(
+							this.networkData.getUnimodalNetwork(consolidationUnit.samgodsMode, true), travelDisutility,
+							travelTime));
+			if (router == null) {
+				log.warn("No Router available. ConsolidationUnit: " + consolidationUnit);
+				return null;
+			}
+
+			final Network network = this.networkData.getUnimodalNetwork(consolidationUnit.samgodsMode, true);
+			final Id<Node> fromId = consolidationUnit.od.origin;
+			final Id<Node> toId = consolidationUnit.od.destination;
 			if (fromId.equals(toId)) {
 				if (logProgress) {
 					registerFoundRoute(this);
@@ -199,53 +198,27 @@ public class Router {
 		}
 
 		private void process(ConsolidationUnit consolidationUnit) {
-
-			final List<Link> withFerryRoute = this.computeRoute(consolidationUnit, true);
-			final Double withFerryCost;
-			final Boolean withFerryContainsFerry;
-			if (withFerryRoute != null) {
-				final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
-						.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
-								consolidationUnit.samgodsMode, consolidationUnit.isContainer, true));
-				withFerryCost = withFerryRoute.stream()
-						.mapToDouble(l -> linkId2withFerryUnitCost.get(l.getId()).monetaryCost).sum();
-				withFerryContainsFerry = withFerryRoute.stream()
-						.anyMatch(l -> this.networkData.getFerryLinkIds().contains(l.getId()));
-			} else {
-				withFerryCost = null;
-				withFerryContainsFerry = null;
-			}
-			
-			if ((withFerryRoute != null) && !withFerryContainsFerry) {
-				consolidationUnit.setRoutes(withFerryRoute, this.networkData, this.fleetData);
-			} else {
-
-				final List<Link> withoutFerryRoute = this.computeRoute(consolidationUnit, false);
-				final Double withoutFerryCost;
-				if (withoutFerryRoute != null) {
-					Map<Id<Link>, BasicTransportCost> link2withoutFerryUnitCost = this.networkData
+			Set<VehicleType> bestGroup = null;
+			List<Link> bestRoute = null;
+			Double bestCost = null;
+			for (Set<VehicleType> group : this.fleetData.computeCompatibleVehicleGroups(consolidationUnit.commodity,
+					consolidationUnit.samgodsMode, consolidationUnit.isContainer, true)) {
+				final List<Link> route = this.computeRoute(consolidationUnit, group);
+				if (route != null) {
+					final Map<Id<Link>, BasicTransportCost> linkId2unitCost = this.networkData
 							.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
-									consolidationUnit.samgodsMode, consolidationUnit.isContainer, false));
-					withoutFerryCost = withoutFerryRoute.stream()
-							.mapToDouble(l -> link2withoutFerryUnitCost.get(l.getId()).monetaryCost).sum();
-				} else {
-					withoutFerryCost = null;
-				}
-
-				if (withFerryRoute != null) {
-					if ((withoutFerryRoute != null) && (withoutFerryCost < withFerryCost)) {
-						consolidationUnit.setRoutes(withoutFerryRoute, this.networkData, this.fleetData);
-					} else {
-						consolidationUnit.setRoutes(withFerryRoute, this.networkData, this.fleetData);
-					}
-				} else {
-					if (withoutFerryRoute != null) {
-						consolidationUnit.setRoutes(withoutFerryRoute, this.networkData, this.fleetData);
-					} else {
-						log.warn("Could not route all segments. " + consolidationUnit);
-						consolidationUnit.setRoutes(null, this.networkData, this.fleetData);
+									consolidationUnit.samgodsMode, consolidationUnit.isContainer, true));
+					final double cost = route.stream().mapToDouble(l -> linkId2unitCost.get(l.getId()).monetaryCost)
+							.sum();
+					if (bestCost == null || cost < bestCost) {
+						bestGroup = group;
+						bestRoute = route;
+						bestCost = cost;
 					}
 				}
+			}
+			if (bestCost != null) {
+				consolidationUnit.setRoutes(bestRoute, this.networkData, this.fleetData);
 			}
 		}
 
