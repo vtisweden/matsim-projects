@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.LogManager;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -35,7 +34,6 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
-import org.matsim.core.gbl.MatsimResource;
 import org.matsim.core.router.AStarLandmarksFactory;
 import org.matsim.core.router.Dijkstra;
 import org.matsim.core.router.util.LeastCostPathCalculator;
@@ -44,10 +42,9 @@ import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.NetworkAndFleetData;
+import se.vti.samgods.NetworkAndFleetDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
-import se.vti.samgods.transportation.fleet.FleetData;
-import se.vti.samgods.transportation.fleet.FleetDataProvider;
 
 /**
  * 
@@ -109,11 +106,11 @@ public class Router {
 
 		private final String name;
 
-		private final Commodity commodity;
+//		private final Commodity commodity;
 
-		private final NetworkData networkData;
-
-		private final FleetData fleetData;
+//		private final NetworkData networkData;
+//		private final FleetData fleetData;
+		private final NetworkAndFleetData networkAndFleetData;
 
 		private final AStarLandmarksFactory routerFactory = new AStarLandmarksFactory(4);
 
@@ -121,29 +118,27 @@ public class Router {
 
 		private final BlockingQueue<ConsolidationUnit> jobQueue;
 
-		RouteProcessor(String name, Commodity commodity, NetworkData networkData, FleetData fleetData,
+		RouteProcessor(String name, NetworkAndFleetData networkAndFleetData,
 				BlockingQueue<ConsolidationUnit> jobQueue) {
 			this.name = name;
-			this.commodity = commodity;
-			this.networkData = networkData;
-			this.fleetData = fleetData;
+			this.networkAndFleetData = networkAndFleetData;
 			this.jobQueue = jobQueue;
 		}
 
 		private List<Link> computeRoute(ConsolidationUnit job, VehicleType vehicleType) {
 
 			final LeastCostPathCalculator router = this.vehicleType2router.computeIfAbsent(vehicleType, vt -> {
-				final TravelDisutility travelDisutility = this.networkData.getTravelDisutility(vehicleType);
+				final TravelDisutility travelDisutility = this.networkAndFleetData.getTravelDisutility(vehicleType);
 				if (travelDisutility == null) {
 					log.warn("No TravelDisutility available. ConsolidationUnit: " + job);
 					return null;
 				}
-				final TravelTime travelTime = this.networkData.getTravelTime(vehicleType);
+				final TravelTime travelTime = this.networkAndFleetData.getTravelTime(vehicleType);
 				if (travelTime == null) {
 					log.warn("No TravelTime available. ConsolidationUnit: " + job);
 					return null;
 				}
-				return this.routerFactory.createPathCalculator(this.networkData.getUnimodalNetwork(vt),
+				return this.routerFactory.createPathCalculator(this.networkAndFleetData.getUnimodalNetwork(vt),
 						travelDisutility, travelTime);
 			});
 			if (router == null) {
@@ -151,7 +146,7 @@ public class Router {
 				return null;
 			}
 
-			final Network network = this.networkData.getUnimodalNetwork(vehicleType);
+			final Network network = this.networkAndFleetData.getUnimodalNetwork(vehicleType);
 			final Id<Node> fromId = job.od.origin;
 			final Id<Node> toId = job.od.destination;
 			if (fromId.equals(toId)) {
@@ -194,7 +189,7 @@ public class Router {
 
 		private void process(ConsolidationUnit consolidationUnit) {
 			consolidationUnit.vehicleType2route.clear();
-			final Set<VehicleType> compatibleVehicleTypes = this.fleetData.getCompatibleVehicleTypes(
+			final Set<VehicleType> compatibleVehicleTypes = this.networkAndFleetData.getCompatibleVehicleTypes(
 					consolidationUnit.commodity, consolidationUnit.samgodsMode, consolidationUnit.isContainer);
 			for (VehicleType vehicleType : compatibleVehicleTypes) {
 				final List<Link> links = this.computeRoute(consolidationUnit, vehicleType);
@@ -227,19 +222,16 @@ public class Router {
 
 	// -------------------- CONSTANTS AND MEMBERS --------------------
 
-	private final NetworkDataProvider networkDataProvider;
-
-	private final FleetDataProvider fleetDataProvider;
-
+	private final NetworkAndFleetDataProvider networkAndFleetDataProvider;
+	
 	private boolean logProgress = true;
 
 	private int maxThreads = Integer.MAX_VALUE;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public Router(NetworkDataProvider networkDataProvider, FleetDataProvider fleetDataProvider) {
-		this.networkDataProvider = networkDataProvider;
-		this.fleetDataProvider = fleetDataProvider;
+	public Router(NetworkAndFleetDataProvider networkAndFleetDataProvider) {
+		this.networkAndFleetDataProvider = networkAndFleetDataProvider;
 	}
 
 	public Router setLogProgress(boolean logProgress) {
@@ -254,7 +246,7 @@ public class Router {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void route(Commodity commodity, Iterable<ConsolidationUnit> allJobs) {
+	public void route(Iterable<ConsolidationUnit> allJobs) {
 		try {
 			final int threadCnt = Math.min(this.maxThreads, Runtime.getRuntime().availableProcessors());
 			final BlockingQueue<ConsolidationUnit> jobQueue = new LinkedBlockingQueue<>(10 * threadCnt);
@@ -262,9 +254,8 @@ public class Router {
 
 			log.info("Starting " + threadCnt + " routing threads.");
 			for (int i = 0; i < threadCnt; i++) {
-				final RouteProcessor routeProcessor = new RouteProcessor(commodity + "_" + i, commodity,
-						this.networkDataProvider.createNetworkData(), this.fleetDataProvider.createFleetData(),
-						jobQueue);
+				final RouteProcessor routeProcessor = new RouteProcessor(RouteProcessor.class.getSimpleName() + i,
+						this.networkAndFleetDataProvider.createDataInstance(), jobQueue);
 				final Thread routingThread = new Thread(routeProcessor);
 				routingThreads.add(routingThread);
 				routingThread.start();

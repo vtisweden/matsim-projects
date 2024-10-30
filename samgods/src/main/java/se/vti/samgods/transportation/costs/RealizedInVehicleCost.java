@@ -19,8 +19,6 @@
  */
 package se.vti.samgods.transportation.costs;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,9 +26,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
-import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**

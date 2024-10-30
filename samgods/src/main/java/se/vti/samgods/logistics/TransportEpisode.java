@@ -24,13 +24,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 
 /**

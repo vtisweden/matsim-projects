@@ -72,15 +72,11 @@ import se.vti.samgods.logistics.choice.MonetaryChainAndShipmentSizeUtilityFuncti
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.logistics.costs.NonTransportCostModel_v1_22;
 import se.vti.samgods.network.LinkRegionsReader;
-import se.vti.samgods.network.NetworkData;
-import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
 import se.vti.samgods.transportation.consolidation.ConsolidationJob;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
-import se.vti.samgods.transportation.fleet.FleetData;
-import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleUtils;
 import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.utils.MiscUtils;
@@ -128,7 +124,7 @@ public class SamgodsRunner {
 	public boolean enforceReroute;
 
 	public Vehicles vehicles = null;
-	private FleetDataProvider fleetDataProvider = null;
+//	private FleetDataProvider fleetDataProvider = null;
 
 	public Network network = null;
 
@@ -260,19 +256,19 @@ public class SamgodsRunner {
 		return this;
 	}
 
-	public FleetDataProvider getOrCreateFleetDataProvider() {
-		if (this.fleetDataProvider == null) {
-			this.fleetDataProvider = new FleetDataProvider(this.network, this.vehicles);
-		}
-		return this.fleetDataProvider;
-	}
+//	public FleetDataProvider getOrCreateFleetDataProvider() {
+//		if (this.fleetDataProvider == null) {
+//			this.fleetDataProvider = new FleetDataProvider(this.network, this.vehicles);
+//		}
+//		return this.fleetDataProvider;
+//	}
 
-	public NetworkDataProvider getOrCreateNetworkDataProvider() {
-		if (NetworkDataProvider.getInstance() == null) {
-			NetworkDataProvider.initialize(this.network);
-		}
-		return NetworkDataProvider.getInstance();
-	}
+//	public NetworkDataProvider getOrCreateNetworkDataProvider() {
+//		if (NetworkDataProvider.getInstance() == null) {
+//			NetworkDataProvider.initialize(this.network);
+//		}
+//		return NetworkDataProvider.getInstance();
+//	}
 
 //	public SamgodsRunner checkAvailableVehicles() {
 //		FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
@@ -341,11 +337,12 @@ public class SamgodsRunner {
 			 * Routing changes the behavior of hashcode(..) / equals(..) in
 			 * ConsolidationUnit, but this should not affect the *values* of a HashMap.
 			 */
+			// TODO No need to separate by commodity ... separate differently?
 			for (Commodity commodity : this.consideredCommodities) {
 				log.info(commodity + ": Routing consolidation units.");
-				Router router = new Router(this.getOrCreateNetworkDataProvider(), this.getOrCreateFleetDataProvider())
-						.setLogProgress(true).setMaxThreads(this.maxThreads);
-				router.route(commodity, consolidationUnitPattern2representativeUnit.entrySet().stream()
+				Router router = new Router(NetworkAndFleetDataProvider.getProviderInstance()).setLogProgress(true)
+						.setMaxThreads(this.maxThreads);
+				router.route(consolidationUnitPattern2representativeUnit.entrySet().stream()
 						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
 			}
 
@@ -398,9 +395,6 @@ public class SamgodsRunner {
 			}
 
 		} else {
-
-			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
-			final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
 
 			/*
 			 * Load (routed!) consolidation units.
@@ -467,9 +461,9 @@ public class SamgodsRunner {
 	}
 
 	// TODO primarily for testing
-	private Set<Set<VehicleType>> computeAllVehicleOnLinkGroups(FleetData fleetData) {
+	private Set<Set<VehicleType>> computeAllVehicleOnLinkGroups(NetworkAndFleetData networkAndFleetData) {
 		final Set<Set<VehicleType>> allVehicleOnLinkGroups = new LinkedHashSet<>();
-		for (Set<VehicleType> vehicleOnLinkGroup : fleetData.getLinkId2allowedVehicleTypes().values()) {
+		for (Set<VehicleType> vehicleOnLinkGroup : networkAndFleetData.getLinkId2allowedVehicleTypes().values()) {
 			allVehicleOnLinkGroups.add(vehicleOnLinkGroup);
 		}
 		return allVehicleOnLinkGroups;
@@ -489,12 +483,14 @@ public class SamgodsRunner {
 		}
 		return type2accompanyingGroup.values().stream().collect(Collectors.toSet());
 	}
-	
+
 	public void checkVehicleAvailabilityForConsolidationUnits() {
 
-		final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+//		final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+		final NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider.getProviderInstance()
+				.createDataInstance();
 
-		final Set<Set<VehicleType>> allLinkGroups = this.computeAllVehicleOnLinkGroups(fleetData);
+		final Set<Set<VehicleType>> allLinkGroups = this.computeAllVehicleOnLinkGroups(networkAndFleetData);
 		log.info("VEHICLE ON LINK GROUPS");
 		for (Set<VehicleType> group : allLinkGroups) {
 			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
@@ -610,7 +606,8 @@ public class SamgodsRunner {
 		} else {
 			this.ascs = new ASCs();
 		}
-		this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
+//		this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
+		NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
 		if (this.config.getAscCalibrationStepSize() != null) {
 			this.fleetCalibrator = new TransportWorkAscCalibrator(this.vehicles,
@@ -652,7 +649,7 @@ public class SamgodsRunner {
 			 */
 
 			final LogisticChoiceDataProvider logisticChoiceDataProvider = new LogisticChoiceDataProvider(
-					this.getOrCreateNetworkDataProvider(), this.getOrCreateFleetDataProvider());
+					NetworkAndFleetDataProvider.getProviderInstance());
 			logisticChoiceDataProvider.update(null);
 
 			BlockingQueue<ChainAndShipmentSize> allChoices = new LinkedBlockingQueue<>();
@@ -664,11 +661,12 @@ public class SamgodsRunner {
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
 					for (int i = 0; i < threadCnt; i++) {
-						final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+						final NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider
+								.getProviderInstance().createDataInstance();
 						final NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						final ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
-								new LinkedHashMap<>(this.commodity2scale), fleetData.getMode2asc(),
-								fleetData.getRailCommodity2asc());
+								new LinkedHashMap<>(this.commodity2scale), networkAndFleetData.getMode2asc(),
+								networkAndFleetData.getRailCommodity2asc());
 						final ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(
 								logisticChoiceDataProvider.createLogisticChoiceData(), nonTransportCostModel,
 								utilityFunction, jobQueue, allChoices);
@@ -709,7 +707,7 @@ public class SamgodsRunner {
 			log.info("Collecting data, calculating choice stats.");
 			Map<ConsolidationUnit, List<ChainAndShipmentSize>> consolidationUnit2choices = new LinkedHashMap<>();
 			ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats(
-					this.getOrCreateNetworkDataProvider().createNetworkData());
+					NetworkAndFleetDataProvider.getProviderInstance().createDataInstance());
 			for (ChainAndShipmentSize choice : allChoices) {
 				stats.add(choice);
 				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
@@ -749,10 +747,10 @@ public class SamgodsRunner {
 
 					log.info("Starting " + threadCnt + " consolidation threads.");
 					for (int i = 0; i < threadCnt; i++) {
-						NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
-						FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+						NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider.getProviderInstance()
+								.createDataInstance();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								networkData, fleetData, jobQueue, consolidationUnit2assignment,
+								networkAndFleetData, jobQueue, consolidationUnit2assignment,
 								new LinkedHashMap<>(this.commodity2scale));
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
@@ -760,7 +758,8 @@ public class SamgodsRunner {
 					}
 
 					log.info("Starting to populate consolidation job queue, continuing as threads progress.");
-					final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
+					final NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider.getProviderInstance()
+							.createDataInstance();
 					for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> entry : consolidationUnit2choices
 							.entrySet()) {
 						ConsolidationUnit consolidationUnit = entry.getKey();
@@ -769,7 +768,7 @@ public class SamgodsRunner {
 							final double totalDemand_ton = choices.stream()
 									.mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
 							if (totalDemand_ton >= 1e-3
-									&& consolidationUnit.computeAverageLength_km(networkData) >= 1e-3) {
+									&& consolidationUnit.computeAverageLength_km(networkAndFleetData) >= 1e-3) {
 								ConsolidationJob job = new ConsolidationJob(consolidationUnit, choices,
 										this.commodity2serviceInterval_days.get(consolidationUnit.commodity));
 								jobQueue.put(job);
@@ -837,7 +836,7 @@ public class SamgodsRunner {
 //				}
 //			}
 
-			this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
+			NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
 			if ((iteration == this.maxIterations - 1)) {
 

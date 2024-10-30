@@ -51,12 +51,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.NetworkAndFleetData;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.NetworkData;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
 @JsonDeserialize(using = ConsolidationUnit.Deserializer.class)
@@ -141,7 +141,7 @@ public class ConsolidationUnit {
 //		return this.linkIds.stream().map(lid -> networkData.getLinks().get(lid)).toList();
 //	}
 
-	public Double computeAverageLength_km(NetworkData networkData) {
+	public Double computeAverageLength_km(NetworkAndFleetData networkData) {
 		if (this.vehicleType2route.size() == 0) {
 			return null;
 		}

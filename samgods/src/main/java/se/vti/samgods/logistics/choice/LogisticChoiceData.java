@@ -23,7 +23,6 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.fleet.FleetData;
 
 /**
  * 
@@ -36,13 +35,10 @@ public class LogisticChoiceData {
 
 	private final LogisticChoiceDataProvider logisticChoiceDataProvider;
 
-	private final FleetData fleetData;
-
 	// -------------------- CONSTRUCTION --------------------
 
-	LogisticChoiceData(LogisticChoiceDataProvider dataProvider, FleetData fleetData) {
+	LogisticChoiceData(LogisticChoiceDataProvider dataProvider) {
 		this.logisticChoiceDataProvider = dataProvider;
-		this.fleetData = fleetData;
 	}
 
 	// -------------------- TRANSPORT EPISODE UNIT COSTS --------------------

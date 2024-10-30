@@ -19,36 +19,28 @@
  */
 package se.vti.samgods.utils;
 
-import java.util.List;
-
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.population.Activity;
-import org.matsim.api.core.v01.population.Leg;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.Population;
-import org.matsim.api.core.v01.population.Route;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.population.PopulationUtils;
-import org.matsim.core.population.routes.RouteUtils;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.NetworkAndFleetData;
+import se.vti.samgods.NetworkAndFleetDataProvider;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.network.NetworkData;
-import se.vti.samgods.network.NetworkDataProvider;
 
 public class ShipmentPopulationCreator {
 
 	private long id = 0;
 
-	private final NetworkData networkData;
+	private final NetworkAndFleetData networkAndFleetData;
 	
 	private Population population;
 	
-	public ShipmentPopulationCreator() {
-		this.networkData = NetworkDataProvider.getInstance().createNetworkData();
+	public ShipmentPopulationCreator(NetworkAndFleetDataProvider dataProvider) {
+		this.networkAndFleetData = dataProvider.createDataInstance();
 		this.population = PopulationUtils.createPopulation(ConfigUtils.createConfig());
 	}
 
@@ -94,7 +86,7 @@ public class ShipmentPopulationCreator {
 	}
 
 	public static void main(String[] args) {
-		new ShipmentPopulationCreator();
+		new ShipmentPopulationCreator(null);
 		System.out.println("DONE");
 	}
 

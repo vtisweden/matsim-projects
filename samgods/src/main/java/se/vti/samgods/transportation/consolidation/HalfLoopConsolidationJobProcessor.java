@@ -28,12 +28,11 @@ import org.apache.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
+import se.vti.samgods.NetworkAndFleetData;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
-import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
-import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.utils.ChoiceModelUtils;
 
@@ -50,25 +49,23 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 
-	private final NetworkData networkData;
-	private final FleetData fleetData;
+	private final NetworkAndFleetData networkAndFleetData;
 
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
 
 	private final Map<Commodity, Double> commodity2scale;
 
-	private int noCompatibleVehicleTypeWarnings = 0;
+//	private int noCompatibleVehicleTypeWarnings = 0;
 	private int couldNotComputeFleetAssignmentWarnings = 0;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidationJobProcessor(NetworkData networkData, FleetData fleetData,
+	public HalfLoopConsolidationJobProcessor(NetworkAndFleetData networkAndFleetData,
 			BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
 			final Map<Commodity, Double> commodity2scale) {
-		this.networkData = networkData;
-		this.fleetData = fleetData;
+		this.networkAndFleetData = networkAndFleetData;
 		this.jobQueue = jobQueue;
 		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
 		this.commodity2scale = commodity2scale;
@@ -119,7 +116,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		public FleetAssignment(double realDemand_ton, VehicleType vehicleType, double vehicleCapacity_ton,
 				DetailedTransportCost cost, double serviceIntervalActiveProba, ConsolidationJob job,
-				NetworkData networkData) {
+				NetworkAndFleetData networkAndFleetData) {
 
 			this.realDemand_ton = realDemand_ton;
 
@@ -129,8 +126,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 			this.domesticLoopLength_km = 2.0 * Units.KM_PER_M
 					* job.consolidationUnit.vehicleType2route.get(vehicleType).stream()
-							.filter(lid -> networkData.getDomesticLinkIds().contains(lid))
-							.mapToDouble(lid -> networkData.getLinks().get(lid).getLength()).sum();
+							.filter(lid -> networkAndFleetData.getDomesticLinkIds().contains(lid))
+							.mapToDouble(lid -> networkAndFleetData.getLinks().get(lid).getLength()).sum();
 
 			final double serviceInterval_h = Units.H_PER_D * job.serviceInterval_days;
 			final double serviceDemandPerActiveServiceInterval_ton = (1.0 / serviceIntervalActiveProba)
@@ -176,12 +173,13 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	private FleetAssignment dimensionFleetAssignment(double realDemand_ton, VehicleType vehicleType,
 			ConsolidationJob job, double serviceIntervalActiveProba) {
-		final SamgodsVehicleAttributes vehicleAttrs = this.fleetData.getVehicleType2attributes().get(vehicleType);
+		final SamgodsVehicleAttributes vehicleAttrs = this.networkAndFleetData.getVehicleType2attributes()
+				.get(vehicleType);
 		FleetAssignment result = new FleetAssignment(realDemand_ton, vehicleType, vehicleAttrs.capacity_ton,
 				this.realizedInVehicleCost.compute(vehicleAttrs, 0.5 * vehicleAttrs.capacity_ton, job.consolidationUnit,
-						vehicleType, this.networkData.getLinkId2unitCost(vehicleType),
-						this.networkData.getFerryLinkIds()),
-				serviceIntervalActiveProba, job, this.networkData);
+						vehicleType, this.networkAndFleetData.getLinkId2unitCost(vehicleType),
+						this.networkAndFleetData.getFerryLinkIds()),
+				serviceIntervalActiveProba, job, this.networkAndFleetData);
 		boolean done = false;
 		final int maxIts = 100;
 //		List<Double> devList = new ArrayList<>(maxIts);
@@ -190,13 +188,13 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			final FleetAssignment newResult = new FleetAssignment(realDemand_ton, vehicleType,
 					vehicleAttrs.capacity_ton,
 					this.realizedInVehicleCost.compute(vehicleAttrs, result.payload_ton, job.consolidationUnit,
-							vehicleType, this.networkData.getLinkId2unitCost(vehicleType),
-							this.networkData.getFerryLinkIds()),
-					serviceIntervalActiveProba, job, this.networkData);
+							vehicleType, this.networkAndFleetData.getLinkId2unitCost(vehicleType),
+							this.networkAndFleetData.getFerryLinkIds()),
+					serviceIntervalActiveProba, job, this.networkAndFleetData);
 			final double dev = Math.abs(newResult.unitCost_1_tonKm - result.unitCost_1_tonKm) / result.unitCost_1_tonKm;
 //			devList.add(dev);
 			if (++its == maxIts) {
-				this.log.warn("Too many iterations, terminating with relative unit cost deviation " + dev + ".");
+				log.warn("Too many iterations, terminating with relative unit cost deviation " + dev + ".");
 				done = true;
 			} else {
 				done = (dev < 1e-8);
@@ -263,7 +261,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			final FleetAssignment assignment = this.dimensionFleetAssignment(realDemand_ton, vehicleType, job,
 					serviceIntervalActiveProba);
 			final double utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5 * assignment.loopLength_km
-					* realDemand_ton + this.fleetData.getVehicleType2asc().getOrDefault(vehicleType, 0.0);
+					* realDemand_ton + this.networkAndFleetData.getVehicleType2asc().getOrDefault(vehicleType, 0.0);
 			assignment2utility.put(assignment, utility);
 		}
 		return new ChoiceModelUtils().choose(assignment2utility.keySet().stream().toList(),

@@ -27,15 +27,13 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.NetworkAndFleetData;
+import se.vti.samgods.NetworkAndFleetDataProvider;
 import se.vti.samgods.logistics.TransportEpisode;
-import se.vti.samgods.network.NetworkData;
-import se.vti.samgods.network.NetworkDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
-import se.vti.samgods.transportation.fleet.FleetData;
-import se.vti.samgods.transportation.fleet.FleetDataProvider;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
@@ -51,19 +49,16 @@ public class LogisticChoiceDataProvider {
 
 	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 
-	private final NetworkData internalNetworkData;
-
-	private final FleetDataProvider fleetDataProvider;
+	private final NetworkAndFleetData internalNetworkAndFleetData;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public LogisticChoiceDataProvider(NetworkDataProvider networkDataProvider, FleetDataProvider fleetDataProvider) {
-		this.internalNetworkData = networkDataProvider.createNetworkData();
-		this.fleetDataProvider = fleetDataProvider;
+	public LogisticChoiceDataProvider(NetworkAndFleetDataProvider networkAndFleetDataProvider) {
+		this.internalNetworkAndFleetData = networkAndFleetDataProvider.createDataInstance();
 	}
 
 	public LogisticChoiceData createLogisticChoiceData() {
-		return new LogisticChoiceData(this, this.fleetDataProvider.createFleetData());
+		return new LogisticChoiceData(this);
 	}
 
 	// -------------------- THREAD SAFE CONSOLIDATION COSTS --------------------
@@ -110,12 +105,12 @@ public class LogisticChoiceDataProvider {
 		 */
 		if (this.consolidationUnit2fleetAssignment != null) {
 			costBuilder.add(this.realizedInVehicleCost.compute(vehicleAttributes, payload_ton, consolidationUnit,
-					vehicleType, this.internalNetworkData.getLinkId2unitCost(vehicleType),
-					this.internalNetworkData.getFerryLinkIds()), false);
+					vehicleType, this.internalNetworkAndFleetData.getLinkId2unitCost(vehicleType),
+					this.internalNetworkAndFleetData.getFerryLinkIds()), false);
 		} else {
 			costBuilder.add(this.realizedInVehicleCost.compute(vehicleAttributes, payload_ton, consolidationUnit,
-					vehicleType, this.internalNetworkData.getLinkId2unitCost(vehicleType),
-					this.internalNetworkData.getFerryLinkIds()), false);
+					vehicleType, this.internalNetworkAndFleetData.getLinkId2unitCost(vehicleType),
+					this.internalNetworkAndFleetData.getFerryLinkIds()), false);
 		}
 
 		/*

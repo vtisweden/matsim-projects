@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 
 import de.vandermeer.asciitable.AsciiTable;
+import se.vti.samgods.NetworkAndFleetData;
 import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.network.NetworkData;
 import se.vti.samgods.utils.MiscUtils;
 
 /**
@@ -41,14 +41,14 @@ import se.vti.samgods.utils.MiscUtils;
  */
 public class ChainAndShipmentChoiceStats {
 
-	private final NetworkData networkData;
+	private final NetworkAndFleetData networkAndFleetData;
 
 	private Map<SamgodsConstants.Commodity, Map<SamgodsConstants.ShipmentSize, Long>> commodity2size2cnt;
 
 	private Map<SamgodsConstants.Commodity, List<Double>> commodity2lengths;
 
-	public ChainAndShipmentChoiceStats(NetworkData networkData) {
-		this.networkData = networkData;
+	public ChainAndShipmentChoiceStats(NetworkAndFleetData networkAndFleetData) {
+		this.networkAndFleetData = networkAndFleetData;
 		this.commodity2size2cnt = new LinkedHashMap<>(SamgodsConstants.commodityCnt());
 		this.commodity2lengths = new LinkedHashMap<>(SamgodsConstants.commodityCnt());
 		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
@@ -62,7 +62,7 @@ public class ChainAndShipmentChoiceStats {
 		this.commodity2size2cnt.get(choice.annualShipment.getCommodity()).compute(choice.sizeClass, (s, c) -> c + 1);
 		this.commodity2lengths.get(choice.annualShipment.getCommodity())
 				.add(choice.transportChain.getEpisodes().stream().flatMap(e -> e.getConsolidationUnits().stream())
-						.mapToDouble(cu -> cu.computeAverageLength_km(this.networkData)).sum());
+						.mapToDouble(cu -> cu.computeAverageLength_km(this.networkAndFleetData)).sum());
 	}
 
 	public String createChoiceStatsTable() {

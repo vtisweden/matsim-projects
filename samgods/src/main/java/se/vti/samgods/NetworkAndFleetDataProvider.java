@@ -85,17 +85,21 @@ public class NetworkAndFleetDataProvider {
 		instance = new NetworkAndFleetDataProvider(network, vehicles);
 	}
 
-	// TODO unsure if below should stay here
+	// TODO unsure if below should stay here, combine with the above?
 	public static void updateASCs(ASCs ascs) {
 		instance.vehicleType2asc = new ConcurrentHashMap<>(ascs.getVehicleTyp2ASC());
 		instance.mode2asc = new ConcurrentHashMap<>(ascs.getMode2ASC());
 		instance.railCommodity2asc = new ConcurrentHashMap<>(ascs.getRailCommodity2ASC());
 	}
 
-	public static NetworkAndFleetData createDataInstance() {
-		return new NetworkAndFleetData(instance);
+	public static NetworkAndFleetDataProvider getProviderInstance() {
+		return instance;
 	}
-	
+
+	public NetworkAndFleetData createDataInstance() {
+		return new NetworkAndFleetData(this);
+	}
+
 	// -------------------- PRIVATE CONSTRUCTION --------------------
 
 	private NetworkAndFleetDataProvider(Network multimodalNetwork, Vehicles vehicles) {

@@ -23,12 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Network;
-
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.network.NetworkData;
 
 /**
  * 
