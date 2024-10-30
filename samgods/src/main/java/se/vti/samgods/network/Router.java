@@ -27,13 +27,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.LogManager;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
+import org.matsim.core.gbl.MatsimResource;
 import org.matsim.core.router.AStarLandmarksFactory;
+import org.matsim.core.router.Dijkstra;
 import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.LeastCostPathCalculator.Path;
 import org.matsim.core.router.util.TravelDisutility;
@@ -41,9 +45,7 @@ import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
-import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
 
@@ -115,8 +117,7 @@ public class Router {
 
 		private final AStarLandmarksFactory routerFactory = new AStarLandmarksFactory(4);
 
-//		private final Map<TransportMode, Map<Boolean, Map<Boolean, LeastCostPathCalculator>>> mode2isContainer2containsFerry2router = new LinkedHashMap<>();
-		private final Map<Set<VehicleType>, LeastCostPathCalculator> group2router = new LinkedHashMap<>();
+		private final Map<VehicleType, LeastCostPathCalculator> vehicleType2router = new LinkedHashMap<>();
 
 		private final BlockingQueue<ConsolidationUnit> jobQueue;
 
@@ -129,41 +130,30 @@ public class Router {
 			this.jobQueue = jobQueue;
 		}
 
-		private List<Link> computeRoute(ConsolidationUnit consolidationUnit, Set<VehicleType> vehicleGroup) {
+		private List<Link> computeRoute(ConsolidationUnit job, VehicleType vehicleType) {
 
-			final VehicleType representativeVehicleType = this.fleetData.selectRepresentativeVehicleType(vehicleGroup);
-			if (representativeVehicleType == null) {
-				log.warn("No representative vehicle type available. ConsolidationUnit: " + consolidationUnit
-						+ ", vehicleGroup: " + vehicleGroup);
-				return null;
-			}
-
-			final TravelDisutility travelDisutility = this.networkData.getTravelDisutility(representativeVehicleType);
-			if (travelDisutility == null) {
-				log.warn("No TravelDisutility available. ConsolidationUnit: " + consolidationUnit + ", vehicleGroup: "
-						+ vehicleGroup);
-				return null;
-			}
-
-			final TravelTime travelTime = this.networkData.getTravelTime(representativeVehicleType);
-			if (travelTime == null) {
-				log.warn("No TravelTime available. ConsolidationUnit: " + consolidationUnit + ", vehicleGroup: "
-						+ vehicleGroup);
-				return null;
-			}
-
-			final LeastCostPathCalculator router = this.group2router.computeIfAbsent(vehicleGroup,
-					g -> this.routerFactory.createPathCalculator(
-							this.networkData.getUnimodalNetwork(consolidationUnit.samgodsMode, true), travelDisutility,
-							travelTime));
+			final LeastCostPathCalculator router = this.vehicleType2router.computeIfAbsent(vehicleType, vt -> {
+				final TravelDisutility travelDisutility = this.networkData.getTravelDisutility(vehicleType);
+				if (travelDisutility == null) {
+					log.warn("No TravelDisutility available. ConsolidationUnit: " + job);
+					return null;
+				}
+				final TravelTime travelTime = this.networkData.getTravelTime(vehicleType);
+				if (travelTime == null) {
+					log.warn("No TravelTime available. ConsolidationUnit: " + job);
+					return null;
+				}
+				return this.routerFactory.createPathCalculator(this.networkData.getUnimodalNetwork(vt),
+						travelDisutility, travelTime);
+			});
 			if (router == null) {
-				log.warn("No Router available. ConsolidationUnit: " + consolidationUnit);
+				log.warn("No Router available. ConsolidationUnit: " + job);
 				return null;
 			}
 
-			final Network network = this.networkData.getUnimodalNetwork(consolidationUnit.samgodsMode, true);
-			final Id<Node> fromId = consolidationUnit.od.origin;
-			final Id<Node> toId = consolidationUnit.od.destination;
+			final Network network = this.networkData.getUnimodalNetwork(vehicleType);
+			final Id<Node> fromId = job.od.origin;
+			final Id<Node> toId = job.od.destination;
 			if (fromId.equals(toId)) {
 				if (logProgress) {
 					registerFoundRoute(this);
@@ -173,7 +163,12 @@ public class Router {
 				final Node from = network.getNodes().get(fromId);
 				final Node to = network.getNodes().get(toId);
 				if ((from != null) && (to != null) && (router != null)) {
+
+					Level level = Logger.getLogger(Dijkstra.class).getLevel();
+					Logger.getLogger(Dijkstra.class).setLevel(Level.OFF);
 					Path path = router.calcLeastCostPath(from, to, 0, null, null);
+					Logger.getLogger(Dijkstra.class).setLevel(level);
+
 					if (path == null) {
 						if (logProgress) {
 							registerFailedRouteNoConnection(this);
@@ -198,27 +193,16 @@ public class Router {
 		}
 
 		private void process(ConsolidationUnit consolidationUnit) {
-			Set<VehicleType> bestGroup = null;
-			List<Link> bestRoute = null;
-			Double bestCost = null;
-			for (Set<VehicleType> group : this.fleetData.computeCompatibleVehicleGroups(consolidationUnit.commodity,
-					consolidationUnit.samgodsMode, consolidationUnit.isContainer, true)) {
-				final List<Link> route = this.computeRoute(consolidationUnit, group);
-				if (route != null) {
-					final Map<Id<Link>, BasicTransportCost> linkId2unitCost = this.networkData
-							.getLinkId2unitCost(this.fleetData.getRepresentativeVehicleType(this.commodity,
-									consolidationUnit.samgodsMode, consolidationUnit.isContainer, true));
-					final double cost = route.stream().mapToDouble(l -> linkId2unitCost.get(l.getId()).monetaryCost)
-							.sum();
-					if (bestCost == null || cost < bestCost) {
-						bestGroup = group;
-						bestRoute = route;
-						bestCost = cost;
-					}
+			consolidationUnit.vehicleType2route.clear();
+			final Set<VehicleType> compatibleVehicleTypes = this.fleetData.getCompatibleVehicleTypes(
+					consolidationUnit.commodity, consolidationUnit.samgodsMode, consolidationUnit.isContainer);
+			for (VehicleType vehicleType : compatibleVehicleTypes) {
+				final List<Link> links = this.computeRoute(consolidationUnit, vehicleType);
+				if (links != null) {
+//					final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
+//							.getLinkId2unitCost(vehicleType);
+					consolidationUnit.setRouteLinks(vehicleType, links);
 				}
-			}
-			if (bestCost != null) {
-				consolidationUnit.setRoutes(bestRoute, this.networkData, this.fleetData);
 			}
 		}
 
@@ -247,7 +231,7 @@ public class Router {
 
 	private final FleetDataProvider fleetDataProvider;
 
-	private boolean logProgress = false;
+	private boolean logProgress = true;
 
 	private int maxThreads = Integer.MAX_VALUE;
 

@@ -37,7 +37,8 @@ public class TransportModeMatching {
 	private TransportModeMatching() {
 	}
 
-	public static String getMatsimModeIgnoreFerry(TransportMode samgodsMode) {
+	// TODO no synchronization here
+	public synchronized static String getMatsimModeIgnoreFerry(TransportMode samgodsMode) {
 		if (TransportMode.Road.equals(samgodsMode)) {
 			return org.matsim.api.core.v01.TransportMode.car;
 		}
@@ -53,7 +54,8 @@ public class TransportModeMatching {
 		throw new RuntimeException("No MATSim mode available for " + samgodsMode);
 	}
 
-	public static Set<String> computeMatsimModes(SamgodsLinkAttributes linkAttributes) {
+	// TODO no synchronization here
+	public synchronized static Set<String> computeMatsimModes(SamgodsLinkAttributes linkAttributes) {
 		final Set<String> result = new LinkedHashSet<>(2);
 		if (linkAttributes.isFerryLink()) {
 			if (linkAttributes.isRoadFerryLink()) {

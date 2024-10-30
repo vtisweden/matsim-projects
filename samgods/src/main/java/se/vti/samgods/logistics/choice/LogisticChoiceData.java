@@ -19,16 +19,11 @@
  */
 package se.vti.samgods.logistics.choice;
 
-import java.util.List;
-
-import org.matsim.vehicles.VehicleType;
-
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.fleet.FleetData;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -52,40 +47,24 @@ public class LogisticChoiceData {
 
 	// -------------------- TRANSPORT EPISODE UNIT COSTS --------------------
 
-	private DetailedTransportCost createEpisodeUnitCost_1_ton(TransportEpisode episode) {
-		final VehicleType vehicleType = this.fleetData.getRepresentativeVehicleType(episode.getCommodity(),
-				episode.getMode(), episode.isContainer(),
-				episode.getConsolidationUnits().stream().anyMatch(cu -> cu.containsFerry));
-		final SamgodsVehicleAttributes vehicleAttributes = this.fleetData.getVehicleType2attributes().get(vehicleType);
-		final double payload_ton = episode.getConsolidationUnits().stream()
-				.mapToDouble(cu -> this.logisticChoiceDataProvider.getInVehicleTransportCost(cu).amount_ton).average()
-				.getAsDouble();
-
-		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
-				.addAmount_ton(payload_ton);
-		builder.addLoadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
-		builder.addLoadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
-
-		final int transferCnt = episode.getConsolidationUnits().size() - 1;
-		if (transferCnt > 0) {
-			builder.addTransferDuration_h(transferCnt * vehicleAttributes.transferTime_h.get(episode.getCommodity()));
-			builder.addTransferCost(
-					transferCnt * vehicleAttributes.transferCost_1_ton.get(episode.getCommodity()) * payload_ton);
+	private DetailedTransportCost createUnitCost_1_ton(TransportEpisode episode) {
+		final DetailedTransportCost.Builder costBuilder = new DetailedTransportCost.Builder().setToAllZeros()
+				.addAmount_ton(1.0);
+		final ConsolidationUnit firstConsolidationUnit = episode.getConsolidationUnits().get(0);
+		final ConsolidationUnit lastConsolidationUnit = episode.getConsolidationUnits()
+				.get(episode.getConsolidationUnits().size() - 1);
+		for (ConsolidationUnit consolidationUnit : episode.getConsolidationUnits()) {
+			costBuilder.add(
+					this.logisticChoiceDataProvider.getTransportUnitCost_1_ton(lastConsolidationUnit,
+							firstConsolidationUnit == consolidationUnit, lastConsolidationUnit == consolidationUnit),
+					false);
 		}
-
-		builder.addUnloadingDuration_h(vehicleAttributes.loadTime_h.get(episode.getCommodity()));
-		builder.addUnloadingCost(vehicleAttributes.loadCost_1_ton.get(episode.getCommodity()) * payload_ton);
-
-		final List<ConsolidationUnit> consolidationUnits = episode.getConsolidationUnits();
-		for (ConsolidationUnit consolidationUnit : consolidationUnits) {
-			builder.add(this.logisticChoiceDataProvider.getInVehicleTransportCost(consolidationUnit), true);
-		}
-		return builder.build().createUnitCost_1_ton();
+		return costBuilder.build();
 	}
 
 	public DetailedTransportCost getEpisodeUnitCost_1_ton(TransportEpisode episode) {
 		return this.logisticChoiceDataProvider.getEpisode2unitCost_1_ton().computeIfAbsent(episode,
-				e -> this.createEpisodeUnitCost_1_ton(e));
+				e -> this.createUnitCost_1_ton(e));
 	}
 
 	// -------------------- TRANSPORT CHAIN UNIT COSTS --------------------

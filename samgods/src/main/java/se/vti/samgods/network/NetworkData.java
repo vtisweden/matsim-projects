@@ -36,7 +36,6 @@ import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
 import floetteroed.utilities.Units;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
@@ -79,12 +78,15 @@ public class NetworkData {
 
 	private ConcurrentMap<Id<Link>, BasicTransportCost> createLinkId2unitCost(VehicleType vehicleType) {
 		final ConcurrentHashMap<Id<Link>, BasicTransportCost> result = new ConcurrentHashMap<>(
-				this.dataProvider.getAllLinks().size());
+				this.dataProvider.getLinks().size());
 		final SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
 				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
-		for (Link link : this.dataProvider.getAllLinks()) {
+		for (Link link : this.dataProvider.getLinks().values()) {
 			final SamgodsLinkAttributes linkAttrs = ((SamgodsLinkAttributes) link.getAttributes()
 					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME));
+			
+			
+			
 			if (linkAttrs.samgodsMode.equals(vehicleAttrs.samgodsMode)
 					|| (linkAttrs.samgodsMode.isFerry() && vehicleAttrs.isFerryCompatible())) {
 				final double speed_km_h;
@@ -118,11 +120,14 @@ public class NetworkData {
 
 	// -------------------- LOCALLY CACHED UNIMODAL Network --------------------
 
-	private final Map<TransportMode, Map<Boolean, Network>> mode2containsFerry2network = new LinkedHashMap<>();
+	private final Map<VehicleType, Network> vehicleType2network = new LinkedHashMap<>();
 
-	public Network getUnimodalNetwork(TransportMode samgodsMode, boolean containsFerry) {
-		return this.mode2containsFerry2network.computeIfAbsent(samgodsMode, m -> new LinkedHashMap<>())
-				.computeIfAbsent(containsFerry, cf -> this.dataProvider.createMATSimNetwork(samgodsMode, cf));
+	public Network getUnimodalNetwork(VehicleType vehicleType) {
+		return this.vehicleType2network.computeIfAbsent(vehicleType, vt -> {
+			SamgodsVehicleAttributes vehicleAttrs = (SamgodsVehicleAttributes) vt.getAttributes()
+					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+			return this.dataProvider.createNetwork(vehicleAttrs);
+		});
 	}
 
 	// -------------------- LOCALLY CACHED TravelDisutility --------------------

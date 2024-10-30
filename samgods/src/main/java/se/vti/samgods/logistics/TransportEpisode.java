@@ -68,9 +68,9 @@ public class TransportEpisode {
 		this.consolidationUnits = consolidationUnits;
 	}
 
-	public List<? extends Link> allLinks(NetworkData networkData) {
-		return this.consolidationUnits.stream().map(cu -> cu.allLinks(networkData)).flatMap(list -> list.stream()).toList();
-	}
+//	public List<? extends Link> allLinks(NetworkData networkData) {
+//		return this.consolidationUnits.stream().map(cu -> cu.allLinks(networkData)).flatMap(list -> list.stream()).toList();
+//	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
@@ -123,8 +123,8 @@ public class TransportEpisode {
 	}
 
 	public boolean isRouted() {
-		return (this.hasSignatures()
-				&& (this.consolidationUnits.stream().allMatch(s -> (s != null) && (s.linkIds != null))));
+		return (this.hasSignatures() && (this.consolidationUnits.stream()
+				.allMatch(cu -> (cu != null) && (cu.vehicleType2route.size() > 0))));
 	}
 
 	// -------------------- OVERRIDING OF OBJECT --------------------

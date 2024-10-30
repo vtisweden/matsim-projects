@@ -100,21 +100,6 @@ public class FleetDataProvider {
 			}
 			this.linkId2allowedVehicleTypes.put(link.getId(), new CopyOnWriteArraySet<>(allowedTypes));
 		}
-
-		// TODO NEW BELOW
-
-		this.vehicleType2group = new ConcurrentHashMap<>(vehicles.getVehicleTypes().size());
-		for (Set<VehicleType> group : this.getLinkId2allowedVehicleTypes().values()) {
-			for (VehicleType type : group) {
-				if (this.vehicleType2group.containsKey(type)) {
-					this.vehicleType2group.get(type).retainAll(group);
-				} else {
-					final Set<VehicleType> set = ConcurrentHashMap.newKeySet(group.size());
-					set.addAll(group);
-					this.vehicleType2group.put(type, set);
-				}
-			}
-		}
 	}
 
 	public FleetData createFleetData() {
@@ -129,12 +114,6 @@ public class FleetDataProvider {
 		return this.linkId2allowedVehicleTypes;
 	}
 
-	private final ConcurrentMap<VehicleType, Set<VehicleType>> vehicleType2group;
-
-	ConcurrentMap<VehicleType, Set<VehicleType>> getVehicleType2group() {
-		return this.vehicleType2group;
-	}
-
 	// ---------- THREAD-SAFE LOCALLY CACHED SamgodsVehicleAttributes ----------
 
 	private final ConcurrentMap<VehicleType, SamgodsVehicleAttributes> vehicleType2attributes;
@@ -145,21 +124,13 @@ public class FleetDataProvider {
 
 	// ---------- THREAD-SAFE LOCALLY CACHED COMPATIBLE VEHICLE TYPES ----------
 
-	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, CopyOnWriteArraySet<VehicleType>>>>> commodity2transportMode2isContainer2isFerry2compatibleVehicleTypes = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, CopyOnWriteArraySet<VehicleType>>>> commodity2transportMode2isContainer2compatibleVehicleTypes = new ConcurrentHashMap<>();
 
-	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, CopyOnWriteArraySet<VehicleType>>>>> getCommodity2transportMode2isContainer2isFerry2compatibleVehicleTypes() {
-		return this.commodity2transportMode2isContainer2isFerry2compatibleVehicleTypes;
+	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, CopyOnWriteArraySet<VehicleType>>>> getCommodity2transportMode2isContainer2compatibleVehicleTypes() {
+		return this.commodity2transportMode2isContainer2compatibleVehicleTypes;
 	}
 
-	// ---------- THREAD-SAFE LOCALLY CACHED REPRESENTATIVE VEHICLE TYPES ----------
-
-	private final ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, VehicleType>>>> commodity2transportMode2isContainer2isFerry2representativeVehicleType = new ConcurrentHashMap<>();
-
-	ConcurrentMap<Commodity, ConcurrentMap<TransportMode, ConcurrentMap<Boolean, ConcurrentMap<Boolean, VehicleType>>>> getCommodity2transportMode2isContainer2isFerry2representativeVehicleType() {
-		return this.commodity2transportMode2isContainer2isFerry2representativeVehicleType;
-	}
-
-	// ---------- THREAD-SAFE LOCALLY CACHED VEHICLE COST FACTORS ----------
+	// ---------- THREAD-SAFE LOCALLY CACHED ASCs ----------
 
 	private ConcurrentMap<VehicleType, Double> vehicleType2asc = new ConcurrentHashMap<>();
 	private ConcurrentMap<TransportMode, Double> mode2asc = new ConcurrentHashMap<>();

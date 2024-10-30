@@ -20,12 +20,13 @@
 package se.vti.samgods.network;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import org.jfree.util.Log;
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -34,8 +35,9 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.TransportModeNetworkFilter;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
  * 
@@ -44,11 +46,14 @@ import se.vti.samgods.transportation.costs.BasicTransportCost;
  */
 public class NetworkDataProvider {
 
-	// -------------------- CONSTRUCTION --------------------
+	// -------------------- STATIC, SINGLETON --------------------
 
-	public NetworkDataProvider(final Network multimodalNetwork) {
+	private static final Logger log = Logger.getLogger(NetworkDataProvider.class);
+
+	private static NetworkDataProvider instance;
+
+	private NetworkDataProvider(final Network multimodalNetwork) {
 		this.multimodalNetwork = multimodalNetwork;
-		this.allLinks.addAll(multimodalNetwork.getLinks().values());
 		this.domesticNodeIds.addAll(multimodalNetwork.getNodes().values().stream()
 				.filter(l -> ((SamgodsNodeAttributes) l.getAttributes()
 						.getAttribute(SamgodsNodeAttributes.ATTRIBUTE_NAME)).isDomestic)
@@ -64,6 +69,14 @@ public class NetworkDataProvider {
 		this.links = new ConcurrentHashMap<>(multimodalNetwork.getLinks());
 	}
 
+	public static void initialize(final Network network) {
+		instance = new NetworkDataProvider(network);
+	}
+
+	public static NetworkDataProvider getInstance() {
+		return instance;
+	}
+
 	public NetworkData createNetworkData() {
 		return new NetworkData(this);
 	}
@@ -72,15 +85,24 @@ public class NetworkDataProvider {
 
 	private final Network multimodalNetwork;
 
-	synchronized Network createMATSimNetwork(SamgodsConstants.TransportMode samgodsModeNotFerry, boolean allowFerry) {
+	synchronized Network createNetwork(SamgodsVehicleAttributes vehicleAttrs) {
+		assert (!TransportMode.Ferry.equals(vehicleAttrs.samgodsMode));
+
 		final Network unimodalNetwork = NetworkUtils.createNetwork();
 		new TransportModeNetworkFilter(this.multimodalNetwork).filter(unimodalNetwork,
-				Collections.singleton(TransportModeMatching.getMatsimModeIgnoreFerry(samgodsModeNotFerry)));
-		if (!allowFerry) {
-			this.ferryLinkIds.forEach(id -> unimodalNetwork.removeLink(id));
+				Collections.singleton(TransportModeMatching.getMatsimModeIgnoreFerry(vehicleAttrs.samgodsMode)));
+
+		final Set<Id<Link>> removeLinkIds = new LinkedHashSet<>();
+		for (Link link : this.multimodalNetwork.getLinks().values()) {
+			final SamgodsLinkAttributes linkAttrs = (SamgodsLinkAttributes) link.getAttributes()
+					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
+			if (vehicleAttrs.networkModes.stream().noneMatch(nm -> linkAttrs.networkModes.contains(nm))) {
+				removeLinkIds.add(link.getId());
+			}
 		}
-		Log.warn("Not cleaning unimodal network.");
-		// new NetworkCleaner().run(unimodalNetwork);
+		removeLinkIds.forEach(id -> unimodalNetwork.removeLink(id));
+
+		log.warn("Not cleaning unimodal network."); // new NetworkCleaner().run(unimodalNetwork);
 		return unimodalNetwork;
 	}
 
@@ -97,7 +119,7 @@ public class NetworkDataProvider {
 	Set<Id<Link>> getDomesticLinkIds() {
 		return this.domesticLinkIds;
 	}
-	
+
 	ConcurrentMap<Id<Link>, Link> getLinks() {
 		return this.links;
 	}
@@ -108,14 +130,6 @@ public class NetworkDataProvider {
 
 	Set<Id<Link>> getFerryLinkIds() {
 		return this.ferryLinkIds;
-	}
-
-	// --------------- THREAD-SAFE, LOCALLY CACHED LINK REFERENCES ---------------
-
-	private final Set<Link> allLinks = ConcurrentHashMap.newKeySet();
-
-	Set<Link> getAllLinks() {
-		return this.allLinks;
 	}
 
 	// --------------- THREAD-SAFE, LOCALLY CACHED LINK UNIT COSTS ---------------

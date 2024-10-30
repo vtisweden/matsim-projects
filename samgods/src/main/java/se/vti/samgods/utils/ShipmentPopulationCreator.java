@@ -43,12 +43,12 @@ public class ShipmentPopulationCreator {
 
 	private long id = 0;
 
+	private final NetworkData networkData;
+	
 	private Population population;
 	
-	private NetworkData networkData;
-
-	public ShipmentPopulationCreator(Network network) {
-		this.networkData = new NetworkDataProvider(network).createNetworkData();
+	public ShipmentPopulationCreator() {
+		this.networkData = NetworkDataProvider.getInstance().createNetworkData();
 		this.population = PopulationUtils.createPopulation(ConfigUtils.createConfig());
 	}
 
@@ -58,29 +58,29 @@ public class ShipmentPopulationCreator {
 //		for (TransportEpisode episode : chain.getEpisodes()) {
 			Plan plan = population.getFactory().createPlan();
 			
-			List<? extends Link> links = chain.allLinks(this.networkData);
-			if (links.size() > 1) {
-
-				Activity load = population.getFactory().createActivityFromLinkId("START", links.get(0).getId());
-				load.setEndTime(time);
-				plan.addActivity(load);
-
-				Leg leg = population.getFactory().createLeg("freightmode");
-				Route route = RouteUtils.createNetworkRoute(links.stream().map(l -> l.getId()).toList());
-				double duration = links.stream().mapToDouble(l -> l.getLength() / l.getFreespeed()).sum();
-				double length = links.stream().mapToDouble(l -> l.getLength() / l.getFreespeed()).sum();
-				route.setDistance(length);
-				route.setTravelTime(duration);
-				leg.setRoute(route);
-				leg.setDepartureTime(time);
-				plan.addLeg(leg);
-				time += duration;
-
-				Activity unload = population.getFactory().createActivityFromLinkId("END",
-						links.get(links.size() - 1).getId());
-				unload.setEndTime(time);
-				plan.addActivity(unload);
-			}
+//			List<? extends Link> links = chain.allLinks(this.networkData);
+//			if (links.size() > 1) {
+//
+//				Activity load = population.getFactory().createActivityFromLinkId("START", links.get(0).getId());
+//				load.setEndTime(time);
+//				plan.addActivity(load);
+//
+//				Leg leg = population.getFactory().createLeg("freightmode");
+//				Route route = RouteUtils.createNetworkRoute(links.stream().map(l -> l.getId()).toList());
+//				double duration = links.stream().mapToDouble(l -> l.getLength() / l.getFreespeed()).sum();
+//				double length = links.stream().mapToDouble(l -> l.getLength() / l.getFreespeed()).sum();
+//				route.setDistance(length);
+//				route.setTravelTime(duration);
+//				leg.setRoute(route);
+//				leg.setDepartureTime(time);
+//				plan.addLeg(leg);
+//				time += duration;
+//
+//				Activity unload = population.getFactory().createActivityFromLinkId("END",
+//						links.get(links.size() - 1).getId());
+//				unload.setEndTime(time);
+//				plan.addActivity(unload);
+//			}
 
 			Person shipment = population.getFactory().createPerson(Id.createPersonId(id++));
 			shipment.addPlan(plan);
@@ -94,7 +94,7 @@ public class ShipmentPopulationCreator {
 	}
 
 	public static void main(String[] args) {
-		new ShipmentPopulationCreator(null);
+		new ShipmentPopulationCreator();
 		System.out.println("DONE");
 	}
 

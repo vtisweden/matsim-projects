@@ -19,6 +19,9 @@
  */
 package se.vti.samgods.logistics.choice;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,14 +54,12 @@ public class LogisticChoiceDataProvider {
 	private final NetworkData internalNetworkData;
 
 	private final FleetDataProvider fleetDataProvider;
-	private final FleetData internalFleetData;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public LogisticChoiceDataProvider(NetworkDataProvider networkDataProvider, FleetDataProvider fleetDataProvider) {
 		this.internalNetworkData = networkDataProvider.createNetworkData();
 		this.fleetDataProvider = fleetDataProvider;
-		this.internalFleetData = fleetDataProvider.createFleetData();
 	}
 
 	public LogisticChoiceData createLogisticChoiceData() {
@@ -67,38 +68,85 @@ public class LogisticChoiceDataProvider {
 
 	// -------------------- THREAD SAFE CONSOLIDATION COSTS --------------------
 
-	// TODO Might not need to be concurrent.
 	private ConcurrentMap<ConsolidationUnit, FleetAssignment> consolidationUnit2fleetAssignment = null;
 
 	public void update(ConcurrentMap<ConsolidationUnit, FleetAssignment> consolidationUnit2fleetAssignment) {
 		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
 	}
 
-	private final ConcurrentMap<ConsolidationUnit, DetailedTransportCost> consolidationUnit2inVehicleTransportCost = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Boolean, ConcurrentMap<Boolean, ConcurrentMap<ConsolidationUnit, DetailedTransportCost>>> load2unload2consolidationUnit2transportUnitCost_1_ton = new ConcurrentHashMap<>();
 
-	private synchronized DetailedTransportCost createInVehicleTransportCost(ConsolidationUnit consolidationUnit) {
+	private synchronized DetailedTransportCost createTransportUnitCost_1_ton(ConsolidationUnit consolidationUnit,
+			boolean load, boolean unload) {
+
+		/*
+		 * Identify (possibly randomly if no other data available) the used vehicle
+		 * type.
+		 */
+		final VehicleType vehicleType;
 		if (this.consolidationUnit2fleetAssignment != null) {
-			final FleetAssignment assignment = this.consolidationUnit2fleetAssignment.get(consolidationUnit);
-			if (assignment != null && assignment.payload_ton >= 1e-3) { // WHY?
-				final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData.getVehicleType2attributes()
-						.get(assignment.vehicleType);
-				return this.realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton, consolidationUnit,
-						this.internalNetworkData.getLinkId2unitCost(assignment.vehicleType),
-						this.internalNetworkData.getFerryLinkIds());
-			}
+			vehicleType = this.consolidationUnit2fleetAssignment.get(consolidationUnit).vehicleType;
+		} else {
+			final List<VehicleType> availableTypes = new ArrayList<>(consolidationUnit.vehicleType2route.keySet());
+			vehicleType = availableTypes.get(new Random().nextInt(availableTypes.size()));
 		}
-		final VehicleType vehicleType = this.internalFleetData.getRepresentativeVehicleType(consolidationUnit.commodity,
-				consolidationUnit.samgodsMode, consolidationUnit.isContainer, consolidationUnit.containsFerry);
-		final SamgodsVehicleAttributes vehicleAttributes = this.internalFleetData.getVehicleType2attributes()
-				.get(vehicleType);
-		return this.realizedInVehicleCost.compute(vehicleAttributes,
-				this.initialTransportEfficiency * vehicleAttributes.capacity_ton, consolidationUnit,
-				this.internalNetworkData.getLinkId2unitCost(vehicleType), this.internalNetworkData.getFerryLinkIds());
+		final SamgodsVehicleAttributes vehicleAttributes = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+				.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+
+		/*
+		 * Identify or estimate payload and initialize cost building.
+		 */
+		final double payload_ton;
+		if (this.consolidationUnit2fleetAssignment != null) {
+			payload_ton = this.consolidationUnit2fleetAssignment.get(consolidationUnit).payload_ton;
+		} else {
+			payload_ton = this.initialTransportEfficiency * vehicleAttributes.capacity_ton;
+		}
+		final DetailedTransportCost.Builder costBuilder = new DetailedTransportCost.Builder().setToAllZeros()
+				.addAmount_ton(payload_ton);
+
+		/*
+		 * Compute in-vehicle cost.
+		 */
+		if (this.consolidationUnit2fleetAssignment != null) {
+			costBuilder.add(this.realizedInVehicleCost.compute(vehicleAttributes, payload_ton, consolidationUnit,
+					vehicleType, this.internalNetworkData.getLinkId2unitCost(vehicleType),
+					this.internalNetworkData.getFerryLinkIds()), false);
+		} else {
+			costBuilder.add(this.realizedInVehicleCost.compute(vehicleAttributes, payload_ton, consolidationUnit,
+					vehicleType, this.internalNetworkData.getLinkId2unitCost(vehicleType),
+					this.internalNetworkData.getFerryLinkIds()), false);
+		}
+
+		/*
+		 * Add loading/unloading/transfer costs.
+		 */
+		if (load) {
+			costBuilder.addLoadingDuration_h(vehicleAttributes.loadTime_h.get(consolidationUnit.commodity));
+			costBuilder.addLoadingCost(vehicleAttributes.loadCost_1_ton.get(consolidationUnit.commodity) * payload_ton);
+		}
+		if (unload) {
+			costBuilder.addUnloadingDuration_h(vehicleAttributes.loadTime_h.get(consolidationUnit.commodity));
+			costBuilder
+					.addUnloadingCost(vehicleAttributes.loadCost_1_ton.get(consolidationUnit.commodity) * payload_ton);
+		}
+		final int transfers = (load ? 0 : 1) + (unload ? 0 : 1);
+		if (transfers > 0) {
+			costBuilder.addTransferDuration_h(
+					transfers * vehicleAttributes.transferTime_h.get(consolidationUnit.commodity));
+			costBuilder.addTransferCost(
+					transfers * vehicleAttributes.transferCost_1_ton.get(consolidationUnit.commodity) * payload_ton);
+		}
+
+		return costBuilder.build().createUnitCost_1_ton();
 	}
 
-	public DetailedTransportCost getInVehicleTransportCost(ConsolidationUnit consolidationUnit) {
-		return this.consolidationUnit2inVehicleTransportCost.computeIfAbsent(consolidationUnit,
-				cu -> this.createInVehicleTransportCost(cu));
+	public DetailedTransportCost getTransportUnitCost_1_ton(ConsolidationUnit consolidationUnit, boolean load,
+			boolean unload) {
+		return this.load2unload2consolidationUnit2transportUnitCost_1_ton
+				.computeIfAbsent(load, l -> new ConcurrentHashMap<>())
+				.computeIfAbsent(unload, u -> new ConcurrentHashMap<>())
+				.computeIfAbsent(consolidationUnit, cu -> this.createTransportUnitCost_1_ton(cu, load, unload));
 	}
 
 	// --------------- THREAD SAFE EPISODE UNIT COST ACCESS ---------------

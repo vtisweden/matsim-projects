@@ -81,7 +81,6 @@ import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
 import se.vti.samgods.transportation.fleet.FleetData;
 import se.vti.samgods.transportation.fleet.FleetDataProvider;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleUtils;
 import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.utils.MiscUtils;
@@ -132,7 +131,6 @@ public class SamgodsRunner {
 	private FleetDataProvider fleetDataProvider = null;
 
 	public Network network = null;
-	private NetworkDataProvider networkDataProvider = null;
 
 	private Map<Id<Link>, Double> linkId2domesticWeights = null;
 
@@ -270,43 +268,43 @@ public class SamgodsRunner {
 	}
 
 	public NetworkDataProvider getOrCreateNetworkDataProvider() {
-		if (this.networkDataProvider == null) {
-			this.networkDataProvider = new NetworkDataProvider(this.network);
+		if (NetworkDataProvider.getInstance() == null) {
+			NetworkDataProvider.initialize(this.network);
 		}
-		return this.networkDataProvider;
+		return NetworkDataProvider.getInstance();
 	}
 
-	public SamgodsRunner checkAvailableVehicles() {
-		FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
-		System.out.println("commodity\tmode\tisContainer\tcontainsFerry");
-		for (Commodity commodity : Commodity.values()) {
-			for (TransportMode mode : TransportMode.values()) {
-				for (Boolean isContainer : Arrays.asList(false, true)) {
-					for (Boolean containsFerry : Arrays.asList(false, true)) {
-						Set<VehicleType> compatibleVehicleTypes = fleetData.getCompatibleVehicleTypes(commodity, mode,
-								isContainer, containsFerry);
-						if (compatibleVehicleTypes.size() > 0) {
-							VehicleType type = fleetData.getRepresentativeVehicleType(commodity, mode, isContainer,
-									containsFerry);
-							if (type == null) {
-								throw new RuntimeException(
-										"No representative type although compatibleVehicleTypes != null");
-							}
-							SamgodsVehicleAttributes attrs = fleetData.getVehicleType2attributes().get(type);
-							if (attrs == null) {
-								throw new RuntimeException("No attributes although compatibleVehicleTypes != null");
-							}
-						} else {
-							System.out.println(commodity + "\t" + mode + "\t" + isContainer + "\t" + containsFerry);
-						}
-					}
-				}
-			}
-		}
-		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
-		return this;
-	}
+//	public SamgodsRunner checkAvailableVehicles() {
+//		FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
+//		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
+//		System.out.println("commodity\tmode\tisContainer\tcontainsFerry");
+//		for (Commodity commodity : Commodity.values()) {
+//			for (TransportMode mode : TransportMode.values()) {
+//				for (Boolean isContainer : Arrays.asList(false, true)) {
+//					for (Boolean containsFerry : Arrays.asList(false, true)) {
+//						Set<VehicleType> compatibleVehicleTypes = fleetData.getCompatibleVehicleTypes(commodity, mode,
+//								isContainer, containsFerry);
+//						if (compatibleVehicleTypes.size() > 0) {
+//							VehicleType type = fleetData.getRepresentativeVehicleType(commodity, mode, isContainer,
+//									containsFerry);
+//							if (type == null) {
+//								throw new RuntimeException(
+//										"No representative type although compatibleVehicleTypes != null");
+//							}
+//							SamgodsVehicleAttributes attrs = fleetData.getVehicleType2attributes().get(type);
+//							if (attrs == null) {
+//								throw new RuntimeException("No attributes although compatibleVehicleTypes != null");
+//							}
+//						} else {
+//							System.out.println(commodity + "\t" + mode + "\t" + isContainer + "\t" + containsFerry);
+//						}
+//					}
+//				}
+//			}
+//		}
+//		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
+//		return this;
+//	}
 
 	// -------------------- PREPARE CONSOLIDATION UNITS --------------------
 
@@ -361,7 +359,7 @@ public class SamgodsRunner {
 			FileOutputStream fos = new FileOutputStream(new File(this.config.getConsolidationUnitsFileName()));
 			JsonGenerator gen = mapper.getFactory().createGenerator(fos);
 			for (ConsolidationUnit consolidationUnit : consolidationUnitPattern2representativeUnit.values()) {
-				if (consolidationUnit.linkIds != null) {
+				if (consolidationUnit.vehicleType2route.size() > 0) {
 					mapper.writeValue(gen, consolidationUnit);
 					routedCnt++;
 				}
@@ -419,7 +417,7 @@ public class SamgodsRunner {
 			Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			while (parser.nextToken() != null) {
 				ConsolidationUnit unit = reader.readValue(parser);
-				unit.computeNetworkCharacteristics(networkData, fleetData);
+//				unit.computeNetworkCharacteristics(networkData, fleetData);
 				consolidationUnitPattern2representativeUnit.put(unit.createRoutingEquivalentTemplate(), unit);
 			}
 			parser.close();
@@ -468,17 +466,41 @@ public class SamgodsRunner {
 		}
 	}
 
+	// TODO primarily for testing
+	private Set<Set<VehicleType>> computeAllVehicleOnLinkGroups(FleetData fleetData) {
+		final Set<Set<VehicleType>> allVehicleOnLinkGroups = new LinkedHashSet<>();
+		for (Set<VehicleType> vehicleOnLinkGroup : fleetData.getLinkId2allowedVehicleTypes().values()) {
+			allVehicleOnLinkGroups.add(vehicleOnLinkGroup);
+		}
+		return allVehicleOnLinkGroups;
+	}
+
+	// TODO primarily for testing
+	public Set<Set<VehicleType>> computeAlwaysJointVehicleGroups(Set<Set<VehicleType>> allLinkGroups) {
+		final Map<VehicleType, Set<VehicleType>> type2accompanyingGroup = new LinkedHashMap<>();
+		for (Set<VehicleType> linkGroup : allLinkGroups) {
+			for (VehicleType type : linkGroup) {
+				if (type2accompanyingGroup.containsKey(type)) {
+					type2accompanyingGroup.get(type).retainAll(linkGroup);
+				} else {
+					type2accompanyingGroup.put(type, new LinkedHashSet<>(linkGroup));
+				}
+			}
+		}
+		return type2accompanyingGroup.values().stream().collect(Collectors.toSet());
+	}
+	
 	public void checkVehicleAvailabilityForConsolidationUnits() {
 
 		final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
 
-//		final Set<Set<VehicleType>> allLinkGroups = fleetData.computeAllVehicleOnLinkGroups();
-//		log.info("VEHICLE ON LINK GROUPS");
-//		for (Set<VehicleType> group : allLinkGroups) {
-//			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
-//		}
+		final Set<Set<VehicleType>> allLinkGroups = this.computeAllVehicleOnLinkGroups(fleetData);
+		log.info("VEHICLE ON LINK GROUPS");
+		for (Set<VehicleType> group : allLinkGroups) {
+			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
+		}
 
-		final Set<Set<VehicleType>> allConnectedGroups = new LinkedHashSet<>(fleetData.getVehicleType2group().values());
+		final Set<Set<VehicleType>> allConnectedGroups = this.computeAlwaysJointVehicleGroups(allLinkGroups);
 		log.info("ALWAYS JOINT VEHICLE GROUPS");
 		for (Set<VehicleType> group : allConnectedGroups) {
 			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")) + "; modes="
@@ -608,17 +630,18 @@ public class SamgodsRunner {
 		}
 
 		if (this.checkChainConnectivity) {
-			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
-			for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains()
-					.values()) {
-				for (List<TransportChain> chains : od2chain.values()) {
-					for (TransportChain chain : chains) {
-						if (!chain.isConnected(networkData)) {
-							throw new RuntimeException("TODO");
-						}
-					}
-				}
-			}
+			throw new UnsupportedOperationException();
+//			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
+//			for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains()
+//					.values()) {
+//				for (List<TransportChain> chains : od2chain.values()) {
+//					for (TransportChain chain : chains) {
+//						if (!chain.isConnected(networkData)) {
+//							throw new RuntimeException("TODO");
+//						}
+//					}
+//				}
+//			}
 		}
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
@@ -685,7 +708,8 @@ public class SamgodsRunner {
 
 			log.info("Collecting data, calculating choice stats.");
 			Map<ConsolidationUnit, List<ChainAndShipmentSize>> consolidationUnit2choices = new LinkedHashMap<>();
-			ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats();
+			ChainAndShipmentChoiceStats stats = new ChainAndShipmentChoiceStats(
+					this.getOrCreateNetworkDataProvider().createNetworkData());
 			for (ChainAndShipmentSize choice : allChoices) {
 				stats.add(choice);
 				for (TransportEpisode episode : choice.transportChain.getEpisodes()) {
@@ -736,6 +760,7 @@ public class SamgodsRunner {
 					}
 
 					log.info("Starting to populate consolidation job queue, continuing as threads progress.");
+					final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
 					for (Map.Entry<ConsolidationUnit, List<ChainAndShipmentSize>> entry : consolidationUnit2choices
 							.entrySet()) {
 						ConsolidationUnit consolidationUnit = entry.getKey();
@@ -743,7 +768,8 @@ public class SamgodsRunner {
 						if ((choices != null) && (choices.size() > 0)) {
 							final double totalDemand_ton = choices.stream()
 									.mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
-							if (totalDemand_ton >= 1e-3 && consolidationUnit.length_km >= 1e-3) {
+							if (totalDemand_ton >= 1e-3
+									&& consolidationUnit.computeAverageLength_km(networkData) >= 1e-3) {
 								ConsolidationJob job = new ConsolidationJob(consolidationUnit, choices,
 										this.commodity2serviceInterval_days.get(consolidationUnit.commodity));
 								jobQueue.put(job);

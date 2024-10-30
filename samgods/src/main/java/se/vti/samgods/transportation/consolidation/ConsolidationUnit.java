@@ -25,8 +25,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -55,7 +57,6 @@ import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.network.NetworkData;
-import se.vti.samgods.transportation.fleet.FleetData;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
 @JsonDeserialize(using = ConsolidationUnit.Deserializer.class)
@@ -73,12 +74,13 @@ public class ConsolidationUnit {
 	public final SamgodsConstants.TransportMode samgodsMode;
 	public final Boolean isContainer;
 
-	public CopyOnWriteArrayList<Id<Link>> linkIds = null;
-	public Double length_km = null;
-	public Double domesticLength_km = null;
-	public Boolean containsFerry = null;
+	public final ConcurrentMap<VehicleType, CopyOnWriteArrayList<Id<Link>>> vehicleType2route = new ConcurrentHashMap<>();
 
-	public CopyOnWriteArraySet<VehicleType> linkCompatibleVehicleTypes = null;
+//	public CopyOnWriteArrayList<Id<Link>> linkIds = null;
+//	public Double length_km = null;
+//	public Double domesticLength_km = null;
+//	public Boolean containsFerry = null;
+//	public CopyOnWriteArraySet<VehicleType> linkCompatibleVehicleTypes = null;
 
 	// --------------------CONSTRUCTION --------------------
 
@@ -106,53 +108,54 @@ public class ConsolidationUnit {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public void setRoutes(List<Link> route, NetworkData networkData, FleetData fleetData) {
-		if (route == null) {
-			this.linkIds = null;
-			this.length_km = null;
-			this.domesticLength_km = null;
-			this.containsFerry = null;
-			this.linkCompatibleVehicleTypes = null;
+	public void setRouteLinks(VehicleType vehicleType, List<Link> links) {
+		if (links == null) {
+			this.vehicleType2route.remove(vehicleType);
 		} else {
-			this.linkIds = new CopyOnWriteArrayList<Id<Link>>(route.stream().map(l -> l.getId()).toList());
-			this.computeNetworkCharacteristics(networkData, fleetData);
+			this.setRouteLinkIds(vehicleType, links.stream().map(l -> l.getId()).toList());
 		}
 	}
 
-	// TODO compute network characteristics here
-	public void setRouteIds(List<Id<Link>> routeIds) {
-		this.length_km = null;
-		this.domesticLength_km = null;
-		this.containsFerry = null;
-		this.linkCompatibleVehicleTypes = null;
+	public void setRouteLinkIds(VehicleType vehicleType, List<Id<Link>> routeIds) {
 		if (routeIds == null) {
-			this.linkIds = null;
+			this.vehicleType2route.remove(vehicleType);
 		} else {
-			this.linkIds = new CopyOnWriteArrayList<>(routeIds);
+			this.vehicleType2route.put(vehicleType, new CopyOnWriteArrayList<>(routeIds));
 		}
 	}
 
 	// TODO make private
-	public void computeNetworkCharacteristics(NetworkData networkData, FleetData fleetData) {
-		this.length_km = Units.KM_PER_M
-				* this.linkIds.stream().mapToDouble(lid -> networkData.getLinks().get(lid).getLength()).sum();
-		this.domesticLength_km = Units.KM_PER_M * this.linkIds.stream()
-				.mapToDouble(lid -> networkData.getDomesticLinkIds().contains(lid)
-						? networkData.getLinks().get(lid).getLength()
-						: 0.0)
-				.sum();
-		this.containsFerry = this.linkIds.stream().anyMatch(lid -> networkData.getFerryLinkIds().contains(lid));
-		this.linkCompatibleVehicleTypes = new CopyOnWriteArraySet<>(fleetData.computeLinkCompatibleVehicleTypes(this));
-	}
+//	public void computeNetworkCharacteristics(NetworkData networkData, FleetData fleetData) {
+//		this.length_km = Units.KM_PER_M
+//				* this.linkIds.stream().mapToDouble(lid -> networkData.getLinks().get(lid).getLength()).sum();
+//		this.domesticLength_km = Units.KM_PER_M * this.linkIds.stream()
+//				.mapToDouble(lid -> networkData.getDomesticLinkIds().contains(lid)
+//						? networkData.getLinks().get(lid).getLength()
+//						: 0.0)
+//				.sum();
+//		this.containsFerry = this.linkIds.stream().anyMatch(lid -> networkData.getFerryLinkIds().contains(lid));
+//		this.linkCompatibleVehicleTypes = new CopyOnWriteArraySet<>(fleetData.computeLinkCompatibleVehicleTypes(this));
+//	}
 
-	public List<? extends Link> allLinks(NetworkData networkData) {
-		return this.linkIds.stream().map(lid -> networkData.getLinks().get(lid)).toList();
+//	public List<? extends Link> allLinks(NetworkData networkData) {
+//		return this.linkIds.stream().map(lid -> networkData.getLinks().get(lid)).toList();
+//	}
+
+	public Double computeAverageLength_km(NetworkData networkData) {
+		if (this.vehicleType2route.size() == 0) {
+			return null;
+		}
+		double sum_m = 0.0;
+		for (List<Id<Link>> linkIds : this.vehicleType2route.values()) {
+			sum_m += linkIds.stream().mapToDouble(id -> networkData.getLinks().get(id).getLength()).sum();
+		}
+		return Units.KM_PER_M * sum_m / this.vehicleType2route.size();
 	}
 
 	// -------------------- OVERRIDING Object --------------------
 
 	private List<Object> createAsList() {
-		return Arrays.asList(this.od, this.commodity, this.samgodsMode, this.isContainer, this.linkIds);
+		return Arrays.asList(this.od, this.commodity, this.samgodsMode, this.isContainer);
 	}
 
 	@Override
@@ -177,11 +180,10 @@ public class ConsolidationUnit {
 		content.add("commodity=" + this.commodity);
 		content.add("isContainer=" + this.isContainer);
 		content.add("mode=" + this.samgodsMode);
-		content.add("containsFerry=" + this.containsFerry);
 		content.add("od=" + this.od);
-		content.add("length=" + this.length_km + "km");
-		content.add("domesticLength=" + this.domesticLength_km + "km");
-		content.add("numberOfRouteLinks=" + (this.linkIds != null ? this.linkIds.stream().count() : null));
+//		content.add("length=" + this.length_km + "km");
+//		content.add("domesticLength=" + this.domesticLength_km + "km");
+//		content.add("numberOfRouteLinks=" + (this.linkIds != null ? this.linkIds.stream().count() : null));
 		return this.getClass().getSimpleName() + "[" + content.stream().collect(Collectors.joining(",")) + "]";
 	}
 
@@ -201,12 +203,23 @@ public class ConsolidationUnit {
 			gen.writeStringField("commodity", consolidationUnit.commodity.toString());
 			gen.writeStringField("mode", consolidationUnit.samgodsMode.toString());
 			gen.writeStringField("isContainer", consolidationUnit.isContainer.toString());
-			gen.writeFieldName("links");
+
+			gen.writeFieldName("routes");
 			gen.writeStartArray();
-			for (Id<Link> linkId : consolidationUnit.linkIds) {
-				gen.writeString(linkId.toString());
+			for (Map.Entry<VehicleType, ? extends List<Id<Link>>> entry : consolidationUnit.vehicleType2route
+					.entrySet()) {
+				gen.writeStartObject();
+				gen.writeStringField("vehicleType", entry.getKey().getId().toString());
+				gen.writeFieldName("links");
+				gen.writeStartArray();
+				for (Id<Link> linkId : entry.getValue()) {
+					gen.writeString(linkId.toString());
+				}
+				gen.writeEndArray();
+				gen.writeEndObject();
 			}
 			gen.writeEndArray();
+
 			gen.writeEndObject();
 		}
 	}
@@ -237,16 +250,18 @@ public class ConsolidationUnit {
 			TransportMode mode = TransportMode.valueOf(((TextNode) node.get("mode")).asText());
 			boolean isContainer = Boolean.parseBoolean(((TextNode) node.get("isContainer")).asText());
 
-			ArrayNode linksArrayNode = (ArrayNode) node.get("links");
-			List<Id<Link>> route = new ArrayList<>(linksArrayNode.size());
-			for (JsonNode linkNode : linksArrayNode) {
-				final Id<Link> linkId = Id.createLinkId(linkNode.asText());
-				route.add(linkId);
-			}
+			throw new RuntimeException("TODO");
 
-			final ConsolidationUnit result = new ConsolidationUnit(od, commodity, mode, isContainer);
-			result.setRouteIds(route);
-			return result;
+//			ArrayNode linksArrayNode = (ArrayNode) node.get("links");
+//			List<Id<Link>> route = new ArrayList<>(linksArrayNode.size());
+//			for (JsonNode linkNode : linksArrayNode) {
+//				final Id<Link> linkId = Id.createLinkId(linkNode.asText());
+//				route.add(linkId);
+//			}
+//
+//			final ConsolidationUnit result = new ConsolidationUnit(od, commodity, mode, isContainer);
+//			result.setRouteIds(route);
+//			return result;
 		}
 	}
 }
