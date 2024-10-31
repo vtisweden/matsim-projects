@@ -23,9 +23,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -73,7 +75,7 @@ public class ConsolidationUnit {
 	public final SamgodsConstants.TransportMode samgodsMode;
 	public final Boolean isContainer;
 
-	public final ConcurrentMap<VehicleType, CopyOnWriteArrayList<Id<Link>>> vehicleType2route = new ConcurrentHashMap<>();
+	public final ConcurrentMap<Set<VehicleType>, CopyOnWriteArrayList<Id<Link>>> vehicleType2route = new ConcurrentHashMap<>();
 
 //	public CopyOnWriteArrayList<Id<Link>> linkIds = null;
 //	public Double length_km = null;
@@ -109,7 +111,7 @@ public class ConsolidationUnit {
 
 	public void setRouteLinks(VehicleType vehicleType, List<Link> links) {
 		if (links == null) {
-			this.vehicleType2route.remove(vehicleType);
+			throw new IllegalArgumentException();
 		} else {
 			this.setRouteLinkIds(vehicleType, links.stream().map(l -> l.getId()).toList());
 		}
@@ -117,9 +119,22 @@ public class ConsolidationUnit {
 
 	public void setRouteLinkIds(VehicleType vehicleType, List<Id<Link>> routeIds) {
 		if (routeIds == null) {
-			this.vehicleType2route.remove(vehicleType);
+			throw new IllegalArgumentException();
 		} else {
-			this.vehicleType2route.put(vehicleType, new CopyOnWriteArrayList<>(routeIds));
+			this.vehicleType2route.put(Collections.singleton(vehicleType), new CopyOnWriteArrayList<>(routeIds));
+		}
+	}
+
+	public void compress() {
+		final Map<CopyOnWriteArrayList<Id<Link>>, Set<VehicleType>> linkIds2vehicleTypes = new LinkedHashMap<>();
+		for (Map.Entry<Set<VehicleType>, CopyOnWriteArrayList<Id<Link>>> entry : this.vehicleType2route.entrySet()) {
+			final Set<VehicleType> vehicleTypes = entry.getKey();
+			final CopyOnWriteArrayList<Id<Link>> linkIds = entry.getValue();
+			linkIds2vehicleTypes.computeIfAbsent(linkIds, lids -> ConcurrentHashMap.newKeySet()).addAll(vehicleTypes);
+		}
+		this.vehicleType2route.clear();
+		for (Map.Entry<CopyOnWriteArrayList<Id<Link>>, Set<VehicleType>> entry : linkIds2vehicleTypes.entrySet()) {
+			this.vehicleType2route.put(entry.getValue(), entry.getKey());
 		}
 	}
 
@@ -149,6 +164,15 @@ public class ConsolidationUnit {
 			sum_m += linkIds.stream().mapToDouble(id -> networkData.getLinks().get(id).getLength()).sum();
 		}
 		return Units.KM_PER_M * sum_m / this.vehicleType2route.size();
+	}
+
+	public List<Id<Link>> getRoute(VehicleType vehicleType) {
+		for (Map.Entry<Set<VehicleType>, ? extends List<Id<Link>>> entry : this.vehicleType2route.entrySet()) {
+			if (entry.getKey().contains(vehicleType)) {
+				return entry.getValue();
+			}
+		}
+		return null;
 	}
 
 	// -------------------- OVERRIDING Object --------------------
@@ -205,10 +229,15 @@ public class ConsolidationUnit {
 
 			gen.writeFieldName("routes");
 			gen.writeStartArray();
-			for (Map.Entry<VehicleType, ? extends List<Id<Link>>> entry : consolidationUnit.vehicleType2route
+			for (Map.Entry<Set<VehicleType>, ? extends List<Id<Link>>> entry : consolidationUnit.vehicleType2route
 					.entrySet()) {
 				gen.writeStartObject();
-				gen.writeStringField("vehicleType", entry.getKey().getId().toString());
+				gen.writeFieldName("vehicleTypes");
+				gen.writeStartArray();
+				for (VehicleType vehicleType : entry.getKey()) {
+					gen.writeString(vehicleType.getId().toString());
+				}
+				gen.writeEndArray();
 				gen.writeFieldName("links");
 				gen.writeStartArray();
 				for (Id<Link> linkId : entry.getValue()) {
@@ -245,18 +274,25 @@ public class ConsolidationUnit {
 			Commodity commodity = Commodity.valueOf(((TextNode) node.get("commodity")).asText());
 			TransportMode mode = TransportMode.valueOf(((TextNode) node.get("mode")).asText());
 			boolean isContainer = Boolean.parseBoolean(((TextNode) node.get("isContainer")).asText());
+
 			final ConsolidationUnit result = new ConsolidationUnit(od, commodity, mode, isContainer);
 
 			ArrayNode routesNode = (ArrayNode) node.get("routes");
 			for (JsonNode routeNode : routesNode) {
-				Id<VehicleType> vehicleTypeId = Id.create(((TextNode) routeNode.get("vehicleType")).asText(),
-						VehicleType.class);
+
+				ArrayNode vehiclesNode = (ArrayNode) routeNode.get("vehicleTypes");
+				final Set<VehicleType> vehicleTypes = ConcurrentHashMap.newKeySet(vehiclesNode.size());
+				for (JsonNode vehicleNode : vehiclesNode) {
+					vehicleTypes.add(
+							this.vehicles.getVehicleTypes().get(Id.create(vehicleNode.asText(), VehicleType.class)));
+				}
+
 				ArrayNode linksNode = (ArrayNode) routeNode.get("links");
-				List<Id<Link>> linkIds = new ArrayList<>(linksNode.size());
+				final List<Id<Link>> linkIds = new ArrayList<>(linksNode.size());
 				for (JsonNode linkNode : linksNode) {
 					linkIds.add(Id.createLinkId(linkNode.asText()));
 				}
-				result.setRouteLinkIds(this.vehicles.getVehicleTypes().get(vehicleTypeId), linkIds);
+				result.vehicleType2route.put(vehicleTypes, new CopyOnWriteArrayList<>(linkIds));
 			}
 
 			return result;

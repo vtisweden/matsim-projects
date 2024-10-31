@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import org.matsim.vehicles.VehicleType;
 
@@ -82,7 +83,8 @@ public class LogisticChoiceDataProvider {
 		if (this.consolidationUnit2fleetAssignment != null) {
 			vehicleType = this.consolidationUnit2fleetAssignment.get(consolidationUnit).vehicleType;
 		} else {
-			final List<VehicleType> availableTypes = new ArrayList<>(consolidationUnit.vehicleType2route.keySet());
+			final List<VehicleType> availableTypes = new ArrayList<>(consolidationUnit.vehicleType2route.keySet()
+					.stream().flatMap(types -> types.stream()).collect(Collectors.toSet()));
 			vehicleType = availableTypes.get(new Random().nextInt(availableTypes.size()));
 		}
 		final SamgodsVehicleAttributes vehicleAttributes = (SamgodsVehicleAttributes) vehicleType.getAttributes()

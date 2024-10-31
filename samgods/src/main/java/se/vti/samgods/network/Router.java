@@ -199,6 +199,7 @@ public class Router {
 					consolidationUnit.setRouteLinks(vehicleType, links);
 				}
 			}
+			consolidationUnit.compress();
 		}
 
 		@Override

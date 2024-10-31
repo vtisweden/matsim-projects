@@ -50,7 +50,7 @@ public class NetworkFlows {
 		for (Map.Entry<ConsolidationUnit, FleetAssignment> entry : consolidationUnit2assignment.entrySet()) {
 			final ConsolidationUnit consolidationUnit = entry.getKey();
 			final FleetAssignment fleetAssignment = entry.getValue();
-			for (Id<Link> linkId : consolidationUnit.vehicleType2route.get(fleetAssignment.vehicleType)) {
+			for (Id<Link> linkId : consolidationUnit.getRoute(fleetAssignment.vehicleType)) {
 				this.id2commodity2flow_ton.computeIfAbsent(linkId, id -> new LinkedHashMap<>(Commodity.values().length))
 						.compute(consolidationUnit.commodity, (c, q) -> q == null ? fleetAssignment.realDemand_ton
 								: q + fleetAssignment.realDemand_ton);

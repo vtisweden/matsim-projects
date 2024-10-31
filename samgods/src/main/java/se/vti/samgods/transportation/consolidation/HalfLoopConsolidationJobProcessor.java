@@ -125,7 +125,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 			this.minLoopDuration_h = 2.0 * cost.duration_h;
 
 			this.domesticLoopLength_km = 2.0 * Units.KM_PER_M
-					* job.consolidationUnit.vehicleType2route.get(vehicleType).stream()
+					* job.consolidationUnit.getRoute(vehicleType).stream()
 							.filter(lid -> networkAndFleetData.getDomesticLinkIds().contains(lid))
 							.mapToDouble(lid -> networkAndFleetData.getLinks().get(lid).getLength()).sum();
 
@@ -254,15 +254,16 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		// Identify optimal fleet assigment.
 		final double scale = this.commodity2scale.get(job.consolidationUnit.commodity);
-
-		final Map<FleetAssignment, Double> assignment2utility = new LinkedHashMap<>(
+		final var assignment2utility = new LinkedHashMap<FleetAssignment, Double>(
 				job.consolidationUnit.vehicleType2route.size());
-		for (VehicleType vehicleType : job.consolidationUnit.vehicleType2route.keySet()) {
-			final FleetAssignment assignment = this.dimensionFleetAssignment(realDemand_ton, vehicleType, job,
-					serviceIntervalActiveProba);
-			final double utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5 * assignment.loopLength_km
-					* realDemand_ton + this.networkAndFleetData.getVehicleType2asc().getOrDefault(vehicleType, 0.0);
-			assignment2utility.put(assignment, utility);
+		for (var vehicleTypes : job.consolidationUnit.vehicleType2route.keySet()) {
+			for (var vehicleType : vehicleTypes) {
+				var assignment = this.dimensionFleetAssignment(realDemand_ton, vehicleType, job,
+						serviceIntervalActiveProba);
+				var utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5 * assignment.loopLength_km
+						* realDemand_ton + this.networkAndFleetData.getVehicleType2asc().getOrDefault(vehicleType, 0.0);
+				assignment2utility.put(assignment, utility);
+			}
 		}
 		return new ChoiceModelUtils().choose(assignment2utility.keySet().stream().toList(),
 				a -> assignment2utility.get(a));

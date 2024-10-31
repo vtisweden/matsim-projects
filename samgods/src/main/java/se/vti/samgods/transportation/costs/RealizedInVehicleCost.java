@@ -45,7 +45,7 @@ public class RealizedInVehicleCost {
 			Map<Id<Link>, BasicTransportCost> link2unitCost, Set<Id<Link>> ferryLinks) {
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
 				.addAmount_ton(payload_ton);
-		for (Id<Link> linkId : consolidationUnit.vehicleType2route.get(vehicleType)) {
+		for (Id<Link> linkId : consolidationUnit.getRoute(vehicleType)) {
 			BasicTransportCost unitCost = link2unitCost.get(linkId);
 			builder.addMoveDuration_h(unitCost.duration_h);
 			builder.addDistance_km(unitCost.length_km);
