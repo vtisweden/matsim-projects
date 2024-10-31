@@ -40,7 +40,6 @@ import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
@@ -77,56 +76,64 @@ import se.vti.samgods.network.Router;
 import se.vti.samgods.transportation.consolidation.ConsolidationJob;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
-import se.vti.samgods.transportation.fleet.SamgodsVehicleUtils;
 import se.vti.samgods.transportation.fleet.VehiclesReader;
 import se.vti.samgods.utils.MiscUtils;
 
 /**
- * TODO public members only while moving this into TestSamgods.
  * 
  * @author GunnarF
  *
  */
 public class SamgodsRunner {
 
+	// -------------------- CONSTANTS --------------------
+	
 	private final static Logger log = Logger.getLogger(SamgodsRunner.class);
 
-	private final long defaultSeed = 4711;
+	private final static long defaultSeed = 4711;
 
-	private final Commodity[] defaultConsideredCommodities = Commodity.values();
+	private final static int defaultMaxThreads = Integer.MAX_VALUE;
 
-	private final int defaultMaxThreads = Integer.MAX_VALUE;
+	private final static int defautServiceInterval_days = 7;
 
-	private final int defautServiceInterval_days = 7;
+	private final static int defaultMaxIterations = 5;
 
-	private final int defaultMaxIterations = 5;
+	private final static boolean defaultEnforceReroute = false;
 
-	private final boolean defaultEnforceReroute = false;
+	private final static double defaultSamplingRate = 1.0;
 
-	private final double defaultSamplingRate = 1.0;
+	private final static Commodity[] defaultConsideredCommodities = Commodity.values();
 
-	private final Map<Commodity, Double> commodity2scale = new LinkedHashMap<>(
-			Arrays.stream(Commodity.values()).collect(Collectors.toMap(c -> c, c -> 1.0)));
+	private final static double defaultLogitScale = 1.0;
+	
+	// -------------------- MEMBERS --------------------
+	
+	private final SamgodsConfigGroup config;
 
 	private Random rnd = new Random();
 
-	public List<Commodity> consideredCommodities;
+	private List<Commodity> consideredCommodities;
 
-	public int maxThreads;
+	private int maxThreads;
+
+	// TODO concurrency?
+	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days = new LinkedHashMap<>();
+
+	private int maxIterations;
+
+	private boolean enforceReroute;
 
 	private double samplingRate;
 
-	// TODO concurrency?
-	public final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days = new LinkedHashMap<>();
 
-	public int maxIterations;
+	// 
 
-	public boolean enforceReroute;
+	private final Map<Commodity, Double> commodity2scale = new LinkedHashMap<>(
+			Arrays.stream(Commodity.values()).collect(Collectors.toMap(c -> c, c -> defaultLogitScale)));
 
-	public Vehicles vehicles = null;
-//	private FleetDataProvider fleetDataProvider = null;
+	private Vehicles vehicles = null;
 
-	public Network network = null;
+	private Network network = null;
 
 	private Map<Id<Link>, Double> linkId2domesticWeights = null;
 
@@ -135,37 +142,28 @@ public class SamgodsRunner {
 	private TransportWorkAscCalibrator fleetCalibrator = null;
 	private ASCs ascs = null;
 
-	private boolean checkChainConnectivity = false;
-
 	private String networkFlowsFileName = null;
-
-	private final SamgodsConfigGroup config;
 
 	public SamgodsRunner setNetworkFlowsFileName(String networkFlowsFileName) {
 		this.networkFlowsFileName = networkFlowsFileName;
 		return this;
 	}
 
-	public void setCheckChainConnecivity(boolean checkChainConnectivity) {
-		this.checkChainConnectivity = checkChainConnectivity;
-	}
-
+	// -------------------- CONSTRUCTION --------------------
+	
 	public SamgodsRunner(SamgodsConfigGroup config) {
 		this.config = config;
-		this.setRandomSeed(this.defaultSeed);
-		this.setConsideredCommodities(this.defaultConsideredCommodities);
-		this.setMaxThreads(this.defaultMaxThreads);
-		this.setServiceInterval_days(this.defautServiceInterval_days);
-		this.setMaxIterations(this.defaultMaxIterations);
-		this.setEnforceReroute(this.defaultEnforceReroute);
-		this.setSamplingRate(this.defaultSamplingRate);
+		this.setRandomSeed(defaultSeed);
+		this.setConsideredCommodities(defaultConsideredCommodities);
+		this.setMaxThreads(defaultMaxThreads);
+		this.setServiceInterval_days(defautServiceInterval_days);
+		this.setMaxIterations(defaultMaxIterations);
+		this.setEnforceReroute(defaultEnforceReroute);
+		this.setSamplingRate(defaultSamplingRate);
 	}
 
-	public SamgodsRunner setScale(Commodity commodity, double scale) {
-		this.commodity2scale.put(commodity, scale);
-		return this;
-	}
-
+	// -------------------- SETTERS --------------------
+	
 	public SamgodsRunner setRandomSeed(long seed) {
 		this.rnd = new Random(seed);
 		return this;
@@ -178,11 +176,6 @@ public class SamgodsRunner {
 
 	public SamgodsRunner setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
-		return this;
-	}
-
-	public SamgodsRunner setSamplingRate(double samplingRate) {
-		this.samplingRate = samplingRate;
 		return this;
 	}
 
@@ -202,6 +195,20 @@ public class SamgodsRunner {
 		return this;
 	}
 
+	public SamgodsRunner setSamplingRate(double samplingRate) {
+		this.samplingRate = samplingRate;
+		return this;
+	}
+
+	//
+	
+	public SamgodsRunner setScale(Commodity commodity, double scale) {
+		this.commodity2scale.put(commodity, scale);
+		return this;
+	}
+
+	// -------------------- LOAD VEHICLE FLEET --------------------
+	
 	private SamgodsRunner loadVehicles(String vehicleParametersFileName, String transferParametersFileName,
 			TransportMode samgodsMode, String... excludedIds) throws IOException {
 		if (this.vehicles == null) {
@@ -235,17 +242,15 @@ public class SamgodsRunner {
 		return this;
 	}
 
+	// -------------------- LOAD NETWORK --------------------
+
 	public SamgodsRunner loadNetwork() throws IOException {
 		this.network = new NetworkReader().load(this.config.getNetworkNodesFileName(),
 				this.config.getNetworkLinksFileName());
 		return this;
 	}
 
-	// TODO Needed for NTMCalc.
-	public SamgodsRunner loadLinkRegionalWeights(String linkRegionFile) throws IOException {
-		this.linkId2domesticWeights = new LinkRegionsReader(this.network).read(linkRegionFile);
-		return this;
-	}
+	// -------------------- LOAD TRANSPORT DEMAND --------------------
 
 	public SamgodsRunner loadTransportDemand(String demandFilePrefix, String demandFileSuffix) {
 		this.transportDemand = new TransportDemand();
@@ -256,51 +261,13 @@ public class SamgodsRunner {
 		return this;
 	}
 
-//	public FleetDataProvider getOrCreateFleetDataProvider() {
-//		if (this.fleetDataProvider == null) {
-//			this.fleetDataProvider = new FleetDataProvider(this.network, this.vehicles);
-//		}
-//		return this.fleetDataProvider;
-//	}
-
-//	public NetworkDataProvider getOrCreateNetworkDataProvider() {
-//		if (NetworkDataProvider.getInstance() == null) {
-//			NetworkDataProvider.initialize(this.network);
-//		}
-//		return NetworkDataProvider.getInstance();
-//	}
-
-//	public SamgodsRunner checkAvailableVehicles() {
-//		FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-//		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
-//		System.out.println("commodity\tmode\tisContainer\tcontainsFerry");
-//		for (Commodity commodity : Commodity.values()) {
-//			for (TransportMode mode : TransportMode.values()) {
-//				for (Boolean isContainer : Arrays.asList(false, true)) {
-//					for (Boolean containsFerry : Arrays.asList(false, true)) {
-//						Set<VehicleType> compatibleVehicleTypes = fleetData.getCompatibleVehicleTypes(commodity, mode,
-//								isContainer, containsFerry);
-//						if (compatibleVehicleTypes.size() > 0) {
-//							VehicleType type = fleetData.getRepresentativeVehicleType(commodity, mode, isContainer,
-//									containsFerry);
-//							if (type == null) {
-//								throw new RuntimeException(
-//										"No representative type although compatibleVehicleTypes != null");
-//							}
-//							SamgodsVehicleAttributes attrs = fleetData.getVehicleType2attributes().get(type);
-//							if (attrs == null) {
-//								throw new RuntimeException("No attributes although compatibleVehicleTypes != null");
-//							}
-//						} else {
-//							System.out.println(commodity + "\t" + mode + "\t" + isContainer + "\t" + containsFerry);
-//						}
-//					}
-//				}
-//			}
-//		}
-//		System.out.println("--------------------- MISSING VEHICLE TYPES ---------------------");
-//		return this;
-//	}
+	//
+	
+	// TODO Needed for NTMCalc.
+	public SamgodsRunner loadLinkRegionalWeights(String linkRegionFile) throws IOException {
+		this.linkId2domesticWeights = new LinkRegionsReader(this.network).read(linkRegionFile);
+		return this;
+	}
 
 	// -------------------- PREPARE CONSOLIDATION UNITS --------------------
 
@@ -337,16 +304,10 @@ public class SamgodsRunner {
 			 * Route (if possible) the representative consolidation units.
 			 * 
 			 * Routing changes the behavior of hashcode(..) / equals(..) in
-			 * ConsolidationUnit, but this should not affect the *values* of a HashMap.
+			 * ConsolidationUnit, but this should matter in the *values* of a HashMap.
 			 */
-			// TODO No need to separate by commodity ... separate differently?
-			for (Commodity commodity : this.consideredCommodities) {
-				log.info(commodity + ": Routing consolidation units.");
-				Router router = new Router(NetworkAndFleetDataProvider.getProviderInstance()).setLogProgress(true)
-						.setMaxThreads(this.maxThreads);
-				router.route(consolidationUnitPattern2representativeUnit.entrySet().stream()
-						.filter(e -> commodity.equals(e.getKey().commodity)).map(e -> e.getValue()).toList());
-			}
+			new Router(NetworkAndFleetDataProvider.getProviderInstance()).setLogProgress(true)
+					.setMaxThreads(this.maxThreads).route(consolidationUnitPattern2representativeUnit.values());
 
 			/*
 			 * Stream routed consolidation units to json file.
@@ -411,7 +372,7 @@ public class SamgodsRunner {
 			Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			while (parser.nextToken() != null) {
 				ConsolidationUnit unit = reader.readValue(parser);
-//				unit.computeNetworkCharacteristics(networkData, fleetData);
+				unit.compress(); // TODO not necessary when the file is already compressed
 				consolidationUnitPattern2representativeUnit.put(unit.createRoutingEquivalentTemplate(), unit);
 			}
 			parser.close();
@@ -460,137 +421,8 @@ public class SamgodsRunner {
 		}
 	}
 
-	// TODO primarily for testing
-	private Set<Set<VehicleType>> computeAllVehicleOnLinkGroups(NetworkAndFleetData networkAndFleetData) {
-		final Set<Set<VehicleType>> allVehicleOnLinkGroups = new LinkedHashSet<>();
-		for (Set<VehicleType> vehicleOnLinkGroup : networkAndFleetData.getLinkId2allowedVehicleTypes().values()) {
-			allVehicleOnLinkGroups.add(vehicleOnLinkGroup);
-		}
-		return allVehicleOnLinkGroups;
-	}
-
-	// TODO primarily for testing
-	public Set<Set<VehicleType>> computeAlwaysJointVehicleGroups(Set<Set<VehicleType>> allLinkGroups) {
-		final Map<VehicleType, Set<VehicleType>> type2accompanyingGroup = new LinkedHashMap<>();
-		for (Set<VehicleType> linkGroup : allLinkGroups) {
-			for (VehicleType type : linkGroup) {
-				if (type2accompanyingGroup.containsKey(type)) {
-					type2accompanyingGroup.get(type).retainAll(linkGroup);
-				} else {
-					type2accompanyingGroup.put(type, new LinkedHashSet<>(linkGroup));
-				}
-			}
-		}
-		return type2accompanyingGroup.values().stream().collect(Collectors.toSet());
-	}
-
-	public void checkVehicleAvailabilityForConsolidationUnits() {
-
-//		final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-		final NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider.getProviderInstance()
-				.createDataInstance();
-
-		final Set<Set<VehicleType>> allLinkGroups = this.computeAllVehicleOnLinkGroups(networkAndFleetData);
-		log.info("VEHICLE ON LINK GROUPS");
-		for (Set<VehicleType> group : allLinkGroups) {
-			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
-		}
-
-		final Set<Set<VehicleType>> allConnectedGroups = this.computeAlwaysJointVehicleGroups(allLinkGroups);
-		log.info("ALWAYS JOINT VEHICLE GROUPS");
-		for (Set<VehicleType> group : allConnectedGroups) {
-			log.info("  " + group.stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")) + "; modes="
-					+ group.stream().map(t -> SamgodsVehicleUtils.getMode(t)).collect(Collectors.toSet()));
-		}
-
-//		final Set<ConsolidationUnit> allConsolidationUnits = new LinkedHashSet<>();
-//		for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains().values()) {
-//			for (List<TransportChain> chains : od2chain.values()) {
-//				for (TransportChain chain : chains) {
-//					for (TransportEpisode episode : chain.getEpisodes()) {
-//						allConsolidationUnits.addAll(episode.getConsolidationUnits());
-//					}
-//				}
-//			}
-//		}
-//
-//		long consideredConsolidationUnits = 0l;
-////		long consolidationUnitsWithoutVehicles = 0l;
-//		Set<ConsolidationUnit> consolidationUnitsWithoutVehicles = new LinkedHashSet<>();
-//		final Map<VehicleType, Long> vehicleType2allowedInConsolidationUnit = new LinkedHashMap<>();
-//		final Map<VehicleType, Long> vehicleType2allowedOnAllLinks = new LinkedHashMap<>();
-//		for (ConsolidationUnit consolidationUnit : allConsolidationUnits) {
-//			consideredConsolidationUnits++;
-//			final Set<VehicleType> allowedOnAllLinks = new LinkedHashSet<>(
-//					fleetData.getCompatibleVehicleTypes(consolidationUnit.commodity, consolidationUnit.samgodsMode,
-//							consolidationUnit.isContainer, consolidationUnit.containsFerry));
-//			for (VehicleType type : allowedOnAllLinks) {
-//				vehicleType2allowedInConsolidationUnit.compute(type, (t, c) -> c == null ? 1 : c + 1);
-//			}
-//			for (List<Id<Link>> route : consolidationUnit.linkIds) {
-//				for (Id<Link> linkId : route) {
-//					allowedOnAllLinks.retainAll(fleetData.getLinkId2allowedVehicleTypes().get(linkId));
-//				}
-//			}
-//			for (VehicleType type : allowedOnAllLinks) {
-//				vehicleType2allowedOnAllLinks.compute(type, (t, c) -> c == null ? 1 : c + 1);
-//				if (vehicleType2allowedOnAllLinks.size() == 0) {
-//					consolidationUnitsWithoutVehicles.add(consolidationUnit);
-//				}
-//			}
-//		}
-//
-//		log.info("NO VEHICLES AVAILABLE for " + consolidationUnitsWithoutVehicles.size() + " out of "
-//				+ consideredConsolidationUnits + " consolidation units, i.e. "
-//				+ (100.0 * consolidationUnitsWithoutVehicles.size() / consideredConsolidationUnits) + " percent.");
-//		for (ConsolidationUnit consolidationUnit : consolidationUnitsWithoutVehicles) {
-//			log.info("  " + consolidationUnit);
-//		}
-//		
-//
-//		final Map<TransportMode, List<VehicleType>> mode2types = new LinkedHashMap<>();
-//		for (VehicleType type : this.vehicles.getVehicleTypes().values()) {
-//			mode2types.computeIfAbsent(SamgodsVehicleUtils.getMode(type), l -> new ArrayList<>()).add(type);
-//		}
-//
-//		for (Map.Entry<TransportMode, List<VehicleType>> e : mode2types.entrySet()) {
-//			log.info(e.getKey().toString().toUpperCase());
-//			for (VehicleType type : e.getValue()) {
-//				final long unitCnt = vehicleType2allowedInConsolidationUnit.getOrDefault(type, 0l);
-//				if (unitCnt > 0) {
-//					final long linkCnt = vehicleType2allowedOnAllLinks.getOrDefault(type, 0l);
-//					log.info("  " + type.getId() + " is link-compatible on " + linkCnt + " out of " + unitCnt
-//							+ " consolidation units, i.e. " + (100.0 * linkCnt / unitCnt) + " percent.");
-//				}
-//			}
-//		}
-//
-//		log.info("OCCURRENCES OF FEASIBLE VEHICLE SETS ON LINKS");
-//		final Map<Set<VehicleType>, Long> feasibleVehicleTypes2cnt = new LinkedHashMap<>();
-//		for (Id<Link> linkId : this.network.getLinks().keySet()) {
-//			feasibleVehicleTypes2cnt.compute(fleetData.getLinkId2allowedVehicleTypes().get(linkId),
-//					(f, c) -> c == null ? 1 : c + 1);
-//		}
-//		final List<Map.Entry<Set<VehicleType>, Long>> setAndCnt = new ArrayList<>(
-//				feasibleVehicleTypes2cnt.entrySet());
-//		Collections.sort(setAndCnt, new Comparator<>() {
-//			@Override
-//			public int compare(Entry<Set<VehicleType>, Long> o1, Entry<Set<VehicleType>, Long> o2) {
-//				return o2.getValue().compareTo(o1.getValue());
-//			}
-//		});
-//		for (TransportMode mode : TransportMode.values()) {
-//			log.info(mode);
-//			for (Map.Entry<Set<VehicleType>, Long> entry : setAndCnt) {
-//				if (entry.getKey().size() > 0 && SamgodsVehicleUtils.getMode(entry.getKey().iterator().next()).equals(mode)) {
-//					log.info("  " + entry.getValue() + "\ttimes\t"
-//							+ entry.getKey().stream().map(t -> t.getId().toString()).collect(Collectors.joining(",")));
-//				}
-//			}
-//		}
-//		log.info("Links without feasible vehicles: " + feasibleVehicleTypes2cnt.getOrDefault(new LinkedHashSet<>(), 0l));
-	}
-
+	// -------------------- RUN ITERATIONS --------------------
+	
 	public void run() {
 
 		MiscUtils.ensureEmptyFolder("./results");
@@ -606,7 +438,6 @@ public class SamgodsRunner {
 		} else {
 			this.ascs = new ASCs();
 		}
-//		this.getOrCreateFleetDataProvider().updateASCs(this.ascs);
 		NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
 		if (this.config.getAscCalibrationStepSize() != null) {
@@ -624,21 +455,6 @@ public class SamgodsRunner {
 				transportChains.stream().flatMap(c -> c.getEpisodes().stream())
 						.forEach(e -> allConsolidationUnits.addAll(e.getConsolidationUnits()));
 			}
-		}
-
-		if (this.checkChainConnectivity) {
-			throw new UnsupportedOperationException();
-//			final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
-//			for (Map<OD, List<TransportChain>> od2chain : this.transportDemand.getCommodity2od2transportChains()
-//					.values()) {
-//				for (List<TransportChain> chains : od2chain.values()) {
-//					for (TransportChain chain : chains) {
-//						if (!chain.isConnected(networkData)) {
-//							throw new RuntimeException("TODO");
-//						}
-//					}
-//				}
-//			}
 		}
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
@@ -794,12 +610,6 @@ public class SamgodsRunner {
 			/*
 			 * POSTPROCESSING, SUMMARY STATISTICS.
 			 */
-//			log.info("Collecting transport statistics");
-//			final TransportationStatistics transpStats = new TransportationStatistics(allChoices,
-//					consolidationUnit2assignment, this.getOrCreateNetworkDataProvider().createNetworkData(),
-//					this.getOrCreateFleetDataProvider().createFleetData(),
-//					logisticChoiceDataProvider.createLogisticChoiceData());
-//			statisticsLogger.log(transpStats);
 
 			logisticChoiceDataProvider.update(consolidationUnit2assignment);
 
@@ -812,41 +622,13 @@ public class SamgodsRunner {
 				this.ascs = this.fleetCalibrator.createASCs();
 			}
 
-//			log.info("Computing transport efficiency and unit cost per consolidation unit.");
-//			{
-//				final NetworkData networkData = this.getOrCreateNetworkDataProvider().createNetworkData();
-//				final FleetData fleetData = this.getOrCreateFleetDataProvider().createFleetData();
-//				final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
-//				for (Map.Entry<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> e : consolidationUnit2assignment
-//						.entrySet()) {
-//					final ConsolidationUnit consolidationUnit = e.getKey();
-//					final FleetAssignment assignment = e.getValue();
-//					if (assignment.payload_ton >= 1e-3) {
-//						try {
-//							final SamgodsVehicleAttributes vehicleAttributes = fleetData.getVehicleType2attributes()
-//									.get(assignment.vehicleType);
-//							consolidationUnit2realizedMoveCost.put(consolidationUnit,
-//									realizedInVehicleCost.compute(vehicleAttributes, assignment.payload_ton,
-//											consolidationUnit, networkData.getLinkId2unitCost(assignment.vehicleType),
-//											networkData.getFerryLinkIds()));
-//						} catch (InsufficientDataException e1) {
-//							throw new RuntimeException(e1);
-//						}
-//					}
-//				}
-//			}
-
 			NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
 			if ((iteration == this.maxIterations - 1)) {
-
 				if (this.networkFlowsFileName != null) {
 					new NetworkFlows().add(consolidationUnit2assignment).writeToFile(this.networkFlowsFileName);
 				}
-
 			}
-
 		}
 	}
-
 }
