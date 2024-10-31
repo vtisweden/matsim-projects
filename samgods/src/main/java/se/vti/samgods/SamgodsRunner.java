@@ -306,6 +306,8 @@ public class SamgodsRunner {
 
 	public void createOrLoadConsolidationUnits() throws IOException {
 
+		NetworkAndFleetDataProvider.initialize(this.network, this.vehicles);
+
 		if (this.enforceReroute || !(new File(this.config.getConsolidationUnitsFileName()).exists())) {
 
 			/*
@@ -401,11 +403,9 @@ public class SamgodsRunner {
 			 */
 			log.info("Loading consolidation units from file " + this.config.getConsolidationUnitsFileName());
 			ObjectMapper mapper = new ObjectMapper();
-			// TODO >>> can do without this? >>>
 			SimpleModule module = (new SimpleModule()).addDeserializer(ConsolidationUnit.class,
-					new ConsolidationUnit.Deserializer());
+					new ConsolidationUnit.Deserializer(this.vehicles));
 			mapper.registerModule(module);
-			// TODO <<< can do without this? <<<
 			ObjectReader reader = mapper.readerFor(ConsolidationUnit.class);
 			JsonParser parser = mapper.getFactory().createParser(new File(this.config.getConsolidationUnitsFileName()));
 			Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();

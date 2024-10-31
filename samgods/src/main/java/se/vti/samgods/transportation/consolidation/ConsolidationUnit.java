@@ -35,6 +35,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.Vehicles;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -45,7 +46,6 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -59,7 +59,6 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
-@JsonDeserialize(using = ConsolidationUnit.Deserializer.class)
 public class ConsolidationUnit {
 
 	// -------------------- CONSTANTS --------------------
@@ -228,7 +227,10 @@ public class ConsolidationUnit {
 
 	public static class Deserializer extends JsonDeserializer<ConsolidationUnit> {
 
-		public Deserializer() {
+		private final Vehicles vehicles;
+
+		public Deserializer(Vehicles vehicles) {
+			this.vehicles = vehicles;
 		}
 
 		@Override
@@ -237,31 +239,27 @@ public class ConsolidationUnit {
 			ObjectCodec codec = p.getCodec();
 			JsonNode node = codec.readTree(p);
 
-			ArrayNode nodesNode = (ArrayNode) node.get("nodes");
-			List<Id<Node>> nodes = new ArrayList<>(nodesNode.size());
-			for (JsonNode nodeNode : nodesNode) {
-				nodes.add(Id.createNodeId(nodeNode.asText()));
-			}
-
 			Id<Node> origin = Id.createNodeId(((TextNode) node.get("origin")).asText());
 			Id<Node> destination = Id.createNodeId(((TextNode) node.get("destination")).asText());
 			OD od = new OD(origin, destination);
 			Commodity commodity = Commodity.valueOf(((TextNode) node.get("commodity")).asText());
 			TransportMode mode = TransportMode.valueOf(((TextNode) node.get("mode")).asText());
 			boolean isContainer = Boolean.parseBoolean(((TextNode) node.get("isContainer")).asText());
+			final ConsolidationUnit result = new ConsolidationUnit(od, commodity, mode, isContainer);
 
-			throw new RuntimeException("TODO");
+			ArrayNode routesNode = (ArrayNode) node.get("routes");
+			for (JsonNode routeNode : routesNode) {
+				Id<VehicleType> vehicleTypeId = Id.create(((TextNode) routeNode.get("vehicleType")).asText(),
+						VehicleType.class);
+				ArrayNode linksNode = (ArrayNode) routeNode.get("links");
+				List<Id<Link>> linkIds = new ArrayList<>(linksNode.size());
+				for (JsonNode linkNode : linksNode) {
+					linkIds.add(Id.createLinkId(linkNode.asText()));
+				}
+				result.setRouteLinkIds(this.vehicles.getVehicleTypes().get(vehicleTypeId), linkIds);
+			}
 
-//			ArrayNode linksArrayNode = (ArrayNode) node.get("links");
-//			List<Id<Link>> route = new ArrayList<>(linksArrayNode.size());
-//			for (JsonNode linkNode : linksArrayNode) {
-//				final Id<Link> linkId = Id.createLinkId(linkNode.asText());
-//				route.add(linkId);
-//			}
-//
-//			final ConsolidationUnit result = new ConsolidationUnit(od, commodity, mode, isContainer);
-//			result.setRouteIds(route);
-//			return result;
+			return result;
 		}
 	}
 }
