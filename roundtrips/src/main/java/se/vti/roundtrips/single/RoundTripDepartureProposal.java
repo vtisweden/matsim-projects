@@ -21,6 +21,8 @@ package se.vti.roundtrips.single;
 
 import java.util.Random;
 
+import org.checkerframework.common.returnsreceiver.qual.This;
+
 import se.vti.roundtrips.model.Scenario;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
@@ -45,12 +47,12 @@ public class RoundTripDepartureProposal<L extends Location> implements MHProposa
 	// -------------------- HELPERS --------------------
 
 	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, Scenario<?> scenario) {
-		return drawUnusedDeparture(state, scenario.getRandom(), scenario.getBinCnt());
-	}
-
-	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, Random rnd, int timeBinCnt) {
+		// TODO Not ideal, handle this upstream:
+		if (state.locationCnt() == scenario.getLocationCnt()) {
+			throw new RuntimeException("No space for inserting a departure time bin.");
+		}		
 		while (true) {
-			final Integer dpt = rnd.nextInt(timeBinCnt);
+			final Integer dpt = scenario.getRandom().nextInt(scenario.getBinCnt());
 			if (!state.containsDeparture(dpt)) {
 				return dpt;
 			}
