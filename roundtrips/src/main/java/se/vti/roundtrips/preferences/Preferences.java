@@ -20,6 +20,7 @@
 package se.vti.roundtrips.preferences;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import se.vti.utils.misc.metropolishastings.MHWeight;
@@ -38,6 +39,10 @@ public class Preferences<X> implements MHWeight<X> {
 	public Preferences() {
 	}
 
+	public List<PreferenceComponent<X>> getComponentsView() {
+		return Collections.unmodifiableList(this.components);
+	}
+	
 	public void addComponent(PreferenceComponent<X> component, double weight) {
 		this.components.add(component);
 		this.weights.add(weight);
