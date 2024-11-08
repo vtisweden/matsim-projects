@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.VehicleType;
@@ -48,49 +50,47 @@ import se.vti.samgods.SamgodsConstants.TransportMode;
  * @author GunnarF
  *
  */
-public class ASCs {
+public class ASCDataProvider {
 
 	// -------------------- MEMBERS --------------------
 
-	private final Map<VehicleType, Double> vehicleType2ASC;
-
-	private final Map<TransportMode, Double> mode2ASC;
-
-	private final Map<Commodity, Double> railCommodity2ASC;
+	private ConcurrentMap<VehicleType, Double> vehicleType2ASC = new ConcurrentHashMap<>();
+	private ConcurrentMap<TransportMode, Double> mode2ASC = new ConcurrentHashMap<>();
+	private ConcurrentMap<Commodity, Double> railCommodity2ASC = new ConcurrentHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ASCs() {
+	public ASCDataProvider() {
 		this(new LinkedHashMap<>(), new LinkedHashMap<>(), new LinkedHashMap<>());
 	}
 
-	public ASCs(Map<VehicleType, Double> vehicleType2ASC, Map<TransportMode, Double> mode2ASC,
+	public ASCDataProvider(Map<VehicleType, Double> vehicleType2ASC, Map<TransportMode, Double> mode2ASC,
 			Map<Commodity, Double> railCommodity2ASC) {
-		this.vehicleType2ASC = vehicleType2ASC;
-		this.mode2ASC = mode2ASC;
-		this.railCommodity2ASC = railCommodity2ASC;
+		this.vehicleType2ASC = new ConcurrentHashMap<>(vehicleType2ASC);
+		this.mode2ASC = new ConcurrentHashMap<>( mode2ASC);
+		this.railCommodity2ASC = new ConcurrentHashMap<>(railCommodity2ASC);
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public Map<VehicleType, Double> getVehicleTyp2ASC() {
+	public ConcurrentMap<VehicleType, Double> getConcurrentVehicleType2ASC() {
 		return this.vehicleType2ASC;
 	}
 
-	public Map<TransportMode, Double> getMode2ASC() {
+	public ConcurrentMap<TransportMode, Double> getConcurrentMode2ASC() {
 		return this.mode2ASC;
 	}
 
-	public Map<Commodity, Double> getRailCommodity2ASC() {
+	public ConcurrentMap<Commodity, Double> getConcurrentRailCommodity2ASC() {
 		return this.railCommodity2ASC;
 	}
 
 	// -------------------- JSON (DE)SERIALIZATION --------------------
 
-	static class Serializer extends JsonSerializer<ASCs> {
+	static class Serializer extends JsonSerializer<ASCDataProvider> {
 
 		@Override
-		public void serialize(ASCs ascs, JsonGenerator jsonGenerator, SerializerProvider serializers)
+		public void serialize(ASCDataProvider ascs, JsonGenerator jsonGenerator, SerializerProvider serializers)
 				throws IOException {
 			jsonGenerator.writeStartObject();
 
@@ -122,13 +122,13 @@ public class ASCs {
 	public void writeToFile(String fileName) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		SimpleModule module = new SimpleModule();
-		module.addSerializer(ASCs.class, new Serializer());
+		module.addSerializer(ASCDataProvider.class, new Serializer());
 		mapper.registerModule(module);
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		mapper.writeValue(new File(fileName), this);
 	}
 
-	static class Deserializer extends JsonDeserializer<ASCs> {
+	static class Deserializer extends JsonDeserializer<ASCDataProvider> {
 
 		private final Vehicles vehicles;
 
@@ -137,10 +137,10 @@ public class ASCs {
 		}
 
 		@Override
-		public ASCs deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
+		public ASCDataProvider deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
 			JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
-			ASCs result = new ASCs();
+			ASCDataProvider result = new ASCDataProvider();
 
 			JsonNode vehicleTypeNode = node.get("vehicleType2ASC");
 			if (vehicleTypeNode != null) {
@@ -170,12 +170,12 @@ public class ASCs {
 		}
 	}
 
-	public static ASCs createFromFile(String fileName, Vehicles vehicles) throws IOException {
+	public static ASCDataProvider createFromFile(String fileName, Vehicles vehicles) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		SimpleModule module = new SimpleModule();
-		module.addDeserializer(ASCs.class, new Deserializer(vehicles));
+		module.addDeserializer(ASCDataProvider.class, new Deserializer(vehicles));
 		mapper.registerModule(module);
-		return mapper.readValue(new File(fileName), ASCs.class);
+		return mapper.readValue(new File(fileName), ASCDataProvider.class);
 
 	}
 
@@ -185,7 +185,7 @@ public class ASCs {
 
 		System.out.println("STARTED ...");
 
-		ASCs asc = new ASCs();
+		ASCDataProvider asc = new ASCDataProvider();
 
 		Vehicles vehicles = VehicleUtils.createVehiclesContainer();
 		Id<VehicleType> smallTruckId = Id.create("smalltruck", VehicleType.class);
@@ -197,7 +197,7 @@ public class ASCs {
 
 		asc.writeToFile("ascs.json");
 
-		ASCs ascs2 = ASCs.createFromFile("ascs.json", vehicles);
+		ASCDataProvider ascs2 = ASCDataProvider.createFromFile("ascs.json", vehicles);
 
 		System.out.println("... DONE");
 

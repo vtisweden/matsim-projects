@@ -54,7 +54,7 @@ class ASCLogger {
 				@Override
 				public String value(TransportWorkAscCalibrator fleetCalibrator) {
 					return LogEntry
-							.toString(fleetCalibrator.createASCs().getVehicleTyp2ASC().getOrDefault(vehicleType, 0.0));
+							.toString(fleetCalibrator.createASCDataProvider().getConcurrentVehicleType2ASC().getOrDefault(vehicleType, 0.0));
 				}
 			});
 		}
@@ -69,7 +69,7 @@ class ASCLogger {
 				@Override
 				public String value(TransportWorkAscCalibrator fleetCalibrator) {
 					return LogEntry
-							.toString(fleetCalibrator.createASCs().getRailCommodity2ASC().getOrDefault(commodity, 0.0));
+							.toString(fleetCalibrator.createASCDataProvider().getConcurrentRailCommodity2ASC().getOrDefault(commodity, 0.0));
 				}
 			});
 		}
@@ -82,7 +82,7 @@ class ASCLogger {
 
 				@Override
 				public String value(TransportWorkAscCalibrator fleetCalibrator) {
-					return LogEntry.toString(fleetCalibrator.createASCs().getMode2ASC().getOrDefault(mode, 0.0));
+					return LogEntry.toString(fleetCalibrator.createASCDataProvider().getConcurrentMode2ASC().getOrDefault(mode, 0.0));
 				}
 			});
 		}

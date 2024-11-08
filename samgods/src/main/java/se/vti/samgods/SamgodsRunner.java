@@ -52,7 +52,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.calibration.ascs.ASCs;
+import se.vti.samgods.calibration.ascs.ASCDataProvider;
 import se.vti.samgods.calibration.ascs.TransportWorkAscCalibrator;
 import se.vti.samgods.calibration.ascs.TransportWorkMonitor;
 import se.vti.samgods.external.gis.NetworkFlows;
@@ -140,7 +140,7 @@ public class SamgodsRunner {
 	private TransportDemand transportDemand = null;
 
 	private TransportWorkAscCalibrator fleetCalibrator = null;
-	private ASCs ascs = null;
+	private ASCDataProvider ascDataProvider = null;
 
 	private String networkFlowsFileName = null;
 
@@ -431,14 +431,14 @@ public class SamgodsRunner {
 
 		if (this.config.getAscSourceFileName() != null) {
 			try {
-				this.ascs = ASCs.createFromFile(this.config.getAscSourceFileName(), this.vehicles);
+				this.ascDataProvider = ASCDataProvider.createFromFile(this.config.getAscSourceFileName(), this.vehicles);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		} else {
-			this.ascs = new ASCs();
+			this.ascDataProvider = new ASCDataProvider();
 		}
-		NetworkAndFleetDataProvider.updateASCs(this.ascs);
+//		NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
 		if (this.config.getAscCalibrationStepSize() != null) {
 			this.fleetCalibrator = new TransportWorkAscCalibrator(this.vehicles,
@@ -481,8 +481,8 @@ public class SamgodsRunner {
 								.getProviderInstance().createDataInstance();
 						final NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						final ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
-								new LinkedHashMap<>(this.commodity2scale), networkAndFleetData.getMode2asc(),
-								networkAndFleetData.getRailCommodity2asc());
+								new LinkedHashMap<>(this.commodity2scale), this.ascDataProvider.getConcurrentMode2ASC(),
+								this.ascDataProvider.getConcurrentRailCommodity2ASC());
 						final ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(
 								logisticChoiceDataProvider.createLogisticChoiceData(), nonTransportCostModel,
 								utilityFunction, jobQueue, allChoices);
@@ -566,7 +566,7 @@ public class SamgodsRunner {
 						NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider.getProviderInstance()
 								.createDataInstance();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								networkAndFleetData, jobQueue, consolidationUnit2assignment,
+								networkAndFleetData, this.ascDataProvider, jobQueue, consolidationUnit2assignment,
 								new LinkedHashMap<>(this.commodity2scale));
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
@@ -619,10 +619,10 @@ public class SamgodsRunner {
 				this.fleetCalibrator.update(transportWorkMonitor.getVehicleType2lastRealizedDomesticGTonKm(),
 						transportWorkMonitor.getMode2lastRealizedDomesticGTonKm(),
 						transportWorkMonitor.getCommodity2lastRealizedRailDomesticGTonKm(), iteration);
-				this.ascs = this.fleetCalibrator.createASCs();
+				this.ascDataProvider = this.fleetCalibrator.createASCDataProvider();
 			}
 
-			NetworkAndFleetDataProvider.updateASCs(this.ascs);
+//			NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
 			if ((iteration == this.maxIterations - 1)) {
 				if (this.networkFlowsFileName != null) {

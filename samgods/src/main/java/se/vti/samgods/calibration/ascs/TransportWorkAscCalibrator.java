@@ -317,15 +317,15 @@ public class TransportWorkAscCalibrator {
 		this.commodityRailAscTuner.update(c -> commodity2lastRealizedRailDomesticGTonKm.getOrDefault(c, 0.0));
 
 		try {
-			this.createASCs().writeToFile("./results/calibratedASCs/" + iteration + ".ascs.json");
+			this.createASCDataProvider().writeToFile("./results/calibratedASCs/" + iteration + ".ascs.json");
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 		this.ascLogger.log(this);
 	}
 
-	public ASCs createASCs() {
-		return new ASCs(this.createVehicleType2asc(), this.createMode2asc(), this.createRailCommodity2asc());
+	public ASCDataProvider createASCDataProvider() {
+		return new ASCDataProvider(this.createVehicleType2asc(), this.createMode2asc(), this.createRailCommodity2asc());
 	}
 
 //	public Map<VehicleGroup, Double> createGroup2asc() {

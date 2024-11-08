@@ -199,17 +199,17 @@ public class NetworkAndFleetData {
 		return this.dataProvider.getVehicleType2attributes();
 	}
 
-	public Map<VehicleType, Double> getVehicleType2asc() {
-		return this.dataProvider.getVehicleType2asc();
-	}
-
-	public Map<TransportMode, Double> getMode2asc() {
-		return this.dataProvider.getMode2asc();
-	}
-
-	public ConcurrentMap<Commodity, Double> getRailCommodity2asc() {
-		return this.dataProvider.getRailCommodity2asc();
-	}
+//	public Map<VehicleType, Double> getVehicleType2asc() {
+//		return this.dataProvider.getVehicleType2asc();
+//	}
+//
+//	public Map<TransportMode, Double> getMode2asc() {
+//		return this.dataProvider.getMode2asc();
+//	}
+//
+//	public ConcurrentMap<Commodity, Double> getRailCommodity2asc() {
+//		return this.dataProvider.getRailCommodity2asc();
+//	}
 
 	public Set<VehicleType> getCompatibleVehicleTypes(Commodity commodity, TransportMode mode, boolean isContainer) {
 		return this.dataProvider.getCommodity2transportMode2isContainer2compatibleVehicleTypes()

@@ -30,6 +30,7 @@ import org.matsim.vehicles.VehicleType;
 import floetteroed.utilities.Units;
 import se.vti.samgods.NetworkAndFleetData;
 import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.calibration.ascs.ASCDataProvider;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
@@ -50,6 +51,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 
 	private final NetworkAndFleetData networkAndFleetData;
+	private final ASCDataProvider ascDataProvider;
 
 	private final BlockingQueue<ConsolidationJob> jobQueue;
 	private final ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment;
@@ -61,11 +63,12 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public HalfLoopConsolidationJobProcessor(NetworkAndFleetData networkAndFleetData,
+	public HalfLoopConsolidationJobProcessor(NetworkAndFleetData networkAndFleetData, ASCDataProvider ascDataProvider,
 			BlockingQueue<ConsolidationJob> jobQueue,
 			ConcurrentHashMap<ConsolidationUnit, HalfLoopConsolidationJobProcessor.FleetAssignment> consolidationUnit2fleetAssignment,
 			final Map<Commodity, Double> commodity2scale) {
 		this.networkAndFleetData = networkAndFleetData;
+		this.ascDataProvider = ascDataProvider;
 		this.jobQueue = jobQueue;
 		this.consolidationUnit2fleetAssignment = consolidationUnit2fleetAssignment;
 		this.commodity2scale = commodity2scale;
@@ -261,7 +264,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				var assignment = this.dimensionFleetAssignment(realDemand_ton, vehicleType, job,
 						serviceIntervalActiveProba);
 				var utility = (-1.0) * scale * assignment.unitCost_1_tonKm * 0.5 * assignment.loopLength_km
-						* realDemand_ton + this.networkAndFleetData.getVehicleType2asc().getOrDefault(vehicleType, 0.0);
+						* realDemand_ton
+						+ this.ascDataProvider.getConcurrentVehicleType2ASC().getOrDefault(vehicleType, 0.0);
 				assignment2utility.put(assignment, utility);
 			}
 		}

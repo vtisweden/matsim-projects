@@ -41,7 +41,6 @@ import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.calibration.ascs.ASCs;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.network.SamgodsNodeAttributes;
 import se.vti.samgods.network.TransportModeMatching;
@@ -72,9 +71,9 @@ public class NetworkAndFleetDataProvider {
 
 	private final ConcurrentMap<VehicleType, ConcurrentMap<Id<Link>, BasicTransportCost>> vehicleType2linkId2unitCost = new ConcurrentHashMap<>();
 
-	private ConcurrentMap<VehicleType, Double> vehicleType2asc = new ConcurrentHashMap<>();
-	private ConcurrentMap<TransportMode, Double> mode2asc = new ConcurrentHashMap<>();
-	private ConcurrentMap<Commodity, Double> railCommodity2asc = new ConcurrentHashMap<>();
+//	private ConcurrentMap<VehicleType, Double> vehicleType2asc = new ConcurrentHashMap<>();
+//	private ConcurrentMap<TransportMode, Double> mode2asc = new ConcurrentHashMap<>();
+//	private ConcurrentMap<Commodity, Double> railCommodity2asc = new ConcurrentHashMap<>();
 
 	// -------------------- SINGLETON --------------------
 
@@ -85,12 +84,12 @@ public class NetworkAndFleetDataProvider {
 		instance = new NetworkAndFleetDataProvider(network, vehicles);
 	}
 
-	// TODO unsure if below should stay here, combine with the above?
-	public static void updateASCs(ASCs ascs) {
-		instance.vehicleType2asc = new ConcurrentHashMap<>(ascs.getVehicleTyp2ASC());
-		instance.mode2asc = new ConcurrentHashMap<>(ascs.getMode2ASC());
-		instance.railCommodity2asc = new ConcurrentHashMap<>(ascs.getRailCommodity2ASC());
-	}
+//	// TODO unsure if below should stay here, combine with the above?
+//	public static void updateASCs(ASCs ascs) {
+//		instance.vehicleType2asc = new ConcurrentHashMap<>(ascs.getVehicleTyp2ASC());
+//		instance.mode2asc = new ConcurrentHashMap<>(ascs.getMode2ASC());
+//		instance.railCommodity2asc = new ConcurrentHashMap<>(ascs.getRailCommodity2ASC());
+//	}
 
 	public static NetworkAndFleetDataProvider getProviderInstance() {
 		return instance;
@@ -130,8 +129,8 @@ public class NetworkAndFleetDataProvider {
 		this.vehicleType2attributes = new ConcurrentHashMap<>(vehicles.getVehicleTypes().values().stream()
 				.collect(Collectors.toMap(t -> t, t -> (SamgodsVehicleAttributes) t.getAttributes()
 						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME))));
-		this.vehicleType2asc = new ConcurrentHashMap<>(
-				vehicles.getVehicleTypes().values().stream().collect(Collectors.toMap(t -> t, t -> 0.0)));
+//		this.vehicleType2asc = new ConcurrentHashMap<>(
+//				vehicles.getVehicleTypes().values().stream().collect(Collectors.toMap(t -> t, t -> 0.0)));
 
 		final Map<String, Set<VehicleType>> networkMode2vehicleTypes = new LinkedHashMap<>();
 		final Set<VehicleType> ferryCompatibleRoadVehicleTypes = new LinkedHashSet<>();
@@ -234,15 +233,15 @@ public class NetworkAndFleetDataProvider {
 		return this.commodity2transportMode2isContainer2compatibleVehicleTypes;
 	}
 
-	ConcurrentMap<VehicleType, Double> getVehicleType2asc() {
-		return this.vehicleType2asc;
-	}
-
-	ConcurrentMap<TransportMode, Double> getMode2asc() {
-		return this.mode2asc;
-	}
-
-	ConcurrentMap<Commodity, Double> getRailCommodity2asc() {
-		return this.railCommodity2asc;
-	}
+//	ConcurrentMap<VehicleType, Double> getVehicleType2asc() {
+//		return this.vehicleType2asc;
+//	}
+//
+//	ConcurrentMap<TransportMode, Double> getMode2asc() {
+//		return this.mode2asc;
+//	}
+//
+//	ConcurrentMap<Commodity, Double> getRailCommodity2asc() {
+//		return this.railCommodity2asc;
+//	}
 }
