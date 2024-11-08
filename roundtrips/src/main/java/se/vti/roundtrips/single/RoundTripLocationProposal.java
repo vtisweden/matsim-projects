@@ -39,7 +39,6 @@ public class RoundTripLocationProposal<L extends Location> implements MHProposal
 
 	// -------------------- CONSTRUCTION --------------------
 
-	@Deprecated
 	public RoundTripLocationProposal(Scenario<L> scenario, PossibleTransitionFactory possibleTransitionFactory) {
 		this.scenario = scenario;
 		this.possibleTransitionFactory = possibleTransitionFactory;

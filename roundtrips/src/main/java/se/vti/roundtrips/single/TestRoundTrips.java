@@ -129,9 +129,17 @@ public class TestRoundTrips {
 		for (int i = 1; i <= 3; i++) {
 			scenario.getOrCreateLocationWithSameName(new Location("" + i));
 		}
+		scenario.setMaxParkingEpisodes(2);
+		scenario.setTimeBinCnt(24);
 
 		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
-		proposal.addProposal(new RoundTripLocationProposal<>(scenario), locationProba);
+		proposal.addProposal(new RoundTripLocationProposal<>(scenario, new PossibleTransitionFactory() {
+			@Override
+			public <L extends Location> PossibleTransitions<L> createPossibleTransitions(RoundTrip<L> state,
+					Scenario<L> scenario) {
+				return new PossibleTransitionsWithoutLocationConstraintsSimplified<>(state, scenario);
+			}
+		}), locationProba);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
@@ -185,9 +193,8 @@ public class TestRoundTrips {
 
 		};
 
-		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1"),
-				scenario.getLocation("2"), scenario.getLocation("3"), scenario.getLocation("2")),
-				Arrays.asList(1, 3, 5, 7));
+		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1")),
+				Arrays.asList(12));
 		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, state -> 0.0, rnd);
 		algo.addStateProcessor(prn);
 		algo.setMsgInterval(10000);
