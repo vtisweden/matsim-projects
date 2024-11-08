@@ -132,14 +132,15 @@ public class TestRoundTrips {
 		scenario.setMaxParkingEpisodes(2);
 		scenario.setTimeBinCnt(24);
 
-		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
-		proposal.addProposal(new RoundTripLocationProposal<>(scenario, new PossibleTransitionFactory() {
+		PossibleTransitionFactory possibleTransitionFactory = new PossibleTransitionFactory() {
 			@Override
 			public <L extends Location> PossibleTransitions<L> createPossibleTransitions(RoundTrip<L> state,
 					Scenario<L> scenario) {
 				return new PossibleTransitionsWithoutLocationConstraintsSimplified<>(state, scenario);
 			}
-		}), locationProba);
+		};		
+		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
+		proposal.addProposal(new RoundTripLocationProposal<>(scenario, possibleTransitionFactory), locationProba);
 		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
