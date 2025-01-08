@@ -35,7 +35,7 @@ import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
-import se.vti.samgods.utils.ChoiceModelUtils;
+import se.vti.utils.misc.math.LogitChoiceModel;
 
 /**
  * 
@@ -269,7 +269,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 				assignment2utility.put(assignment, utility);
 			}
 		}
-		return new ChoiceModelUtils().choose(assignment2utility.keySet().stream().toList(),
+		return new LogitChoiceModel().choose(assignment2utility.keySet().stream().toList(),
 				a -> assignment2utility.get(a));
 	}
 }

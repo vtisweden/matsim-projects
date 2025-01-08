@@ -34,7 +34,7 @@ import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.costs.NonTransportCost;
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.utils.ChoiceModelUtils;
+import se.vti.utils.misc.math.LogitChoiceModel;
 
 /**
  * 
@@ -45,7 +45,7 @@ public class ChoiceJobProcessor implements Runnable {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final ChoiceModelUtils choiceModel = new ChoiceModelUtils();
+	private final LogitChoiceModel choiceModel = new LogitChoiceModel();
 
 	private final LogisticChoiceData choiceData;
 

@@ -96,7 +96,7 @@ public class SamgodsRunner {
 
 	private final static int defautServiceInterval_days = 7;
 
-	private final static int defaultMaxIterations = 5;
+//	private final static int defaultMaxIterations = 5;
 
 	private final static boolean defaultEnforceReroute = false;
 
@@ -119,7 +119,7 @@ public class SamgodsRunner {
 	// TODO concurrency?
 	private final Map<SamgodsConstants.Commodity, Integer> commodity2serviceInterval_days = new LinkedHashMap<>();
 
-	private int maxIterations;
+//	private int maxIterations;
 
 	private boolean enforceReroute;
 
@@ -157,7 +157,7 @@ public class SamgodsRunner {
 		this.setConsideredCommodities(defaultConsideredCommodities);
 		this.setMaxThreads(defaultMaxThreads);
 		this.setServiceInterval_days(defautServiceInterval_days);
-		this.setMaxIterations(defaultMaxIterations);
+//		this.setMaxIterations(defaultMaxIterations);
 		this.setEnforceReroute(defaultEnforceReroute);
 		this.setSamplingRate(defaultSamplingRate);
 	}
@@ -185,10 +185,10 @@ public class SamgodsRunner {
 		return this;
 	}
 
-	public SamgodsRunner setMaxIterations(int maxIterations) {
-		this.maxIterations = maxIterations;
-		return this;
-	}
+//	public SamgodsRunner setMaxIterations(int maxIterations) {
+//		this.maxIterations = maxIterations;
+//		return this;
+//	}
 
 	public SamgodsRunner setEnforceReroute(boolean enforceReroute) {
 		this.enforceReroute = enforceReroute;
@@ -457,7 +457,7 @@ public class SamgodsRunner {
 			}
 		}
 
-		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
+		for (int iteration = 0; iteration < this.config.getMaxIterations(); iteration++) {
 			log.info("STARTING ITERATION " + iteration);
 
 			/*
@@ -477,8 +477,8 @@ public class SamgodsRunner {
 				log.info("Starting " + threadCnt + " choice simulation threads.");
 				try {
 					for (int i = 0; i < threadCnt; i++) {
-						final NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider
-								.getProviderInstance().createDataInstance();
+//						final NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider
+//								.getProviderInstance().createDataInstance();
 						final NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						final ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
 								new LinkedHashMap<>(this.commodity2scale), this.ascDataProvider.getConcurrentMode2ASC(),
@@ -624,7 +624,7 @@ public class SamgodsRunner {
 
 //			NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
-			if ((iteration == this.maxIterations - 1)) {
+			if ((iteration == this.config.getMaxIterations() - 1)) {
 				if (this.networkFlowsFileName != null) {
 					new NetworkFlows().add(consolidationUnit2assignment).writeToFile(this.networkFlowsFileName);
 				}
