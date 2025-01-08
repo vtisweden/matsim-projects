@@ -88,7 +88,7 @@ public class TestSamgods {
 				.setScale(Commodity.FURNITURE, scaleFactor * 0.0002)
 				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
 				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
-				.setMaxIterations(50).setEnforceReroute(false);
+				.setEnforceReroute(false);
 
 		runner.loadVehiclesOtherThan("WG950", "KOMXL", "SYSXL", "WGEXL", "HGV74", "ROF7", "RAF5", "INW", "ROF2", "ROF5");
 //		runner.checkAvailableVehicles();

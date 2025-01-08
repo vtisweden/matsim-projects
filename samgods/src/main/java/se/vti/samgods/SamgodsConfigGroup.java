@@ -41,6 +41,20 @@ public class SamgodsConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
+	private Integer maxIterations = null;
+
+	@StringGetter("maxIterations")
+	public Integer getMaxIterations() {
+		return this.maxIterations;
+	}
+
+	@StringSetter("maxIterations")
+	public void setMaxIterations(Integer maxIterations) {
+		this.maxIterations = maxIterations;
+	}
+
+	//
+
 	private String ascSourceFileName = null;
 
 	@StringGetter("ascSourceFileName")
