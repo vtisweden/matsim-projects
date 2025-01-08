@@ -65,29 +65,29 @@ public class ASCTuner<A> {
 	}
 
 	public void update(Function<A, Double> alternative2realized) {
-		final double realizedTotal = this.alternative2target.keySet().stream()
-				.mapToDouble(a -> alternative2realized.apply(a)).sum();
-		final double tmpTargetTotal = (this.targetTotal == null ? realizedTotal : this.targetTotal);
-		final double lnT0;
-		final double lnP0;
+//		final double realizedTotal = this.alternative2target.keySet().stream()
+//				.mapToDouble(a -> alternative2realized.apply(a)).sum();
+//		final double tmpTargetTotal = (this.targetTotal == null ? realizedTotal : this.targetTotal);
+//		final double lnT0;
+//		final double lnP0;
 
-		if (realizedTotal <= tmpTargetTotal) {
-			final double targetSlack = this.relativeSlack * tmpTargetTotal;
-			final double realSlack = (tmpTargetTotal + targetSlack) - realizedTotal;
-			lnT0 = Math.log(Math.max(this.minProba, targetSlack));
-			lnP0 = Math.log(Math.max(this.minProba, realSlack));
-		} else {
-			final double realSlack = this.relativeSlack * realizedTotal;
-			final double targetSlack = (realizedTotal + realSlack) - tmpTargetTotal;
-			lnT0 = Math.log(Math.max(this.minProba, targetSlack));
-			lnP0 = Math.log(Math.max(this.minProba, realSlack));
-		}
+//		if (realizedTotal <= tmpTargetTotal) {
+//			final double targetSlack = this.relativeSlack * tmpTargetTotal;
+//			final double realSlack = (tmpTargetTotal + targetSlack) - realizedTotal;
+//			lnT0 = Math.log(Math.max(this.minProba, targetSlack));
+//			lnP0 = Math.log(Math.max(this.minProba, realSlack));
+//		} else {
+//			final double realSlack = this.relativeSlack * realizedTotal;
+//			final double targetSlack = (realizedTotal + realSlack) - tmpTargetTotal;
+//			lnT0 = Math.log(Math.max(this.minProba, targetSlack));
+//			lnP0 = Math.log(Math.max(this.minProba, realSlack));
+//		}
 
 		for (Map.Entry<A, Double> e : this.alternative2target.entrySet()) {
 			final A alternative = e.getKey();
 			final double lnT = Math.log(Math.max(this.minProba, e.getValue()));
 			final double lnP = Math.log(Math.max(this.minProba, alternative2realized.apply(alternative)));
-			final double deltaASC = (lnT - lnP) - (lnT0 - lnP0);
+			final double deltaASC = (lnT - lnP); // - (lnT0 - lnP0); // TODO same slack offset for all alternatives
 			this.alternative2asc.compute(alternative, (alt, asc) -> asc + this.updateStepSize * deltaASC);
 		}
 	}
