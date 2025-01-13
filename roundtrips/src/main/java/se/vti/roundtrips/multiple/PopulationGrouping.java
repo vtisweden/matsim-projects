@@ -86,6 +86,44 @@ public class PopulationGrouping {
 		};
 	}
 
+	// >>> TODO Experimental 2025-01-13 >>>
+	
+	public <L extends Location> Function<MultiRoundTrip<L>, MultiRoundTrip<L>> createMultiGroupFilter(
+			String... groups) {
+		this.ensureIndexing();
+		return new Function<>() {
+			@Override
+			public MultiRoundTrip<L> apply(
+					MultiRoundTrip<L> multiRoundTrip) {
+
+				final int[] indicators = new int[populationSize];
+				for (String group : groups) {
+					for (int index : group2indices.get(group)) {
+						indicators[index] = 1;
+					}
+				}
+				
+				final MultiRoundTrip<L> result = new MultiRoundTrip<>(Arrays.stream(indicators).sum());
+				int j = 0;
+				for (int i = 0; i < indicators.length; i++) {
+					if (indicators[i] == 1) {
+						result.setRoundTrip(j++, multiRoundTrip.getRoundTrip(i));
+					}
+				}
+				return result;
+				
+//				final int[] indices = group2indices.get(group);
+//				MultiRoundTrip<L> result = new MultiRoundTrip<>(indices.length);
+//				for (int i = 0; i < indices.length; i++) {
+//					result.setRoundTrip(i, multiRoundTrip.getRoundTrip(indices[i]));
+//				}
+//				return result;
+			}
+		};
+	}
+
+	// <<< TODO Experimental 2025-01-13 <<<
+	
 	public static void main(String[] args) {
 		for (int size = 10; size <= 10; size++) {
 
