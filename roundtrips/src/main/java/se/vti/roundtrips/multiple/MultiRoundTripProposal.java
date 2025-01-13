@@ -76,6 +76,11 @@ public class MultiRoundTripProposal<L extends Location> implements MHProposal<Mu
 			for (int i = 0; i < state.size(); i++) {
 				if (this.rnd.nextDouble() < flipProba) {
 					MHTransition<RoundTrip<L>> transition = this.singleProposal.newTransition(state.getRoundTrip(i));
+					
+					// >>> TODO 2025-01-13 experimental >>>					
+					newState.getRoundTrip(i).setEpisodes(this.singleProposal.getSimulator().simulate(newState.getRoundTrip(i)));
+					// <<< TODO 2025-01-13 experimental <<<
+
 					newState.setRoundTrip(i, transition.getNewState());
 					fwdLogProba += Math.log(flipProba) + transition.getFwdLogProb();
 					bwdLogProba += Math.log(flipProba) + transition.getBwdLogProb();
