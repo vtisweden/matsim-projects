@@ -69,13 +69,11 @@ public class PopulationGrouping {
 				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().stream().mapToInt(i -> i).toArray()));
 	}
 
-	public <L extends Location> Function<MultiRoundTrip<L>, MultiRoundTrip<L>> createFilter(
-			String group) {
+	public <L extends Location> Function<MultiRoundTrip<L>, MultiRoundTrip<L>> createFilter(String group) {
 		this.ensureIndexing();
 		return new Function<>() {
 			@Override
-			public MultiRoundTrip<L> apply(
-					MultiRoundTrip<L> multiRoundTrip) {
+			public MultiRoundTrip<L> apply(MultiRoundTrip<L> multiRoundTrip) {
 				final int[] indices = group2indices.get(group);
 				MultiRoundTrip<L> result = new MultiRoundTrip<>(indices.length);
 				for (int i = 0; i < indices.length; i++) {
@@ -87,14 +85,13 @@ public class PopulationGrouping {
 	}
 
 	// >>> TODO Experimental 2025-01-13 >>>
-	
+
 	public <L extends Location> Function<MultiRoundTrip<L>, MultiRoundTrip<L>> createMultiGroupFilter(
-			String... groups) {
+			Function<Integer, MultiRoundTrip<L>> sizeToMultiRoundTripSubtype, String... groups) {
 		this.ensureIndexing();
 		return new Function<>() {
 			@Override
-			public MultiRoundTrip<L> apply(
-					MultiRoundTrip<L> multiRoundTrip) {
+			public MultiRoundTrip<L> apply(MultiRoundTrip<L> multiRoundTrip) {
 
 				final int[] indicators = new int[populationSize];
 				for (String group : groups) {
@@ -102,8 +99,8 @@ public class PopulationGrouping {
 						indicators[index] = 1;
 					}
 				}
-				
-				final MultiRoundTrip<L> result = new MultiRoundTrip<>(Arrays.stream(indicators).sum());
+
+				final MultiRoundTrip<L> result = sizeToMultiRoundTripSubtype.apply(Arrays.stream(indicators).sum());
 				int j = 0;
 				for (int i = 0; i < indicators.length; i++) {
 					if (indicators[i] == 1) {
@@ -111,7 +108,7 @@ public class PopulationGrouping {
 					}
 				}
 				return result;
-				
+
 //				final int[] indices = group2indices.get(group);
 //				MultiRoundTrip<L> result = new MultiRoundTrip<>(indices.length);
 //				for (int i = 0; i < indices.length; i++) {
@@ -123,7 +120,7 @@ public class PopulationGrouping {
 	}
 
 	// <<< TODO Experimental 2025-01-13 <<<
-	
+
 	public static void main(String[] args) {
 		for (int size = 10; size <= 10; size++) {
 
