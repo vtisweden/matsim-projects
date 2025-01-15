@@ -48,7 +48,7 @@ public class RoundTripDepartureProposal<L extends Location> implements MHProposa
 
 	public synchronized static Integer drawUnusedDeparture(RoundTrip<?> state, Scenario<?> scenario) {
 		// TODO Not ideal, handle this upstream:
-		if (state.locationCnt() == scenario.getLocationCnt()) {
+		if (state.locationCnt() == scenario.getBinCnt()) {
 			throw new RuntimeException("No space for inserting a departure time bin.");
 		}		
 		while (true) {
