@@ -57,13 +57,8 @@ public class TransportWorkAscCalibrator {
 	// -------------------- MEMBERS --------------------
 
 	final Map<VehicleGroup, Double> group2targetDomesticGTonKm;
-//	Map<VehicleGroup, Double> group2lastRealizedDomesticGTonKm = null;
-
 	final Map<TransportMode, Double> mode2targetDomesticGTonKm;
-//	Map<TransportMode, Double> mode2lastRealizedDomesticGTonKm = null;
-
 	final Map<Commodity, Double> commodity2railTargetDomesticGTonKm;
-//	Map<Commodity, Double> commodity2lastRealizedRailDomesticGTonKm = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -89,15 +84,15 @@ public class TransportWorkAscCalibrator {
 		this.vehicleType2group.put(this.name2type("HGV60"), VehicleGroup.HGV60_X);
 		this.vehicleType2group.put(this.name2type("HGV60_CONTAINER"), VehicleGroup.HGV60_X);
 
-		this.group2mode.put(VehicleGroup.MGV16_X, TransportMode.Road);
-		this.group2mode.put(VehicleGroup.MGV24_X, TransportMode.Road);
-		this.group2mode.put(VehicleGroup.HGV40_X, TransportMode.Road);
-		this.group2mode.put(VehicleGroup.HGV60_X, TransportMode.Road);
-
 		this.group2targetDomesticGTonKm.put(VehicleGroup.MGV16_X, 0.3);
 		this.group2targetDomesticGTonKm.put(VehicleGroup.MGV24_X, 0.4);
 		this.group2targetDomesticGTonKm.put(VehicleGroup.HGV40_X, 12.2);
 		this.group2targetDomesticGTonKm.put(VehicleGroup.HGV60_X, 39.1);
+
+		this.group2mode.put(VehicleGroup.MGV16_X, TransportMode.Road);
+		this.group2mode.put(VehicleGroup.MGV24_X, TransportMode.Road);
+		this.group2mode.put(VehicleGroup.HGV40_X, TransportMode.Road);
+		this.group2mode.put(VehicleGroup.HGV60_X, TransportMode.Road);
 
 		/*
 		 * RAIL
@@ -116,13 +111,13 @@ public class TransportWorkAscCalibrator {
 		this.vehicleType2group.put(this.name2type("WG750"), VehicleGroup.RAIL_WAGON);
 		this.vehicleType2group.put(this.name2type("WG750_CONTAINER"), VehicleGroup.RAIL_WAGON);
 
-		this.group2mode.put(VehicleGroup.RAIL_COMBI, TransportMode.Rail);
-		this.group2mode.put(VehicleGroup.RAIL_SYSTEM, TransportMode.Rail);
-		this.group2mode.put(VehicleGroup.RAIL_WAGON, TransportMode.Rail);
-
 		this.group2targetDomesticGTonKm.put(VehicleGroup.RAIL_COMBI, 5.96);
 		this.group2targetDomesticGTonKm.put(VehicleGroup.RAIL_SYSTEM, 8.61);
 		this.group2targetDomesticGTonKm.put(VehicleGroup.RAIL_WAGON, 8.25);
+
+		this.group2mode.put(VehicleGroup.RAIL_COMBI, TransportMode.Rail);
+		this.group2mode.put(VehicleGroup.RAIL_SYSTEM, TransportMode.Rail);
+		this.group2mode.put(VehicleGroup.RAIL_WAGON, TransportMode.Rail);
 
 		/*
 		 * SEA
@@ -163,9 +158,9 @@ public class TransportWorkAscCalibrator {
 		this.vehicleType2group.put(this.name2type("RO10"), VehicleGroup.SEA);
 		this.vehicleType2group.put(this.name2type("RO10_CONTAINER"), VehicleGroup.SEA);
 
-		this.group2mode.put(VehicleGroup.SEA, TransportMode.Sea);
-
 		this.group2targetDomesticGTonKm.put(VehicleGroup.SEA, 29.61);
+
+		this.group2mode.put(VehicleGroup.SEA, TransportMode.Sea);
 
 		/*
 		 * TARGETS AND ASC TUNERS.

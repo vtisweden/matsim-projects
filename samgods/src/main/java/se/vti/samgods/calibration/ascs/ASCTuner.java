@@ -83,12 +83,22 @@ public class ASCTuner<A> {
 //			lnP0 = Math.log(Math.max(this.minProba, realSlack));
 //		}
 
+		final Map<A, Double> alternative2deltaASC = new LinkedHashMap<>();
 		for (Map.Entry<A, Double> e : this.alternative2target.entrySet()) {
 			final A alternative = e.getKey();
 			final double lnT = Math.log(Math.max(this.minProba, e.getValue()));
 			final double lnP = Math.log(Math.max(this.minProba, alternative2realized.apply(alternative)));
-			final double deltaASC = (lnT - lnP); // - (lnT0 - lnP0); // TODO same slack offset for all alternatives
-			this.alternative2asc.compute(alternative, (alt, asc) -> asc + this.updateStepSize * deltaASC);
+			final double deltaASC = (lnT - lnP); // - (lnT0 - lnP0); // TODO same slack offset for all alternatives			
+			alternative2deltaASC.put(alternative, deltaASC);
+//			this.alternative2asc.compute(alternative, (alt, asc) -> asc + this.updateStepSize * deltaASC);
 		}
+
+		final double meanASC = alternative2deltaASC.values().stream().mapToDouble(v -> v).average().getAsDouble();
+		for (Map.Entry<A, Double> e : alternative2deltaASC.entrySet()) {
+			final A alternative = e.getKey();
+			final double deltaASC = e.getValue();
+			this.alternative2asc.compute(alternative, (alt, asc) -> asc + this.updateStepSize * (deltaASC - meanASC));
+		}
+
 	}
 }
