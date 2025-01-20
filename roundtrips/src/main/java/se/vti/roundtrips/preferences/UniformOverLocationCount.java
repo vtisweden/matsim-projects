@@ -38,7 +38,7 @@ public class UniformOverLocationCount<R extends RoundTrip<L>, L extends Location
 	public UniformOverLocationCount(Scenario<?> scenario) {
 		this.correctDepartureCombinations = new RoundTripIgnoreDepartureCombinations(scenario.getBinCnt());
 		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinations(scenario.getLocationCnt(),
-				scenario.getMaxParkingEpisodes());
+				scenario.getMaxPStayEpisodes());
 	}
 
 	@Override

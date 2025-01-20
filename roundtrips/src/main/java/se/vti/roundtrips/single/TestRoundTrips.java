@@ -129,7 +129,7 @@ public class TestRoundTrips {
 		for (int i = 1; i <= 3; i++) {
 			scenario.getOrCreateLocationWithSameName(new Location("" + i));
 		}
-		scenario.setMaxParkingEpisodes(2);
+		scenario.setMaxStayEpisodes(2);
 		scenario.setTimeBinCnt(24);
 
 		PossibleTransitionFactory possibleTransitionFactory = new PossibleTransitionFactory() {

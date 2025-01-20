@@ -69,7 +69,7 @@ public class PossibleTransitionsWithAlternatingLocations<L extends Location> imp
 			// analyze inserts
 
 			final List<L> localInserts;
-			if (state.locationCnt() == scenario.getMaxParkingEpisodes()) {
+			if (state.locationCnt() == scenario.getMaxPStayEpisodes()) {
 				localInserts = Collections.emptyList();
 			} else {
 				localInserts = new ArrayList<>(scenario.getLocationsView());
@@ -107,7 +107,7 @@ public class PossibleTransitionsWithAlternatingLocations<L extends Location> imp
 		// analyze appends-to end of list
 
 		final List<L> lastInserts;
-		if (state.locationCnt() == scenario.getMaxParkingEpisodes()) {
+		if (state.locationCnt() == scenario.getMaxPStayEpisodes()) {
 			lastInserts = Collections.emptyList();
 		} else {
 			lastInserts = new ArrayList<>(scenario.getLocationsView());

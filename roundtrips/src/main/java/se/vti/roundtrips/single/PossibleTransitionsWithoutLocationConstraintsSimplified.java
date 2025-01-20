@@ -66,7 +66,7 @@ public class PossibleTransitionsWithoutLocationConstraintsSimplified<L extends L
 
 		// >>> NEW >>>
 
-		if (state.locationCnt() < Math.min(scenario.getMaxParkingEpisodes(), scenario.getBinCnt() - 1)) {
+		if (state.locationCnt() < Math.min(scenario.getMaxPStayEpisodes(), scenario.getBinCnt() - 1)) {
 			this.possibleInserts = IntStream.rangeClosed(0, state.locationCnt()).boxed().toList();
 		} else {
 			this.possibleInserts = Collections.emptyList();

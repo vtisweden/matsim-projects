@@ -39,9 +39,9 @@ public class Scenario<L extends Location> {
 	private final Random rnd = new Random();
 
 	private int timeBinCnt = 24;
-	private int maxParkingEpisodes = 4;
+	
+	private int maxStayEpisodes = 4;
 
-	// private final Set<L> locations = new LinkedHashSet<>();
 	private final Map<String, L> name2location = new LinkedHashMap<>();
 
 	private final Map<Tuple<L, L>, Double> od2distance_km = new LinkedHashMap<>();
@@ -63,14 +63,6 @@ public class Scenario<L extends Location> {
 		}
 	}
 
-//	public L createAndAddLocation(String name) {
-//		L result = (L) this.locationFactory.createLocation(name);
-////		this.name2location.put(name, result);
-////		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
-//		this.addLocation(result);
-//		return result;
-//	}
-
 	public Random getRandom() {
 		return this.rnd;
 	}
@@ -87,14 +79,6 @@ public class Scenario<L extends Location> {
 	public L getLocation(String name) {
 		return this.name2location.get(name);
 	}
-
-//	public L getOrCreateAndAddLocation(String name) {
-//		L loc = this.name2location.get(name);
-//		if (loc == null) {
-//			loc = this.createAndAddLocation(name);
-//		}
-//		return loc;
-//	}
 
 	public void setDistance_km(L from, L to, double dist_km) {
 		Tuple<L, L> od = new Tuple<>(from, to);
@@ -153,11 +137,11 @@ public class Scenario<L extends Location> {
 		this.timeBinCnt = timeBinCnt;
 	}
 
-	public void setMaxParkingEpisodes(int maxParkingEpisodes) {
-		this.maxParkingEpisodes = maxParkingEpisodes;
+	public void setMaxStayEpisodes(int maxStayEpisodes) {
+		this.maxStayEpisodes = maxStayEpisodes;
 	}
 
-	public int getMaxParkingEpisodes() {
-		return this.maxParkingEpisodes;
+	public int getMaxPStayEpisodes() {
+		return this.maxStayEpisodes;
 	}
 }
