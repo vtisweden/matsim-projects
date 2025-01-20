@@ -17,13 +17,12 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.targets;
+package se.vti.roundtrips.preferences;
 
 import java.util.Arrays;
 import java.util.function.Function;
 
 import se.vti.roundtrips.multiple.MultiRoundTrip;
-import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.roundtrips.single.Location;
 
 /**
@@ -31,7 +30,7 @@ import se.vti.roundtrips.single.Location;
  * @author GunnarF
  *
  */
-public abstract class Target<L extends Location> extends PreferenceComponent<MultiRoundTrip<L>> {
+public abstract class MultiRoundTripPreferenceComponent<L extends Location> extends PreferenceComponent<MultiRoundTrip<L>> {
 
 	private double lastDeviationError;
 	private double lastDiscretizationError;
@@ -41,7 +40,7 @@ public abstract class Target<L extends Location> extends PreferenceComponent<Mul
 
 	private Function<MultiRoundTrip<L>, MultiRoundTrip<L>> filter = m -> m;
 
-	public Target() {
+	public MultiRoundTripPreferenceComponent() {
 	}
 
 	public void setFilter(Function<MultiRoundTrip<L>, MultiRoundTrip<L>> filter) {
