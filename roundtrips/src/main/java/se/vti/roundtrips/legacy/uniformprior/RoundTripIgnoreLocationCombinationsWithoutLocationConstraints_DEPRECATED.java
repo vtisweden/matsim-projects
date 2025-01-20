@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.roundtrips.legacy.uniformprior;
 
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
@@ -27,11 +28,11 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  *
  * @param <L>
  */
-public class RoundTripIgnoreLocationCombinationsWithoutLocationConstraints implements MHWeight<RoundTrip<?>> {
+public class RoundTripIgnoreLocationCombinationsWithoutLocationConstraints_DEPRECATED implements MHWeight<RoundTrip<?>> {
 
 	private final double logOfAvailableLocationCnt;
 
-	public RoundTripIgnoreLocationCombinationsWithoutLocationConstraints(int availableLocationCnt) {
+	public RoundTripIgnoreLocationCombinationsWithoutLocationConstraints_DEPRECATED(int availableLocationCnt) {
 		this.logOfAvailableLocationCnt = Math.log(availableLocationCnt);
 	}
 

@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.roundtrips.legacy.uniformprior;
 
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
@@ -27,13 +28,13 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  *
  * @param <L>
  */
-public class RoundTripIgnoreLocationCombinations implements MHWeight<RoundTrip<?>> {
+public class RoundTripIgnoreLocationCombinations_DEPRECATED implements MHWeight<RoundTrip<?>> {
 
 	private final int locationCnt;
 
 	private double[] size;
 
-	public RoundTripIgnoreLocationCombinations(int locationCnt, int maxLength) {
+	public RoundTripIgnoreLocationCombinations_DEPRECATED(int locationCnt, int maxLength) {
 		this.locationCnt = locationCnt;
 		this.size = new double[maxLength];
 		for (int length = 1; length <= maxLength; length++) {
@@ -105,13 +106,13 @@ public class RoundTripIgnoreLocationCombinations implements MHWeight<RoundTrip<?
 		}
 
 		{
-			System.out.println(new RoundTripIgnoreLocationCombinations(7, 4).size(4));
+			System.out.println(new RoundTripIgnoreLocationCombinations_DEPRECATED(7, 4).size(4));
 
 		}
 
 		for (int _N = 1; _N <= 10; _N++) {
 			for (int _J = 4; _J <= _N; _J++) {
-				RoundTripIgnoreLocationCombinations obj = new RoundTripIgnoreLocationCombinations(_N, _J);
+				RoundTripIgnoreLocationCombinations_DEPRECATED obj = new RoundTripIgnoreLocationCombinations_DEPRECATED(_N, _J);
 				double size1 = obj.size(_J);
 
 				double size2 = _N * Math.pow(_N - 1.0, _J - 2.0) ;

@@ -17,28 +17,27 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.legacy.uniformprior;
 
 import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
-import se.vti.roundtrips.single.RoundTripIgnoreDepartureCombinations;
-import se.vti.roundtrips.single.RoundTripIgnoreLocationCombinationsWithoutLocationConstraints;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class UniformOverLocationCountWithoutLocationConstraints<R extends RoundTrip<L>, L extends Location>
+public class UniformOverLocationCountWithoutLocationConstraints_DEPRECATED<R extends RoundTrip<L>, L extends Location>
 		extends PreferenceComponent<R> {
 
-	private final RoundTripIgnoreDepartureCombinations correctDepartureCombinations;
-	private final RoundTripIgnoreLocationCombinationsWithoutLocationConstraints correctLocationCombinations;
+	private final RoundTripIgnoreDepartureCombinations_DEPRECATED correctDepartureCombinations;
+	private final RoundTripIgnoreLocationCombinationsWithoutLocationConstraints_DEPRECATED correctLocationCombinations;
 
-	public UniformOverLocationCountWithoutLocationConstraints(Scenario<?> scenario) {
-		this.correctDepartureCombinations = new RoundTripIgnoreDepartureCombinations(scenario.getBinCnt());
-		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinationsWithoutLocationConstraints(
+	public UniformOverLocationCountWithoutLocationConstraints_DEPRECATED(Scenario<?> scenario) {
+		this.correctDepartureCombinations = new RoundTripIgnoreDepartureCombinations_DEPRECATED(scenario.getBinCnt());
+		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinationsWithoutLocationConstraints_DEPRECATED(
 				scenario.getLocationCnt());
 	}
 
