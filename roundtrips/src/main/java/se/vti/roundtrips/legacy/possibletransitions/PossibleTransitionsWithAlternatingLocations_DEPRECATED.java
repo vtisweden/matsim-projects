@@ -17,20 +17,22 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.roundtrips.legacy.possibletransitions;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class PossibleTransitionsWithAlternatingLocations<L extends Location> implements PossibleTransitions<L> {
+public class PossibleTransitionsWithAlternatingLocations_DEPRECATED<L extends Location> implements PossibleTransitions_DEPRECATED<L> {
 
 	private final Scenario<L> scenario;
 	
@@ -45,7 +47,7 @@ public class PossibleTransitionsWithAlternatingLocations<L extends Location> imp
 	final double removeProba;
 	final double flipProba;
 
-	public PossibleTransitionsWithAlternatingLocations(RoundTrip<L> state, Scenario<L> scenario) {
+	public PossibleTransitionsWithAlternatingLocations_DEPRECATED(RoundTrip<L> state, Scenario<L> scenario) {
 		
 		this.scenario = scenario;
 		

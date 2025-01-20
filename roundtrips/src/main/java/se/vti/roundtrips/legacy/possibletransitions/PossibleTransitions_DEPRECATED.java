@@ -17,17 +17,30 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.roundtrips.legacy.possibletransitions;
 
-import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.single.Location;
 
-/**
- * 
- * @author GunnarF
- *
- */
-public interface PossibleTransitionFactory {
+public interface PossibleTransitions_DEPRECATED<L extends Location> {
 
-	public <L extends Location> PossibleTransitions<L> createPossibleTransitions(RoundTrip<L> state, Scenario<L> scenario);
+	double getInsertProba();
+	double getRemoveProba();
+	double getFlipProba();
 	
+	int drawInsertIndex();
+
+	L drawInsertValue(int index);
+
+	int drawRemoveIndex();
+
+	int drawFlipIndex();
+
+	L drawFlipValue(int index);
+
+	double concreteInsertProba(int index);
+
+	double concreteRemoveProba();
+
+	double concreteFlipProba(int index);
+
 }

@@ -19,26 +19,119 @@
  */
 package se.vti.roundtrips.single;
 
-public interface PossibleTransitions<L extends Location> {
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.IntStream;
 
-	double getInsertProba();
-	double getRemoveProba();
-	double getFlipProba();
-	
-	int drawInsertIndex();
+import se.vti.roundtrips.model.Scenario;
 
-	L drawInsertValue(int index);
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+class PossibleTransitions<L extends Location> {
 
-	int drawRemoveIndex();
+	private final RoundTrip<L> fromState;
 
-	int drawFlipIndex();
+	private final Scenario<L> scenario;
 
-	L drawFlipValue(int index);
+	final List<Integer> possibleInserts;
+	final List<Integer> possibleRemoves;
+	final List<Integer> possibleFlips;
 
-	double concreteInsertProba(int index);
+	final double insertProba;
+	final double removeProba;
+	final double flipProba;
 
-	double concreteRemoveProba();
+	PossibleTransitions(RoundTrip<L> state, Scenario<L> scenario) {
 
-	double concreteFlipProba(int index);
+		this.fromState = state;
+		this.scenario = scenario;
 
+		if (state.locationCnt() < Math.min(scenario.getMaxPStayEpisodes(), scenario.getBinCnt() - 1)) {
+			this.possibleInserts = IntStream.rangeClosed(0, state.locationCnt()).boxed().toList();
+		} else {
+			this.possibleInserts = Collections.emptyList();
+		}
+
+		if (state.locationCnt() > 1) {
+			this.possibleRemoves = IntStream.range(0, state.locationCnt()).boxed().toList();
+		} else {
+			this.possibleRemoves = Collections.emptyList();
+		}
+
+		this.possibleFlips = IntStream.range(0, state.locationCnt()).boxed().toList();
+
+		final double insertIndicator = (this.possibleInserts.size() > 0 ? 1.0 : 0.0);
+		final double removeIndicator = (this.possibleRemoves.size() > 0 ? 1.0 : 0.0);
+		final double flipIndicator = (this.possibleFlips.size() > 0 ? 1.0 : 0.0);
+
+		// derived quantities
+
+		assert (insertIndicator + removeIndicator + flipIndicator > 0);
+		this.insertProba = insertIndicator / (insertIndicator + removeIndicator + flipIndicator);
+		this.removeProba = removeIndicator / (insertIndicator + removeIndicator + flipIndicator);
+		this.flipProba = flipIndicator / (insertIndicator + removeIndicator + flipIndicator);
+	}
+
+	private <X> X draw(List<X> list) {
+		return list.get(this.scenario.getRandom().nextInt(list.size()));
+	}
+
+	double getInsertProba() {
+		return this.insertProba;
+	}
+
+	double getRemoveProba() {
+		return this.removeProba;
+	}
+
+	double getFlipProba() {
+		return this.flipProba;
+	}
+
+	int drawInsertIndex() {
+		return this.draw(this.possibleInserts);
+	}
+
+	int drawRemoveIndex() {
+		return this.draw(this.possibleRemoves);
+	}
+
+	int drawFlipIndex() {
+		return this.draw(this.possibleFlips);
+	}
+
+	L drawInsertValue(int index) {
+		return this.draw(this.scenario.getLocationsView());
+	}
+
+	L drawFlipValue(int index) {
+		while (true) {
+			L newValue = this.draw(this.scenario.getLocationsView());
+			if (!newValue.equals(this.fromState.getLocation(index))) {
+				return newValue;
+			}
+		}
+	}
+
+	double concreteInsertProba(int index) {
+		return this.insertProba // insert at all
+				* (1.0 / (this.fromState.locationCnt() + 1)) // where in the plan to insert
+				* (1.0 / (this.scenario.getBinCnt() - this.fromState.locationCnt())) // which timeslot
+				* (1.0 / this.scenario.getLocationCnt()); // which location
+	}
+
+	double concreteRemoveProba() {
+		return this.removeProba // remove at all
+				* (1.0 / this.fromState.locationCnt()) // which location to remove
+				* (1.0 / this.fromState.locationCnt()); // which timeslot to remove
+	}
+
+	double concreteFlipProba(int index) {
+		return this.flipProba // flip at all
+				* (1.0 / this.fromState.locationCnt()) // where in the plan to flip
+				* (1.0 / this.scenario.getLocationCnt() - 1); // to what new (and different) location
+	}
 }
