@@ -19,7 +19,7 @@
  */
 package se.vti.roundtrips.model;
 
-import se.vti.roundtrips.model.DefaultSimulator.DrivingSimulator;
+import se.vti.roundtrips.model.DefaultSimulator.StaySimulator;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
@@ -28,33 +28,30 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class DefaultDrivingSimulator<L extends Location> implements DrivingSimulator<L> {
+public class DefaultStaySimulator<L extends Location> implements StaySimulator<L> {
 
 	protected final Scenario<L> scenario;
 
-	public DefaultDrivingSimulator(Scenario<L> scenario) {
+	public DefaultStaySimulator(Scenario<L> scenario) {
 		this.scenario = scenario;
 	}
 
-	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, DrivingEpisode<L> driving) {
+	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, StayEpisode<L> parking) {
 		return null;
 	}
 
 	@Override
-	public DrivingEpisode<L> newDrivingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
+	public StayEpisode<L> newStayEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
 			Object initialState) {
-		L origin = roundTrip.getLocation(roundTripIndex);
-		L destination = roundTrip.getSuccessorLocation(roundTripIndex);
+		final StayEpisode<L> stay = new StayEpisode<>(roundTrip.getLocation(roundTripIndex));
+		stay.setInitialState(initialState);
 
-		final DrivingEpisode<L> driving = new DrivingEpisode<>(origin, destination);
-		driving.setInitialState(initialState);
+		stay.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * roundTrip.getDeparture(roundTripIndex)));
+		stay.setDuration_h(stay.getEndTime_h() - time_h);
 
-		driving.setDuration_h(this.scenario.getTime_h(origin, destination));
-		driving.setEndTime_h(time_h + driving.getDuration_h());
+		stay.setFinalState(this.computeFinalState(roundTrip, roundTripIndex, stay));
 
-		driving.setFinalState(this.computeFinalState(roundTrip, roundTripIndex, driving));
-
-		return driving;
+		return stay;
 	}
 
 }

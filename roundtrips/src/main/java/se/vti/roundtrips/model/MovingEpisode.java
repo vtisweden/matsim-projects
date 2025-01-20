@@ -26,26 +26,21 @@ import se.vti.roundtrips.single.Location;
  * @author GunnarF
  *
  */
-public final class DrivingEpisode<L extends Location> extends Episode {
-
-	private final L origin;
-	private final L destination;
-
-	public DrivingEpisode(L origin, L destination) {
-		this.origin = origin;
-		this.destination = destination;
+public final class MovingEpisode<L extends Location> extends Episode {
+	
+	private final L location;
+	
+	public MovingEpisode(L location) {
+		this.location = location;
 	}
 
-	public L getOrigin() {
-		return origin;
+	public L getLocation() {
+		return location;
 	}
-
-	public L getDestination() {
-		return destination;
-	}
-
+	
 	@Override
 	public String toString() {
-		return super.toString() + ",od(" + this.origin + "," + this.destination + ")";
+		return super.toString() + ",loc(" + this.location + ")";
 	}
+
 }

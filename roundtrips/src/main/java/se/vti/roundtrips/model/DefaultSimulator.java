@@ -36,15 +36,15 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 	// -------------------- INTERFACES --------------------
 
-	public interface ParkingSimulator<L extends Location> {
+	public interface StaySimulator<L extends Location> {
 
-		ParkingEpisode<L> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double initialTime_h,
+		StayEpisode<L> newStayEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double initialTime_h,
 				Object initialState);
 	}
 
-	public interface DrivingSimulator<L extends Location> {
+	public interface MoveSimulator<L extends Location> {
 
-		DrivingEpisode<L> newDrivingEpisode(RoundTrip<L> roundTrip, int roundTripStartIndex, double initialTime_h,
+		MoveEpisode<L> newMoveEpisode(RoundTrip<L> roundTrip, int roundTripStartIndex, double initialTime_h,
 				Object initialState);
 	}
 
@@ -52,15 +52,15 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 	protected final Scenario<L> scenario;
 
-	private DrivingSimulator<L> drivingSimulator = null;
-	private ParkingSimulator<L> parkingSimulator = null;
+	private MoveSimulator<L> moveSimulator = null;
+	private StaySimulator<L> staySimulator = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public DefaultSimulator(Scenario<L> scenario) {
 		this.scenario = scenario;
-		this.setDrivingSimulator(new DefaultDrivingSimulator<>(scenario));
-		this.setParkingSimulator(new DefaultParkingSimulator<>(scenario));
+		this.setMoveSimulator(new DefaultMoveSimulator<>(scenario));
+		this.setStaySimulator(new DefaultStaySimulator<>(scenario));
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
@@ -69,12 +69,12 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 		return this.scenario;
 	}
 
-	public void setDrivingSimulator(DrivingSimulator<L> drivingSimulator) {
-		this.drivingSimulator = drivingSimulator;
+	public void setMoveSimulator(MoveSimulator<L> drivingSimulator) {
+		this.moveSimulator = drivingSimulator;
 	}
 
-	public void setParkingSimulator(ParkingSimulator<L> parkingSimulator) {
-		this.parkingSimulator = parkingSimulator;
+	public void setStaySimulator(StaySimulator<L> parkingSimulator) {
+		this.staySimulator = parkingSimulator;
 	}
 
 	// -------------------- HOOKS FOR SUBCLASSING --------------------
@@ -83,8 +83,8 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 		return null;
 	}
 
-	public ParkingEpisode<L> createHomeOnlyEpisode(RoundTrip<L> roundTrip) {
-		ParkingEpisode<L> home = new ParkingEpisode<>(roundTrip.getLocation(0));
+	public StayEpisode<L> createHomeOnlyEpisode(RoundTrip<L> roundTrip) {
+		StayEpisode<L> home = new StayEpisode<>(roundTrip.getLocation(0));
 		home.setDuration_h(24.0);
 		home.setEndTime_h(24.0 - 1e-8); // wraparound
 		home.setInitialState(this.createAndInitializeState());
@@ -119,26 +119,26 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 			for (int index = 0; index < roundTrip.locationCnt() - 1; index++) {
 
-				final DrivingEpisode<L> driving = this.drivingSimulator.newDrivingEpisode(roundTrip, index, time_h,
+				final MoveEpisode<L> moving = this.moveSimulator.newMoveEpisode(roundTrip, index, time_h,
 						currentState);
-				episodes.add(driving);
-				time_h = driving.getEndTime_h();
-				currentState = driving.getFinalState();
+				episodes.add(moving);
+				time_h = moving.getEndTime_h();
+				currentState = moving.getFinalState();
 
-				final ParkingEpisode<L> parking = this.parkingSimulator.newParkingEpisode(roundTrip, index + 1, time_h,
+				final StayEpisode<L> staying = this.staySimulator.newStayEpisode(roundTrip, index + 1, time_h,
 						currentState);
-				episodes.add(parking);
-				time_h = parking.getEndTime_h();
-				currentState = parking.getFinalState();
+				episodes.add(staying);
+				time_h = staying.getEndTime_h();
+				currentState = staying.getFinalState();
 			}
 
-			final DrivingEpisode<L> driving = this.drivingSimulator.newDrivingEpisode(roundTrip,
+			final MoveEpisode<L> moving = this.moveSimulator.newMoveEpisode(roundTrip,
 					roundTrip.locationCnt() - 1, time_h, currentState);
-			episodes.add(driving);
-			time_h = driving.getEndTime_h();
-			currentState = driving.getFinalState();
+			episodes.add(moving);
+			time_h = moving.getEndTime_h();
+			currentState = moving.getFinalState();
 
-			final ParkingEpisode<L> home = this.parkingSimulator.newParkingEpisode(roundTrip, 0, time_h - 24.0,
+			final StayEpisode<L> home = this.staySimulator.newStayEpisode(roundTrip, 0, time_h - 24.0,
 					currentState);
 			episodes.set(0, home);
 

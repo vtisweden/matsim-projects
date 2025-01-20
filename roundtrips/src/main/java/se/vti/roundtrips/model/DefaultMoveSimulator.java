@@ -19,7 +19,7 @@
  */
 package se.vti.roundtrips.model;
 
-import se.vti.roundtrips.model.DefaultSimulator.ParkingSimulator;
+import se.vti.roundtrips.model.DefaultSimulator.MoveSimulator;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
@@ -28,30 +28,33 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class DefaultParkingSimulator<L extends Location> implements ParkingSimulator<L> {
+public class DefaultMoveSimulator<L extends Location> implements MoveSimulator<L> {
 
 	protected final Scenario<L> scenario;
 
-	public DefaultParkingSimulator(Scenario<L> scenario) {
+	public DefaultMoveSimulator(Scenario<L> scenario) {
 		this.scenario = scenario;
 	}
 
-	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, ParkingEpisode<L> parking) {
+	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, MoveEpisode<L> driving) {
 		return null;
 	}
 
 	@Override
-	public ParkingEpisode<L> newParkingEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
+	public MoveEpisode<L> newMoveEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
 			Object initialState) {
-		final ParkingEpisode<L> parking = new ParkingEpisode<>(roundTrip.getLocation(roundTripIndex));
-		parking.setInitialState(initialState);
+		L origin = roundTrip.getLocation(roundTripIndex);
+		L destination = roundTrip.getSuccessorLocation(roundTripIndex);
 
-		parking.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * roundTrip.getDeparture(roundTripIndex)));
-		parking.setDuration_h(parking.getEndTime_h() - time_h);
+		final MoveEpisode<L> move = new MoveEpisode<>(origin, destination);
+		move.setInitialState(initialState);
 
-		parking.setFinalState(this.computeFinalState(roundTrip, roundTripIndex, parking));
+		move.setDuration_h(this.scenario.getTime_h(origin, destination));
+		move.setEndTime_h(time_h + move.getDuration_h());
 
-		return parking;
+		move.setFinalState(this.computeFinalState(roundTrip, roundTripIndex, move));
+
+		return move;
 	}
 
 }

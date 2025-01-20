@@ -19,7 +19,7 @@
  */
 package se.vti.roundtrips.preferences;
 
-import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.model.StayEpisode;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
@@ -44,7 +44,7 @@ public class StrategyRealizationConsistency<R extends RoundTrip<L>, L extends Lo
 		} else {
 			double discrepancy_h = 0.0;
 			for (int i = 0; i < simulatedRoundTrip.locationCnt(); i++) {
-				ParkingEpisode<?> parking = (ParkingEpisode<?>) simulatedRoundTrip.getEpisodes().get(2 * i);
+				StayEpisode<?> parking = (StayEpisode<?>) simulatedRoundTrip.getEpisodes().get(2 * i);
 				assert (parking.getEndTime_h() >= 0.0);
 				discrepancy_h += Math.abs(
 						this.scenario.getBinSize_h() * simulatedRoundTrip.getDeparture(i) - parking.getEndTime_h());

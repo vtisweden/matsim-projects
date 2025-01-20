@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.model.Episode;
-import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.model.StayEpisode;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
@@ -78,7 +78,7 @@ public class AtMainActivityTarget<L extends Location> extends Target<L> {
 			L bestLocation = null;
 			List<?> episodes = roundTrip.getEpisodes();
 			for (int i = 2; i < episodes.size(); i += 2) {
-				ParkingEpisode<L> episode = (ParkingEpisode<L>) episodes.get(i);
+				StayEpisode<L> episode = (StayEpisode<L>) episodes.get(i);
 				double overlap_h = episode.overlap_h(this.targetIntervals);
 				if (overlap_h > bestOverlap_h) {
 					bestLocation = episode.getLocation();

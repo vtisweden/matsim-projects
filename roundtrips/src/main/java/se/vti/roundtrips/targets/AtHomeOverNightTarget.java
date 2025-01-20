@@ -24,7 +24,7 @@ import java.util.List;
 
 import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.model.Episode;
-import se.vti.roundtrips.model.ParkingEpisode;
+import se.vti.roundtrips.model.StayEpisode;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
@@ -62,7 +62,7 @@ public class AtHomeOverNightTarget<L extends Location> extends Target<L> {
 		double cnt = 0.0;
 		for (RoundTrip<L> roundTrip : filteredMultiRoundTrip) {
 			total++;
-			final ParkingEpisode<L> home = (ParkingEpisode<L>) roundTrip.getEpisodes().get(0);
+			final StayEpisode<L> home = (StayEpisode<L>) roundTrip.getEpisodes().get(0);
 			if (home.overlap_h(this.targetIntervals) >= this.targetDuration_h) {
 				cnt++;
 			}
