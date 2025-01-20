@@ -29,15 +29,15 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class AllDayTimeConstraintPreference<R extends RoundTrip<L>, L extends Location> extends PreferenceComponent<R> {
+public class PeriodicSchedulePreference<R extends RoundTrip<L>, L extends Location> extends PreferenceComponent<R> {
 
 	private final double minHomeDuration_h;
 
-	public AllDayTimeConstraintPreference(double minHomeDuration_h) {
+	public PeriodicSchedulePreference(double minHomeDuration_h) {
 		this.minHomeDuration_h = minHomeDuration_h;
 	}
 
-	public AllDayTimeConstraintPreference() {
+	public PeriodicSchedulePreference() {
 		this(0.0);
 	}
 	

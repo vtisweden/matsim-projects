@@ -29,12 +29,12 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class StrategyRealizationConsistency<R extends RoundTrip<L>, L extends Location>
+public class StrategyRealizationPreference<R extends RoundTrip<L>, L extends Location>
 		extends PreferenceComponent<R> {
 
 	private final Scenario<?> scenario;
 
-	public StrategyRealizationConsistency(Scenario<?> scenario) {
+	public StrategyRealizationPreference(Scenario<?> scenario) {
 		this.scenario = scenario;
 	}
 
