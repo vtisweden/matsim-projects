@@ -21,7 +21,9 @@ package se.vti.roundtrips.multiple;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import se.vti.roundtrips.single.Location;
@@ -37,6 +39,20 @@ public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>
 
 	private final List<RoundTrip<L>> roundTrips;
 
+	// TODO NEW
+	private final Map<Class<?>, MultiRoundTripSummaryStats<L>> class2summaryStats = new LinkedHashMap<>();
+	
+	// TODO NEW
+	public MultiRoundTripSummaryStats<L> getSummaryStats(Class<? extends MultiRoundTripSummaryStats<L>> summaryStatsClass) {
+		return this.class2summaryStats.get(summaryStatsClass);
+	}
+
+	// TODO NEW
+	public void addSummaryStats(MultiRoundTripSummaryStats<L> summaryStats) {
+		assert(!this.class2summaryStats.containsKey(summaryStats.getClass()));
+		this.class2summaryStats.put(summaryStats.getClass(), summaryStats);
+	}
+	
 	public MultiRoundTrip(int size) {
 		this.roundTrips = new ArrayList<>(size);
 		for (int i = 0; i < size; i++) {
@@ -49,6 +65,12 @@ public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>
 	}
 
 	public void setRoundTrip(int i, RoundTrip<L> roundTrip) {
+		
+		// TODO NEW
+		for (MultiRoundTripSummaryStats<L> summaryStats : this.class2summaryStats.values()) {
+			summaryStats.update(this.roundTrips.get(i), roundTrip);
+		}
+		
 		this.roundTrips.set(i, roundTrip);
 	}
 
@@ -66,6 +88,12 @@ public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>
 		for (int i = 0; i < this.size(); i++) {
 			result.setRoundTrip(i, this.getRoundTrip(i).clone());
 		}
+		
+		// TODO NEW
+		for (Map.Entry<Class<?>, MultiRoundTripSummaryStats<L>> entry : this.class2summaryStats.entrySet()) {
+			result.class2summaryStats.put(entry.getKey(), entry.getValue().clone());
+		}
+		
 		return result;
 	}
 
