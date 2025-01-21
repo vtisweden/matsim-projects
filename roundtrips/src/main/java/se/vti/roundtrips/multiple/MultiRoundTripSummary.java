@@ -29,10 +29,10 @@ import se.vti.roundtrips.single.RoundTrip;
  * @param <L> the location type
  * @param <S> the concrete subclass type
  */
-public interface MultiRoundTripSummaryStats<L extends Location> {
+public interface MultiRoundTripSummary<L extends Location> {
 
-	public void update(RoundTrip<L> oldRoundTrip, RoundTrip<L> newRoundTrip);
+	public void update(int i, RoundTrip<L> newRoundTrip, MultiRoundTrip<L> oldMultiRoundTrip);
 	
-	public MultiRoundTripSummaryStats<L> clone();
+	public MultiRoundTripSummary<L> clone();
 	
 }

@@ -37,22 +37,15 @@ import se.vti.roundtrips.single.RoundTrip;
  */
 public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>> {
 
+	// -------------------- MEMBERS --------------------
+
 	private final List<RoundTrip<L>> roundTrips;
 
 	// TODO NEW
-	private final Map<Class<?>, MultiRoundTripSummaryStats<L>> class2summaryStats = new LinkedHashMap<>();
-	
-	// TODO NEW
-	public MultiRoundTripSummaryStats<L> getSummaryStats(Class<? extends MultiRoundTripSummaryStats<L>> summaryStatsClass) {
-		return this.class2summaryStats.get(summaryStatsClass);
-	}
+	private final Map<Class<?>, MultiRoundTripSummary<L>> class2summary = new LinkedHashMap<>();
 
-	// TODO NEW
-	public void addSummaryStats(MultiRoundTripSummaryStats<L> summaryStats) {
-		assert(!this.class2summaryStats.containsKey(summaryStats.getClass()));
-		this.class2summaryStats.put(summaryStats.getClass(), summaryStats);
-	}
-	
+	// -------------------- CONSTRUCTION --------------------
+
 	public MultiRoundTrip(int size) {
 		this.roundTrips = new ArrayList<>(size);
 		for (int i = 0; i < size; i++) {
@@ -60,27 +53,46 @@ public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>
 		}
 	}
 
-	public RoundTrip<L> getRoundTrip(int i) {
-		return this.roundTrips.get(i);
-	}
+	// -------------------- SETTERS AND GETTERS --------------------
 
 	public void setRoundTrip(int i, RoundTrip<L> roundTrip) {
-		
+
 		// TODO NEW
-		for (MultiRoundTripSummaryStats<L> summaryStats : this.class2summaryStats.values()) {
-			summaryStats.update(this.roundTrips.get(i), roundTrip);
+		for (MultiRoundTripSummary<L> summaryStats : this.class2summary.values()) {
+			summaryStats.update(i, roundTrip, this);
 		}
-		
+
 		this.roundTrips.set(i, roundTrip);
+	}
+
+	public RoundTrip<L> getRoundTrip(int i) {
+		return this.roundTrips.get(i);
 	}
 
 	public int size() {
 		return this.roundTrips.size();
 	}
 
-	public int locationCnt() {
-		return this.roundTrips.stream().mapToInt(r -> r.locationCnt()).sum();
+	// TODO NEW
+	@SuppressWarnings("unchecked")
+	public <S extends MultiRoundTripSummary<L>> S getSummary(Class<S> summaryClass) {
+		return (S) this.class2summary.get(summaryClass);
 	}
+
+	// TODO NEW
+	public void addSummary(MultiRoundTripSummary<L> summary) {
+		assert (!this.class2summary.containsKey(summary.getClass()));
+		this.class2summary.put(summary.getClass(), summary);
+	}
+
+	// -------------------- IMPLEMENTATION OF Iterable --------------------
+
+	@Override
+	public Iterator<RoundTrip<L>> iterator() {
+		return this.roundTrips.iterator();
+	}
+
+	// -------------------- OVERRIDING OF Object --------------------
 
 	@Override
 	public MultiRoundTrip<L> clone() {
@@ -88,18 +100,13 @@ public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>
 		for (int i = 0; i < this.size(); i++) {
 			result.setRoundTrip(i, this.getRoundTrip(i).clone());
 		}
-		
-		// TODO NEW
-		for (Map.Entry<Class<?>, MultiRoundTripSummaryStats<L>> entry : this.class2summaryStats.entrySet()) {
-			result.class2summaryStats.put(entry.getKey(), entry.getValue().clone());
-		}
-		
-		return result;
-	}
 
-	@Override
-	public Iterator<RoundTrip<L>> iterator() {
-		return this.roundTrips.iterator();
+		// TODO NEW
+		for (Map.Entry<Class<?>, MultiRoundTripSummary<L>> entry : this.class2summary.entrySet()) {
+			result.class2summary.put(entry.getKey(), entry.getValue().clone());
+		}
+
+		return result;
 	}
 
 	@Override
