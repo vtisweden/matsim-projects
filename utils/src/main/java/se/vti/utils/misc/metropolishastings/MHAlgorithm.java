@@ -140,8 +140,9 @@ public class MHAlgorithm<S extends Object> {
 
 			if ((this.msgInterval >= 1) && (i % this.msgInterval == 0)) {
 				System.out.println("MH iteration " + i);
-				System.out.println("  state  = " + currentState);
-				System.out.println("  weight = " + Math.exp(currentLogWeight));
+				System.out.println("  state     = " + currentState);
+				System.out.println("  logweight = " + currentLogWeight);
+				System.out.println("  weight    = " + Math.exp(currentLogWeight));
 			}
 
 			tick_ms = System.currentTimeMillis();
