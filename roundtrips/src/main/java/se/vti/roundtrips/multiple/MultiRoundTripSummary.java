@@ -31,7 +31,9 @@ import se.vti.roundtrips.single.RoundTrip;
  */
 public interface MultiRoundTripSummary<L extends Location> {
 
-	public void update(int i, RoundTrip<L> newRoundTrip, MultiRoundTrip<L> oldMultiRoundTrip);
+	public void clear();
+	
+	public void update(int roundTripIndex, RoundTrip<L> oldRoundTrip, RoundTrip<L> newRoundTrip);
 	
 	public MultiRoundTripSummary<L> clone();
 	

@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.Simulator;
 
 /**
  * 
@@ -53,13 +54,30 @@ public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>
 		}
 	}
 
+	public void recomputeSummaries() {
+		for (MultiRoundTripSummary<L> summary : this.class2summary.values()) {
+			summary.clear();
+		}
+		for (int i = 0; i < roundTrips.size(); i++) {
+			RoundTrip<L> roundTrip = this.roundTrips.get(i);
+			this.roundTrips.set(i, null);
+			this.setRoundTrip(i, roundTrip);
+		}
+	}
+	
+	public void simulateAll(Simulator<L> simulator) {
+		for (RoundTrip<L> roundTrip : this.roundTrips) {
+			roundTrip.setEpisodes(simulator.simulate(roundTrip));
+		}
+	}
+	
 	// -------------------- SETTERS AND GETTERS --------------------
 
-	public void setRoundTrip(int i, RoundTrip<L> roundTrip) {
+	public final void setRoundTrip(int i, RoundTrip<L> roundTrip) {
 
 		// TODO NEW
 		for (MultiRoundTripSummary<L> summaryStats : this.class2summary.values()) {
-			summaryStats.update(i, roundTrip, this);
+			summaryStats.update(i, this.getRoundTrip(i), roundTrip);
 		}
 
 		this.roundTrips.set(i, roundTrip);

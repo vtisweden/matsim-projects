@@ -46,6 +46,9 @@ import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripJsonIO;
 
 /**
+ * Loads a MultiRoundTrip without any summaries. Add summary objects and call
+ * MultiRoundTrip.recomputeSummaries() if needed.
+ * 
  * 
  * @author GunnarF
  *
