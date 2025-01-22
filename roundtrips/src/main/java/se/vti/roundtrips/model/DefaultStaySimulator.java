@@ -22,6 +22,7 @@ package se.vti.roundtrips.model;
 import se.vti.roundtrips.model.DefaultSimulator.StaySimulator;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.SimulatorState;
 
 /**
  * 
@@ -36,13 +37,13 @@ public class DefaultStaySimulator<L extends Location> implements StaySimulator<L
 		this.scenario = scenario;
 	}
 
-	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, StayEpisode<L> parking) {
+	public SimulatorState computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, StayEpisode<L> parking) {
 		return null;
 	}
 
 	@Override
 	public StayEpisode<L> newStayEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
-			Object initialState) {
+			SimulatorState initialState) {
 		final StayEpisode<L> stay = new StayEpisode<>(roundTrip.getLocation(roundTripIndex));
 		stay.setInitialState(initialState);
 

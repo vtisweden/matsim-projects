@@ -45,7 +45,7 @@ public class RoundTrip<L extends Location> {
 
 	private List<Integer> departures;
 
-	private List<? extends Episode> episodes = null;
+	private List<Episode> episodes = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
@@ -151,20 +151,34 @@ public class RoundTrip<L extends Location> {
 		return new ArrayList<>(this.departures);
 	}
 
-	public List<? extends Episode> getEpisodes() {
+	public List<Episode> getEpisodes() {
 		return episodes;
 	}
 
-	public void setEpisodes(List<? extends Episode> episodes) {
+	public void setEpisodes(List<Episode> episodes) {
 		this.episodes = episodes;
 	}
+	
+	// TODO NEW
+	public void cloneEpisodes(RoundTrip<L> other) {
+		// Deliberately not checking for this.episodes==null, should fail clearly.
+		this.episodes = new ArrayList<>(other.episodes.size());
+		for (Episode episode : other.episodes) {
+			this.episodes.add(episode.clone());
+		}
+	}
+	
 	// -------------------- OVERRIDING OF Object --------------------
 
 	@Override
 	public RoundTrip<L> clone() {
 		// TODO for this to work, attributes have to be immutable, as they are shared by
 		// round trips
-		return new RoundTrip<L>(this.cloneLocations(), this.cloneDepartures(), this.attributes);
+		final RoundTrip<L> result = new RoundTrip<>(this.cloneLocations(), this.cloneDepartures(), this.attributes);
+		if (this.episodes != null) {
+			result.cloneEpisodes(this);
+		}
+		return result;
 	}
 
 	@Override

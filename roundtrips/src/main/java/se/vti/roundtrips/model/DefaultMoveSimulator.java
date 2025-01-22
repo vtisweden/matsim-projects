@@ -22,6 +22,7 @@ package se.vti.roundtrips.model;
 import se.vti.roundtrips.model.DefaultSimulator.MoveSimulator;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.SimulatorState;
 
 /**
  * 
@@ -36,13 +37,13 @@ public class DefaultMoveSimulator<L extends Location> implements MoveSimulator<L
 		this.scenario = scenario;
 	}
 
-	public Object computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, MoveEpisode<L> driving) {
+	public SimulatorState computeFinalState(RoundTrip<L> roundTrip, int roundTripIndex, MoveEpisode<L> driving) {
 		return null;
 	}
 
 	@Override
 	public MoveEpisode<L> newMoveEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
-			Object initialState) {
+			SimulatorState initialState) {
 		L origin = roundTrip.getLocation(roundTripIndex);
 		L destination = roundTrip.getSuccessorLocation(roundTripIndex);
 

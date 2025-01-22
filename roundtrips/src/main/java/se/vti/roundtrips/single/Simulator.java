@@ -30,6 +30,6 @@ import se.vti.roundtrips.model.Episode;
  */
 public interface Simulator<L extends Location> {
 
-	List<? extends Episode> simulate(RoundTrip<L> roundTrip);
+	List<Episode> simulate(RoundTrip<L> roundTrip);
 
 }

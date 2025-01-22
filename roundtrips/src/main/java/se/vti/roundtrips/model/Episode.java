@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import floetteroed.utilities.Tuple;
+import se.vti.roundtrips.single.SimulatorState;
 import se.vti.utils.misc.math.MathHelpers;
 
 /**
@@ -37,9 +38,25 @@ public class Episode {
 	private Double duration_h = null;
 	private Double end_h = null;
 
-	private Object initialState = null;
-	private Object finalState = null;
+	private SimulatorState initialState = null;
+	private SimulatorState finalState = null;
 
+	// TODO NEW
+	public void deepCopyInto(Episode target) {
+		target.duration_h = this.duration_h;
+		target.end_h = this.end_h;
+		target.initialState = (this.initialState == null ? null : this.initialState.clone());
+		target.finalState = (this.finalState == null ? null : this.finalState.clone());
+	}
+	
+	// TODO NEW
+	@Override
+	public Episode clone() {
+		Episode result = new Episode();
+		this.deepCopyInto(result);
+		return result;
+	}
+	
 	public Episode() {
 	}
 
@@ -63,15 +80,15 @@ public class Episode {
 		return initialState;
 	}
 
-	public void setInitialState(Object initialState) {
+	public void setInitialState(SimulatorState initialState) {
 		this.initialState = initialState;
 	}
 
-	public Object getFinalState() {
+	public SimulatorState getFinalState() {
 		return finalState;
 	}
 
-	public void setFinalState(Object finalState) {
+	public void setFinalState(SimulatorState finalState) {
 		this.finalState = finalState;
 	}
 

@@ -26,6 +26,7 @@ import java.util.List;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.Simulator;
+import se.vti.roundtrips.single.SimulatorState;
 
 /**
  * 
@@ -39,13 +40,13 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 	public interface StaySimulator<L extends Location> {
 
 		StayEpisode<L> newStayEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double initialTime_h,
-				Object initialState);
+				SimulatorState initialState);
 	}
 
 	public interface MoveSimulator<L extends Location> {
 
 		MoveEpisode<L> newMoveEpisode(RoundTrip<L> roundTrip, int roundTripStartIndex, double initialTime_h,
-				Object initialState);
+				SimulatorState initialState);
 	}
 
 	// -------------------- MEMBERS --------------------
@@ -79,7 +80,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 	// -------------------- HOOKS FOR SUBCLASSING --------------------
 
-	public Object createAndInitializeState() {
+	public SimulatorState createAndInitializeState() {
 		return null;
 	}
 
@@ -92,21 +93,21 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 		return home;
 	}
 
-	public Object keepOrChangeInitialState(Object oldInitialState, Object newInitialState) {
+	public SimulatorState keepOrChangeInitialState(SimulatorState oldInitialState, SimulatorState newInitialState) {
 		return oldInitialState;
 	}
 
 	// -------------------- IMPLEMENTATION --------------------
 
 	@Override
-	public List<? extends Episode> simulate(RoundTrip<L> roundTrip) {
+	public List<Episode> simulate(RoundTrip<L> roundTrip) {
 
 		if (roundTrip.locationCnt() == 1) {
 			return Collections.singletonList(this.createHomeOnlyEpisode(roundTrip));
 		}
 
 		final double initialTime_h = this.scenario.getBinSize_h() * roundTrip.getDeparture(0);
-		Object initialState = this.createAndInitializeState();
+		SimulatorState initialState = this.createAndInitializeState();
 
 		List<Episode> episodes = null;
 		do {
@@ -115,7 +116,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 			episodes.add(null); // placeholder for home episode
 
 			double time_h = initialTime_h;
-			Object currentState = initialState;
+			SimulatorState currentState = initialState;
 
 			for (int index = 0; index < roundTrip.locationCnt() - 1; index++) {
 
@@ -142,7 +143,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 					currentState);
 			episodes.set(0, home);
 
-			final Object newInitialState = this.keepOrChangeInitialState(initialState, home.getFinalState());
+			final SimulatorState newInitialState = this.keepOrChangeInitialState(initialState, home.getFinalState());
 			if (newInitialState == initialState) {
 				// accept wrap-around
 				home.setFinalState(initialState);

@@ -31,6 +31,21 @@ public final class MoveEpisode<L extends Location> extends Episode {
 	private final L origin;
 	private final L destination;
 
+	
+	// TODO NEW
+	@Override
+	public void deepCopyInto(Episode target) {
+		throw new RuntimeException("Use clone().");
+	}
+	
+	// TODO NEW
+	@Override
+	public MoveEpisode<L> clone() {
+		MoveEpisode<L> result = new MoveEpisode<>(this.origin, this.destination);
+		super.deepCopyInto(result);
+		return result;
+	}
+	
 	public MoveEpisode(L origin, L destination) {
 		this.origin = origin;
 		this.destination = destination;
