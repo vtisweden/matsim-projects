@@ -49,7 +49,7 @@ class PossibleTransitions<L extends Location> {
 		this.fromState = state;
 		this.scenario = scenario;
 
-		if (state.locationCnt() < Math.min(scenario.getMaxPStayEpisodes(), scenario.getBinCnt() - 1)) {
+		if (state.locationCnt() < Math.min(scenario.getMaxStayEpisodes(), scenario.getBinCnt() - 1)) {
 			this.possibleInserts = IntStream.rangeClosed(0, state.locationCnt()).boxed().toList();
 		} else {
 			this.possibleInserts = Collections.emptyList();

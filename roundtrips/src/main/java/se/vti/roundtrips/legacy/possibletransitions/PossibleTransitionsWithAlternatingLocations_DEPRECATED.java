@@ -71,7 +71,7 @@ public class PossibleTransitionsWithAlternatingLocations_DEPRECATED<L extends Lo
 			// analyze inserts
 
 			final List<L> localInserts;
-			if (state.locationCnt() == scenario.getMaxPStayEpisodes()) {
+			if (state.locationCnt() == scenario.getMaxStayEpisodes()) {
 				localInserts = Collections.emptyList();
 			} else {
 				localInserts = new ArrayList<>(scenario.getLocationsView());
@@ -109,7 +109,7 @@ public class PossibleTransitionsWithAlternatingLocations_DEPRECATED<L extends Lo
 		// analyze appends-to end of list
 
 		final List<L> lastInserts;
-		if (state.locationCnt() == scenario.getMaxPStayEpisodes()) {
+		if (state.locationCnt() == scenario.getMaxStayEpisodes()) {
 			lastInserts = Collections.emptyList();
 		} else {
 			lastInserts = new ArrayList<>(scenario.getLocationsView());

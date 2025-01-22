@@ -37,7 +37,7 @@ public class UniformOverLocationCount_DEPRECATED<R extends RoundTrip<L>, L exten
 	public UniformOverLocationCount_DEPRECATED(Scenario<?> scenario) {
 		this.correctDepartureCombinations = new RoundTripIgnoreDepartureCombinations_DEPRECATED(scenario.getBinCnt());
 		this.correctLocationCombinations = new RoundTripIgnoreLocationCombinations_DEPRECATED(scenario.getLocationCnt(),
-				scenario.getMaxPStayEpisodes());
+				scenario.getMaxStayEpisodes());
 	}
 
 	@Override

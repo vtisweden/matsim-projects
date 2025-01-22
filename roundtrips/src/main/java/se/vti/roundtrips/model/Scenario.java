@@ -141,7 +141,7 @@ public class Scenario<L extends Location> {
 		this.maxStayEpisodes = maxStayEpisodes;
 	}
 
-	public int getMaxPStayEpisodes() {
+	public int getMaxStayEpisodes() {
 		return this.maxStayEpisodes;
 	}
 }
