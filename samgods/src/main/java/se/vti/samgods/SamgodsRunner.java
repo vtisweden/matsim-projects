@@ -481,7 +481,8 @@ public class SamgodsRunner {
 //								.getProviderInstance().createDataInstance();
 						final NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						final ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
-								new LinkedHashMap<>(this.commodity2scale), this.ascDataProvider.getConcurrentMode2ASC(),
+								new LinkedHashMap<>(this.commodity2scale), 
+//								this.ascDataProvider.getConcurrentMode2ASC(),
 								this.ascDataProvider.getConcurrentRailCommodity2ASC());
 						final ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(
 								logisticChoiceDataProvider.createLogisticChoiceData(), nonTransportCostModel,

@@ -43,7 +43,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 
 /**
  * 
@@ -55,19 +54,20 @@ public class ASCDataProvider {
 	// -------------------- MEMBERS --------------------
 
 	private ConcurrentMap<VehicleType, Double> vehicleType2ASC = new ConcurrentHashMap<>();
-	private ConcurrentMap<TransportMode, Double> mode2ASC = new ConcurrentHashMap<>();
+//	private ConcurrentMap<TransportMode, Double> mode2ASC = new ConcurrentHashMap<>();
 	private ConcurrentMap<Commodity, Double> railCommodity2ASC = new ConcurrentHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public ASCDataProvider() {
-		this(new LinkedHashMap<>(), new LinkedHashMap<>(), new LinkedHashMap<>());
+		this(new LinkedHashMap<>(), new LinkedHashMap<>()); // , new LinkedHashMap<>());
 	}
 
-	public ASCDataProvider(Map<VehicleType, Double> vehicleType2ASC, Map<TransportMode, Double> mode2ASC,
+	public ASCDataProvider(Map<VehicleType, Double> vehicleType2ASC, 
+//			Map<TransportMode, Double> mode2ASC,
 			Map<Commodity, Double> railCommodity2ASC) {
 		this.vehicleType2ASC = new ConcurrentHashMap<>(vehicleType2ASC);
-		this.mode2ASC = new ConcurrentHashMap<>( mode2ASC);
+//		this.mode2ASC = new ConcurrentHashMap<>( mode2ASC);
 		this.railCommodity2ASC = new ConcurrentHashMap<>(railCommodity2ASC);
 	}
 
@@ -77,9 +77,9 @@ public class ASCDataProvider {
 		return this.vehicleType2ASC;
 	}
 
-	public ConcurrentMap<TransportMode, Double> getConcurrentMode2ASC() {
-		return this.mode2ASC;
-	}
+//	public ConcurrentMap<TransportMode, Double> getConcurrentMode2ASC() {
+//		return this.mode2ASC;
+//	}
 
 	public ConcurrentMap<Commodity, Double> getConcurrentRailCommodity2ASC() {
 		return this.railCommodity2ASC;
@@ -101,12 +101,12 @@ public class ASCDataProvider {
 			}
 			jsonGenerator.writeEndObject();
 
-			jsonGenerator.writeFieldName("mode2ASC");
-			jsonGenerator.writeStartObject();
-			for (Map.Entry<TransportMode, Double> entry : ascs.mode2ASC.entrySet()) {
-				jsonGenerator.writeNumberField(entry.getKey().toString(), entry.getValue());
-			}
-			jsonGenerator.writeEndObject();
+//			jsonGenerator.writeFieldName("mode2ASC");
+//			jsonGenerator.writeStartObject();
+//			for (Map.Entry<TransportMode, Double> entry : ascs.mode2ASC.entrySet()) {
+//				jsonGenerator.writeNumberField(entry.getKey().toString(), entry.getValue());
+//			}
+//			jsonGenerator.writeEndObject();
 
 			jsonGenerator.writeFieldName("railCommodity2ASC");
 			jsonGenerator.writeStartObject();
@@ -150,13 +150,13 @@ public class ASCDataProvider {
 				});
 			}
 
-			JsonNode modeNode = node.get("mode2ASC");
-			if (modeNode != null) {
-				modeNode.fields().forEachRemaining(entry -> {
-					TransportMode mode = TransportMode.valueOf(entry.getKey());
-					result.mode2ASC.put(mode, entry.getValue().asDouble());
-				});
-			}
+//			JsonNode modeNode = node.get("mode2ASC");
+//			if (modeNode != null) {
+//				modeNode.fields().forEachRemaining(entry -> {
+//					TransportMode mode = TransportMode.valueOf(entry.getKey());
+//					result.mode2ASC.put(mode, entry.getValue().asDouble());
+//				});
+//			}
 
 			JsonNode commodityNode = node.get("railCommodity2ASC");
 			if (commodityNode != null) {
@@ -192,7 +192,7 @@ public class ASCDataProvider {
 		vehicles.addVehicleType(VehicleUtils.createVehicleType(smallTruckId));
 
 		asc.vehicleType2ASC.put(vehicles.getVehicleTypes().get(smallTruckId), 12.34);
-		asc.mode2ASC.put(TransportMode.Rail, 6789.);
+//		asc.mode2ASC.put(TransportMode.Rail, 6789.);
 		asc.railCommodity2ASC.put(Commodity.BASICMETALS, 1.);
 
 		asc.writeToFile("ascs.json");

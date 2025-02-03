@@ -73,7 +73,7 @@ public class TestSamgods {
 //				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
 //				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
 //				.setMaxIterations(2).setEnforceReroute(false);
-		final SamgodsRunner runner = new SamgodsRunner(samgodsConfig).setServiceInterval_days(7)
+		SamgodsRunner runner = new SamgodsRunner(samgodsConfig).setServiceInterval_days(7)
 				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(1.0)
 				.setMaxThreads(Integer.MAX_VALUE).setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
 				.setScale(Commodity.COAL, scaleFactor * 0.0000001).setScale(Commodity.METAL, scaleFactor * 0.0000001

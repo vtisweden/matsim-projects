@@ -23,7 +23,6 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.utils.misc.iterationlogging.LogEntry;
 import se.vti.utils.misc.iterationlogging.LogWriter;
 
@@ -36,13 +35,13 @@ class ASCLogger {
 
 	private final LogWriter<TransportWorkAscCalibrator> vehicleASCWriter;
 	private final LogWriter<TransportWorkAscCalibrator> railCommodityASCWriter;
-	private final LogWriter<TransportWorkAscCalibrator> modeASCWriter;
+//	private final LogWriter<TransportWorkAscCalibrator> modeASCWriter;
 
 	ASCLogger(Vehicles vehicles) {
 
 		this.vehicleASCWriter = new LogWriter<>("./results/calibratedASCs/vehicleGroupASCs.txt", false);
 		this.railCommodityASCWriter = new LogWriter<>("./results/calibratedASCs/railASCs.txt", false);
-		this.modeASCWriter = new LogWriter<>("./results/calibratedASCs/modeASCs.txt", false);
+//		this.modeASCWriter = new LogWriter<>("./results/calibratedASCs/modeASCs.txt", false);
 
 		for (VehicleType vehicleType : vehicles.getVehicleTypes().values()) {
 			this.vehicleASCWriter.addEntry(new LogEntry<>() {
@@ -73,25 +72,24 @@ class ASCLogger {
 				}
 			});
 		}
-		for (TransportMode mode : TransportMode.values()) {
-			this.modeASCWriter.addEntry(new LogEntry<>() {
-				@Override
-				public String label() {
-					return mode.toString();
-				}
-
-				@Override
-				public String value(TransportWorkAscCalibrator fleetCalibrator) {
-					return LogEntry.toString(fleetCalibrator.createASCDataProvider().getConcurrentMode2ASC().getOrDefault(mode, 0.0));
-				}
-			});
-		}
-
+//		for (TransportMode mode : TransportMode.values()) {
+//			this.modeASCWriter.addEntry(new LogEntry<>() {
+//				@Override
+//				public String label() {
+//					return mode.toString();
+//				}
+//
+//				@Override
+//				public String value(TransportWorkAscCalibrator fleetCalibrator) {
+//					return LogEntry.toString(fleetCalibrator.createASCDataProvider().getConcurrentMode2ASC().getOrDefault(mode, 0.0));
+//				}
+//			});
+//		}
 	}
 
 	public void log(TransportWorkAscCalibrator fleetCalibr) {
 		this.vehicleASCWriter.writeToFile(fleetCalibr);
 		this.railCommodityASCWriter.writeToFile(fleetCalibr);
-		this.modeASCWriter.writeToFile(fleetCalibr);
+//		this.modeASCWriter.writeToFile(fleetCalibr);
 	}
 }
