@@ -17,13 +17,15 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
+package se.vti.roundtrips.legacy.proposals;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 

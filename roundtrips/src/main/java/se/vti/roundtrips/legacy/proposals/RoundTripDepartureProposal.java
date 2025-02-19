@@ -17,13 +17,11 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.single;
-
-import java.util.Random;
-
-import org.checkerframework.common.returnsreceiver.qual.This;
+package se.vti.roundtrips.legacy.proposals;
 
 import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -50,7 +48,7 @@ public class RoundTripDepartureProposal<L extends Location> implements MHProposa
 		// TODO Not ideal, handle this upstream:
 		if (state.locationCnt() == scenario.getBinCnt()) {
 			throw new RuntimeException("No space for inserting a departure time bin.");
-		}		
+		}
 		while (true) {
 			final Integer dpt = scenario.getRandom().nextInt(scenario.getBinCnt());
 			if (!state.containsDeparture(dpt)) {
@@ -71,7 +69,7 @@ public class RoundTripDepartureProposal<L extends Location> implements MHProposa
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> state) {
 
 		final Integer newDeparture = drawUnusedDeparture(state, this.scenario);
-		final RoundTrip<L> newState = state.clone(); 
+		final RoundTrip<L> newState = state.clone();
 		newState.setDepartureAndEnsureOrdering(this.scenario.getRandom().nextInt(state.locationCnt()), newDeparture);
 
 		final double fwdLogProba = -Math.log(state.locationCnt())
