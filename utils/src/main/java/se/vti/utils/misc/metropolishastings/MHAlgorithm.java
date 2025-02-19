@@ -35,11 +35,13 @@ public class MHAlgorithm<S extends Object> {
 
 	// -------------------- CONSTANTS --------------------
 
+	private final MHOneStepLogic<S> oneStepLogic;
+
 	private final MHProposal<S> proposal;
 
-	private final MHWeight<S> weight;
-
-	private final Random rnd;
+//	private final MHWeight<S> weight;
+//
+//	private final Random rnd;
 
 	// -------------------- MEMBERS --------------------
 
@@ -52,22 +54,33 @@ public class MHAlgorithm<S extends Object> {
 	private long lastCompTime_ms = 0;
 
 	private S finalState = null;
-	
+
 	// -------------------- CONSTRUCTION --------------------
 
-	public MHAlgorithm(final MHProposal<S> proposal, final MHWeight<S> weight, final Random rnd) {
-		if (proposal == null) {
-			throw new IllegalArgumentException("proposal is null");
-		}
-		if (weight == null) {
-			throw new IllegalArgumentException("weight is null");
-		}
-		if (rnd == null) {
-			throw new IllegalArgumentException("rnd is null");
-		}
+	public MHAlgorithm(final MHOneStepLogic<S> oneStepLogic, final MHProposal<S> proposal
+//			, final MHWeight<S> weight,
+//			final Random rnd
+			) {
+//		if (oneStepLogic == null) {
+//			throw new IllegalArgumentException("oneStepLogic is null");
+//		}
+//		if (proposal == null) {
+//			throw new IllegalArgumentException("proposal is null");
+//		}
+//		if (weight == null) {
+//			throw new IllegalArgumentException("weight is null");
+//		}
+//		if (rnd == null) {
+//			throw new IllegalArgumentException("rnd is null");
+//		}
+		this.oneStepLogic = oneStepLogic;
 		this.proposal = proposal;
-		this.weight = weight;
-		this.rnd = rnd;
+//		this.weight = weight;
+//		this.rnd = rnd;
+	}
+
+	public MHAlgorithm(final MHProposal<S> proposal, final MHWeight<S> weight, final Random rnd) {
+		this(new MHSequentialOneStepLogic<S>(proposal, weight, rnd), proposal);
 	}
 
 	// -------------------- SETTERS AND GETTERS --------------------
@@ -120,17 +133,19 @@ public class MHAlgorithm<S extends Object> {
 		}
 
 		long tick_ms = System.currentTimeMillis();
-		S currentState;
-		if (this.initialState != null) {
-			currentState = this.initialState;
-		} else {
-			currentState = this.proposal.newInitialState();
-		}
-		double currentLogWeight = this.weight.logWeight(currentState);
+//		S currentState;
+//		if (this.initialState != null) {
+//			currentState = this.initialState;
+//		} else {
+//			currentState = this.proposal.newInitialState();
+//		}
+//		double currentLogWeight = this.weight.logWeight(currentState);
+		MHState<S> currentState = this.oneStepLogic.createInitial(this.initialState != null ? this.initialState : this.proposal.newInitialState());
+		
 		this.lastCompTime_ms += System.currentTimeMillis() - tick_ms;
 
 		for (MHStateProcessor<S> processor : this.stateProcessors) {
-			processor.processState(currentState);
+			processor.processState(currentState.getState());
 		}
 
 		/*
@@ -140,36 +155,39 @@ public class MHAlgorithm<S extends Object> {
 
 			if ((this.msgInterval >= 1) && (i % this.msgInterval == 0)) {
 				System.out.println("MH iteration " + i);
-				System.out.println("  state     = " + currentState);
-				System.out.println("  logweight = " + currentLogWeight);
-				System.out.println("  weight    = " + Math.exp(currentLogWeight));
+				System.out.println("  state     = " + currentState.getState());
+//				System.out.println("  logweight = " + currentLogWeight);
+//				System.out.println("  weight    = " + Math.exp(currentLogWeight));
 			}
 
 			tick_ms = System.currentTimeMillis();
-			final MHTransition<S> proposalTransition = this.proposal.newTransition(currentState);
-			final S proposalState = proposalTransition.getNewState();
-			double proposalLogWeight = this.weight.logWeight(proposalState);
-			final double logAlpha = (proposalLogWeight - currentLogWeight)
-					+ (proposalTransition.getBwdLogProb() - proposalTransition.getFwdLogProb());
+
+//			final MHTransition<S> proposalTransition = this.proposal.newTransition(currentState);
+//			final S proposalState = proposalTransition.getNewState();
+//			double proposalLogWeight = this.weight.logWeight(proposalState);
+//			final double logAlpha = (proposalLogWeight - currentLogWeight)
+//					+ (proposalTransition.getBwdLogProb() - proposalTransition.getFwdLogProb());
+//
+//			if (Math.log(this.rnd.nextDouble()) < logAlpha) {
+//				currentState = proposalState;
+//				currentLogWeight = proposalLogWeight;
+//			}
+			currentState = this.oneStepLogic.drawNext(currentState);
 			
-			if (Math.log(this.rnd.nextDouble()) < logAlpha) {
-				currentState = proposalState;
-				currentLogWeight = proposalLogWeight;
-			}
 			this.lastCompTime_ms += System.currentTimeMillis() - tick_ms;
 
 			for (MHStateProcessor<S> processor : this.stateProcessors) {
-				processor.processState(currentState);
+				processor.processState(currentState.getState());
 			}
 		}
 
 		/*
 		 * wrap up
 		 */
-		this.finalState = currentState;
+		this.finalState = currentState.getState();
 
 		for (MHStateProcessor<S> processor : this.stateProcessors) {
 			processor.end();
-		}		
+		}
 	}
 }
