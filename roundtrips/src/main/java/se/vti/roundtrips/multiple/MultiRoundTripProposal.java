@@ -23,7 +23,6 @@ import java.util.Random;
 
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
-import se.vti.roundtrips.single.RoundTripProposal;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -36,11 +35,11 @@ public class MultiRoundTripProposal<L extends Location> implements MHProposal<Mu
 
 	private final Random rnd;
 
-	private final RoundTripProposal<L> singleProposal;
+	private final MHProposal<RoundTrip<L>> singleProposal;
 
 	private Double flipProba = null;
 
-	public MultiRoundTripProposal(Random rnd, RoundTripProposal<L> singleProposal) {
+	public MultiRoundTripProposal(Random rnd, MHProposal<RoundTrip<L>> singleProposal) {
 		this.rnd = rnd;
 		this.singleProposal = singleProposal;
 	}

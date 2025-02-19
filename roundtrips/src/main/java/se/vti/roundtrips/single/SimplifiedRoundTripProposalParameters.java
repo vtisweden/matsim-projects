@@ -17,44 +17,29 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.parallel;
-
-import java.util.Collections;
-import java.util.List;
+package se.vti.roundtrips.single;
 
 /**
  * 
  * @author GunnarF
  *
- * @param <X>
  */
-public class MHParallelTransition<X> {
+public class SimplifiedRoundTripProposalParameters {
 
-	// -------------------- CONSTANTS --------------------
+	public final double insertWeight;
+	public final double removeWeight;
+	public final double flipLocationWeight;
+	public final double flipDepTimeWeight;
 
-	private final List<X> states;
-
-	private final double[][] logTransProbas;
-
-	// -------------------- CONSTRUCTION --------------------
-
-	public MHParallelTransition(List<X> states) {
-		this.states = Collections.unmodifiableList(states);
-		this.logTransProbas = new double[states.size()][states.size()];
+	public SimplifiedRoundTripProposalParameters(double insertWeight, double removeWeight, double flipLocationWeight,
+			double flipDepTimeWeight) {
+		this.insertWeight = insertWeight;
+		this.removeWeight = removeWeight;
+		this.flipLocationWeight = flipLocationWeight;
+		this.flipDepTimeWeight = flipDepTimeWeight;
 	}
 
-	public void setLogTransProba(int i, int j, double logTransProba) {
-		this.logTransProbas[i][j] = logTransProba;
+	public SimplifiedRoundTripProposalParameters() {
+		this(1.0, 1.0, 1.0, 1.0);
 	}
-
-	// -------------------- CONTENT ACCESS --------------------
-
-	public List<X> getStates() {
-		return this.states;
-	}
-
-	public double getLogTransProba(int i, int j) {
-		return this.logTransProbas[i][j];
-	}
-
 }
