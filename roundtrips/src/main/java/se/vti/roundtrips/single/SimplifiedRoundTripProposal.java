@@ -19,6 +19,7 @@
  */
 package se.vti.roundtrips.single;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -41,14 +42,15 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 	private final Scenario<L> scenario;
 
 	private final Simulator<L> simulator;
-	
+
 	private final List<L> allLocations;
 
 	private final Random rnd;
-	
+
 	// -------------------- CONSTRUCTION --------------------
 
-	public SimplifiedRoundTripProposal(SimplifiedRoundTripProposalParameters proposalParams, Scenario<L> scenario, Simulator<L> simulator) {
+	public SimplifiedRoundTripProposal(SimplifiedRoundTripProposalParameters proposalParams, Scenario<L> scenario,
+			Simulator<L> simulator) {
 		this.proposalParams = proposalParams;
 		this.scenario = scenario;
 		this.simulator = simulator;
@@ -86,6 +88,28 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 		}
 	}
 
+	// for testing
+	private boolean correctAction(RoundTripTransitionKernel fwdTransitionKernel,
+			RoundTripTransitionKernel bwdTransitionKernel, RoundTripTransitionKernel.Action realizedFwdAction,
+			RoundTrip<L> from, RoundTrip<L> to) {
+		final RoundTripTransitionKernel.Action identifiedFwdAction = fwdTransitionKernel.identifyAction(to);
+		final RoundTripTransitionKernel.Action identifiedBwdAction = bwdTransitionKernel.identifyAction(from);
+		if (!identifiedFwdAction.equals(realizedFwdAction)) {
+			return false;
+		}
+		if (RoundTripTransitionKernel.Action.INS.equals(identifiedFwdAction)) {
+			return (RoundTripTransitionKernel.Action.REM.equals(identifiedBwdAction));
+		} else if (RoundTripTransitionKernel.Action.REM.equals(identifiedFwdAction)) {
+			return (RoundTripTransitionKernel.Action.INS.equals(identifiedBwdAction));
+		} else if (RoundTripTransitionKernel.Action.FLIP_LOC.equals(identifiedFwdAction)) {
+			return (RoundTripTransitionKernel.Action.FLIP_LOC.equals(identifiedBwdAction));
+		} else if (RoundTripTransitionKernel.Action.FLIP_DEP.equals(identifiedFwdAction)) {
+			return (RoundTripTransitionKernel.Action.FLIP_DEP.equals(identifiedBwdAction));
+		} else {
+			return false;
+		}
+	}
+
 	// -------------------- IMPLEMENTATION OF INTERFACE --------------------
 
 	@Override
@@ -96,41 +120,59 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 	@Override
 	public MHTransition<RoundTrip<L>> newTransition(RoundTrip<L> from) {
 
-		final RoundTripTransitionKernel fwdTransitionKernel = new RoundTripTransitionKernel(from,
-				this.scenario, this.proposalParams);
+		assert (new LinkedHashSet<>(from.getDeparturesView()).size() == from.getDeparturesView().size());
+
+		final RoundTripTransitionKernel fwdTransitionKernel = new RoundTripTransitionKernel(from, this.scenario,
+				this.proposalParams);
 
 		final RoundTrip<L> to = from.clone();
 
+		final RoundTripTransitionKernel.Action realizedFwdAction;
 		final double _U = this.rnd.nextDouble();
 		if (_U < fwdTransitionKernel.insertProba) { // INSERT
 
+			realizedFwdAction = RoundTripTransitionKernel.Action.INS;
 			final int whereToInsert = this.rnd.nextInt(from.locationCnt() + 1);
 			final L whatLocationToInsert = this.allLocations.get(this.rnd.nextInt(this.allLocations.size()));
-			final Integer whatDptTimeToInsert = this.drawUnusedDepartureTime(from);
-			to.addAndEnsureSortedDepartures(whereToInsert, whatLocationToInsert, whatDptTimeToInsert);
+			final Integer whatDepTimeToInsert = this.drawUnusedDepartureTime(from);
+			to.addAndEnsureSortedDepartures(whereToInsert, whatLocationToInsert, whatDepTimeToInsert);
 
 		} else if (_U < fwdTransitionKernel.insertProba + fwdTransitionKernel.removeProba) { // REMOVE
 
-			final int whereToRemove = this.rnd.nextInt(from.locationCnt());
-			to.remove(whereToRemove, whereToRemove);
+			/*
+			 * We need to draw location and departure index independently because it
+			 * otherwise can happen that there is no one-step transition back after an
+			 * insert.
+			 */
+			realizedFwdAction = RoundTripTransitionKernel.Action.REM;
+			final int whereToRemoveLoc = this.rnd.nextInt(from.locationCnt());
+			final int whereToRemoveDep = this.rnd.nextInt(from.locationCnt());
+			to.remove(whereToRemoveLoc, whereToRemoveDep);
 
 		} else if (_U < fwdTransitionKernel.insertProba + fwdTransitionKernel.removeProba
 				+ fwdTransitionKernel.flipLocationProba) { // FLIP LOCATION
 
+			realizedFwdAction = RoundTripTransitionKernel.Action.FLIP_LOC;
 			final int whereToFlip = this.rnd.nextInt(from.locationCnt());
 			final L newLocation = this.drawLocationDifferentFrom(from.getLocation(whereToFlip));
 			to.setLocation(whereToFlip, newLocation);
 
 		} else { // FLIP DEPARTURE TIME
 
+			realizedFwdAction = RoundTripTransitionKernel.Action.FLIP_DEP;
 			final int whereToFlip = this.rnd.nextInt(from.locationCnt());
 			final Integer newDptTime = this.drawUnusedDepartureTime(from);
 			to.setDepartureAndEnsureOrdering(whereToFlip, newDptTime);
 		}
-		to.setEpisodes(this.simulator.simulate(to));
 
-		final RoundTripTransitionKernel bwdTransitionKernel = new RoundTripTransitionKernel(to,
-				this.scenario, this.proposalParams);
+		to.setEpisodes(this.simulator.simulate(to));
+		final RoundTripTransitionKernel bwdTransitionKernel = new RoundTripTransitionKernel(to, this.scenario,
+				this.proposalParams);
+
+		assert (this.correctAction(fwdTransitionKernel, bwdTransitionKernel, realizedFwdAction, from, to));
+		assert (fwdTransitionKernel.transitionProba(to) > 0);
+		assert (bwdTransitionKernel.transitionProba(from) > 0);
+
 		return new MHTransition<>(from, to, Math.log(fwdTransitionKernel.transitionProba(to)),
 				Math.log(bwdTransitionKernel.transitionProba(from)));
 	}
