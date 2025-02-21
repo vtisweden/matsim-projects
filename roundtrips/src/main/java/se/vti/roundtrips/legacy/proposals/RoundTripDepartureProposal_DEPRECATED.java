@@ -30,7 +30,7 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class RoundTripDepartureProposal<L extends Location> implements MHProposal<RoundTrip<L>> {
+public class RoundTripDepartureProposal_DEPRECATED<L extends Location> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -38,7 +38,7 @@ public class RoundTripDepartureProposal<L extends Location> implements MHProposa
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripDepartureProposal(Scenario<L> scenario) {
+	public RoundTripDepartureProposal_DEPRECATED(Scenario<L> scenario) {
 		this.scenario = scenario;
 	}
 

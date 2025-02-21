@@ -36,7 +36,7 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  *
  * @param <L> the location type
  */
-public class RoundTripProposal<L extends Location> implements MHProposal<RoundTrip<L>> {
+public class RoundTripProposal_DEPRECATED<L extends Location> implements MHProposal<RoundTrip<L>> {
 
 	private final Simulator<L> simulator;
 
@@ -44,7 +44,7 @@ public class RoundTripProposal<L extends Location> implements MHProposal<RoundTr
 
 	private final Map<MHProposal<RoundTrip<L>>, Double> proposal2weight = new LinkedHashMap<>();
 
-	public RoundTripProposal(Simulator<L> simulator, Random rnd) {
+	public RoundTripProposal_DEPRECATED(Simulator<L> simulator, Random rnd) {
 		this.simulator = simulator;
 		this.rnd = rnd;
 	}

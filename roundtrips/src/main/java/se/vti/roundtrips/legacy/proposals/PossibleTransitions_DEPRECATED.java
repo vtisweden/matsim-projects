@@ -32,7 +32,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-class PossibleTransitions<L extends Location> {
+class PossibleTransitions_DEPRECATED<L extends Location> {
 
 	private final RoundTrip<L> fromState;
 
@@ -46,7 +46,7 @@ class PossibleTransitions<L extends Location> {
 	final double removeProba;
 	final double flipProba;
 
-	PossibleTransitions(RoundTrip<L> state, Scenario<L> scenario) {
+	PossibleTransitions_DEPRECATED(RoundTrip<L> state, Scenario<L> scenario) {
 
 		this.fromState = state;
 		this.scenario = scenario;
