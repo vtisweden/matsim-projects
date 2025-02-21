@@ -134,8 +134,8 @@ public class RoundTrip<L extends Location> {
 		Collections.sort(this.departures);
 	}
 
-	public void remove(int locationChargingIndex, int departureIndex) {
-		this.locations.remove(locationChargingIndex);
+	public void remove(int locationIndex, int departureIndex) {
+		this.locations.remove(locationIndex);
 		this.departures.remove(departureIndex);
 	}
 
