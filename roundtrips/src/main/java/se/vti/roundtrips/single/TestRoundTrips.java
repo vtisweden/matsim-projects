@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Random;
 
 import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.preferences.MaximumEntropyPrior;
+import se.vti.roundtrips.preferences.Preferences;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -39,90 +41,14 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  */
 public class TestRoundTrips {
 
-	static void testLocationsAndTimesWithAlternatingLocations() {
-		final int totalIts = 10 * 1000 * 1000;
-
-		final Random rnd = new Random();
-
-		final Scenario<Location> scenario = new Scenario<>();
-		for (int i = 1; i <= 3; i++) {
-			scenario.getOrCreateLocationWithSameName(new Location("" + i));
-		}
-
-		final double locationProba = 0.1;
-		final double departureProba = 0.9;
-//		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
-//		proposal.addProposal(new RoundTripLocationProposal<Location>(scenario), locationProba);
-//		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
-		SimplifiedRoundTripProposal<Location> proposal = new SimplifiedRoundTripProposal<>(
-				new SimplifiedRoundTripProposalParameters(locationProba / 3.0, locationProba / 3.0, locationProba / 3.0,
-						departureProba),
-				scenario, r -> null);
-
-		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
-
-			int it = 0;
-			Map<RoundTrip<Location>, Long> roundTrip2cnt = new LinkedHashMap<>();
-			private long[] binCnts = new long[scenario.getBinCnt()];
-
-			@Override
-			public void start() {
-			}
-
-			@Override
-			public void processState(RoundTrip<Location> state) {
-				if (it++ > totalIts / 2) {
-					this.roundTrip2cnt.compute(state, (s, c) -> c == null ? 1 : c + 1);
-					for (int i = 0; i < state.locationCnt(); i++) {
-						this.binCnts[state.getDeparture(i)]++;
-					}
-				}
-			}
-
-			@Override
-			public void end() {
-				List<Long> counts = new ArrayList<>(this.roundTrip2cnt.size());
-
-				for (Map.Entry<RoundTrip<Location>, Long> e : this.roundTrip2cnt.entrySet()) {
-					System.out.println(e.getKey() + "\t" + e.getValue());
-					counts.add(e.getValue());
-				}
-				System.out.println(this.roundTrip2cnt.size());
-
-				System.out.println("departures");
-				for (long cnt : this.binCnts) {
-					System.out.println(cnt);
-				}
-
-				Collections.sort(counts);
-				try {
-					PrintWriter w = new PrintWriter("counts.txt");
-					for (long c : counts) {
-						w.println(c);
-					}
-					w.flush();
-					w.close();
-				} catch (Exception e) {
-					throw new RuntimeException();
-				}
-
-			}
-
-		};
-
-		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1"),
-				scenario.getLocation("2"), scenario.getLocation("3"), scenario.getLocation("2")),
-				Arrays.asList(1, 3, 5, 7));
-		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, state -> 0.0, rnd);
-		algo.addStateProcessor(prn);
-		algo.setMsgInterval(10000);
-		algo.setInitialState(initialState);
-		algo.run(totalIts);
-	}
-
 	static void testLocationsAndTimesWithoutLocationConstraints() {
-		final long totalIts = 100 * 1000 * 1000;
+		final long totalIts = 5 * 1000 * 1000;
 
+//		System.out.println("" + (Double.NaN < 0));
+//		System.out.println("" + (Double.NaN > 0));
+//		System.out.println("" + (Double.NaN == 0));
+//		System.exit(0);
+		
 		final Random rnd = new Random();
 
 		final double locationProba = 0.1;
@@ -132,22 +58,23 @@ public class TestRoundTrips {
 		for (int i = 1; i <= 3; i++) {
 			scenario.getOrCreateLocationWithSameName(new Location("" + i));
 		}
-		scenario.setMaxStayEpisodes(2);
+		scenario.setMaxStayEpisodes(10);
 		scenario.setTimeBinCnt(24);
 
 //		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
 //		proposal.addProposal(new RoundTripLocationProposal<>(scenario), locationProba);
 //		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
 		SimplifiedRoundTripProposal<Location> proposal = new SimplifiedRoundTripProposal<>(
-				new SimplifiedRoundTripProposalParameters(locationProba / 3.0, locationProba / 3.0, locationProba / 3.0,
-						departureProba),
-				scenario, r -> null);
+				new SimplifiedRoundTripProposalParameters(locationProba / 3.0, locationProba / 3.0, 0 * locationProba / 3.0,
+						0 * departureProba),
+				scenario, roundTrip -> null);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
-
+			
 			long it = 0;
 			Map<RoundTrip<Location>, Long> roundTrip2cnt = new LinkedHashMap<>();
 			private long[] binCnts = new long[scenario.getBinCnt()];
+			Map<Integer, Long> size2cnt = new LinkedHashMap<>();
 
 			@Override
 			public void start() {
@@ -160,6 +87,7 @@ public class TestRoundTrips {
 					for (int i = 0; i < state.locationCnt(); i++) {
 						this.binCnts[state.getDeparture(i)]++;
 					}
+					this.size2cnt.compute(state.locationCnt(), (s,c) -> c == null ? 1 : c + 1);
 				}
 			}
 
@@ -168,7 +96,7 @@ public class TestRoundTrips {
 				List<Long> counts = new ArrayList<>(this.roundTrip2cnt.size());
 
 				for (Map.Entry<RoundTrip<Location>, Long> e : this.roundTrip2cnt.entrySet()) {
-					System.out.println(e.getKey() + "\t" + e.getValue());
+//					System.out.println(e.getKey() + "\t" + e.getValue());
 					counts.add(e.getValue());
 				}
 				System.out.println(this.roundTrip2cnt.size());
@@ -176,6 +104,12 @@ public class TestRoundTrips {
 				System.out.println("departures");
 				for (long cnt : this.binCnts) {
 					System.out.println(cnt);
+				}
+				System.out.println();
+				
+				System.out.println("sizes");
+				for (int size = 1; size <= Math.min(scenario.getBinCnt(), scenario.getMaxStayEpisodes()); size++) {
+					System.out.println(size + "\t" + this.size2cnt.getOrDefault(size, 0l));
 				}
 
 				Collections.sort(counts);
@@ -194,8 +128,14 @@ public class TestRoundTrips {
 
 		};
 
+		Preferences<RoundTrip<Location>> pref = new Preferences<>();
+		pref.addComponent(new MaximumEntropyPrior<>(scenario.getLocationCnt(), scenario.getBinCnt(), 3.0));
+		
 		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1")), Arrays.asList(12));
-		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, state -> 0.0, rnd);
+		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, 
+				pref,
+//				state -> 0.0, 
+				rnd);
 		algo.addStateProcessor(prn);
 		algo.setMsgInterval(10000);
 		algo.setInitialState(initialState);
@@ -205,7 +145,6 @@ public class TestRoundTrips {
 	public static void main(String[] args) {
 		System.out.println("STARTED ...");
 
-//		 testLocationsAndTimesWithAlternatingLocations();
 		testLocationsAndTimesWithoutLocationConstraints();
 
 		System.out.println("... DONE");
