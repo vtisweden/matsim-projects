@@ -64,10 +64,7 @@ public class TestRoundTrips {
 //		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
 //		proposal.addProposal(new RoundTripLocationProposal<>(scenario), locationProba);
 //		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
-		SimplifiedRoundTripProposal<Location> proposal = new SimplifiedRoundTripProposal<>(
-				new SimplifiedRoundTripProposalParameters(locationProba / 3.0, locationProba / 3.0, 0 * locationProba / 3.0,
-						0 * departureProba),
-				scenario, roundTrip -> null);
+		SimplifiedRoundTripProposal<Location> proposal = new SimplifiedRoundTripProposal<>(scenario, roundTrip -> null);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
 			
