@@ -31,11 +31,19 @@ public class MHSequentialOneStepLogic<X> implements MHOneStepLogic<X> {
 	private class SequentialState implements MHState<X> {
 
 		private final X state;
+		
+		private final double logWeight;
 
-		private SequentialState(X state) {
+		private SequentialState(X state, double logWeight) {
 			this.state = state;
+			this.logWeight = logWeight;
 		}
 
+		@Override
+		public Double getLogWeight() {
+			return this.logWeight;
+		}
+		
 		@Override
 		public X getState() {
 			return this.state;
@@ -56,14 +64,14 @@ public class MHSequentialOneStepLogic<X> implements MHOneStepLogic<X> {
 
 	@Override
 	public MHState<X> createInitial(X initial) {
-		return new SequentialState(initial);
+		return new SequentialState(initial, this.weight.logWeight(initial));
 	}
 
 	@Override
 	public MHState<X> drawNext(MHState<X> currentState) {
 
 		// TODO cache
-		final double currentLogWeight = this.weight.logWeight(currentState.getState());
+		final double currentLogWeight = currentState.getLogWeight();
 
 		final MHTransition<X> proposalTransition = this.proposal.newTransition(currentState.getState());
 		final X proposalState = proposalTransition.getNewState();
@@ -72,7 +80,7 @@ public class MHSequentialOneStepLogic<X> implements MHOneStepLogic<X> {
 				+ (proposalTransition.getBwdLogProb() - proposalTransition.getFwdLogProb());
 
 		if (Math.log(this.rnd.nextDouble()) < logAlpha) {
-			return new SequentialState(proposalState);
+			return new SequentialState(proposalState, proposalLogWeight);
 		} else {
 			return currentState;
 		}

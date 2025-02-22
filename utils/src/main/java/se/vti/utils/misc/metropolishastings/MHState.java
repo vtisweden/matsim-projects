@@ -28,4 +28,6 @@ public interface MHState<X> {
 
 	X getState();
 	
+	Double getLogWeight();
+	
 }
