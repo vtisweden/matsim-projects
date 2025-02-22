@@ -43,7 +43,7 @@ public class TestTransitionProbabilities {
 	static boolean growShrink = true;
 	static boolean flip = true;
 
-	static RoundTripTransitionKernel.Action action = RoundTripTransitionKernel.Action.FLIP_DEP;
+	static RoundTripTransitionKernel.Action action = RoundTripTransitionKernel.Action.INS;
 
 	public static void main(String[] args) {
 		Scenario<Location> scenario = new Scenario<>();
@@ -63,7 +63,7 @@ public class TestTransitionProbabilities {
 
 			RoundTrip<Location> from;
 			MHTransition<RoundTrip<Location>> target;
-			RoundTripTransitionKernel fwdKernel;
+			RoundTripTransitionKernel<Location> fwdKernel;
 			do {
 				int size = scenario.getRandom().nextInt(1, Math.min(maxStayEpisodes, binCnt));
 				List<Location> locations = new ArrayList<>(size);
@@ -76,7 +76,7 @@ public class TestTransitionProbabilities {
 				departures = departures.subList(0, size);
 				Collections.sort(departures);
 				from = new RoundTrip<>(locations, departures);
-				fwdKernel = new RoundTripTransitionKernel(from, scenario, params);
+				fwdKernel = new RoundTripTransitionKernel<>(from, scenario, params);
 				target = proposal.newTransition(from);
 			} while (!fwdKernel.identifyAction(target.getNewState()).equals(action));
 

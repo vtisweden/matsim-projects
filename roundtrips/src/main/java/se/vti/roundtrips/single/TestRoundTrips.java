@@ -48,6 +48,12 @@ public class TestRoundTrips {
 //		System.out.println("" + (Double.NaN > 0));
 //		System.out.println("" + (Double.NaN == 0));
 //		System.exit(0);
+
+//		List<String> aa = new ArrayList<>(Arrays.asList("A", "A"));
+//		List<String> a = Arrays.asList("A");
+//		aa.removeAll(a);
+//		System.out.println(aa);
+//		System.exit(0);
 		
 		final Random rnd = new Random();
 
@@ -67,7 +73,7 @@ public class TestRoundTrips {
 		SimplifiedRoundTripProposal<Location> proposal = new SimplifiedRoundTripProposal<>(scenario, roundTrip -> null);
 
 		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
-			
+
 			long it = 0;
 			Map<RoundTrip<Location>, Long> roundTrip2cnt = new LinkedHashMap<>();
 			private long[] binCnts = new long[scenario.getBinCnt()];
@@ -84,7 +90,7 @@ public class TestRoundTrips {
 					for (int i = 0; i < state.locationCnt(); i++) {
 						this.binCnts[state.getDeparture(i)]++;
 					}
-					this.size2cnt.compute(state.locationCnt(), (s,c) -> c == null ? 1 : c + 1);
+					this.size2cnt.compute(state.locationCnt(), (s, c) -> c == null ? 1 : c + 1);
 				}
 			}
 
@@ -103,7 +109,7 @@ public class TestRoundTrips {
 					System.out.println(cnt);
 				}
 				System.out.println();
-				
+
 				System.out.println("sizes");
 				for (int size = 1; size <= Math.min(scenario.getBinCnt(), scenario.getMaxStayEpisodes()); size++) {
 					System.out.println(size + "\t" + this.size2cnt.getOrDefault(size, 0l));
@@ -127,12 +133,13 @@ public class TestRoundTrips {
 
 		Preferences<RoundTrip<Location>> pref = new Preferences<>();
 		pref.addComponent(new MaximumEntropyPrior<>(scenario.getLocationCnt(), scenario.getBinCnt(), 3.0));
-		
+
 		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1")), Arrays.asList(12));
+
 		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, 
 				pref,
-//				state -> 0.0, 
 				rnd);
+
 		algo.addStateProcessor(prn);
 		algo.setMsgInterval(10000);
 		algo.setInitialState(initialState);
