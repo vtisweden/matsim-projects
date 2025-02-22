@@ -89,8 +89,8 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 	}
 
 	// for testing
-	private boolean correctAction(RoundTripTransitionKernel fwdTransitionKernel,
-			RoundTripTransitionKernel bwdTransitionKernel, RoundTripTransitionKernel.Action realizedFwdAction,
+	private boolean correctAction(RoundTripTransitionKernel<L> fwdTransitionKernel,
+			RoundTripTransitionKernel<L> bwdTransitionKernel, RoundTripTransitionKernel.Action realizedFwdAction,
 			RoundTrip<L> from, RoundTrip<L> to) {
 		final RoundTripTransitionKernel.Action identifiedFwdAction = fwdTransitionKernel.identifyAction(to);
 		final RoundTripTransitionKernel.Action identifiedBwdAction = bwdTransitionKernel.identifyAction(from);
@@ -122,7 +122,7 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 
 		assert (new LinkedHashSet<>(from.getDeparturesView()).size() == from.getDeparturesView().size());
 
-		final RoundTripTransitionKernel fwdTransitionKernel = new RoundTripTransitionKernel(from, this.scenario,
+		final RoundTripTransitionKernel<L> fwdTransitionKernel = new RoundTripTransitionKernel<>(from, this.scenario,
 				this.proposalParams);
 
 		final RoundTrip<L> to = from.clone();
@@ -166,7 +166,7 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 		}
 
 		to.setEpisodes(this.simulator.simulate(to));
-		final RoundTripTransitionKernel bwdTransitionKernel = new RoundTripTransitionKernel(to, this.scenario,
+		final RoundTripTransitionKernel<L> bwdTransitionKernel = new RoundTripTransitionKernel<>(to, this.scenario,
 				this.proposalParams);
 
 		assert (this.correctAction(fwdTransitionKernel, bwdTransitionKernel, realizedFwdAction, from, to));

@@ -19,6 +19,7 @@
  */
 package se.vti.roundtrips.single;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ import se.vti.roundtrips.model.Scenario;
  *
  * @param <L>
  */
-class RoundTripTransitionKernel {
+class RoundTripTransitionKernel<L extends Location> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -52,7 +53,7 @@ class RoundTripTransitionKernel {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	RoundTripTransitionKernel(RoundTrip<?> from, Scenario<?> scenario, SimplifiedRoundTripProposalParameters params) {
+	RoundTripTransitionKernel(RoundTrip<L> from, Scenario<L> scenario, SimplifiedRoundTripProposalParameters params) {
 		this.from = from;
 		this.scenario = scenario;
 
@@ -77,6 +78,10 @@ class RoundTripTransitionKernel {
 		this.transitionProbaGivenFlipDepTime = 1.0 / from.locationCnt() / (scenario.getBinCnt() - from.locationCnt());
 	}
 
+	RoundTripTransitionKernel(RoundTrip<L> from, Scenario<L> scenario) {
+		this(from, scenario, new SimplifiedRoundTripProposalParameters());
+	}
+
 	// -------------------- INTERNALS --------------------
 
 	private double numberOfInsertionPoints(List<?> shorter, List<?> longer) {
@@ -89,7 +94,7 @@ class RoundTripTransitionKernel {
 				result++;
 			}
 			tmp.remove(i);
-			assert(tmp.equals(shorter));
+			assert (tmp.equals(shorter));
 		}
 		return result;
 	}
@@ -101,30 +106,28 @@ class RoundTripTransitionKernel {
 	}
 
 	private double numberOfRemovalPoints(List<?> longer, List<?> shorter) {
-		assert(shorter.size() + 1 == longer.size());
+		assert (shorter.size() + 1 == longer.size());
 		int result = 0;
 		LinkedList<Object> tmp = new LinkedList<>(longer);
 		for (int i = 0; i < longer.size(); i++) {
 			Object removed = tmp.remove(i);
-			assert(tmp.size() == shorter.size());
+			assert (tmp.size() == shorter.size());
 			if (tmp.equals(shorter)) {
 				result++;
 			}
 			tmp.add(i, removed);
-			assert(tmp.equals(longer));
+			assert (tmp.equals(longer));
 		}
-		assert(result > 0);
+		assert (result > 0);
 		return result;
 	}
 
 	private double transitionProbaGivenRemove(RoundTrip<?> to) {
-		double result = this.numberOfRemovalPoints(this.from.getLocationsView(), to.getLocationsView()) 
-				/this.from.locationCnt() / this.from.locationCnt();
-		assert(result > 0);
+		double result = this.numberOfRemovalPoints(this.from.getLocationsView(), to.getLocationsView())
+				/ this.from.locationCnt() / this.from.locationCnt();
+		assert (result > 0);
 		return result;
 	}
-
-	// -------------------- IMPLEMENTATION --------------------
 
 	// for testing
 	Action identifyAction(RoundTrip<?> to) {
@@ -141,8 +144,100 @@ class RoundTripTransitionKernel {
 		}
 	}
 
-	// TODO This assumes that the transition from -> to followed the same kernel.
-	double transitionProba(RoundTrip<?> to) {
+	// TODO NEW
+	private boolean locationInsertWasPossible(List<?> shorter, List<?> longer) {
+		assert (shorter.size() + 1 == longer.size());
+		boolean usedInsert = false;
+		for (int indexInShorter = 0; indexInShorter < shorter.size(); indexInShorter++) {
+			int indexInLonger = (usedInsert ? indexInShorter + 1 : indexInShorter);
+			if (!shorter.get(indexInShorter).equals(longer.get(indexInLonger))) {
+				if (usedInsert) {
+					return false;
+				} else {
+					usedInsert = true;
+					if (!shorter.get(indexInShorter).equals(longer.get(indexInShorter + 1))) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+	// TODO NEW
+	private boolean locationFlipWasPossible(List<?> a, List<?> b) {
+		assert (a.size() == b.size());
+		int differenceCnt = 0;
+		for (int i = 0; i < a.size(); i++) {
+			if (!a.get(i).equals(b.get(i))) {
+				differenceCnt++;
+				if (differenceCnt > 1) {
+					return false;
+				}
+			}
+		}
+		return (differenceCnt == 1);
+	}
+
+	// TODO NEW
+	private boolean departuresInsertWasPossible(List<?> shorter, List<?> longer) {
+		assert (shorter.size() + 1 == longer.size());
+		return longer.containsAll(shorter);
+	}
+
+	// TODO NEW
+	private boolean departureFlipWasPossible(List<?> a, List<?> b) {
+		assert (a.size() == b.size());
+
+		List<?> diff = new ArrayList<>(a);
+		diff.removeAll(b);
+		if (diff.size() != 1) {
+			return false;
+		}
+
+		diff = new ArrayList<>(b);
+		diff.removeAll(a);
+		return (diff.size() == 1);
+	}
+
+	double transitionProbaChecked(RoundTrip<?> to) {
+
+		if (this.from.locationCnt() + 1 == to.locationCnt()) {
+
+			if (this.locationInsertWasPossible(this.from.getLocationsView(), to.getLocationsView())
+					&& this.departuresInsertWasPossible(this.from.getDeparturesView(), to.getDeparturesView())) {
+				return this.insertProba * this.transitionProbaGivenInsert(to);
+			}
+
+		} else if (this.from.locationCnt() - 1 == to.locationCnt()) {
+
+			if (this.locationInsertWasPossible(to.getLocationsView(), this.from.getLocationsView())
+					&& this.departuresInsertWasPossible(to.getDeparturesView(), this.from.getDeparturesView())) {
+				return this.removeProba * this.transitionProbaGivenRemove(to);
+			}
+
+		} else if (this.from.locationCnt() == to.locationCnt()) {
+
+			if (this.from.getDeparturesView().equals(to.getDeparturesView())) {
+
+				if (this.locationFlipWasPossible(this.from.getLocationsView(), to.getLocationsView())) {
+					return this.flipLocationProba * this.transitionProbaGivenFlipLocation;
+				}
+
+			} else if (this.from.getLocationsView().equals(to.getLocationsView())) {
+
+				if (this.departureFlipWasPossible(this.from.getDeparturesView(), to.getDeparturesView())) {
+					return this.flipDepTimeProba * this.transitionProbaGivenFlipDepTime;
+				}
+
+			}
+		}
+
+		return 0.0;
+	}
+
+	// This assumes that the transition from -> to followed the same kernel.
+	double transitionProbaUnchecked(RoundTrip<?> to) {
 		double result;
 		if (this.from.locationCnt() + 1 == to.locationCnt()) {
 			assert (this.insertProba * this.transitionProbaGivenInsert(to) > 0);
@@ -159,7 +254,12 @@ class RoundTripTransitionKernel {
 		} else {
 			throw new UnsupportedOperationException();
 		}
-		assert(result > 0);
+		assert (result > 0);
 		return result;
+	}
+
+	public double transitionProba(RoundTrip<L> to) {
+		return this.transitionProbaUnchecked(to);
+//		return this.transitionProbaChecked(to);
 	}
 }
