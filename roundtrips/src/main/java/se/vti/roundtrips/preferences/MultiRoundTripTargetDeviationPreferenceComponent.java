@@ -20,9 +20,9 @@
 package se.vti.roundtrips.preferences;
 
 import java.util.Arrays;
-import java.util.function.Function;
 
 import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.multiple.PopulationGroupFilter;
 import se.vti.roundtrips.single.Location;
 
 /**
@@ -30,21 +30,34 @@ import se.vti.roundtrips.single.Location;
  * @author GunnarF
  *
  */
-public abstract class MultiRoundTripPreferenceComponent<L extends Location> extends PreferenceComponent<MultiRoundTrip<L>> {
+public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends Location>
+		extends PreferenceComponent<MultiRoundTrip<L>> {
 
-	private double lastDeviationError;
-	private double lastDiscretizationError;
+	// -------------------- MEMBERS --------------------
+
+	private PopulationGroupFilter<L> filter = null;
 
 	private double[] target;
+
 	private double targetSize;
 
-	private Function<MultiRoundTrip<L>, MultiRoundTrip<L>> filter = m -> m;
+	private double lastDeviationError;
 
-	public MultiRoundTripPreferenceComponent() {
+	private double lastDiscretizationError;
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public MultiRoundTripTargetDeviationPreferenceComponent() {
 	}
 
-	public void setFilter(Function<MultiRoundTrip<L>, MultiRoundTrip<L>> filter) {
+	// -------------------- SETTERS & GETTERS --------------------
+
+	public void setFilter(PopulationGroupFilter<L> filter) {
 		this.filter = filter;
+	}
+
+	public PopulationGroupFilter<L> getFilter() {
+		return this.filter;
 	}
 
 	public double getLastDeviationError() {
@@ -55,16 +68,12 @@ public abstract class MultiRoundTripPreferenceComponent<L extends Location> exte
 		return this.lastDiscretizationError;
 	}
 
-	public MultiRoundTrip<L> filter(MultiRoundTrip<L> multiRoundTrip) {
-		return this.filter.apply(multiRoundTrip);
-	}
+	// --------------- IMPLEMENTATION OF MHPreferenceComponent ---------------
 
 	@Override
 	public double logWeight(MultiRoundTrip<L> multiRoundTrip) {
 
-		multiRoundTrip = this.filter(multiRoundTrip);
-
-		final double[] sample = this.computeSample(multiRoundTrip);
+		final double[] sample = this.computeSample(multiRoundTrip, this.filter);
 		final double sampleSize = Math.max(Arrays.stream(sample).sum(), 1e-8);
 
 		if (this.target == null) {
@@ -79,13 +88,16 @@ public abstract class MultiRoundTripPreferenceComponent<L extends Location> exte
 					Math.abs(sample[i] / sampleSize - this.target[i] / this.targetSize) - slack);
 		}
 		this.lastDiscretizationError = 0.5 * slack * this.target.length;
-		return (-1.0) * multiRoundTrip.size() * (this.lastDeviationError + this.lastDiscretizationError);
+		return (-1.0) * (this.filter == null ? multiRoundTrip.size() : this.filter.groupSize())
+				* (this.lastDeviationError + this.lastDiscretizationError);
 	}
 
+	// --------------- ABSTRACT FUNCTIONS ---------------
+	
 	public abstract String[] createLabels();
 
 	public abstract double[] computeTarget();
 
-	public abstract double[] computeSample(MultiRoundTrip<L> filteredMultiRoundTrip);
+	public abstract double[] computeSample(MultiRoundTrip<L> multiRoundTrip, PopulationGroupFilter<L> filter);
 
 }

@@ -19,6 +19,10 @@
  */
 package se.vti.roundtrips.preferences;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
@@ -32,17 +36,37 @@ public class SingleToMultiComponent<L extends Location> extends PreferenceCompon
 
 	private final PreferenceComponent<RoundTrip<L>> singleComponent;
 
+	private List<RoundTrip<L>> previousRoundTrips = null;
+	
+	private List<Double> previousLogWeights = null;
+
 	public SingleToMultiComponent(PreferenceComponent<RoundTrip<L>> singleComponent) {
 		this.singleComponent = singleComponent;
 	}
 
 	@Override
 	public double logWeight(MultiRoundTrip<L> multiRoundTrip) {
-		double logWeight = 0.0;
-		for (RoundTrip<L> roundTrip : multiRoundTrip) {
-			logWeight += this.singleComponent.logWeight(roundTrip);
+
+		double logWeightSum = 0.0;
+
+		if (this.previousRoundTrips == null) {
+			this.previousRoundTrips = new ArrayList<>(Collections.nCopies(multiRoundTrip.size(), null));
+			this.previousLogWeights = new ArrayList<>(Collections.nCopies(multiRoundTrip.size(), null));
 		}
-		return logWeight;
+
+		for (int i = 0; i < multiRoundTrip.size(); i++) {
+			final RoundTrip<L> roundTrip = multiRoundTrip.getRoundTrip(i);
+			if (this.previousRoundTrips.get(i) == roundTrip) {
+				logWeightSum += this.previousLogWeights.get(i);
+			} else {
+				final double logWeight = this.singleComponent.logWeight(roundTrip);
+				this.previousRoundTrips.set(i, roundTrip);
+				this.previousLogWeights.set(i, logWeight);
+				logWeightSum += logWeight;
+			}
+		}
+
+		return logWeightSum;
 	}
 
 }
