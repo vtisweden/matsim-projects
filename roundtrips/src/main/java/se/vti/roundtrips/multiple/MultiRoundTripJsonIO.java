@@ -47,7 +47,8 @@ import se.vti.roundtrips.single.RoundTripJsonIO;
 
 /**
  * Loads a MultiRoundTrip without any summaries. Add summary objects and call
- * MultiRoundTrip.recomputeSummaries() if needed.
+ * MultiRoundTrip.recomputeSummaries() if needed. Re-simulate round trips if
+ * necessary.
  * 
  * 
  * @author GunnarF
@@ -90,7 +91,7 @@ public class MultiRoundTripJsonIO {
 			}
 			MultiRoundTrip<Location> result = new MultiRoundTrip<>(roundTrips.size());
 			for (int i = 0; i < roundTrips.size(); i++) {
-				result.setRoundTrip(i, roundTrips.get(i));
+				result.setRoundTripAndUpdateSummaries(i, roundTrips.get(i));
 			}
 			return result;
 		}
@@ -116,8 +117,10 @@ public class MultiRoundTripJsonIO {
 		Location work = scenario.getOrCreateLocationWithSameName(new Location("work"));
 		Location school = scenario.getOrCreateLocationWithSameName(new Location("school"));
 		MultiRoundTrip<Location> multiRoundTrip = new MultiRoundTrip<>(2);
-		multiRoundTrip.setRoundTrip(0, new RoundTrip<>(Arrays.asList(home, work), Arrays.asList(7, 18)));
-		multiRoundTrip.setRoundTrip(1, new RoundTrip<>(Arrays.asList(home, school), Arrays.asList(9, 13)));
+		multiRoundTrip.setRoundTripAndUpdateSummaries(0,
+				new RoundTrip<>(Arrays.asList(home, work), Arrays.asList(7, 18)));
+		multiRoundTrip.setRoundTripAndUpdateSummaries(1,
+				new RoundTrip<>(Arrays.asList(home, school), Arrays.asList(9, 13)));
 		writeToFile(multiRoundTrip, "test.json");
 		multiRoundTrip = null;
 		multiRoundTrip = readFromFile(scenario, "test.json");

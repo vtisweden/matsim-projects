@@ -33,11 +33,15 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  */
 public class MultiRoundTripProposal<L extends Location> implements MHProposal<MultiRoundTrip<L>> {
 
+	// -------------------- MEMBERS --------------------
+
 	private final Random rnd;
 
 	private final MHProposal<RoundTrip<L>> singleProposal;
 
 	private Double flipProba = null;
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public MultiRoundTripProposal(Random rnd, MHProposal<RoundTrip<L>> singleProposal) {
 		this.rnd = rnd;
@@ -49,7 +53,7 @@ public class MultiRoundTripProposal<L extends Location> implements MHProposal<Mu
 		return this;
 	}
 
-	// IMPLEMENTATION OF INTERFACE
+	// --------------------IMPLEMENTATION OF MHProposal --------------------
 
 	@Override
 	public MultiRoundTrip<L> newInitialState() {
@@ -57,45 +61,37 @@ public class MultiRoundTripProposal<L extends Location> implements MHProposal<Mu
 	}
 
 	@Override
-	public MHTransition<MultiRoundTrip<L>> newTransition(MultiRoundTrip<L> state) {
-//		final double minFlipProba = 1.0 / (state.size() + 1);
-//		final double flipProba = 1.0 / (state.size() + 1);
-		final double minFlipProba = 1.0 / Math.max(1.0, state.size());
+	public MHTransition<MultiRoundTrip<L>> newTransition(MultiRoundTrip<L> from) {
+		
+		final double minFlipProba = 1.0 / Math.max(1.0, from.size());
 		final double flipProba = (this.flipProba != null ? Math.max(this.flipProba, minFlipProba) : minFlipProba);
+		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, from.size());
 
-		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, state.size());
+		final MultiRoundTrip<L> to = from.clone();
 
-		MultiRoundTrip<L> newState = state.clone();
 		boolean flipped = false;
 		double fwdLogProba;
 		double bwdLogProba;
 		do {
 			fwdLogProba = 0.0;
 			bwdLogProba = 0.0;
-			for (int i = 0; i < state.size(); i++) {
+			for (int i = 0; i < from.size(); i++) {
 				if (this.rnd.nextDouble() < flipProba) {
-					MHTransition<RoundTrip<L>> transition = this.singleProposal.newTransition(state.getRoundTrip(i));
-//					newState.getRoundTrip(i)
-//							.setEpisodes(this.singleProposal.getSimulator().simulate(newState.getRoundTrip(i)));
-					newState.setRoundTrip(i, transition.getNewState());
+					MHTransition<RoundTrip<L>> transition = this.singleProposal.newTransition(from.getRoundTrip(i));
+					to.setRoundTripAndUpdateSummaries(i, transition.getNewState());
 					fwdLogProba += Math.log(flipProba) + transition.getFwdLogProb();
 					bwdLogProba += Math.log(flipProba) + transition.getBwdLogProb();
 					flipped = true;
 				} else {
-//					newState.getRoundTrip(i)
-//							.setEpisodes(this.singleProposal.getSimulator().simulate(newState.getRoundTrip(i)));
-//					newState.getRoundTrip(i).cloneEpisodes(state.getRoundTrip(i));
 					fwdLogProba += Math.log(1.0 - flipProba);
 					bwdLogProba += Math.log(1.0 - flipProba);
 				}
 			}
 		} while (!flipped);
-
 		fwdLogProba -= Math.log(atLeastOneFlipProba);
 		bwdLogProba -= Math.log(atLeastOneFlipProba);
-//		assert (fwdLogProba == bwdLogProba);
 
-		return new MHTransition<>(state, newState, fwdLogProba, bwdLogProba);
+		return new MHTransition<>(from, to, fwdLogProba, bwdLogProba);
 	}
 
 }
