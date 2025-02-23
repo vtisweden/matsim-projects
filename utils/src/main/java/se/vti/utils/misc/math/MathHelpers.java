@@ -43,6 +43,11 @@ public class MathHelpers {
 
 	public double overlap(final double start1, final double end1,
 			final double start2, final double end2) {
+
+		if (end1 <= start2 || end2 <= start1) {
+			return 0.0;
+		}
+		
 		return Math.max(0, (Math.min(end1, end2) - Math.max(start1, start2)));
 	}
 	
