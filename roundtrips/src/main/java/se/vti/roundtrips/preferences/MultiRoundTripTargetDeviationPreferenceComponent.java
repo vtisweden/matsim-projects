@@ -88,7 +88,7 @@ public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends
 					Math.abs(sample[i] / sampleSize - this.target[i] / this.targetSize) - slack);
 		}
 		this.lastDiscretizationError = 0.5 * slack * this.target.length;
-		return (-1.0) * (this.filter == null ? multiRoundTrip.size() : this.filter.groupSize())
+		return (-1.0) * (this.filter == null ? multiRoundTrip.size() : this.filter.getGroupSize())
 				* (this.lastDeviationError + this.lastDiscretizationError);
 	}
 
