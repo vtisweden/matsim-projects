@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import se.vti.roundtrips.single.Location;
@@ -36,31 +35,37 @@ import se.vti.roundtrips.single.Location;
  */
 public class PopulationGrouping {
 
+	// -------------------- MEMBERS --------------------
+
 	private final int populationSize;
 
 	private final Map<String, Double> group2weights = new LinkedHashMap<>();
 
 	private Map<String, int[]> group2indices = null;
 
-	public PopulationGrouping(int popuationSize) {
-		this.populationSize = popuationSize;
+	// -------------------- CONSTRUCTION --------------------
+
+	public PopulationGrouping(int populationSize) {
+		this.populationSize = populationSize;
 	}
 
 	public void addGroup(String name, double weight) {
 		this.group2weights.put(name, weight);
 	}
 
+	// -------------------- INTERNALS --------------------
+
 	private void ensureIndexing() {
 		if (this.group2indices != null) {
 			return;
 		}
 		final double weightSum = this.group2weights.values().stream().mapToDouble(w -> w).sum();
-		Map<String, List<Integer>> group2indexList = this.group2weights.keySet().stream()
+		final Map<String, List<Integer>> group2indexList = this.group2weights.keySet().stream()
 				.collect(Collectors.toMap(g -> g, g -> new ArrayList<>()));
-		Map<String, Double> group2slack = this.group2weights.entrySet().stream()
+		final Map<String, Double> group2slack = this.group2weights.entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue() / weightSum * this.populationSize));
 		for (int i = 0; i < this.populationSize; i++) {
-			String worstGroup = group2slack.entrySet().stream()
+			final String worstGroup = group2slack.entrySet().stream()
 					.max((e1, e2) -> Double.compare(e1.getValue(), e2.getValue())).get().getKey();
 			group2indexList.get(worstGroup).add(i);
 			group2slack.compute(worstGroup, (g, s) -> s - 1.0);
@@ -69,60 +74,21 @@ public class PopulationGrouping {
 				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().stream().mapToInt(i -> i).toArray()));
 	}
 
-	public <L extends Location> Function<MultiRoundTrip<L>, MultiRoundTrip<L>> createFilter(String group) {
-		this.ensureIndexing();
-		return new Function<>() {
-			@Override
-			public MultiRoundTrip<L> apply(MultiRoundTrip<L> multiRoundTrip) {
-				final int[] indices = group2indices.get(group);
-				MultiRoundTrip<L> result = new MultiRoundTrip<>(indices.length);
-				for (int i = 0; i < indices.length; i++) {
-					result.setRoundTrip(i, multiRoundTrip.getRoundTrip(indices[i]));
-				}
-				return result;
-			}
-		};
+	// -------------------- IMPLEMENTATION --------------------
+
+	public Map<String, int[]> getGroup2indices() {
+		return this.group2indices;
 	}
 
-	// >>> TODO Experimental 2025-01-13 >>>
-
-	public <L extends Location> Function<MultiRoundTrip<L>, MultiRoundTrip<L>> createMultiGroupFilter(
-			Function<Integer, MultiRoundTrip<L>> sizeToMultiRoundTripSubtype, String... groups) {
+	public <L extends Location> PopulationGroupFilter<L> createFilter(String group) {
 		this.ensureIndexing();
-		return new Function<>() {
-			@Override
-			public MultiRoundTrip<L> apply(MultiRoundTrip<L> multiRoundTrip) {
-
-				final int[] indicators = new int[populationSize];
-				for (String group : groups) {
-					for (int index : group2indices.get(group)) {
-						indicators[index] = 1;
-					}
-				}
-
-				final MultiRoundTrip<L> result = sizeToMultiRoundTripSubtype.apply(Arrays.stream(indicators).sum());
-				int j = 0;
-				for (int i = 0; i < indicators.length; i++) {
-					if (indicators[i] == 1) {
-						result.setRoundTrip(j++, multiRoundTrip.getRoundTrip(i));
-					}
-				}
-				return result;
-
-//				final int[] indices = group2indices.get(group);
-//				MultiRoundTrip<L> result = new MultiRoundTrip<>(indices.length);
-//				for (int i = 0; i < indices.length; i++) {
-//					result.setRoundTrip(i, multiRoundTrip.getRoundTrip(indices[i]));
-//				}
-//				return result;
-			}
-		};
+		return new PopulationGroupFilter<>(group, this.group2indices.get(group));
 	}
 
-	// <<< TODO Experimental 2025-01-13 <<<
+	// -------------------- MAIN FUNCTION, ONLY FOR TESTING --------------------
 
 	public static void main(String[] args) {
-		for (int size = 10; size <= 10; size++) {
+		for (int size = 14; size <= 14; size++) {
 
 			PopulationGrouping g = new PopulationGrouping(size);
 			g.addGroup("a", 1.0);
