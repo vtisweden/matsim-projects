@@ -21,6 +21,7 @@ package se.vti.roundtrips.multiple;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import se.vti.roundtrips.single.Location;
@@ -43,10 +44,10 @@ public abstract class ByPopulationGroupSummary<L extends Location, S extends Mul
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ByPopulationGroupSummary(final PopulationGrouping grouping, final Supplier<S> summaryFactory) {
-		for (Map.Entry<String, int[]> entry : grouping.getGroup2indices().entrySet()) {
-			final String group = entry.getKey();
-			final int[] indices = entry.getValue();
+	public ByPopulationGroupSummary(final PopulationGrouping grouping, final Supplier<S> summaryFactory,
+			Set<String> consideredGroups) {
+		for (String group : consideredGroups) {
+			final int[] indices = grouping.getGroup2indices().get(group);
 			final S summary = summaryFactory.get();
 			this.group2summary.put(group, summary);
 			for (int index : indices) {
@@ -86,7 +87,10 @@ public abstract class ByPopulationGroupSummary<L extends Location, S extends Mul
 
 	@Override
 	public void update(int roundTripIndex, RoundTrip<L> oldRoundTrip, RoundTrip<L> newRoundTrip) {
-		this.index2summary.get(roundTripIndex).update(roundTripIndex, oldRoundTrip, newRoundTrip);
+		final S summary = this.index2summary.get(roundTripIndex);
+		if (summary != null) {
+			summary.update(roundTripIndex, oldRoundTrip, newRoundTrip);
+		}
 	}
 
 	@Override
