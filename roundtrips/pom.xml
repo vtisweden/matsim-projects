@@ -3,12 +3,13 @@
 	
   <parent>
     <groupId>se.vti.matsim-projects</groupId>
-  	<artifactId>se.vti.matsim-projects</artifactId>
+  	<artifactId>matsim-projects</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>roundtrips</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
   
 	<repositories>
 	  <!--Note that in general repositories are not transitive, so they need to be repeated at every level where needed.-->

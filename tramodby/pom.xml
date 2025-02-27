@@ -3,7 +3,7 @@
 
   <parent>
     <groupId>se.vti.matsim-projects</groupId>
-  	<artifactId>se.vti.matsim-projects</artifactId>
+  	<artifactId>matsim-projects</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
