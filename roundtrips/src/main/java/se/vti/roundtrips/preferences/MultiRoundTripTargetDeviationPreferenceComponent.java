@@ -67,6 +67,14 @@ public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends
 	public double getLastDiscretizationError() {
 		return this.lastDiscretizationError;
 	}
+	
+	public double[] computeTargetIfAbsent() {
+		if (this.target == null) {
+			this.target = this.computeTarget();
+			this.targetSize = Arrays.stream(this.target).sum();
+		}
+		return this.target;
+	}
 
 	// --------------- IMPLEMENTATION OF MHPreferenceComponent ---------------
 
@@ -76,11 +84,12 @@ public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends
 		final double[] sample = this.computeSample(multiRoundTrip, this.filter);
 		final double sampleSize = Math.max(Arrays.stream(sample).sum(), 1e-8);
 
-		if (this.target == null) {
-			this.target = this.computeTarget();
-			this.targetSize = Arrays.stream(this.target).sum();
-		}
-
+//		if (this.target == null) {
+//			this.target = this.computeTarget();
+//			this.targetSize = Arrays.stream(this.target).sum();
+//		}
+		this.computeTargetIfAbsent();
+		
 		double slack = 0.5 / sampleSize;
 		this.lastDeviationError = 0.0;
 		for (int i = 0; i < this.target.length; i++) {

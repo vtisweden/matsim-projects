@@ -51,6 +51,7 @@ public abstract class ByPopulationGroupSummary<L extends Location, S extends Mul
 			final S summary = summaryFactory.get();
 			this.group2summary.put(group, summary);
 			for (int index : indices) {
+				assert(!this.index2summary.containsKey(index));
 				this.index2summary.put(index, summary);
 			}
 		}
