@@ -207,6 +207,12 @@ public class SamgodsRunner {
 		return this;
 	}
 
+	// -------------------- GETTERS --------------------
+
+	public Network getNetwork() {
+		return this.network;
+	}
+	
 	// -------------------- LOAD VEHICLE FLEET --------------------
 	
 	private SamgodsRunner loadVehicles(String vehicleParametersFileName, String transferParametersFileName,
