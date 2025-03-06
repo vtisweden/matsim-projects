@@ -36,11 +36,6 @@
 			<url>https://mvn.slimjars.com</url>
 		</repository>
 		
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-		
 	</repositories>
 
 	<dependencies>
@@ -51,20 +46,12 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 	
-		<!--
 	  	<dependency>
-			<groupId>se.vti.matsim-projects-playgrounds</groupId>
-			<artifactId>global</artifactId>
+			<groupId>se.vti.matsim-projects</groupId>
+			<artifactId>utils</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-		-->
 		
-		<dependency>
-			<groupId>com.github.gunnarfloetteroed.java</groupId>
-			<artifactId>utilities</artifactId>
-			<version>2020-08-27_snapshot</version>
-		</dependency>
-
 		<dependency>
 			<!-- This is the matsim "core": -->
 			<groupId>org.matsim</groupId>
