@@ -106,7 +106,7 @@ public class ExtractRailNetwork {
 		
 		Set<Node> railNodes = new LinkedHashSet<>();
 		PrintWriter linksWriter = new PrintWriter("railLinks.csv");
-		linksWriter.println("id,from,to,maxSpeed[km/h]");
+		linksWriter.println("id,from,to,maxSpeed[km/h],length[km]");
 		for (Link link : network.getLinks().values()) {			
 			SamgodsLinkAttributes linkAttrs = (SamgodsLinkAttributes) link.getAttributes().getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
 			if (SamgodsConstants.TransportMode.Rail.equals(linkAttrs.samgodsMode)) {
@@ -120,7 +120,10 @@ public class ExtractRailNetwork {
 			linksWriter.print(link.getToNode().getId());
 			linksWriter.print(",");
 			linksWriter.print(Units.KM_H_PER_M_S * link.getFreespeed());
-			linksWriter.println();
+			linksWriter.print(",");
+			linksWriter.print(Units.KM_PER_M * link.getLength());
+			linksWriter.print(",");
+			linksWriter.println(link.getNumberOfLanes());
 		}
 		linksWriter.flush();
 		linksWriter.close();

@@ -38,26 +38,6 @@
 			<url>https://mvn.slimjars.com</url>
 		</repository>
 		
-		<!-- Repository for MATSim releases (MATSim is not on Maven central) -->
-		<!-- 
-		<repository>
-			<id>matsim</id>
-			<url>https://dl.bintray.com/matsim/matsim</url>
-		</repository>
-		-->
- 		<!-- For MATSim snapshots: -->
-		<!--  
-		<repository>
-			<id>ojo-snapshots</id>
-			<url>https://oss.jfrog.org/libs-snapshot</url>
-		</repository>
-		-->
-
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-
 	</repositories>
 
 	<dependencies>
@@ -97,12 +77,6 @@
 			<version>5.2</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.github.gunnarfloetteroed.java</groupId>
-			<artifactId>utilities</artifactId>
-			<version>2020-08-27_snapshot</version>
-		</dependency>
-		
 		<dependency>
     		<groupId>de.vandermeer</groupId>
     		<artifactId>asciitable</artifactId>
