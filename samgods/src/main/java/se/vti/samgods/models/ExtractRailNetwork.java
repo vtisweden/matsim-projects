@@ -34,12 +34,12 @@ import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConfigGroup;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsRunner;
 import se.vti.samgods.network.SamgodsLinkAttributes;
+import se.vti.utils.misc.Units;
 
 /**
  * 

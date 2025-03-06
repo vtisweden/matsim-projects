@@ -31,12 +31,12 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 
-import floetteroed.utilities.Tuple;
-import floetteroed.utilities.math.MathHelpers;
-import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
-import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.tramodby.module.TramodByConfigGroup;
 import se.vti.tramodby.od.ZonalSystem.Zone;
+import se.vti.utils.misc.Tuple;
+import se.vti.utils.misc.math.MathHelpers;
+import se.vti.utils.misc.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
+import se.vti.utils.misc.tabularfileparser.TabularFileParser;
 
 /**
  * This class contains utility methods for the ZonalSystem class.

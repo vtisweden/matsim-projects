@@ -28,8 +28,8 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Population;
 
-import floetteroed.utilities.SetUtils;
-import floetteroed.utilities.math.BasicStatistics;
+import se.vti.utils.misc.math.BasicStatistics;
+import se.vti.utils.misc.math.SetUtils;
 
 /**
  *

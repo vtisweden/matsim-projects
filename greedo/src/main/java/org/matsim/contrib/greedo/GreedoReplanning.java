@@ -50,9 +50,9 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 
-import floetteroed.utilities.statisticslogging.Statistic;
-import floetteroed.utilities.statisticslogging.StatisticsWriter;
-import floetteroed.utilities.statisticslogging.TimeStampStatistic;
+import se.vti.utils.misc.statisticslogging.Statistic;
+import se.vti.utils.misc.statisticslogging.StatisticsWriter;
+import se.vti.utils.misc.statisticslogging.TimeStampStatistic;
 
 /**
  * @author Gunnar Flötteröd

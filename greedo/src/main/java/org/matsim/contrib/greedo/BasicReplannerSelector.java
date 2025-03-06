@@ -32,7 +32,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.gbl.MatsimRandom;
 
-import floetteroed.utilities.Tuple;
+import se.vti.utils.misc.Tuple;
 
 /**
  *

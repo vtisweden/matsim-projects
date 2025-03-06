@@ -36,8 +36,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
+import se.vti.utils.misc.Units;
 
 /**
  * 

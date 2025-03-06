@@ -21,8 +21,8 @@ package org.matsim.contrib.greedo.shouldbeelsewhere;
 
 import java.util.Map;
 
-import floetteroed.utilities.DynamicData;
-import floetteroed.utilities.TimeDiscretization;
+import se.vti.utils.misc.dynamicdata.DynamicData;
+import se.vti.utils.misc.dynamicdata.TimeDiscretization;
 
 /**
  *

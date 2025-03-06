@@ -39,12 +39,12 @@ import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.costs.BasicTransportCost;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.utils.misc.Units;
 
 /**
  * 

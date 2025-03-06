@@ -22,8 +22,8 @@ package se.vti.roundtrips.model;
 import java.util.Arrays;
 import java.util.List;
 
-import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.single.SimulatorState;
+import se.vti.utils.misc.Tuple;
 import se.vti.utils.misc.math.MathHelpers;
 
 /**

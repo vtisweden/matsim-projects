@@ -51,9 +51,9 @@ import org.matsim.core.router.util.TravelTime;
 import org.matsim.utils.leastcostpathtree.LeastCostPathTree;
 import org.matsim.vehicles.Vehicle;
 
-import floetteroed.utilities.math.MathHelpers;
 import se.vti.tramodby.module.TramodByConfigGroup;
 import se.vti.tramodby.od.ZonalSystem.Zone;
+import se.vti.utils.misc.math.MathHelpers;
 
 /**
  * This class handles calculation and printing of distance and travel times

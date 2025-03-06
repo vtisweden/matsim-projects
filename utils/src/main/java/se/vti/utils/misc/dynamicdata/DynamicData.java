@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import floetteroed.utilities.math.MathHelpers;
+import se.vti.utils.misc.math.MathHelpers;
 
 /**
  * 

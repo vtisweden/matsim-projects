@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.Map;
 
 import de.vandermeer.asciitable.AsciiTable;
-import floetteroed.utilities.math.MathHelpers;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.utils.MiscUtils;
+import se.vti.utils.misc.math.MathHelpers;
 
 /**
  * ONLY FOR TESTING.

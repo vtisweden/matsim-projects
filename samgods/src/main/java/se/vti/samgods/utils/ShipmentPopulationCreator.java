@@ -26,10 +26,10 @@ import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.population.PopulationUtils;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.NetworkAndFleetData;
 import se.vti.samgods.NetworkAndFleetDataProvider;
 import se.vti.samgods.logistics.TransportChain;
+import se.vti.utils.misc.Units;
 
 public class ShipmentPopulationCreator {
 

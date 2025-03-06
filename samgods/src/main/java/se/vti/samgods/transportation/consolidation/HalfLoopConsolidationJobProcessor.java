@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.NetworkAndFleetData;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.calibration.ascs.ASCDataProvider;
@@ -35,6 +34,7 @@ import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
 import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
+import se.vti.utils.misc.Units;
 import se.vti.utils.misc.math.LogitChoiceModel;
 
 /**

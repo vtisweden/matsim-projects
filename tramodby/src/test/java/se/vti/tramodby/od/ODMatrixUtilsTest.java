@@ -19,7 +19,8 @@
  */
 package se.vti.tramodby.od;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,8 +46,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.matsim.api.core.v01.Id;
 
-import floetteroed.utilities.TimeDiscretization;
 import se.vti.tramodby.od.ZonalSystem.Zone;
+import se.vti.utils.misc.dynamicdata.TimeDiscretization;
 
 /**
  * @author rasri17

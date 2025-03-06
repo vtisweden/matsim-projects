@@ -25,11 +25,11 @@ import java.util.Random;
 
 import org.matsim.api.core.v01.Id;
 
-import floetteroed.utilities.TimeDiscretization;
-import floetteroed.utilities.tabularfileparser.TabularFileHandler;
-import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.tramodby.od.InterZonalMatrices.Matrix;
 import se.vti.tramodby.od.ZonalSystem.Zone;
+import se.vti.utils.misc.dynamicdata.TimeDiscretization;
+import se.vti.utils.misc.tabularfileparser.TabularFileHandler;
+import se.vti.utils.misc.tabularfileparser.TabularFileParser;
 
 /**
  * This class contains utility methods for handling Origin-Destination (OD) flow data. 

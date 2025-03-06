@@ -33,7 +33,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.Vehicle;
 
-import floetteroed.utilities.DynamicData;
+import se.vti.utils.misc.dynamicdata.DynamicData;
 
 /**
  *

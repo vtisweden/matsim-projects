@@ -25,9 +25,9 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.roadpricing.RoadPricingScheme;
 import org.matsim.contrib.roadpricing.RoadPricingSchemeImpl.Cost;
 
-import floetteroed.utilities.DynamicData;
-import floetteroed.utilities.DynamicDataXMLFileIO;
 import se.vti.tramodby.module.TramodByConfigGroup;
+import se.vti.utils.misc.dynamicdata.DynamicData;
+import se.vti.utils.misc.dynamicdata.DynamicDataXMLFileIO;
 
 public class TollCalculationAnalyzer {
 

@@ -52,13 +52,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.NetworkAndFleetData;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
+import se.vti.utils.misc.Units;
 
 @JsonSerialize(using = ConsolidationUnit.Serializer.class)
 public class ConsolidationUnit {

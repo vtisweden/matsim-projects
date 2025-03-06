@@ -19,7 +19,7 @@
  */
 package se.vti.utils.misc.dynamicdata;
 
-import static floetteroed.utilities.XMLHelpers.writeAttr;
+import static se.vti.utils.misc.dynamicdata.XMLHelpers.writeAttr;
 
 import java.io.File;
 import java.io.IOException;

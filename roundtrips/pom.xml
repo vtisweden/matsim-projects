@@ -35,15 +35,14 @@
 			<id>slimjars</id>
 			<url>https://mvn.slimjars.com</url>
 		</repository>
-		
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-		
 	</repositories>
 
 	<dependencies>
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-math3</artifactId>
+	    	<version>3.6.1</version>
+		</dependency>		
 		
 		<dependency>
 			<groupId>se.vti.matsim-projects</groupId>

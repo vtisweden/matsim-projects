@@ -32,11 +32,11 @@ import org.apache.log4j.Logger;
 import org.jfree.util.Log;
 import org.matsim.api.core.v01.Id;
 
-import floetteroed.utilities.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
-import floetteroed.utilities.tabularfileparser.TabularFileParser;
 import se.vti.samgods.OD;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.utils.misc.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
+import se.vti.utils.misc.tabularfileparser.TabularFileParser;
 
 /**
  * 

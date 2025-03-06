@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import floetteroed.utilities.Tuple;
 import se.vti.roundtrips.single.Location;
+import se.vti.utils.misc.Tuple;
 
 /**
  * 

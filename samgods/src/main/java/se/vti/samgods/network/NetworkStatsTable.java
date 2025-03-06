@@ -26,8 +26,8 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 
 import de.vandermeer.asciitable.AsciiTable;
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.utils.misc.Units;
 
 /**
  * Just for testing.

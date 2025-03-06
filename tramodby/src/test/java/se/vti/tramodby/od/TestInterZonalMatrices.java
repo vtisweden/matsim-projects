@@ -19,7 +19,8 @@
  */
 package se.vti.tramodby.od;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -30,10 +31,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.matsim.api.core.v01.Id;
 
-import floetteroed.utilities.TimeDiscretization;
 import se.vti.tramodby.module.TramodByConfigGroup;
 import se.vti.tramodby.od.InterZonalMatrices.Matrix;
 import se.vti.tramodby.od.ZonalSystem.Zone;
+import se.vti.utils.misc.dynamicdata.TimeDiscretization;
 
 /**
  * @author rasri17

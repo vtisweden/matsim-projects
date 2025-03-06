@@ -27,9 +27,9 @@ import java.util.Map;
 
 import org.matsim.api.core.v01.Id;
 
-import floetteroed.utilities.TimeDiscretization;
 import se.vti.tramodby.module.TramodByConfigGroup;
 import se.vti.tramodby.od.ZonalSystem.Zone;
+import se.vti.utils.misc.dynamicdata.TimeDiscretization;
 
 /**
  * This class acts as a container for Origin-Destination (OD) matrices and are sliced into time bins. 

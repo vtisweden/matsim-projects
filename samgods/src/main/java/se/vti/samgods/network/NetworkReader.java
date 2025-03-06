@@ -36,10 +36,10 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 
-import floetteroed.utilities.Units;
 import se.vti.samgods.SamgodsConstants;
 import se.vti.samgods.SamgodsConstants.TransportMode;
 import se.vti.samgods.utils.ParseNumberUtils;
+import se.vti.utils.misc.Units;
 
 /**
  *

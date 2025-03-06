@@ -36,27 +36,14 @@
 			<url>https://mvn.slimjars.com</url>
 		</repository>
 		
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-		
 	</repositories>
 
 	<dependencies>
-	
-		<!--
-	  	<dependency>
-			<groupId>se.vti.matsim-projects-playgrounds</groupId>
-			<artifactId>global</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		-->
-		
+
 		<dependency>
-			<groupId>com.github.gunnarfloetteroed.java</groupId>
-			<artifactId>utilities</artifactId>
-			<version>2020-08-27_snapshot</version>
+    		<groupId>commons-io</groupId>
+    		<artifactId>commons-io</artifactId>
+    		<version>2.11.0</version>
 		</dependency>
 
 		<dependency>

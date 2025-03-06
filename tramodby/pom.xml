@@ -23,23 +23,10 @@
 			<id>matsim</id>
 			<url>https://repo.matsim.org/repository/matsim</url>
 		</repository>
-		
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
 
 	</repositories>
 
 	<dependencies>
-		
-		<!--
-		<dependency>
-			<groupId>se.vti.matsim-projects-playgrounds</groupId>
-			<artifactId>gfd</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-		-->
 
 	  	<dependency>
 			<groupId>se.vti.matsim-projects</groupId>
@@ -51,12 +38,6 @@
 			<groupId>org.matsim.contrib</groupId>
 			<artifactId>roadpricing</artifactId>
 			<version>${matsim.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.github.gunnarfloetteroed.java</groupId>
-			<artifactId>utilities</artifactId>
-			<version>2020-08-27_snapshot</version>
 		</dependency>
 		
 		<dependency>
@@ -89,6 +70,13 @@
 			<version>${matsim.version}</version>
 			<!-- <scope>test</scope> -->
 		</dependency>
+		
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-math3</artifactId>
+	    <version>3.6.1</version>
+	</dependency>
+
 	</dependencies>
 
 	<build>
