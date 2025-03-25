@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Random;
 
 import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.preferences.MaximumEntropyPrior;
+import se.vti.roundtrips.preferences.MaximumEntropyPriorFactory;
 import se.vti.roundtrips.preferences.Preferences;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
@@ -132,8 +132,9 @@ public class TestRoundTrips {
 		};
 
 		Preferences<RoundTrip<Location>> pref = new Preferences<>();
-		pref.addComponent(new MaximumEntropyPrior<>(scenario.getLocationCnt(), scenario.getBinCnt(), 3.0));
-
+//		pref.addComponent(new MaximumEntropyPrior<>(scenario.getLocationCnt(), scenario.getBinCnt(), 3.0));
+		pref.addComponent(new MaximumEntropyPriorFactory<>(scenario.getLocationCnt(), scenario.getBinCnt(), scenario.getMaxStayEpisodes()).createSingle(3.0));
+		
 		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1")), Arrays.asList(12));
 
 		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, 

@@ -1,4 +1,4 @@
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.legacy.uniformprior;
 
 import java.util.Arrays;
 
@@ -6,6 +6,7 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BrentSolver;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 
+import se.vti.roundtrips.preferences.PreferenceComponent;
 import se.vti.roundtrips.single.Location;
 import se.vti.roundtrips.single.RoundTrip;
 
@@ -13,8 +14,9 @@ import se.vti.roundtrips.single.RoundTrip;
  * 
  * @author GunnarF
  *
+ * @deprecated
  */
-public class MaximumEntropyPrior<L extends Location> extends PreferenceComponent<RoundTrip<L>> {
+public class MaximumEntropyPrior_DEPRECATED<L extends Location> extends PreferenceComponent<RoundTrip<L>> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -32,7 +34,7 @@ public class MaximumEntropyPrior<L extends Location> extends PreferenceComponent
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public MaximumEntropyPrior(int _L, int _K, double meanJ) {
+	public MaximumEntropyPrior_DEPRECATED(int _L, int _K, double meanJ) {
 		assert (meanJ < _K);
 
 		this._L = _L;
@@ -89,7 +91,7 @@ public class MaximumEntropyPrior<L extends Location> extends PreferenceComponent
 
 	// -------------------- INTERNALS --------------------
 
-	private double logOfRoundTripCnt(int _L, int _K, int _J) {
+	public double logOfRoundTripCnt(int _L, int _K, int _J) {
 		return CombinatoricsUtils.binomialCoefficientLog(_K, _J) + _J * Math.log(_L);
 	}
 
@@ -103,6 +105,14 @@ public class MaximumEntropyPrior<L extends Location> extends PreferenceComponent
 
 	// -------------------- IMPLEMENTATION --------------------
 
+	public double sizeProba(int j) {
+		return Math.exp(this.roundTripLogProbasBySize[j] + logOfRoundTripCnt(this._L, this._K, j));
+	}
+
+	public double individualProba(int j) {
+		return Math.exp(this.roundTripLogProbasBySize[j]);
+	}
+
 	public String createTable() {
 		final StringBuffer result = new StringBuffer(
 				"J\tln(Pr(single roundtrip of size J))\tln(Pr(any round trip size J))\n");
@@ -115,6 +125,10 @@ public class MaximumEntropyPrior<L extends Location> extends PreferenceComponent
 	}
 
 	// --------------- IMPLEMENTATION OF PreferenceComponent ---------------
+
+	public double individualLogProba(int size) {
+		return this.roundTripLogProbasBySize[size];
+	}
 
 	@Override
 	public double logWeight(RoundTrip<L> roundTrip) {
@@ -135,7 +149,7 @@ public class MaximumEntropyPrior<L extends Location> extends PreferenceComponent
 				double meanJ = 4;
 				{
 
-					System.out.println(new MaximumEntropyPrior<>(_L, _K, meanJ).createTable());
+					System.out.println(new MaximumEntropyPrior_DEPRECATED<>(_L, _K, meanJ).createTable());
 
 				}
 			}

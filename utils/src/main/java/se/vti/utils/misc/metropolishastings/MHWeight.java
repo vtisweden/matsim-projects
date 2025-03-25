@@ -28,6 +28,6 @@ package se.vti.utils.misc.metropolishastings;
  */
 public interface MHWeight<S extends Object> {
 
-	public double logWeight(final S State);
+	public double logWeight(final S state);
 
 }

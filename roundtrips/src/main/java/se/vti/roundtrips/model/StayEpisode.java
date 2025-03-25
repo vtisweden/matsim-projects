@@ -26,7 +26,7 @@ import se.vti.roundtrips.single.Location;
  * @author GunnarF
  *
  */
-public final class StayEpisode<L extends Location> extends Episode {
+public class StayEpisode<L extends Location> extends Episode {
 	
 	private final L location;
 	

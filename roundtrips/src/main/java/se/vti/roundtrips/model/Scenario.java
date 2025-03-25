@@ -53,6 +53,13 @@ public class Scenario<L extends Location> {
 	public Scenario() {
 	}
 
+	// TODO new
+	public L setLocation(L location) {
+		this.name2location.put(location.getName(), location);
+		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
+		return location;
+	}
+	
 	public L getOrCreateLocationWithSameName(L location) {
 		if (this.name2location.containsKey(location.getName())) {
 			return this.name2location.get(location.getName());
