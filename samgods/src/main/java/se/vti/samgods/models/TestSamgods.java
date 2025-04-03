@@ -57,24 +57,8 @@ public class TestSamgods {
 		SamgodsConfigGroup samgodsConfig = ConfigUtils.addOrGetModule(config, SamgodsConfigGroup.class);
 		
 		final double scaleFactor = 1.0; 
-//		final SamgodsRunner runner = new SamgodsRunner(samgodsConfig).setServiceInterval_days(7)
-//				.setConsideredCommodities(Commodity.AGRICULTURE, Commodity.COAL).setSamplingRate(0.001)
-//				.setMaxThreads(1).setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
-//				.setScale(Commodity.COAL, scaleFactor * 0.0000001).setScale(Commodity.METAL, scaleFactor * 0.0000001
-//				/* METAL: using coal parameter because, estimated has wrong sign */)
-//				.setScale(Commodity.FOOD, scaleFactor * 0.00006).setScale(Commodity.TEXTILES, scaleFactor * 0.0003)
-//				.setScale(Commodity.WOOD, scaleFactor * 0.000003).setScale(Commodity.COKE, scaleFactor * 0.00002)
-//				.setScale(Commodity.CHEMICALS, scaleFactor * 0.00002)
-//				.setScale(Commodity.OTHERMINERAL, scaleFactor * 0.00003)
-//				.setScale(Commodity.BASICMETALS, scaleFactor * 0.00002)
-//				.setScale(Commodity.MACHINERY, scaleFactor * 0.00006)
-//				.setScale(Commodity.TRANSPORT, scaleFactor * 0.00002)
-//				.setScale(Commodity.FURNITURE, scaleFactor * 0.0002)
-//				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
-//				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
-//				.setMaxIterations(2).setEnforceReroute(false);
 		SamgodsRunner runner = new SamgodsRunner(samgodsConfig).setServiceInterval_days(7)
-				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(1.0)
+				.setConsideredCommodities(SamgodsConstants.Commodity.AGRICULTURE).setSamplingRate(0.001)
 				.setMaxThreads(Integer.MAX_VALUE).setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
 				.setScale(Commodity.COAL, scaleFactor * 0.0000001).setScale(Commodity.METAL, scaleFactor * 0.0000001
 				/* METAL: using coal parameter because, estimated has wrong sign */)
@@ -88,7 +72,23 @@ public class TestSamgods {
 				.setScale(Commodity.FURNITURE, scaleFactor * 0.0002)
 				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
 				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
-				.setEnforceReroute(false);
+				.setEnforceReroute(true);
+//		SamgodsRunner runner = new SamgodsRunner(samgodsConfig).setServiceInterval_days(7)
+//				.setConsideredCommodities(allWithoutAir.toArray(new Commodity[0])).setSamplingRate(0.001)
+//				.setMaxThreads(Integer.MAX_VALUE).setScale(Commodity.AGRICULTURE, scaleFactor * 0.0004)
+//				.setScale(Commodity.COAL, scaleFactor * 0.0000001).setScale(Commodity.METAL, scaleFactor * 0.0000001
+//				/* METAL: using coal parameter because, estimated has wrong sign */)
+//				.setScale(Commodity.FOOD, scaleFactor * 0.00006).setScale(Commodity.TEXTILES, scaleFactor * 0.0003)
+//				.setScale(Commodity.WOOD, scaleFactor * 0.000003).setScale(Commodity.COKE, scaleFactor * 0.00002)
+//				.setScale(Commodity.CHEMICALS, scaleFactor * 0.00002)
+//				.setScale(Commodity.OTHERMINERAL, scaleFactor * 0.00003)
+//				.setScale(Commodity.BASICMETALS, scaleFactor * 0.00002)
+//				.setScale(Commodity.MACHINERY, scaleFactor * 0.00006)
+//				.setScale(Commodity.TRANSPORT, scaleFactor * 0.00002)
+//				.setScale(Commodity.FURNITURE, scaleFactor * 0.0002)
+//				.setScale(Commodity.SECONDARYRAW, scaleFactor * 0.00001)
+//				.setScale(Commodity.TIMBER, scaleFactor * 0.00009).setScale(Commodity.AIR, scaleFactor * 0.00005)
+//				.setEnforceReroute(false);
 
 		runner.loadVehiclesOtherThan("WG950", "KOMXL", "SYSXL", "WGEXL", "HGV74", "ROF7", "RAF5", "INW", "ROF2", "ROF5");
 //		runner.checkAvailableVehicles();

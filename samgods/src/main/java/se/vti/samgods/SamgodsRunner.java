@@ -56,6 +56,7 @@ import se.vti.samgods.calibration.ascs.ASCDataProvider;
 import se.vti.samgods.calibration.ascs.TransportWorkAscCalibrator;
 import se.vti.samgods.calibration.ascs.TransportWorkMonitor;
 import se.vti.samgods.external.gis.NetworkFlows;
+import se.vti.samgods.external.ntmcalc.HalfLoopAssignment2NTMCalcWriter;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
@@ -87,7 +88,7 @@ import se.vti.samgods.utils.MiscUtils;
 public class SamgodsRunner {
 
 	// -------------------- CONSTANTS --------------------
-	
+
 	private final static Logger log = Logger.getLogger(SamgodsRunner.class);
 
 	private final static long defaultSeed = 4711;
@@ -105,9 +106,9 @@ public class SamgodsRunner {
 	private final static Commodity[] defaultConsideredCommodities = Commodity.values();
 
 	private final static double defaultLogitScale = 1.0;
-	
+
 	// -------------------- MEMBERS --------------------
-	
+
 	private final SamgodsConfigGroup config;
 
 	private Random rnd = new Random();
@@ -125,8 +126,7 @@ public class SamgodsRunner {
 
 	private double samplingRate;
 
-
-	// 
+	//
 
 	private final Map<Commodity, Double> commodity2scale = new LinkedHashMap<>(
 			Arrays.stream(Commodity.values()).collect(Collectors.toMap(c -> c, c -> defaultLogitScale)));
@@ -150,7 +150,7 @@ public class SamgodsRunner {
 	}
 
 	// -------------------- CONSTRUCTION --------------------
-	
+
 	public SamgodsRunner(SamgodsConfigGroup config) {
 		this.config = config;
 		this.setRandomSeed(defaultSeed);
@@ -163,7 +163,7 @@ public class SamgodsRunner {
 	}
 
 	// -------------------- SETTERS --------------------
-	
+
 	public SamgodsRunner setRandomSeed(long seed) {
 		this.rnd = new Random(seed);
 		return this;
@@ -201,7 +201,7 @@ public class SamgodsRunner {
 	}
 
 	//
-	
+
 	public SamgodsRunner setScale(Commodity commodity, double scale) {
 		this.commodity2scale.put(commodity, scale);
 		return this;
@@ -212,9 +212,9 @@ public class SamgodsRunner {
 	public Network getNetwork() {
 		return this.network;
 	}
-	
+
 	// -------------------- LOAD VEHICLE FLEET --------------------
-	
+
 	private SamgodsRunner loadVehicles(String vehicleParametersFileName, String transferParametersFileName,
 			TransportMode samgodsMode, String... excludedIds) throws IOException {
 		if (this.vehicles == null) {
@@ -268,7 +268,7 @@ public class SamgodsRunner {
 	}
 
 	//
-	
+
 	// TODO Needed for NTMCalc.
 	public SamgodsRunner loadLinkRegionalWeights(String linkRegionFile) throws IOException {
 		this.linkId2domesticWeights = new LinkRegionsReader(this.network).read(linkRegionFile);
@@ -428,7 +428,7 @@ public class SamgodsRunner {
 	}
 
 	// -------------------- RUN ITERATIONS --------------------
-	
+
 	public void run() {
 
 		MiscUtils.ensureEmptyFolder("./results");
@@ -437,7 +437,8 @@ public class SamgodsRunner {
 
 		if (this.config.getAscSourceFileName() != null) {
 			try {
-				this.ascDataProvider = ASCDataProvider.createFromFile(this.config.getAscSourceFileName(), this.vehicles);
+				this.ascDataProvider = ASCDataProvider.createFromFile(this.config.getAscSourceFileName(),
+						this.vehicles);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -487,7 +488,7 @@ public class SamgodsRunner {
 //								.getProviderInstance().createDataInstance();
 						final NonTransportCostModel nonTransportCostModel = new NonTransportCostModel_v1_22();
 						final ChainAndShipmentSizeUtilityFunction utilityFunction = new MonetaryChainAndShipmentSizeUtilityFunction(
-								new LinkedHashMap<>(this.commodity2scale), 
+								new LinkedHashMap<>(this.commodity2scale),
 //								this.ascDataProvider.getConcurrentMode2ASC(),
 								this.ascDataProvider.getConcurrentRailCommodity2ASC());
 						final ChoiceJobProcessor choiceSimulator = new ChoiceJobProcessor(
@@ -632,9 +633,15 @@ public class SamgodsRunner {
 //			NetworkAndFleetDataProvider.updateASCs(this.ascs);
 
 			if ((iteration == this.config.getMaxIterations() - 1)) {
+
 				if (this.networkFlowsFileName != null) {
 					new NetworkFlows().add(consolidationUnit2assignment).writeToFile(this.networkFlowsFileName);
 				}
+
+				new HalfLoopAssignment2NTMCalcWriter(
+						NetworkAndFleetDataProvider.getProviderInstance().createDataInstance())
+						.writeToFile("Flows2NTM_", consolidationUnit2assignment);
+				;
 			}
 		}
 	}

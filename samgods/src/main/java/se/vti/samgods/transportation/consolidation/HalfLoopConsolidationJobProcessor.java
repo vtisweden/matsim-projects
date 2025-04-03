@@ -117,6 +117,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 		public final double domesticLoopLength_km;
 
+		public final double averageVehiclePassages_1_day;
+
 		public FleetAssignment(double realDemand_ton, VehicleType vehicleType, double vehicleCapacity_ton,
 				DetailedTransportCost cost, double serviceIntervalActiveProba, ConsolidationJob job,
 				NetworkAndFleetData networkAndFleetData) {
@@ -138,6 +140,8 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 			// n is fleet size. f is circulation frequency, per service interval
 			final double nf = Math.max(1.0, serviceDemandPerActiveServiceInterval_ton / vehicleCapacity_ton);
+
+			this.averageVehiclePassages_1_day = serviceIntervalActiveProba * nf / job.serviceInterval_days;
 
 			final double fMin = 1.0; // desirable: complete at least one loop
 			final double fMax = serviceInterval_h / this.minLoopDuration_h; // hard physical constraint
