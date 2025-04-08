@@ -80,6 +80,8 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 	private final Collection<? extends Person> persons;
 
 	private final EmulationErrorAnalyzer emulationErrorAnalyzer;
+	
+	private final GapAnalyzer gapAnalyzer;
 
 	// -------------------- MEMBERS --------------------
 
@@ -105,6 +107,9 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 		this.emulationErrorAnalyzer = new EmulationErrorAnalyzer();
 
+		final int percentileStep = 10; // TODO
+		this.gapAnalyzer = new GapAnalyzer(percentileStep);
+		
 		this.statsWriter = new StatisticsWriter<>(
 				new File(services.getConfig().controler().getOutputDirectory(), "GreedoReplanning.log").toString(),
 				false);
@@ -208,7 +213,52 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 				return Statistic.toString(data.emulationErrorAnalyzer.getMeanAbsError());
 			}
 		});
-	}
+		
+		this.statsWriter.addSearchStatistic(new Statistic<>() {
+			@Override
+			public String label() {
+				return "MinScore";
+			}
+
+			@Override
+			public String value(GreedoReplanning data) {
+				return Statistic.toString(data.gapAnalyzer.getMinScore());
+			}
+		});
+		this.statsWriter.addSearchStatistic(new Statistic<>() {
+			@Override
+			public String label() {
+				return "MeanScore";
+			}
+
+			@Override
+			public String value(GreedoReplanning data) {
+				return Statistic.toString(data.gapAnalyzer.getMeanScore());
+			}
+		});
+		this.statsWriter.addSearchStatistic(new Statistic<>() {
+			@Override
+			public String label() {
+				return "MaxScore";
+			}
+
+			@Override
+			public String value(GreedoReplanning data) {
+				return Statistic.toString(data.gapAnalyzer.getMaxScore());
+			}
+		});
+		this.statsWriter.addSearchStatistic(new Statistic<>() {
+			@Override
+			public String label() {
+				return GapAnalyzer.createPercentileHeader(percentileStep, p -> "abs" + p + "%");
+			}
+
+			@Override
+			public String value(GreedoReplanning data) {
+				return data.gapAnalyzer.getAbsolutePercentiles();
+			}
+		});
+}
 
 	// -------------------- INTERNALS --------------------
 
@@ -401,6 +451,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 					Collections.singletonList(this.listOfMode2travelTimes.getFirst()), false);
 			this.gap = (-1.0) * this.services.getScenario().getPopulation().getPersons().values().stream()
 					.mapToDouble(p -> p.getSelectedPlan().getScore()).average().getAsDouble();
+			this.gapAnalyzer.registerPlansBeforeReplanning(this.services.getScenario().getPopulation());
 
 			emulationEngine = this.emulationEngineProvider.get();
 //			emulationEngine.setOverwriteTravelTimes(true);
@@ -409,6 +460,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 					Collections.singletonList(this.listOfMode2travelTimes.getFirst()), false);
 			this.gap += this.services.getScenario().getPopulation().getPersons().values().stream()
 					.mapToDouble(p -> p.getSelectedPlan().getScore()).average().getAsDouble();
+			this.gapAnalyzer.registerPlansAfterReplanning(this.services.getScenario().getPopulation());
 		}
 
 		/*
