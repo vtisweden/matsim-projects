@@ -19,6 +19,9 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
+      
+      - name: Show generated Maven settings.xml
+        run: cat ~/.m2/settings.xml
           
       - name: Deploy parent
         run: mvn clean deploy -N
