@@ -1,0 +1,27 @@
+name: Deploy Selected Snapshot Modules
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          
+      - name: Deploy parent
+        run: mvn clean deploy -N
+
+      - name: Deploy selected snapshot modules
+        run: mvn clean deploy -pl "dynameq,emulation,greedo,roundtrips,samgods,utils" -am

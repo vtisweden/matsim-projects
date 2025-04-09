@@ -63,7 +63,7 @@
   
   	<distributionManagement>
 		<repository>
-			<id>matsim-projects</id>
+			<id>github</id>
 			<name>GitHub vtisweden Apache Maven Packages</name>
 			<url>https://maven.pkg.github.com/vtisweden/matsim-projects</url>
 		</repository>
