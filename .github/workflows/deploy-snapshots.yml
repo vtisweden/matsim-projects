@@ -19,12 +19,12 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-      
-      - name: Show generated Maven settings.xml
-        run: cat ~/.m2/settings.xml
           
       - name: Deploy parent
         run: mvn clean deploy -N
 
       - name: Deploy selected snapshot modules
         run: mvn clean deploy -pl "dynameq,emulation,greedo,roundtrips,samgods,utils" -am
+    
+        env:
+          GITHUB_TOKEN: ${{ secrets.MAVEN_TOKEN }}
