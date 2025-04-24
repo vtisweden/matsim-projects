@@ -20,6 +20,7 @@
 package se.vti.roundtrips.preferences;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.multiple.PopulationGroupFilter;
@@ -41,16 +42,35 @@ public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends
 
 	private double targetSize;
 
-	private double lastDeviationError;
+	private Function<Double, Double> singleAbsoluteResidualToLogWeight = null;
 
-	private double lastDiscretizationError;
+	private Function<Double, Double> totalDiscretizationErrorToLogWeight = null;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public MultiRoundTripTargetDeviationPreferenceComponent() {
+		this.setToTwoSidedExponential();
 	}
 
 	// -------------------- SETTERS & GETTERS --------------------
+
+	public void setToTwoSidedExponential() {
+		this.setSingleAbsoluteResidualToLogWeight(a -> (-1.0) * a);
+		this.setTotalDiscretizationErrorToLogWeight(e -> (-1.0) * e);
+	}
+
+	public void setToGaussian() {
+		this.setSingleAbsoluteResidualToLogWeight(r -> (-0.5) * r * r);
+		this.setTotalDiscretizationErrorToLogWeight(e -> (-0.5) * e * e);
+	}
+
+	public void setSingleAbsoluteResidualToLogWeight(Function<Double, Double> singleAbsoluteResidualToLogWeight) {
+		this.singleAbsoluteResidualToLogWeight = singleAbsoluteResidualToLogWeight;
+	}
+
+	public void setTotalDiscretizationErrorToLogWeight(Function<Double, Double> totalDiscretizationErrorToLogWeight) {
+		this.totalDiscretizationErrorToLogWeight = totalDiscretizationErrorToLogWeight;
+	}
 
 	public void setFilter(PopulationGroupFilter<L> filter) {
 		this.filter = filter;
@@ -60,14 +80,6 @@ public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends
 		return this.filter;
 	}
 
-	public double getLastDeviationError() {
-		return this.lastDeviationError;
-	}
-
-	public double getLastDiscretizationError() {
-		return this.lastDiscretizationError;
-	}
-	
 	public double[] computeTargetIfAbsent() {
 		if (this.target == null) {
 			this.target = this.computeTarget();
@@ -84,25 +96,26 @@ public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends
 		final double[] sample = this.computeSample(multiRoundTrip, this.filter);
 		final double sampleSize = Math.max(Arrays.stream(sample).sum(), 1e-8);
 
-//		if (this.target == null) {
-//			this.target = this.computeTarget();
-//			this.targetSize = Arrays.stream(this.target).sum();
-//		}
 		this.computeTargetIfAbsent();
-		
-		double slack = 0.5 / sampleSize;
-		this.lastDeviationError = 0.0;
+		final double slack = 0.5 * this.targetSize / sampleSize;
+
+		double logWeight = 0.0;
+
 		for (int i = 0; i < this.target.length; i++) {
-			this.lastDeviationError += Math.max(0.0,
-					Math.abs(sample[i] / sampleSize - this.target[i] / this.targetSize) - slack);
+			final double absoluteResidual = Math.max(0.0,
+					Math.abs(sample[i] * this.targetSize / sampleSize - this.target[i]) - slack);
+			logWeight += this.singleAbsoluteResidualToLogWeight.apply(absoluteResidual);
+			// Each addend contributes on average 0.5 * slack to the discretization error.
 		}
-		this.lastDiscretizationError = 0.5 * slack * this.target.length;
-		return (-1.0) * (this.filter == null ? multiRoundTrip.size() : this.filter.getGroupSize())
-				* (this.lastDeviationError + this.lastDiscretizationError);
+
+		final double totalDiscretizationError = 0.5 * slack * this.target.length;
+		logWeight += this.totalDiscretizationErrorToLogWeight.apply(totalDiscretizationError);
+
+		return logWeight;
 	}
 
 	// --------------- ABSTRACT FUNCTIONS ---------------
-	
+
 	public abstract String[] createLabels();
 
 	public abstract double[] computeTarget();
