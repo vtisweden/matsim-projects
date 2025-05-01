@@ -33,8 +33,6 @@ import se.vti.utils.misc.math.MathHelpers;
  */
 public class Episode {
 
-	protected MathHelpers math = new MathHelpers();
-
 	private Double duration_h = null;
 	private Double end_h = null;
 
@@ -48,7 +46,7 @@ public class Episode {
 		target.initialState = (this.initialState == null ? null : this.initialState.clone());
 		target.finalState = (this.finalState == null ? null : this.finalState.clone());
 	}
-	
+
 	// TODO NEW
 	@Override
 	public Episode clone() {
@@ -56,7 +54,7 @@ public class Episode {
 		this.deepCopyInto(result);
 		return result;
 	}
-	
+
 	public Episode() {
 	}
 
@@ -92,47 +90,70 @@ public class Episode {
 		this.finalState = finalState;
 	}
 
-	public List<Tuple<Double, Double>> effectiveIntervals() {
+//	public List<Tuple<Double, Double>> effectiveIntervals() {
+//		assert (this.duration_h >= 0.0);
+//		if (this.duration_h > 24.0) {
+//			return Arrays.asList(new Tuple<>(0.0, 24.0));
+//		} else {
+//			double withinDayEnd_h = this.end_h;
+//			while (withinDayEnd_h < 0.0) {
+//				withinDayEnd_h += 24.0;
+//			}
+//			while (withinDayEnd_h > 24.0) {
+//				withinDayEnd_h -= 24.0;
+//			}
+//			double start_h = withinDayEnd_h - this.duration_h;
+//			if (start_h < 0.0) {
+//				return Arrays.asList(new Tuple<>(start_h + 24.0, 24.0), new Tuple<>(0.0, withinDayEnd_h));
+//			} else {
+//				return Arrays.asList(new Tuple<>(start_h, withinDayEnd_h));
+//			}
+//		}
+//	}
+
+	public List<Tuple<Double, Double>> effectiveIntervals(double periodLength_h) {
 		assert (this.duration_h >= 0.0);
-		if (this.duration_h > 24.0) {
-			return Arrays.asList(new Tuple<>(0.0, 24.0));
+		if (this.duration_h > periodLength_h) {
+			return Arrays.asList(new Tuple<>(0.0, periodLength_h));
 		} else {
-			double withinDayEnd_h = this.end_h;
-			while (withinDayEnd_h < 0.0) {
-				withinDayEnd_h += 24.0;
+			double withinPeriodEnd_h = this.end_h;
+			while (withinPeriodEnd_h < 0.0) {
+				withinPeriodEnd_h += periodLength_h;
 			}
-			while (withinDayEnd_h > 24.0) {
-				withinDayEnd_h -= 24.0;
+			while (withinPeriodEnd_h > periodLength_h) {
+				withinPeriodEnd_h -= periodLength_h;
 			}
-			double start_h = withinDayEnd_h - this.duration_h;
+			double start_h = withinPeriodEnd_h - this.duration_h;
 			if (start_h < 0.0) {
-				return Arrays.asList(new Tuple<>(start_h + 24.0, 24.0), new Tuple<>(0.0, withinDayEnd_h));
+				return Arrays.asList(new Tuple<>(start_h + periodLength_h, periodLength_h),
+						new Tuple<>(0.0, withinPeriodEnd_h));
 			} else {
-				return Arrays.asList(new Tuple<>(start_h, withinDayEnd_h));
+				return Arrays.asList(new Tuple<>(start_h, withinPeriodEnd_h));
 			}
 		}
 	}
 
-	public double overlap_h(List<Tuple<Double, Double>> intervals) {
+	public double overlap_h(List<Tuple<Double, Double>> intervals, double periodLength_h) {
 		double overlap_h = 0.0;
-		for (Tuple<Double, Double> int1 : this.effectiveIntervals()) {
+		for (Tuple<Double, Double> int1 : this.effectiveIntervals(periodLength_h)) {
 			for (Tuple<Double, Double> int2 : intervals) {
-				overlap_h += this.math.overlap(int1.getA(), int1.getB(), int2.getA(), int2.getB());
+				overlap_h += MathHelpers.overlap(int1.getA(), int1.getB(), int2.getA(), int2.getB());
 			}
 		}
 		return overlap_h;
 	}
 
-	public synchronized static List<Tuple<Double, Double>> effectiveIntervals(double duration_h, double end_h) {
+	public synchronized static List<Tuple<Double, Double>> effectiveIntervals(double duration_h, double end_h,
+			double periodLength_h) {
 		Episode e = new Episode();
 		e.setDuration_h(duration_h);
 		e.setEndTime_h(end_h);
-		return e.effectiveIntervals();
+		return e.effectiveIntervals(periodLength_h);
 	}
 
 	@Override
 	public String toString() {
-		return this.getClass().getSimpleName() + ":time(" + math.round(this.end_h - this.duration_h, 2) + ","
-				+ this.math.round(this.end_h, 2) + ")";
+		return this.getClass().getSimpleName() + ":time(" + MathHelpers.round(this.end_h - this.duration_h, 2) + ","
+				+ MathHelpers.round(this.end_h, 2) + ")";
 	}
 }

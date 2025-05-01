@@ -33,21 +33,24 @@ public class PeriodicSchedulePreference<R extends RoundTrip<L>, L extends Locati
 
 	private final double minHomeDuration_h;
 
-	public PeriodicSchedulePreference(double minHomeDuration_h) {
+	private final double periodLength_h;
+
+	public PeriodicSchedulePreference(double minHomeDuration_h, double periodLength_h) {
 		this.minHomeDuration_h = minHomeDuration_h;
+		this.periodLength_h = periodLength_h;
 	}
 
-	public PeriodicSchedulePreference() {
-		this(0.0);
+	public PeriodicSchedulePreference(double periodLength_h) {
+		this(0.0, periodLength_h);
 	}
-	
+
 	public double discrepancy_h(R roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
 			final StayEpisode<?> home = (StayEpisode<?>) roundTrip.getEpisodes().get(0);
 			final MoveEpisode<?> leaveHome = (MoveEpisode<?>) roundTrip.getEpisodes().get(1);
-			final double earliestLeaveHome_h = home.getEndTime_h() - 24.0 + this.minHomeDuration_h;
+			final double earliestLeaveHome_h = home.getEndTime_h() - this.periodLength_h + this.minHomeDuration_h;
 			final double realizedLeaveHome_h = leaveHome.getEndTime_h() - leaveHome.getDuration_h();
 			return Math.max(0.0, earliestLeaveHome_h - realizedLeaveHome_h);
 		}
@@ -55,6 +58,6 @@ public class PeriodicSchedulePreference<R extends RoundTrip<L>, L extends Locati
 
 	@Override
 	public double logWeight(R roundTrip) {
-		return -this.discrepancy_h(roundTrip) / 24.0;
+		return -this.discrepancy_h(roundTrip) / this.periodLength_h;
 	}
 }

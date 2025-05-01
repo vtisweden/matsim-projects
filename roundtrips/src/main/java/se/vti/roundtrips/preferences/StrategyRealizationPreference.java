@@ -29,8 +29,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class StrategyRealizationPreference<R extends RoundTrip<L>, L extends Location>
-		extends PreferenceComponent<R> {
+public class StrategyRealizationPreference<R extends RoundTrip<L>, L extends Location> extends PreferenceComponent<R> {
 
 	private final Scenario<?> scenario;
 
@@ -55,7 +54,7 @@ public class StrategyRealizationPreference<R extends RoundTrip<L>, L extends Loc
 
 	@Override
 	public double logWeight(R simulatedRoundTrip) {
-		return -this.discrepancy_h(simulatedRoundTrip) / 24.0;
+		return -this.discrepancy_h(simulatedRoundTrip) / this.scenario.getPeriodLength_h();
 	}
 
 }

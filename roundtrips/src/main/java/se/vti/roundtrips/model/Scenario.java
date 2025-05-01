@@ -40,6 +40,8 @@ public class Scenario<L extends Location> {
 
 	private int timeBinCnt = 24;
 	
+	private double binSize_h = 1.0;
+	
 	private int maxStayEpisodes = 4;
 
 	private final Map<String, L> name2location = new LinkedHashMap<>();
@@ -79,7 +81,6 @@ public class Scenario<L extends Location> {
 	}
 
 	public int getLocationCnt() {
-//		return this.locations.size();
 		return this.name2location.size();
 	}
 
@@ -133,15 +134,23 @@ public class Scenario<L extends Location> {
 	}
 
 	public double getBinSize_h() {
-		return 24.0 / this.getBinCnt();
+		return this.binSize_h;
+	}
+
+	public void setBinSize_h(double binSize_h) {
+		this.binSize_h = binSize_h;
 	}
 
 	public int getBinCnt() {
 		return this.timeBinCnt;
 	}
-
+	
 	public void setTimeBinCnt(int timeBinCnt) {
 		this.timeBinCnt = timeBinCnt;
+	}
+	
+	public double getPeriodLength_h() {
+		return this.binSize_h * this.timeBinCnt;
 	}
 
 	public void setMaxStayEpisodes(int maxStayEpisodes) {

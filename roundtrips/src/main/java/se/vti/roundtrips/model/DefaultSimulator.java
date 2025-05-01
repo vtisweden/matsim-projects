@@ -86,8 +86,8 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 	public StayEpisode<L> createHomeOnlyEpisode(RoundTrip<L> roundTrip) {
 		StayEpisode<L> home = new StayEpisode<>(roundTrip.getLocation(0));
-		home.setDuration_h(24.0);
-		home.setEndTime_h(24.0 - 1e-8); // wraparound
+		home.setDuration_h(this.scenario.getPeriodLength_h());
+		home.setEndTime_h(this.scenario.getPeriodLength_h() - 1e-8); // wraparound
 		home.setInitialState(this.createAndInitializeState());
 		home.setFinalState(this.createAndInitializeState());
 		return home;
@@ -120,8 +120,7 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 
 			for (int index = 0; index < roundTrip.locationCnt() - 1; index++) {
 
-				final MoveEpisode<L> moving = this.moveSimulator.newMoveEpisode(roundTrip, index, time_h,
-						currentState);
+				final MoveEpisode<L> moving = this.moveSimulator.newMoveEpisode(roundTrip, index, time_h, currentState);
 				episodes.add(moving);
 				time_h = moving.getEndTime_h();
 				currentState = moving.getFinalState();
@@ -133,14 +132,14 @@ public class DefaultSimulator<L extends Location> implements Simulator<L> {
 				currentState = staying.getFinalState();
 			}
 
-			final MoveEpisode<L> moving = this.moveSimulator.newMoveEpisode(roundTrip,
-					roundTrip.locationCnt() - 1, time_h, currentState);
+			final MoveEpisode<L> moving = this.moveSimulator.newMoveEpisode(roundTrip, roundTrip.locationCnt() - 1,
+					time_h, currentState);
 			episodes.add(moving);
 			time_h = moving.getEndTime_h();
 			currentState = moving.getFinalState();
 
-			final StayEpisode<L> home = this.staySimulator.newStayEpisode(roundTrip, 0, time_h - 24.0,
-					currentState);
+			final StayEpisode<L> home = this.staySimulator.newStayEpisode(roundTrip, 0,
+					time_h - this.scenario.getPeriodLength_h(), currentState);
 			episodes.set(0, home);
 
 			final SimulatorState newInitialState = this.keepOrChangeInitialState(initialState, home.getFinalState());
