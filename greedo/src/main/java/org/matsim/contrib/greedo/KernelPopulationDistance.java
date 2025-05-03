@@ -20,11 +20,13 @@
 package org.matsim.contrib.greedo;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -63,26 +65,34 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 	// -------------------- CONSTANTS --------------------
 
 	private final double flowCapacityFactor;
+	private final double kernelHalfTime_s;
+	private final double kernelThreshold;
 
-	private GreedoConfigGroup greedoConfig;
+//	private GreedoConfigGroup greedoConfig;
 
 	// -------------------- MEMBERS --------------------
 
-	private final Map<Id<Person>, Map<Id<Person>, Double>> personId2personId2aCoeff = new LinkedHashMap<>();
+//	private final Map<Id<Person>, Map<Id<Person>, Double>> personId2personId2aCoeff = new LinkedHashMap<>();
+	private final ConcurrentHashMap<Id<Person>, ConcurrentHashMap<Id<Person>, Double>> personId2personId2aCoeff = new ConcurrentHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
 	KernelPopulationDistance(final Plans pop1, final Plans pop2, final Scenario scenario,
 			final Map<String, ? extends TravelTime> mode2travelTime) {
 		this.flowCapacityFactor = scenario.getConfig().qsim().getFlowCapFactor();
-		this.greedoConfig = ConfigUtils.addOrGetModule(scenario.getConfig(), GreedoConfigGroup.class);
+		final GreedoConfigGroup greedoConfig = ConfigUtils.addOrGetModule(scenario.getConfig(),
+				GreedoConfigGroup.class);
+		this.kernelHalfTime_s = greedoConfig.getKernelHalftime_s();
+		this.kernelThreshold = greedoConfig.getKernelThreshold();
 
-		final Map<Link, List<LinkEntry>> link2entries1 = this.plans2linkEntries(pop1, scenario, mode2travelTime);
-		final Map<Link, List<LinkEntry>> link2entries2 = this.plans2linkEntries(pop2, scenario, mode2travelTime);
+		final ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> link2entries1 = this.plans2linkEntries(pop1,
+				scenario, mode2travelTime);
+		final ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> link2entries2 = this.plans2linkEntries(pop2,
+				scenario, mode2travelTime);
 
-		this.updateCoeffs(link2entries1, link2entries1, 1.0); // K(x,x) terms
-		this.updateCoeffs(link2entries1, link2entries2, -2.0); // K(x,y) terms
-		this.updateCoeffs(link2entries2, link2entries2, 1.0); // K(y,y) terms
+		this.updateCoeffsParallel(link2entries1, link2entries1, 1.0); // K(x,x) terms
+		this.updateCoeffsParallel(link2entries1, link2entries2, -2.0); // K(x,y) terms
+		this.updateCoeffsParallel(link2entries2, link2entries2, 1.0); // K(y,y) terms
 
 		System.gc(); // link2entries no longer needed
 	}
@@ -123,61 +133,151 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 		return result;
 	}
 
-	private Map<Link, List<LinkEntry>> plans2linkEntries(final Plans plans, final Scenario scenario,
-			Map<String, ? extends TravelTime> mode2travelTime) {
+	private ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> plans2linkEntries(final Plans plans,
+			final Scenario scenario, Map<String, ? extends TravelTime> mode2travelTime) {
 		this.noNetworkRouteWarningCnt = 0;
-		final Map<Link, List<LinkEntry>> result = new LinkedHashMap<>();
+		final Map<Link, List<LinkEntry>> tmpResult = new LinkedHashMap<>();
 		for (Id<Person> personId : plans.getPersonIdView()) {
 			for (Leg leg : this.extractNetworkLegs(plans.getSelectedPlan(personId))) {
 				final TravelTime travelTime = mode2travelTime.get(leg.getMode());
 				double time_s = leg.getDepartureTime().seconds();
 				for (Link link : this.allLinksAsList((NetworkRoute) leg.getRoute(), scenario.getNetwork())) {
-					result.computeIfAbsent(link, l -> new ArrayList<>()).add(new LinkEntry(personId, time_s));
+					tmpResult.computeIfAbsent(link, l -> new ArrayList<>()).add(new LinkEntry(personId, time_s));
 					time_s += travelTime.getLinkTravelTime(link, time_s, null, null);
 				}
 			}
 		}
 
-		// TODO Sorting seems not to be used right now. Make use of it, or let it be.
-		for (List<LinkEntry> entriesList : result.values()) {
-			Collections.sort(entriesList, new Comparator<>() {
-				@Override
-				public int compare(final LinkEntry entry1, final LinkEntry entry2) {
-					return Double.compare(entry1.time_s, entry2.time_s);
-				}
-			});
+		final ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> result = new ConcurrentHashMap<>();
+		for (Map.Entry<Link, List<LinkEntry>> e : tmpResult.entrySet()) {
+			result.put(e.getKey(), new CopyOnWriteArrayList<>(e.getValue()));
 		}
 		return result;
 	}
 
-	private void updateCoeffs(final Map<Link, List<LinkEntry>> link2entries1,
-			final Map<Link, List<LinkEntry>> link2entries2, final double fact) {
-		for (Map.Entry<Link, List<LinkEntry>> e : link2entries1.entrySet()) {
-			final Link link = e.getKey();
+//	private void updateCoeffs(final Map<Link, List<LinkEntry>> link2entries1,
+//			final Map<Link, List<LinkEntry>> link2entries2, final double fact) {
+//		for (Map.Entry<Link, List<LinkEntry>> e : link2entries1.entrySet()) {
+//			final Link link = e.getKey();
+//
+//			final double flowCap_veh_s = this.flowCapacityFactor * link.getCapacity() / link.getCapacityPeriod();
+//			final double kernelMu_1_s = Math.log(2.0) / kernelHalfTime_s;
+//			final double linkFact = fact * kernelMu_1_s / flowCap_veh_s;
+//
+//			final List<LinkEntry> entries1 = e.getValue();
+//			final List<LinkEntry> entries2 = link2entries2.computeIfAbsent(link, l -> Collections.emptyList());
+//			if (entries1.size() > 0 && entries2.size() > 0) {
+//				for (LinkEntry entry1 : entries1) {
+//					for (LinkEntry entry2 : entries2) {
+//						final double muTimesDelta = kernelMu_1_s * Math.abs(entry1.time_s - entry2.time_s);
+//						final double kernel = Math.exp(-muTimesDelta) * (1.0 + muTimesDelta);
+//						if (kernel >= kernelThreshold) {
+//							this.addCoefficient(entry1.personId, entry2.personId, linkFact * kernel);
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
 
-			final double flowCap_veh_s = this.flowCapacityFactor * link.getCapacity() / link.getCapacityPeriod();
-			final double kernelMu_1_s = Math.log(2.0) / this.greedoConfig.getKernelHalftime_s();
-			final double linkFact = fact * kernelMu_1_s / flowCap_veh_s;
+//	private void addCoefficient(final Id<Person> personId1, final Id<Person> personId2, final double addend) {
+//		this.personId2personId2aCoeff.computeIfAbsent(personId1, id -> new ConcurrentHashMap<>()).compute(personId2,
+//				(id, coeff) -> coeff == null ? addend : coeff + addend);
+//	}
 
-			final List<LinkEntry> entries1 = e.getValue();
-			final List<LinkEntry> entries2 = link2entries2.computeIfAbsent(link, l -> Collections.emptyList());
-			if (entries1.size() > 0 && entries2.size() > 0) {
+	private class JobProcessor implements Runnable {
+
+		private final BlockingQueue<Job> allJobs;
+		private final double fact;
+		private final ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> link2entries2;
+
+		JobProcessor(BlockingQueue<Job> allJobs, double fact,
+				ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> link2entries2) {
+			this.allJobs = allJobs;
+			this.fact = fact;
+			this.link2entries2 = link2entries2;
+		}
+
+		@Override
+		public void run() {
+			try {
+				while (true) {
+					Job job = this.allJobs.take();
+					if (job == Job.TERMINATE) {
+						break;
+					}
+					this.process(job);
+				}
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		void process(Job job) {
+			final Link link = job.entry.getKey();
+
+			final double flowCap_veh_s = flowCapacityFactor * link.getCapacity() / link.getCapacityPeriod();
+			final double kernelMu_1_s = Math.log(2.0) / kernelHalfTime_s;
+			final double linkFact = this.fact * kernelMu_1_s / flowCap_veh_s;
+
+			final CopyOnWriteArrayList<LinkEntry> entries1 = job.entry.getValue();
+			final List<LinkEntry> entries2 = this.link2entries2.get(link);
+			if (entries1.size() > 0 && entries2 != null && entries2.size() > 0) {
 				for (LinkEntry entry1 : entries1) {
 					for (LinkEntry entry2 : entries2) {
 						final double muTimesDelta = kernelMu_1_s * Math.abs(entry1.time_s - entry2.time_s);
 						final double kernel = Math.exp(-muTimesDelta) * (1.0 + muTimesDelta);
-						if (kernel >= this.greedoConfig.getKernelThreshold()) {
-							this.addCoefficient(entry1.personId, entry2.personId, linkFact * kernel);
+						if (kernel >= kernelThreshold) {
+							final double addend = linkFact * kernel;
+							personId2personId2aCoeff.computeIfAbsent(entry1.personId, id -> new ConcurrentHashMap<>())
+									.compute(entry2.personId, (id, coeff) -> coeff == null ? addend : coeff + addend);
+
 						}
 					}
 				}
 			}
 		}
+
 	}
 
-	private void addCoefficient(final Id<Person> personId1, final Id<Person> personId2, final double addend) {
-		this.personId2personId2aCoeff.computeIfAbsent(personId1, id -> new LinkedHashMap<>()).compute(personId2,
-				(id, coeff) -> coeff == null ? addend : coeff + addend);
+	private static class Job {
+
+		static Job TERMINATE = new Job(null);
+
+		private final Map.Entry<Link, CopyOnWriteArrayList<LinkEntry>> entry;
+
+		Job(Map.Entry<Link, CopyOnWriteArrayList<LinkEntry>> entry) {
+			this.entry = entry;
+		}
+
+	}
+
+	private void updateCoeffsParallel(final ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> link2entries1,
+			final ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> link2entries2, final double fact) {
+
+		final int threadCnt = Runtime.getRuntime().availableProcessors();
+		final BlockingQueue<Job> jobQueue = new LinkedBlockingQueue<>(100 * threadCnt);
+		final List<Thread> threads = new ArrayList<>();
+
+		try {
+			for (int i = 0; i < threadCnt; i++) {
+				final JobProcessor jobProcessor = new JobProcessor(jobQueue, fact, link2entries2);
+				final Thread thread = new Thread(jobProcessor);
+				threads.add(thread);
+				thread.start();
+			}
+			for (Map.Entry<Link, CopyOnWriteArrayList<LinkEntry>> e : link2entries1.entrySet()) {
+				jobQueue.put(new Job(e));
+			}
+			for (int i = 0; i < threads.size(); i++) {
+				jobQueue.put(Job.TERMINATE);
+			}
+			for (Thread thread : threads) {
+				thread.join();
+			}
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	// --------------- OVERRIDING of PopulationDistance ---------------
