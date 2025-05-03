@@ -101,20 +101,6 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
-//	private boolean gapRelativeMSA = false;
-//
-//	@StringGetter("gapRelativeMSA")
-//	public boolean getGapRelativeMSA() {
-//		return this.gapRelativeMSA;
-//	}
-//
-//	@StringSetter("gapRelativeMSA")
-//	public void setGapRelativeMSA(boolean gapRelativeMSA) {
-//		this.gapRelativeMSA = gapRelativeMSA;
-//	}
-
-	//
-
 	private boolean useLinearDistance = true;
 
 	@StringGetter("useLinearDistance")
@@ -142,12 +128,74 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 	}
 
 	//
+//
+//	public Function<Double, Double> newQuadraticDistanceTransformation() {
+//		return new Function<>() {
+//			@Override
+//			public Double apply(Double _D2) {
+//				return (getUseLinearDistance() ? Math.sqrt(_D2) : 0.0) + (getUseQuadraticDistance() ? _D2 : 0.0);
+//			}
+//		};
+//	}
 
-	public Function<Double, Double> newQuadraticDistanceTransformation() {
-		return new Function<>() {
+	//
+
+	private boolean normalizeDistance = false;
+
+	@StringGetter("normalizeDistance")
+	public boolean getNormalizeDistance() {
+		return this.normalizeDistance;
+	}
+
+	@StringSetter("normalizeDistance")
+	public void setNormalizeDistance(boolean normalizeDistance) {
+		this.normalizeDistance = normalizeDistance;
+	}
+
+	//
+
+	private boolean useExponentialDistance = false;
+
+	@StringGetter("useExponentialDistance")
+	public boolean getUseExponentialDistance() {
+		return this.useExponentialDistance;
+	}
+
+	@StringSetter("useExponentialDistance")
+	public void setUseExponentialDistance(boolean useExponentialDistance) {
+		this.useExponentialDistance = useExponentialDistance;
+	}
+
+	//
+
+	private boolean useLogarithmicDistance = false;
+
+	@StringGetter("useLogarithmicDistance")
+	public boolean getUseLogarithmicDistance() {
+		return this.useLogarithmicDistance;
+	}
+
+	@StringSetter("useLogarithmicDistance")
+	public void setUseLogarithmicDistance(boolean useLogarithmicDistance) {
+		this.useLogarithmicDistance = useLogarithmicDistance;
+	}
+
+	//
+
+	public interface DistanceTransformation {
+		public double transform(double _D, Double _Dmax);
+	}
+
+	public DistanceTransformation newDistanceTransformation() {
+		return new DistanceTransformation() {
 			@Override
-			public Double apply(Double _D2) {
-				return (getUseLinearDistance() ? Math.sqrt(_D2) : 0.0) + (getUseQuadraticDistance() ? _D2 : 0.0);
+			public double transform(double _D, Double _Dmax) {
+				if (getNormalizeDistance()) {
+					_D = _D / _Dmax;
+				}
+				return (getUseLinearDistance() ? _D : 0.0) + (getUseQuadraticDistance() ? _D * _D : 0.0)
+						+ (getUseExponentialDistance() ? (Math.exp(_D) - 1.0) : 0.0)
+						+ (getUseLogarithmicDistance() ? Math.log(1.0 + _D) : 0.0);
 			}
 		};
 	}

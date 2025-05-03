@@ -42,7 +42,6 @@ public class RoadPricingEmulationHandler implements EmulationHandler, LinkEnterE
 	private final Network network;
 	private final RoadPricingScheme scheme;
 
-//	private Person person = null;
 	private RoadPricingTollCalculator tollCalculator = null;
 
 	@Inject

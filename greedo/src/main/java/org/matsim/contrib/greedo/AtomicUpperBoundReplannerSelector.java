@@ -47,7 +47,8 @@ class AtomicUpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	private final boolean logReplanningProcess = true;
 
-	private final Function<Double, Double> quadraticDistanceTransformation;
+//	private final Function<Double, Double> quadraticDistanceTransformation;
+	private final GreedoConfigGroup.DistanceTransformation distanceTransformation;
 
 	final GreedoConfigGroup.UpperboundStepSize stepSizeLogic;
 
@@ -58,17 +59,20 @@ class AtomicUpperBoundReplannerSelector extends AbstractReplannerSelector {
 	// -------------------- CONSTRUCTION --------------------
 
 	AtomicUpperBoundReplannerSelector(final Function<Integer, Double> iterationToEta,
-			final Function<Double, Double> quadraticDistanceTransformation,
+//			final Function<Double, Double> quadraticDistanceTransformation,
+			final GreedoConfigGroup.DistanceTransformation distanceTransformation,
 			final GreedoConfigGroup.UpperboundStepSize stepSizeLogic) {
 		super(iterationToEta);
-		this.quadraticDistanceTransformation = quadraticDistanceTransformation;
+//		this.quadraticDistanceTransformation = quadraticDistanceTransformation;
+		this.distanceTransformation = distanceTransformation;
 		this.stepSizeLogic = stepSizeLogic;
 	}
 
 	// -------------------- INTERNALS --------------------
 
-	private double _Q(final double _G, final double _Dsum, final double gamma) {
-		final double transformedD = this.quadraticDistanceTransformation.apply(_Dsum * _Dsum);
+	private double _Q(final double _G, final double _Dsum, final double gamma, final double _DsumMax) {
+//		final double transformedD = this.quadraticDistanceTransformation.apply(_Dsum * _Dsum);
+		final double transformedD = this.distanceTransformation.transform(_Dsum, _DsumMax);
 		return (_G - gamma) / Math.max(this.eps, transformedD);
 	}
 
@@ -185,6 +189,7 @@ class AtomicUpperBoundReplannerSelector extends AbstractReplannerSelector {
 		double _G = replannerIds.stream().mapToDouble(r -> personId2gap.get(r)).sum();
 		double _Dsum = personId2D2withoutSelf.values().stream().mapToDouble(d2 -> Math.sqrt(Math.max(this.eps, d2)))
 				.sum();
+		final double _DsumMax = Math.max(0.0, _Dsum);
 
 		/*
 		 * (2) Repeatedly switch (non)replanners.
@@ -197,7 +202,7 @@ class AtomicUpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 			if (this.logReplanningProcess) {
 				Hacks.append2file(logFile, _G + "\t" + Math.sqrt(_Dsum) + "\t"
-						+ this._Q(_G, _Dsum, this.getTargetReplanningRate() * _Gall) + "\n");
+						+ this._Q(_G, _Dsum, this.getTargetReplanningRate() * _Gall, _DsumMax) + "\n");
 			}
 
 			switched = false;
@@ -223,8 +228,8 @@ class AtomicUpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 				// attention, now we maximize
 
-				final double oldQ = this._Q(_G, _Dsum, this.getTargetReplanningRate() * _Gall);
-				final double newQ = this._Q(_G + deltaG, _Dsum + deltaDsum, this.getTargetReplanningRate() * _Gall);
+				final double oldQ = this._Q(_G, _Dsum, this.getTargetReplanningRate() * _Gall, _DsumMax);
+				final double newQ = this._Q(_G + deltaG, _Dsum + deltaDsum, this.getTargetReplanningRate() * _Gall, _DsumMax);
 
 				if (newQ > oldQ) {
 					_G = Math.max(0.0, _G + deltaG);

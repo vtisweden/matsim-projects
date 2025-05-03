@@ -58,44 +58,25 @@ public class Greedo {
 
 	private Config config = null;
 
-//	private final Map<String, Class<? extends ActivityEmulator>> actType2emulator = new LinkedHashMap<>();
-//
-//	private final Map<String, Class<? extends LegEmulator>> mode2emulator = new LinkedHashMap<>();
-//
-//	private final Map<String, Class<? extends LegDecomposer>> mode2decomposer = new LinkedHashMap<>();
-
 	private final EmulationParameters emulationParameters;
 
 	// -------------------- CONSTRUCTION --------------------
 
 	public Greedo() {
-//		// (atomic) activity emulation
-//		this.setActivityEmulator(DEFAULT, BasicActivityEmulator.class);
-//		// (atomic) leg emulation
-//		this.setEmulator(TransportMode.car, CarLegEmulator.class);
-//		this.setEmulator(DEFAULT, OnlyDepartureArrivalLegEmulator.class);
-//		// leg decomposition
-//		this.setDecomposer(DEFAULT, BasicLegDecomposer.class);
 		this.emulationParameters = new EmulationParameters();
 	}
 
 	// -------------------- WIRE GREEDO INTO MATSim --------------------
 
 	public void setActivityEmulator(String type, Class<? extends ActivityEmulator> clazz) {
-//		logger.info("Emulator for activity type " + type + " is of type " + clazz.getSimpleName());
-//		this.actType2emulator.put(type, clazz);
 		this.emulationParameters.setActivityEmulator(type, clazz);
 	}
 
 	public void setEmulator(String mode, Class<? extends LegEmulator> clazz) {
-//		logger.info("Emulator for mode " + mode + " is of type " + clazz.getSimpleName());
-//		this.mode2emulator.put(mode, clazz);
 		this.emulationParameters.setEmulator(mode, clazz);
 	}
 
 	public void addHandler(Class<? extends EmulationHandler> clazz) {
-//		logger.info("Decomposer for mode " + mode + " is of type " + clazz.getSimpleName());
-//		this.mode2decomposer.put(mode, clazz);
 		this.emulationParameters.addHandler(clazz);
 	}
 
@@ -113,7 +94,7 @@ public class Greedo {
 			logger.warn("Config module " + EmulationConfigGroup.GROUP_NAME
 					+ " is missing, falling back to default values.");
 		}
-		final EmulationConfigGroup ierConfig = ConfigUtils.addOrGetModule(config, EmulationConfigGroup.class);
+		final EmulationConfigGroup emulationConfig = ConfigUtils.addOrGetModule(config, EmulationConfigGroup.class);
 
 		if (!config.getModules().containsKey(GreedoConfigGroup.GROUP_NAME)) {
 			logger.warn(
@@ -151,16 +132,16 @@ public class Greedo {
 
 		if (thereAreCheapStrategies) {
 			if (thereAreExpensiveStrategies) {
-				ierConfig.setIterationsPerCycle(Math.max(ierConfig.getIterationsPerCycle(), 2));
+				emulationConfig.setIterationsPerCycle(Math.max(emulationConfig.getIterationsPerCycle(), 2));
 				logger.info("There are cheap and expensive strategies. Number of emulated iterations per cycle is "
-						+ ierConfig.getIterationsPerCycle() + ".");
+						+ emulationConfig.getIterationsPerCycle() + ".");
 			} else {
 				logger.info("There are no expensive strategies. Keeping number of emulated iterations at "
-						+ ierConfig.getIterationsPerCycle() + ".");
+						+ emulationConfig.getIterationsPerCycle() + ".");
 			}
 		} else {
 			if (thereAreExpensiveStrategies) {
-				ierConfig.setIterationsPerCycle(1);
+				emulationConfig.setIterationsPerCycle(1);
 				logger.info("There are no cheap strategies- Setting number of emulated iterations to 1.");
 			} else {
 				throw new RuntimeException("There are no neither cheap nor expensive strategies.");
@@ -172,7 +153,7 @@ public class Greedo {
 
 			final double expensiveStrategyWeightFactor;
 			if (subpop2expensiveStrategyWeightSum.getOrDefault(subpop, 0.0) > 0.0) {
-				expensiveStrategyWeightFactor = 1.0 / ierConfig.getIterationsPerCycle()
+				expensiveStrategyWeightFactor = 1.0 / emulationConfig.getIterationsPerCycle()
 						/ subpop2expensiveStrategyWeightSum.getOrDefault(subpop, 0.0);
 			} else {
 				expensiveStrategyWeightFactor = 0.0;
@@ -181,7 +162,7 @@ public class Greedo {
 			final double cheapStrategyWeightFactor;
 			if (subpop2cheapStrategyWeightSum.getOrDefault(subpop, 0.0) > 0.0) {
 				cheapStrategyWeightFactor = (expensiveStrategyWeightFactor > 0.0
-						? (1.0 - 1.0 / ierConfig.getIterationsPerCycle())
+						? (1.0 - 1.0 / emulationConfig.getIterationsPerCycle())
 						: 1.0) / subpop2cheapStrategyWeightSum.getOrDefault(subpop, 0.0);
 			} else {
 				cheapStrategyWeightFactor = 0.0;
@@ -235,14 +216,16 @@ public class Greedo {
 		for (AbstractModule module : this.getModules()) {
 			controler.addOverridingModule(module);
 		}
-		
-		final int checkEmulatedAgentsCnt = ConfigUtils.addOrGetModule(this.config, GreedoConfigGroup.class).getCheckEmulatedAgentsCnt();
+
+		final int checkEmulatedAgentsCnt = ConfigUtils.addOrGetModule(this.config, GreedoConfigGroup.class)
+				.getCheckEmulatedAgentsCnt();
 		if (checkEmulatedAgentsCnt > 0) {
-			EventsChecker.generateObservedPersonIds(controler.getScenario().getPopulation(), checkEmulatedAgentsCnt, "observedPersons.txt");
+			EventsChecker.generateObservedPersonIds(controler.getScenario().getPopulation(), checkEmulatedAgentsCnt,
+					"observedPersons.txt");
 			EventsChecker simulatedEventsChecker = new EventsChecker("observedPersons.txt", true);
 			controler.addControlerListener(simulatedEventsChecker);
 			controler.getEvents().addHandler(simulatedEventsChecker);
-		}		
+		}
 	}
 
 	public AbstractModule[] getModules() {
@@ -254,13 +237,6 @@ public class Greedo {
 				bind(PlansReplanning.class).to(GreedoReplanning.class);
 			}
 		};
-		return new AbstractModule[] { greedoModule,
-				// new EmulationModule(this.actType2emulator, this.mode2emulator,
-				// this.mode2decomposer) };
-				new EmulationModule(this.emulationParameters) };
-//						this.emulationParameters.getActType2emulatorView(),
-//						this.emulationParameters.getMode2emulatorView(),
-//						this.emulationParameters.getMode2decomposerView()) };
-		// this.actType2emulator, this.mode2emulator, this.mode2decomposer) };
+		return new AbstractModule[] { greedoModule, new EmulationModule(this.emulationParameters) };
 	}
 }

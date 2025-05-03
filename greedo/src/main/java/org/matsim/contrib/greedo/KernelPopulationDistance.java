@@ -72,21 +72,13 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	KernelPopulationDistance(final Plans pop1, final Plans pop2, final Scenario scenario, 
-//			final TravelTime travelTime
-			final Map<String, ? extends TravelTime> mode2travelTime
-			) {
+	KernelPopulationDistance(final Plans pop1, final Plans pop2, final Scenario scenario,
+			final Map<String, ? extends TravelTime> mode2travelTime) {
 		this.flowCapacityFactor = scenario.getConfig().qsim().getFlowCapFactor();
 		this.greedoConfig = ConfigUtils.addOrGetModule(scenario.getConfig(), GreedoConfigGroup.class);
 
-//		Map<Id<Link>, ? extends Link> bottlenecks = new PotentialBottlenecks(scenario.getNetwork(), 0.95 /* TODO make configurable */)
-//				.getBottleneckLinks(this.greedoConfig.getRequireUpstreamBottlenecks(),
-//						this.greedoConfig.getRequireDownstreamBottlenecks());
-
 		final Map<Link, List<LinkEntry>> link2entries1 = this.plans2linkEntries(pop1, scenario, mode2travelTime);
-		// , bottlenecks);
 		final Map<Link, List<LinkEntry>> link2entries2 = this.plans2linkEntries(pop2, scenario, mode2travelTime);
-		// , bottlenecks);
 
 		this.updateCoeffs(link2entries1, link2entries1, 1.0); // K(x,x) terms
 		this.updateCoeffs(link2entries1, link2entries2, -2.0); // K(x,y) terms
@@ -97,6 +89,8 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 
 	// -------------------- INTERNALS --------------------
 
+	private int noNetworkRouteWarningCnt = 0;
+
 	private List<Leg> extractNetworkLegs(final Plan plan) {
 		final List<Leg> legs = new ArrayList<>(plan.getPlanElements().size() / 2);
 		for (PlanElement pE : plan.getPlanElements()) {
@@ -104,12 +98,16 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 				final Leg leg = (Leg) pE;
 				if ((leg.getRoute() != null) && (leg.getRoute() instanceof NetworkRoute)) {
 					legs.add(leg);
-				} else {
+				} else if (this.noNetworkRouteWarningCnt < 10) {
 					Logger.getLogger(this.getClass())
 							.warn("Person " + plan.getPerson().getId() + " has a selected plan with "
 									+ (leg.getRoute() == null ? "no route"
 											: ("a route that is not of type NetworkRoute but "
 													+ leg.getRoute().getClass().getSimpleName())));
+					this.noNetworkRouteWarningCnt++;
+					if (this.noNetworkRouteWarningCnt == 10) {
+						Logger.getLogger(this.getClass()).warn("Suppressing further warnings of this type.");
+					}
 				}
 			}
 		}
@@ -126,23 +124,20 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 	}
 
 	private Map<Link, List<LinkEntry>> plans2linkEntries(final Plans plans, final Scenario scenario,
-			Map<String, ? extends TravelTime> mode2travelTime
-//			, final Map<Id<Link>, ? extends Link> bottlenecks
-	) {
+			Map<String, ? extends TravelTime> mode2travelTime) {
+		this.noNetworkRouteWarningCnt = 0;
 		final Map<Link, List<LinkEntry>> result = new LinkedHashMap<>();
 		for (Id<Person> personId : plans.getPersonIdView()) {
 			for (Leg leg : this.extractNetworkLegs(plans.getSelectedPlan(personId))) {
 				final TravelTime travelTime = mode2travelTime.get(leg.getMode());
 				double time_s = leg.getDepartureTime().seconds();
 				for (Link link : this.allLinksAsList((NetworkRoute) leg.getRoute(), scenario.getNetwork())) {
-//					if (bottlenecks.values().contains(link)) {
 					result.computeIfAbsent(link, l -> new ArrayList<>()).add(new LinkEntry(personId, time_s));
-//					}
 					time_s += travelTime.getLinkTravelTime(link, time_s, null, null);
 				}
 			}
 		}
-		
+
 		// TODO Sorting seems not to be used right now. Make use of it, or let it be.
 		for (List<LinkEntry> entriesList : result.values()) {
 			Collections.sort(entriesList, new Comparator<>() {

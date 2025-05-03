@@ -80,7 +80,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 	private final Collection<? extends Person> persons;
 
 	private final EmulationErrorAnalyzer emulationErrorAnalyzer;
-	
+
 	private final GapAnalyzer gapAnalyzer;
 
 	// -------------------- MEMBERS --------------------
@@ -109,7 +109,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 
 		final int percentileStep = 10; // TODO
 		this.gapAnalyzer = new GapAnalyzer(percentileStep);
-		
+
 		this.statsWriter = new StatisticsWriter<>(
 				new File(services.getConfig().controler().getOutputDirectory(), "GreedoReplanning.log").toString(),
 				false);
@@ -213,7 +213,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 				return Statistic.toString(data.emulationErrorAnalyzer.getMeanAbsError());
 			}
 		});
-		
+
 		this.statsWriter.addSearchStatistic(new Statistic<>() {
 			@Override
 			public String label() {
@@ -258,7 +258,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 				return data.gapAnalyzer.getAbsolutePercentiles();
 			}
 		});
-}
+	}
 
 	// -------------------- INTERNALS --------------------
 
@@ -461,6 +461,13 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 			this.gap += this.services.getScenario().getPopulation().getPersons().values().stream()
 					.mapToDouble(p -> p.getSelectedPlan().getScore()).average().getAsDouble();
 			this.gapAnalyzer.registerPlansAfterReplanning(this.services.getScenario().getPopulation());
+
+			if (this.gapAnalyzer.linkCntAndAbsoluteGap != null && (this.replanIteration % 100 == 0
+					|| this.replanIteration == this.services.getConfig().controler().getLastIteration() - 1)) {
+				this.gapAnalyzer.writeLinkCntAndAbsoluteGapScatterplot(
+						new File(services.getConfig().controler().getOutputDirectory(),
+								"linkCnt_vs_absGap." + this.replanIteration + ".txt").toString());
+			}
 		}
 
 		/*

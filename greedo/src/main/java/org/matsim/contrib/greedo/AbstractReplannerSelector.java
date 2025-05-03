@@ -68,11 +68,15 @@ abstract class AbstractReplannerSelector {
 			return new BasicReplannerSelector(true, greedoConfig.newIterationToTargetReplanningRate());
 		} else if (GreedoConfigGroup.ReplannerIdentifierType.UPPERBOUND.equals(greedoConfig.getReplannerIdentifier())) {
 			return new UpperBoundReplannerSelector(greedoConfig.newIterationToTargetReplanningRate(),
-					greedoConfig.newQuadraticDistanceTransformation(), greedoConfig.getUpperboundStepSize());
+//					greedoConfig.newQuadraticDistanceTransformation(), 
+					greedoConfig.newDistanceTransformation(),
+					greedoConfig.getUpperboundStepSize());
 		} else if (GreedoConfigGroup.ReplannerIdentifierType.UPPERBOUND_ATOMIC
 				.equals(greedoConfig.getReplannerIdentifier())) {
 			return new AtomicUpperBoundReplannerSelector(greedoConfig.newIterationToTargetReplanningRate(),
-					greedoConfig.newQuadraticDistanceTransformation(), greedoConfig.getUpperboundStepSize());
+//					greedoConfig.newQuadraticDistanceTransformation(), 
+					greedoConfig.newDistanceTransformation(),
+					greedoConfig.getUpperboundStepSize());
 		} else if (GreedoConfigGroup.ReplannerIdentifierType.DONOTHING.equals(greedoConfig.getReplannerIdentifier())) {
 			return new AbstractReplannerSelector(null) {
 				@Override

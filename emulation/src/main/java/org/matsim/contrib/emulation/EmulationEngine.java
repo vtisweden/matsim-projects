@@ -77,10 +77,6 @@ public class EmulationEngine {
 	private final Provider<Set<EmulationHandler>> emulationHandlerProvider;
 	private final Provider<ScoringFunctionFactory> scoringFunctionFactoryProvider;
 
-	// -------------------- MEMBERS --------------------
-
-//	private boolean overwriteTravelTimes = false;
-
 	// -------------------- CONSTRUCTION --------------------
 
 	@Inject
@@ -96,16 +92,6 @@ public class EmulationEngine {
 		this.emulationHandlerProvider = emulationHandlerProvider;
 		this.scoringFunctionFactoryProvider = scoringFunctionFactoryProvider;
 	}
-
-	// -------------------- SETTERS / GETTERS --------------------
-
-//	public void setOverwriteTravelTimes(final boolean overwriteTravelTimes) {
-//		this.overwriteTravelTimes = overwriteTravelTimes;
-//	}
-//
-//	public boolean getOverwiteTravelTimes() {
-//		return this.overwriteTravelTimes;
-//	}
 
 	// -------------------- STATIC UTILITIES --------------------
 
