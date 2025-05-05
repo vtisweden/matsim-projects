@@ -101,6 +101,20 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
+	private double linkShareInDistance = 1.0;
+
+	@StringGetter("linkShareInDistance")
+	public double getLinkShareInDistance() {
+		return this.linkShareInDistance;
+	}
+
+	@StringSetter("linkShareInDistance")
+	public void setLinkShareInDistance(double linkShareInDistance) {
+		this.linkShareInDistance = linkShareInDistance;
+	}
+
+	//
+	
 	private boolean useLinearDistance = true;
 
 	@StringGetter("useLinearDistance")

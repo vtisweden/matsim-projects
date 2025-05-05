@@ -20,9 +20,12 @@
 package org.matsim.contrib.greedo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -75,6 +78,8 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 //	private final Map<Id<Person>, Map<Id<Person>, Double>> personId2personId2aCoeff = new LinkedHashMap<>();
 	private final ConcurrentHashMap<Id<Person>, ConcurrentHashMap<Id<Person>, Double>> personId2personId2aCoeff = new ConcurrentHashMap<>();
 
+	private final Set<Id<Link>> consideredLinkIds;
+
 	// -------------------- CONSTRUCTION --------------------
 
 	KernelPopulationDistance(final Plans pop1, final Plans pop2, final Scenario scenario,
@@ -84,6 +89,18 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 				GreedoConfigGroup.class);
 		this.kernelHalfTime_s = greedoConfig.getKernelHalftime_s();
 		this.kernelThreshold = greedoConfig.getKernelThreshold();
+
+		// >>> NEW >>>
+
+		this.consideredLinkIds = new LinkedHashSet<>(
+				1 + (int) (greedoConfig.getLinkShareInDistance() * scenario.getNetwork().getLinks().size()));
+		final List<Id<Link>> allLinkIds = new ArrayList<>(scenario.getNetwork().getLinks().keySet().stream().toList());
+		Collections.shuffle(allLinkIds);
+		for (int i = 0; i < greedoConfig.getLinkShareInDistance() * scenario.getNetwork().getLinks().size(); i++) {
+			this.consideredLinkIds.add(allLinkIds.get(i));
+		}
+
+		// <<< NEW <<<
 
 		final ConcurrentHashMap<Link, CopyOnWriteArrayList<LinkEntry>> link2entries1 = this.plans2linkEntries(pop1,
 				scenario, mode2travelTime);
@@ -124,12 +141,17 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 		return legs;
 	}
 
-	private List<Link> allLinksAsList(final NetworkRoute route, final Network network) {
+	private List<Link> allRelevantLinksAsList(final NetworkRoute route, final Network network) {
 		final List<Link> result = new ArrayList<>(route.getLinkIds().size() + 2);
 		// route start and end leg are not included in getLinkIds()
-		result.add(network.getLinks().get(route.getStartLinkId()));
-		route.getLinkIds().stream().forEach(id -> result.add(network.getLinks().get(id)));
-		result.add(network.getLinks().get(route.getEndLinkId()));
+		if (this.consideredLinkIds.contains(route.getStartLinkId())) {
+			result.add(network.getLinks().get(route.getStartLinkId()));
+		}
+		route.getLinkIds().stream().filter(id -> this.consideredLinkIds.contains(id))
+				.forEach(id -> result.add(network.getLinks().get(id)));
+		if (this.consideredLinkIds.contains(route.getEndLinkId())) {
+			result.add(network.getLinks().get(route.getEndLinkId()));
+		}
 		return result;
 	}
 
@@ -141,7 +163,7 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 			for (Leg leg : this.extractNetworkLegs(plans.getSelectedPlan(personId))) {
 				final TravelTime travelTime = mode2travelTime.get(leg.getMode());
 				double time_s = leg.getDepartureTime().seconds();
-				for (Link link : this.allLinksAsList((NetworkRoute) leg.getRoute(), scenario.getNetwork())) {
+				for (Link link : this.allRelevantLinksAsList((NetworkRoute) leg.getRoute(), scenario.getNetwork())) {
 					tmpResult.computeIfAbsent(link, l -> new ArrayList<>()).add(new LinkEntry(personId, time_s));
 					time_s += travelTime.getLinkTravelTime(link, time_s, null, null);
 				}
