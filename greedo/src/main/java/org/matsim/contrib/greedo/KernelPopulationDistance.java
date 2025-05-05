@@ -305,6 +305,11 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 	// --------------- OVERRIDING of PopulationDistance ---------------
 
 	@Override
+	ConcurrentHashMap<Id<Person>, ConcurrentHashMap<Id<Person>, Double>> getPersonId2personId2aCoeff() {
+		return this.personId2personId2aCoeff;
+	}
+	
+	@Override
 	double getACoefficient(final Id<Person> personId1, final Id<Person> personId2) {
 		if (this.personId2personId2aCoeff.containsKey(personId1)) {
 			return this.personId2personId2aCoeff.get(personId1).getOrDefault(personId2, 0.0);

@@ -19,13 +19,14 @@
  */
 package org.matsim.contrib.greedo;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -39,18 +40,62 @@ import org.matsim.contrib.greedo.shouldbeelsewhere.Hacks;
  */
 class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
+	private class JobProcessor implements Runnable {
+
+		private final ConcurrentHashMap<Id<Person>, ConcurrentHashMap<Id<Person>, Double>> personId2personId2aCoeff;
+
+		private final List<Id<Person>> myPersonIds = new ArrayList<>();
+		private final ConcurrentHashMap<Id<Person>, Double> personId2bParam;
+
+		JobProcessor(ConcurrentHashMap<Id<Person>, Double> personId2bParam,
+				ConcurrentHashMap<Id<Person>, ConcurrentHashMap<Id<Person>, Double>> personId2personId2aCoeff) {
+			this.personId2bParam = personId2bParam;
+			this.personId2personId2aCoeff = personId2personId2aCoeff;
+		}
+
+		void addPersonId(Id<Person> personId) {
+			this.myPersonIds.add(personId);
+		}
+
+		private LinkedHashMap<Id<Person>, LinkedHashMap<Id<Person>, Double>> personId2personId2aCoeffSum = null;
+
+		private double deltaSign;
+
+		private Id<Person> candidateId;
+
+		void prepareRun(double deltaSign, Id<Person> candidateId) {
+			this.deltaSign = deltaSign;
+			this.candidateId = candidateId;
+		}
+
+		@Override
+		public void run() {
+			for (Id<Person> personId : this.myPersonIds) {
+				double aSum = 0.0;
+				if (this.personId2personId2aCoeff.containsKey(personId)) {
+					aSum += this.personId2personId2aCoeff.get(personId).getOrDefault(this.candidateId, 0.0);
+				}
+				if (this.personId2personId2aCoeff.containsKey(this.candidateId)) {
+					aSum += this.personId2personId2aCoeff.get(this.candidateId).getOrDefault(personId, 0.0);
+				}
+				final double aSumFinal = aSum;
+				this.personId2bParam.compute(personId, (id, b2) -> b2 + this.deltaSign * aSumFinal);
+			}
+		}
+	}
+
 	// -------------------- CONSTANTS --------------------
 
 	private final double eps = 1e-8;
 
-	private final boolean checkDistance = true;
+	private final GreedoConfigGroup greedoConfig;
 
 	private final boolean logReplanningProcess = true;
 
 //	private final Function<Double, Double> quadraticDistanceTransformation;
 	private final GreedoConfigGroup.DistanceTransformation distanceTransformation;
 
-	final GreedoConfigGroup.UpperboundStepSize stepSizeLogic;
+	private final GreedoConfigGroup.UpperboundStepSize stepSizeLogic;
 
 	// -------------------- MEMBERS --------------------
 
@@ -62,14 +107,12 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	UpperBoundReplannerSelector(final Function<Integer, Double> iterationToEta,
-//			final Function<Double, Double> quadraticDistanceTransformation,
-			final GreedoConfigGroup.DistanceTransformation distanceTransformation,
-			final GreedoConfigGroup.UpperboundStepSize stepSizeLogic) {
-		super(iterationToEta);
+	UpperBoundReplannerSelector(final GreedoConfigGroup greedoConfig) {
+		super(greedoConfig.newIterationToTargetReplanningRate());
 //		this.quadraticDistanceTransformation = quadraticDistanceTransformation;
-		this.distanceTransformation = distanceTransformation;
-		this.stepSizeLogic = stepSizeLogic;
+		this.distanceTransformation = greedoConfig.newDistanceTransformation();
+		this.stepSizeLogic = greedoConfig.getUpperboundStepSize();
+		this.greedoConfig = greedoConfig;
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -140,7 +183,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			return Collections.emptySet();
 		}
 
-		final Map<Id<Person>, Double> personId2bParam = new LinkedHashMap<>(personId2gap.size());
+		final ConcurrentHashMap<Id<Person>, Double> personId2bParam = new ConcurrentHashMap<>(personId2gap.size());
 		for (Id<Person> personId : personId2gap.keySet()) {
 			double b = 0.0;
 			for (Id<Person> replannerId : replannerIds) {
@@ -172,11 +215,30 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
 		final double _D2max = _D2;
 
+		final List<Id<Person>> allPersonIds = new ArrayList<>(personId2gap.keySet());
+
+		/*
+		 * (1b) Initialize parallel switching.
+		 */
+
+		final int threadCnt = Runtime.getRuntime().availableProcessors();
+		final List<JobProcessor> jobProcessors = new ArrayList<>(threadCnt);
+		for (int i = 0; i < threadCnt; i++) {
+			jobProcessors.add(new JobProcessor(personId2bParam, this.populationDistance.getPersonId2personId2aCoeff()));
+		}
+
+		int processorIndex = 0;
+		for (Id<Person> personId : allPersonIds) {
+			jobProcessors.get(processorIndex++).addPersonId(personId);
+			if (processorIndex >= jobProcessors.size()) {
+				processorIndex = 0;
+			}
+		}
+
 		/*
 		 * (2) Repeatedly switch (non)replanners.
 		 */
 
-		final List<Id<Person>> allPersonIds = new LinkedList<>(personId2gap.keySet());
 		boolean switched = true;
 
 		while (switched) {
@@ -187,7 +249,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			}
 
 			switched = false;
-			Collections.shuffle(allPersonIds);
+			if (this.greedoConfig.getShuffleBeforeReplannerSelection()) {
+				Collections.shuffle(allPersonIds);
+			}
 
 			for (Id<Person> candidateId : allPersonIds) {
 
@@ -222,15 +286,32 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 						replannerIds.add(candidateId);
 						deltaSign = +1.0;
 					}
-					for (Id<Person> personId : personId2gap.keySet()) {
-						final double deltaB = deltaSign
-								* (this.populationDistance.getACoefficient(candidateId, personId)
-										+ this.populationDistance.getACoefficient(personId, candidateId));
-						personId2bParam.compute(personId, (id, b2) -> b2 + deltaB);
+
+//					for (Id<Person> personId : personId2gap.keySet()) {
+//						final double deltaB = deltaSign
+//								* (this.populationDistance.getACoefficient(candidateId, personId)
+//										+ this.populationDistance.getACoefficient(personId, candidateId));
+//						personId2bParam.compute(personId, (id, b2) -> b2 + deltaB);
+//					}					
+					final List<Thread> threads = new ArrayList<>();
+					try {
+						for (int i = 0; i < threadCnt; i++) {
+							final JobProcessor jobProcessor = jobProcessors.get(i);
+							jobProcessor.prepareRun(deltaSign, candidateId);
+							final Thread thread = new Thread(jobProcessor);
+							threads.add(thread);
+							thread.start();
+						}
+						for (Thread thread : threads) {
+							thread.join();
+						}
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
 					}
+
 					switched = true;
 
-					if (this.checkDistance) {
+					if (this.greedoConfig.getCheckDistance()) {
 						final double _Gchecked = personId2gap.entrySet().stream()
 								.filter(e -> replannerIds.contains(e.getKey())).mapToDouble(e -> e.getValue()).sum();
 						final double _D2checkedB = 0.5 * personId2bParam.entrySet().stream()

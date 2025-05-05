@@ -45,6 +45,34 @@ public class GreedoConfigGroup extends ReflectiveConfigGroup {
 
 	//
 
+	private boolean checkDistance = false;
+
+	@StringGetter("checkDistance")
+	public boolean getCheckDistance() {
+		return this.checkDistance;
+	}
+
+	@StringSetter("checkDistance")
+	public void setCheckDistance(boolean checkDistance) {
+		this.checkDistance = checkDistance;
+	}
+
+	//
+
+	private boolean shuffleBeforeReplannerSelection = true;
+
+	@StringGetter("shuffleBeforeReplannerSelection")
+	public boolean getShuffleBeforeReplannerSelection() {
+		return this.shuffleBeforeReplannerSelection;
+	}
+
+	@StringSetter("shuffleBeforeReplannerSelection")
+	public void setShuffleBeforeReplannerSelection(boolean shuffleBeforeReplannerSelection) {
+		this.shuffleBeforeReplannerSelection = shuffleBeforeReplannerSelection;
+	}
+
+	//
+
 	private boolean useFilteredTravelTimesForEmulation = false;
 
 	@StringGetter("useFilteredTravelTimesForEmulation")

@@ -20,6 +20,7 @@
 package org.matsim.contrib.greedo;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -45,6 +46,10 @@ abstract class AbstractPopulationDistance {
 		} else {
 			throw new RuntimeException("Unknown distance type: " + greedoConfig.getPopulationDistance());
 		}
+	}
+
+	ConcurrentHashMap<Id<Person>, ConcurrentHashMap<Id<Person>, Double>> getPersonId2personId2aCoeff() {
+		throw new UnsupportedOperationException();
 	}
 
 	abstract double getACoefficient(Id<Person> personId1, Id<Person> personId2);
