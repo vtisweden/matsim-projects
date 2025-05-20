@@ -59,9 +59,6 @@ public class HalfLoopAssignment2NTMCalcWriter
 		final FleetAssignment fleetAssignment;
 
 		RoadHalfLoopAssignment(ConsolidationUnit consolidationUnit, FleetAssignment fleetAssignment) {
-//			if (!SamgodsConstants.TransportMode.Road.equals(consolidationUnit.samgodsMode)) {
-//				throw new RuntimeException("Accepting only main mode Road (possibly with ferry episodes).");
-//			}
 			this.consolidationUnit = consolidationUnit;
 			this.fleetAssignment = fleetAssignment;
 		}
@@ -103,9 +100,13 @@ public class HalfLoopAssignment2NTMCalcWriter
 					.getAttribute(SamgodsLinkAttributes.ATTRIBUTE_NAME);
 			gen.writeStartObject();
 			gen.writeStringField("linkId", linkId.toString());
+			gen.writeStringField("domestic", linkAttrs.isDomestic ? "yes" : "no");
 			gen.writeNumberField("length_m", link.getLength());
 			gen.writeNumberField("maxSpeed_km_h", Math.round(link.getFreespeed() * Units.KM_H_PER_M_S));
 			if (linkAttrs.isFerryLink()) {
+				assert (SamgodsConstants.TransportMode.Road.equals(halfLoopAssignment.consolidationUnit.samgodsMode)
+						|| SamgodsConstants.TransportMode.Rail
+								.equals(halfLoopAssignment.consolidationUnit.samgodsMode));
 				Logger.getLogger(this.getClass()).info("Found ferry link: " + linkId); // TODO for testing
 				gen.writeStringField("mode", SamgodsConstants.TransportMode.Ferry.toString());
 				gen.writeNumberField("vesselDWT", 5000.0); // TODO uniform assumption for both road and rail
@@ -120,38 +121,32 @@ public class HalfLoopAssignment2NTMCalcWriter
 		gen.writeEndObject();
 	}
 
-	public void writeToFile(String fileNamePrefix, SamgodsConstants.Commodity commodity,
-			Map<ConsolidationUnit, FleetAssignment> consolidationUnits2fleetAssignments) {
-		final List<RoadHalfLoopAssignment> dataToWrite = consolidationUnits2fleetAssignments.entrySet().stream()
-				// .filter(e -> SamgodsConstants.TransportMode.Road.equals(e.getKey().samgodsMode))
-				.filter(e -> commodity.equals(e.getKey().commodity))
-				.map(e -> new RoadHalfLoopAssignment(e.getKey(), e.getValue())).toList();
-		if (dataToWrite.size() > 0) {
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.enable(SerializationFeature.INDENT_OUTPUT);
-			mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-
-			SimpleModule module = new SimpleModule();
-			module.addSerializer(RoadHalfLoopAssignment.class, this);
-			mapper.registerModule(module);
-
-			try {
-				mapper.writeValue(new File(fileNamePrefix + commodity + ".json"), dataToWrite);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-	}
-
 	public void writeToFile(String fileNamePrefix,
 			Map<ConsolidationUnit, FleetAssignment> consolidationUnits2fleetAssignments) {
+
 		for (SamgodsConstants.Commodity commodity : SamgodsConstants.Commodity.values()) {
-			final List<RoadHalfLoopAssignment> dataToWrite = consolidationUnits2fleetAssignments.entrySet().stream()
-					.filter(e -> SamgodsConstants.TransportMode.Road.equals(e.getKey().samgodsMode))
-					.filter(e -> commodity.equals(e.getKey().commodity))
+			final List<RoadHalfLoopAssignment> dataForCommodity = consolidationUnits2fleetAssignments.entrySet()
+					.stream().filter(e -> commodity.equals(e.getKey().commodity))
 					.map(e -> new RoadHalfLoopAssignment(e.getKey(), e.getValue())).toList();
-			if (dataToWrite.size() > 0) {
-				this.writeToFile(fileNamePrefix, commodity, consolidationUnits2fleetAssignments);
+
+			for (SamgodsConstants.TransportMode mode : SamgodsConstants.TransportMode.values()) {
+				final List<RoadHalfLoopAssignment> dataToWrite = dataForCommodity.stream()
+						.filter(e -> mode.equals(e.consolidationUnit.samgodsMode)).toList();
+
+				if (dataToWrite.size() > 0) {
+					final ObjectMapper mapper = new ObjectMapper();
+					mapper.enable(SerializationFeature.INDENT_OUTPUT);
+					mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+					final SimpleModule module = new SimpleModule();
+					module.addSerializer(RoadHalfLoopAssignment.class, this);
+					mapper.registerModule(module);
+					try {
+						mapper.writeValue(new File(fileNamePrefix + "_" + commodity + "_" + mode + ".json"),
+								dataToWrite);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
 			}
 		}
 	}
