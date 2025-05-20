@@ -28,8 +28,10 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -55,7 +57,7 @@ public class Router {
 
 	// -------------------- LOGGING, ONLY FOR TESTING --------------------
 
-	private static final Logger log = Logger.getLogger(Router.class);
+	private static final Logger log = LogManager.getLogger(Router.class);
 
 	private long lastUpdate_ms = System.currentTimeMillis();
 
@@ -159,10 +161,11 @@ public class Router {
 				final Node to = network.getNodes().get(toId);
 				if ((from != null) && (to != null) && (router != null)) {
 
-					Level level = Logger.getLogger(Dijkstra.class).getLevel();
-					Logger.getLogger(Dijkstra.class).setLevel(Level.OFF);
+					
+					Level level = LogManager.getLogger(Dijkstra.class).getLevel();
+					Configurator.setLevel(Dijkstra.class, Level.OFF);
 					Path path = router.calcLeastCostPath(from, to, 0, null, null);
-					Logger.getLogger(Dijkstra.class).setLevel(level);
+					Configurator.setLevel(Dijkstra.class, level);
 
 					if (path == null) {
 						if (logProgress) {

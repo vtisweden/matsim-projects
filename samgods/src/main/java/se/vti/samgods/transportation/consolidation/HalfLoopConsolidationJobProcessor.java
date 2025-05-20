@@ -24,7 +24,8 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.vehicles.VehicleType;
 
 import se.vti.samgods.NetworkAndFleetData;
@@ -46,7 +47,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(HalfLoopConsolidationJobProcessor.class);
+	private static final Logger log = LogManager.getLogger(HalfLoopConsolidationJobProcessor.class);
 
 	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
 

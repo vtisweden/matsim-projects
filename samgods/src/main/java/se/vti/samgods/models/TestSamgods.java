@@ -24,7 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 
@@ -41,7 +42,7 @@ import se.vti.samgods.SamgodsRunner;
  */
 public class TestSamgods {
 
-	static final Logger log = Logger.getLogger(TestSamgods.class);
+	static final Logger log = LogManager.getLogger(TestSamgods.class);
 
 	static final String consolidationUnitsFileName = "consolidationUnits.json";
 

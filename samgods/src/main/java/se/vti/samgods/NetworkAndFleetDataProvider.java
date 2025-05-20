@@ -29,7 +29,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -54,7 +55,7 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
  */
 public class NetworkAndFleetDataProvider {
 
-	private static final Logger log = Logger.getLogger(NetworkAndFleetDataProvider.class);
+	private static final Logger log = LogManager.getLogger(NetworkAndFleetDataProvider.class);
 
 	// -------------------- MEMBERS --------------------
 

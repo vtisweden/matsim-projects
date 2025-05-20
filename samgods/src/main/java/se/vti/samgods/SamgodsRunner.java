@@ -36,7 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -89,7 +90,7 @@ public class SamgodsRunner {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final static Logger log = Logger.getLogger(SamgodsRunner.class);
+	private final static Logger log = LogManager.getLogger(SamgodsRunner.class);
 
 	private final static long defaultSeed = 4711;
 

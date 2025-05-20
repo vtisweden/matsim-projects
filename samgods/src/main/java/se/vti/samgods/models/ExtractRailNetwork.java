@@ -27,7 +27,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
@@ -48,7 +49,7 @@ import se.vti.utils.misc.Units;
  */
 public class ExtractRailNetwork {
 
-	static final Logger log = Logger.getLogger(ExtractRailNetwork.class);
+	static final Logger log = LogManager.getLogger(ExtractRailNetwork.class);
 
 	static final String consolidationUnitsFileName = "consolidationUnits.json";
 

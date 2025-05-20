@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
-import org.jfree.util.Log;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 
 import se.vti.samgods.OD;
@@ -47,7 +47,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(ChainChoiReader.class);
+	private static final Logger log = LogManager.getLogger(ChainChoiReader.class);
 
 	private final static String Key = "Key";
 	private final static String NRelations = "NRelations";
@@ -195,7 +195,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 				chainType = chainType.replace("" + i, "");
 			}
 			if (oldChainType.length() > chainType.length()) {
-				Log.warn("Reduced chain type " + oldChainType + " to " + chainType + ".");
+				log.warn("Reduced chain type " + oldChainType + " to " + chainType + ".");
 			}
 		}
 

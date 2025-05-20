@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.VehicleType;
@@ -107,7 +108,7 @@ public class HalfLoopAssignment2NTMCalcWriter
 				assert (SamgodsConstants.TransportMode.Road.equals(halfLoopAssignment.consolidationUnit.samgodsMode)
 						|| SamgodsConstants.TransportMode.Rail
 								.equals(halfLoopAssignment.consolidationUnit.samgodsMode));
-				Logger.getLogger(this.getClass()).info("Found ferry link: " + linkId); // TODO for testing
+				LogManager.getLogger(this.getClass()).info("Found ferry link: " + linkId); // TODO for testing
 				gen.writeStringField("mode", SamgodsConstants.TransportMode.Ferry.toString());
 				gen.writeNumberField("vesselDWT", 5000.0); // TODO uniform assumption for both road and rail
 			} else {

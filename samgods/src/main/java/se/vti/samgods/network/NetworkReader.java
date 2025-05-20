@@ -28,7 +28,8 @@ import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -50,7 +51,7 @@ public class NetworkReader {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(NetworkReader.class);
+	private static final Logger log = LogManager.getLogger(NetworkReader.class);
 
 	private static final String NODE_COUNTER = "N";
 	private static final String NODE_X = "X";
@@ -189,13 +190,13 @@ public class NetworkReader {
 			assert (Double.isFinite(speed_km_h));
 
 			if (speed_km_h < this.minSpeed_km_h) {
-				Logger.getLogger(NetworkReader.class)
+				LogManager.getLogger(NetworkReader.class)
 						.warn("Skipping link " + id + " because of too low speed: " + speed_km_h + " km/h.");
 			} else {
 				final double capacity_veh_h = ParseNumberUtils
 						.parseDoubleOrDefault(record.get(LINK_CAPACITY_TRAINS_DAY), Double.POSITIVE_INFINITY) / 24.0;
 				if (capacity_veh_h < this.minCapacity_veh_h) {
-					Logger.getLogger(NetworkReader.class).warn(
+					LogManager.getLogger(NetworkReader.class).warn(
 							"Skipping link " + id + " because of too low capacity: " + capacity_veh_h + " veh/h.");
 				} else {
 					final Link link = NetworkUtils.createAndAddLink(network, id, fromNode, toNode, length_m,

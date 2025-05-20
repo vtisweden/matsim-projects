@@ -30,7 +30,8 @@ import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.math3.exception.InsufficientDataException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
@@ -47,7 +48,7 @@ public class VehiclesReader {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger log = Logger.getLogger(VehiclesReader.class);
+	private static final Logger log = LogManager.getLogger(VehiclesReader.class);
 
 	private static final String VEH_NR = "VEH_NR";
 

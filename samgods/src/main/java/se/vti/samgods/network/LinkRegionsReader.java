@@ -31,7 +31,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -47,7 +48,7 @@ import se.vti.utils.misc.Tuple;
  */
 public class LinkRegionsReader {
 
-	private static final Logger log = Logger.getLogger(LinkRegionsReader.class);
+	private static final Logger log = LogManager.getLogger(LinkRegionsReader.class);
 
 	private static final String From = "From";
 	private static final String To = "To";
