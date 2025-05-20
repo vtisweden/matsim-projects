@@ -31,8 +31,10 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 import java.util.Random;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +50,7 @@ import org.matsim.core.config.ConfigUtils;
  */
 class TestTramodByConfigGroup {
 	// Test utility variables
-	private static final Logger log = Logger.getLogger( TestTramodByConfigGroup.class );
+	private static final Logger log = LogManager.getLogger( TestTramodByConfigGroup.class );
 	private static boolean skip = false;
 	
 	private static final Class<?>[] classList = {
@@ -82,10 +84,10 @@ class TestTramodByConfigGroup {
 		// Disable logging.
 		defaultLevels = new Level[classList.length];
 		for(int i = 0 ; i < classList.length ; i++) {
-			Logger currentLogger = Logger.getLogger(classList[i]);
+			Logger currentLogger = LogManager.getLogger(classList[i]);
 			defaultLevels[i] = currentLogger.getLevel();
 			
-			currentLogger.setLevel(Level.OFF);
+			Configurator.setLevel(classList[i], Level.OFF);
 		}
 		
 		/* Creating utility objects */
@@ -495,7 +497,7 @@ class TestTramodByConfigGroup {
 	static void teardownAfterClass() throws Exception {
 		// Enabling logging.
 		for(int i = 0 ; i < classList.length ; i++) {
-			Logger.getLogger(classList[i]).setLevel(defaultLevels[i]);
+			Configurator.setLevel(classList[i], defaultLevels[i]);
 		}
 		
 		log.info("Test complete");

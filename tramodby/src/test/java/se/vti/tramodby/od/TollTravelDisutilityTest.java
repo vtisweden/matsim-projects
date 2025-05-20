@@ -25,8 +25,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +50,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 class TollTravelDisutilityTest {
 	
 	// Test utility variables.
-	private static final Logger log = Logger.getLogger( TollTravelDisutility.class );
+	private static final Logger log = LogManager.getLogger( TollTravelDisutility.class );
 	private static final String[] classList = {
 			"org.matsim.core.config.Config",
 			"org.matsim.core.network.NetworkImpl"
@@ -71,10 +73,10 @@ class TollTravelDisutilityTest {
 		// Disable logging.
 		defaultLevels = new Level[classList.length];
 		for(int i = 0 ; i < classList.length ; i++) {
-			Logger currentLogger = Logger.getLogger(classList[i]);
+			Logger currentLogger = LogManager.getLogger(classList[i]);
 			defaultLevels[i] = currentLogger.getLevel();
 			
-			currentLogger.setLevel(Level.OFF);
+			Configurator.setLevel(classList[i], Level.OFF);
 		}
 		
 		// Creating network and RoadPricingScheme.
@@ -146,7 +148,7 @@ class TollTravelDisutilityTest {
 	static void tearDownAfterClass() throws Exception {
 		// Enabling logging.
 		for(int i = 0 ; i < classList.length ; i++) {
-			Logger.getLogger(classList[i]).setLevel(defaultLevels[i]);
+			Configurator.setLevel(classList[i], defaultLevels[i]);
 		}
 				
 		log.info("Test complete");

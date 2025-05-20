@@ -36,7 +36,8 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +56,7 @@ import se.vti.utils.misc.dynamicdata.TimeDiscretization;
  */
 class ODMatrixUtilsTest {
 	// Test utility variables.
-	private static final Logger log = Logger.getLogger( ODMatrixUtilsTest.class );
+	private static final Logger log = LogManager.getLogger( ODMatrixUtilsTest.class );
 	private static boolean skip = false;
 	
 	// Setup variables.

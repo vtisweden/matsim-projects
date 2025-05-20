@@ -29,7 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,7 +44,7 @@ import se.vti.tramodby.od.ZonalSystem.Zone;
 
 class ZonalSystemTest {
 	// Test utility variables.
-	private static final Logger log = Logger.getLogger( ZonalSystemTest.class );
+	private static final Logger log = LogManager.getLogger( ZonalSystemTest.class );
 	
 	// Setup variables.
 	private static List<Id<Zone>> zones;

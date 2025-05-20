@@ -33,7 +33,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -61,7 +62,7 @@ import se.vti.utils.misc.math.MathHelpers;
  * 
  */
 public class SkimMatrixCalculator implements ShutdownListener {
-	private static final Logger log = Logger.getLogger(SkimMatrixCalculator.class);
+	private static final Logger log = LogManager.getLogger(SkimMatrixCalculator.class);
 	private static int done = 0;
 	private static Integer total = null;
 	private static double nextOutput;

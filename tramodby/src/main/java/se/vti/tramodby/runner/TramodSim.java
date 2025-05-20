@@ -32,8 +32,10 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.population.Activity;
@@ -49,7 +51,7 @@ import org.matsim.contrib.roadpricing.RoadPricingEmulationHandler;
 import org.matsim.contrib.roadpricing.RoadPricingTollCalculator;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.ControlerConfigGroup;
+import org.matsim.core.config.groups.ControllerConfigGroup;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
@@ -69,7 +71,7 @@ import se.vti.tramodby.od.InterZonalMatrices.Matrix;
 import se.vti.tramodby.od.ZonalSystem.Zone;
 
 public class TramodSim {
-	private static final Logger log = Logger.getLogger( TramodSim.class );
+	private static final Logger log = LogManager.getLogger(TramodSim.class);
 	public static void main(String[] args) throws IOException {
 		
 		// Extracting run parameters.
@@ -90,7 +92,7 @@ public class TramodSim {
 		
 		// Set the OverwriteFileSetting to overwrite in order to make 
 		// the controller to not delete the log prior to creation.
-		ControlerConfigGroup controlerConfig = ConfigUtils.addOrGetModule(config, ControlerConfigGroup.class);
+		ControllerConfigGroup controlerConfig = ConfigUtils.addOrGetModule(config, ControllerConfigGroup.class);
 		controlerConfig.setOverwriteFileSetting(OverwriteFileSetting.overwriteExistingFiles);
 		
 		log.info("Starting Tramod By MATSim simulation.");
@@ -173,9 +175,9 @@ public class TramodSim {
 		
 		// Suppress EventManager logging output.
 		controler.addControlerListener((StartupListener) event -> 
-			{
-				Logger.getLogger(EventsManagerImpl.class).setLevel(Level.OFF);
-				Logger.getLogger(RoadPricingTollCalculator.class).setLevel(Level.OFF);
+			{ 
+				Configurator.setLevel(EventsManagerImpl.class, Level.OFF);
+				Configurator.setLevel(RoadPricingTollCalculator.class, Level.OFF);
 			}
 		);
 
