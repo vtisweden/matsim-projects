@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import org.matsim.api.core.v01.Id;
@@ -57,29 +56,61 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			this.myPersonIds.add(personId);
 		}
 
-		private LinkedHashMap<Id<Person>, LinkedHashMap<Id<Person>, Double>> personId2personId2aCoeffSum = null;
+		private double computeASum(Id<Person> personId1, Id<Person> personId2) {
+			double aSum = 0.0;
+			if (this.personId2personId2aCoeff.containsKey(personId1)) {
+				aSum += this.personId2personId2aCoeff.get(personId1).getOrDefault(personId2, 0.0);
+			}
+			if (this.personId2personId2aCoeff.containsKey(personId2)) {
+				aSum += this.personId2personId2aCoeff.get(personId2).getOrDefault(personId1, 0.0);
+			}
+			return aSum;
+		}
+
+		private List<Id<Person>> replannerIds = null;
+
+		void prepareInit(List<Id<Person>> replannerIds) {
+			this.replannerIds = replannerIds;
+		}
+
+		private void init() {
+			for (Id<Person> personId : this.myPersonIds) {
+				double b = 0.0;
+				for (Id<Person> replannerId : this.replannerIds) {
+//					b += this.populationDistance.getACoefficient(replannerId, personId)
+//							+ this.populationDistance.getACoefficient(personId, replannerId);
+					b += this.computeASum(personId, replannerId);
+				}
+				this.personId2bParam.put(personId, b);
+			}
+			this.replannerIds = null;
+		}
 
 		private double deltaSign;
 
 		private Id<Person> candidateId;
 
 		void prepareRun(double deltaSign, Id<Person> candidateId) {
+			if (this.replannerIds != null) {
+				throw new RuntimeException();
+			}
 			this.deltaSign = deltaSign;
 			this.candidateId = candidateId;
 		}
 
+		private void update() {
+			for (Id<Person> personId : this.myPersonIds) {
+				final double aSum = this.computeASum(personId, this.candidateId);
+				this.personId2bParam.compute(personId, (id, b2) -> b2 + this.deltaSign * aSum);
+			}
+		}
+
 		@Override
 		public void run() {
-			for (Id<Person> personId : this.myPersonIds) {
-				double aSum = 0.0;
-				if (this.personId2personId2aCoeff.containsKey(personId)) {
-					aSum += this.personId2personId2aCoeff.get(personId).getOrDefault(this.candidateId, 0.0);
-				}
-				if (this.personId2personId2aCoeff.containsKey(this.candidateId)) {
-					aSum += this.personId2personId2aCoeff.get(this.candidateId).getOrDefault(personId, 0.0);
-				}
-				final double aSumFinal = aSum;
-				this.personId2bParam.compute(personId, (id, b2) -> b2 + this.deltaSign * aSumFinal);
+			if (this.replannerIds != null) {
+				this.init();
+			} else {
+				this.update();
 			}
 		}
 	}
@@ -183,15 +214,52 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 			return Collections.emptySet();
 		}
 
+		// >>>>>>>>>> PARALLEL SWITCHING >>>>>>>>>>
+
+		final List<Id<Person>> allPersonIds = new ArrayList<>(personId2gap.keySet());
+
 		final ConcurrentHashMap<Id<Person>, Double> personId2bParam = new ConcurrentHashMap<>(personId2gap.size());
-		for (Id<Person> personId : personId2gap.keySet()) {
-			double b = 0.0;
-			for (Id<Person> replannerId : replannerIds) {
-				b += this.populationDistance.getACoefficient(replannerId, personId)
-						+ this.populationDistance.getACoefficient(personId, replannerId);
-			}
-			personId2bParam.put(personId, b);
+
+		final int threadCnt = Runtime.getRuntime().availableProcessors();
+		final List<JobProcessor> jobProcessors = new ArrayList<>(threadCnt);
+		for (int i = 0; i < threadCnt; i++) {
+			jobProcessors.add(new JobProcessor(personId2bParam, this.populationDistance.getPersonId2personId2aCoeff()));
 		}
+
+		int processorIndex = 0;
+		for (Id<Person> personId : allPersonIds) {
+			jobProcessors.get(processorIndex++).addPersonId(personId);
+			if (processorIndex >= jobProcessors.size()) {
+				processorIndex = 0;
+			}
+		}
+
+//		final ConcurrentHashMap<Id<Person>, Double> personId2bParam = new ConcurrentHashMap<>(personId2gap.size());
+//		for (Id<Person> personId : personId2gap.keySet()) {
+//			double b = 0.0;
+//			for (Id<Person> replannerId : replannerIds) {
+//				b += this.populationDistance.getACoefficient(replannerId, personId)
+//						+ this.populationDistance.getACoefficient(personId, replannerId);
+//			}
+//			personId2bParam.put(personId, b);
+//		}
+		List<Thread> threads = new ArrayList<>();
+		try {
+			for (int i = 0; i < threadCnt; i++) {
+				final JobProcessor jobProcessor = jobProcessors.get(i);
+				jobProcessor.prepareInit(new ArrayList<>(replannerIds));
+				final Thread thread = new Thread(jobProcessor);
+				threads.add(thread);
+				thread.start();
+			}
+			for (Thread thread : threads) {
+				thread.join();
+			}
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+
+		// <<<<<<<<<< PARALLEL SWITCHING <<<<<<<<<<
 
 		final String logFile = "exact-replanning.log";
 		if (this.logReplanningProcess) {
@@ -215,25 +283,9 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 		double _D2 = 0.5 * replannerIds.stream().mapToDouble(r -> personId2bParam.get(r)).sum();
 		final double _D2max = _D2;
 
-		final List<Id<Person>> allPersonIds = new ArrayList<>(personId2gap.keySet());
-
 		/*
 		 * (1b) Initialize parallel switching.
 		 */
-
-		final int threadCnt = Runtime.getRuntime().availableProcessors();
-		final List<JobProcessor> jobProcessors = new ArrayList<>(threadCnt);
-		for (int i = 0; i < threadCnt; i++) {
-			jobProcessors.add(new JobProcessor(personId2bParam, this.populationDistance.getPersonId2personId2aCoeff()));
-		}
-
-		int processorIndex = 0;
-		for (Id<Person> personId : allPersonIds) {
-			jobProcessors.get(processorIndex++).addPersonId(personId);
-			if (processorIndex >= jobProcessors.size()) {
-				processorIndex = 0;
-			}
-		}
 
 		/*
 		 * (2) Repeatedly switch (non)replanners.
@@ -293,7 +345,7 @@ class UpperBoundReplannerSelector extends AbstractReplannerSelector {
 //										+ this.populationDistance.getACoefficient(personId, candidateId));
 //						personId2bParam.compute(personId, (id, b2) -> b2 + deltaB);
 //					}					
-					final List<Thread> threads = new ArrayList<>();
+					threads = new ArrayList<>();
 					try {
 						for (int i = 0; i < threadCnt; i++) {
 							final JobProcessor jobProcessor = jobProcessors.get(i);
