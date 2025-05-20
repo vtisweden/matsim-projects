@@ -30,7 +30,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -45,7 +46,6 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.PopulationUtils;
 import org.matsim.core.population.io.PopulationWriter;
 
-import se.vti.matsim.dynameq.network.CreateNetwork;
 import se.vti.matsim.dynameq.network.Utils;
 import se.vti.matsim.dynameq.population.CentroidSystem.Centroid;
 import se.vti.matsim.dynameq.population.ODMatrices.Matrix;
@@ -70,8 +70,8 @@ import se.vti.matsim.dynameq.utils.Units;
  */
 public class CreatePopulation {
 
-	private static final Logger log = Logger.getLogger(CreateNetwork.class);
-
+	private static final Logger log = LogManager.getLogger(CreatePopulation.class);
+	
 	public static void main(String[] args) throws IOException {
 		
 		Path baseDataFolder = Paths.get("data");
