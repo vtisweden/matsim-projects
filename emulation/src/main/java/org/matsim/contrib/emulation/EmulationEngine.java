@@ -31,8 +31,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.population.Person;
@@ -67,7 +69,7 @@ public class EmulationEngine {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final static Logger logger = Logger.getLogger(EmulationEngine.class);
+	private final static Logger logger = LogManager.getLogger(EmulationEngine.class);
 
 	private final StrategyManager strategyManager;
 	private final Scenario scenario;
@@ -134,13 +136,14 @@ public class EmulationEngine {
 			logger.info("[[Suppressing logging while running StrategyManager.]]");
 			// final Level originalLogLevel = Logger.getLogger("org.matsim").getLevel();
 			// Logger.getLogger("org.matsim").setLevel(Level.ERROR);
-			final Level originalLogLevel = Logger.getRootLogger().getLevel();
-			Logger.getRootLogger().setLevel(Level.ERROR);
+			final Level originalLogLevel = LogManager.getRootLogger().getLevel();
+			Configurator.setRootLevel(Level.ERROR);
 
-			this.strategyManager.run(this.scenario.getPopulation(), replanningContext);
+			// TODO 2024-05-20 Added matsim iteration number. Gunnar
+			this.strategyManager.run(this.scenario.getPopulation(), matsimIteration, replanningContext);
 
 			// Logger.getLogger("org.matsim").setLevel(originalLogLevel);
-			Logger.getRootLogger().setLevel(originalLogLevel);
+			Configurator.setRootLevel(originalLogLevel);
 
 			this.emulate(matsimIteration, listOfMode2travelTime, overrideTravelTimesFromFirstListEntry);
 			selectBestPlans(this.scenario.getPopulation());
@@ -175,8 +178,8 @@ public class EmulationEngine {
 		logger.info("[[Suppressing logging while emulating.]]");
 		// final Level originalLogLevel = Logger.getLogger("org.matsim").getLevel();
 		// Logger.getLogger("org.matsim").setLevel(Level.ERROR);
-		final Level originalLogLevel = Logger.getRootLogger().getLevel();
-		Logger.getRootLogger().setLevel(Level.ERROR);
+		final Level originalLogLevel = LogManager.getRootLogger().getLevel();
+		Configurator.setRootLevel(Level.ERROR);
 
 		// Here we set up all the runner threads and start them
 		for (int i = 0; i < this.scenario.getConfig().global().getNumberOfThreads(); i++) {
@@ -221,7 +224,7 @@ public class EmulationEngine {
 									this.scoringFunctionFactoryProvider.get(), eventsManager);
 						}
 						events2score.beginIteration(iteration,
-								this.scenario.getConfig().controler().getLastIteration() == iteration);
+								this.scenario.getConfig().controller().getLastIteration() == iteration);
 
 						// Emulate batch.
 						for (Person person : batch.values()) {
@@ -292,7 +295,7 @@ public class EmulationEngine {
 		}
 
 		// Logger.getLogger("org.matsim").setLevel(originalLogLevel);
-		Logger.getRootLogger().setLevel(originalLogLevel);
+		Configurator.setRootLevel(originalLogLevel);
 
 		logger.info("Emulation finished.");
 

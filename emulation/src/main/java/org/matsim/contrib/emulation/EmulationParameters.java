@@ -26,7 +26,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.contrib.emulation.emulators.ActivityEmulator;
 import org.matsim.contrib.emulation.emulators.LegEmulator;
@@ -44,7 +45,7 @@ public class EmulationParameters {
 
 	// -------------------- CONSTANTS --------------------
 
-	private static final Logger logger = Logger.getLogger(EmulationParameters.class);
+	private static final Logger logger = LogManager.getLogger(EmulationParameters.class);
 
 	public static final String DEFAULT = "default";
 
