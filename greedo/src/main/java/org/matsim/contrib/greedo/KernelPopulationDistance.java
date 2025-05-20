@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
@@ -126,14 +126,14 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 				if ((leg.getRoute() != null) && (leg.getRoute() instanceof NetworkRoute)) {
 					legs.add(leg);
 				} else if (this.noNetworkRouteWarningCnt < 10) {
-					Logger.getLogger(this.getClass())
+					LogManager.getLogger(this.getClass())
 							.warn("Person " + plan.getPerson().getId() + " has a selected plan with "
 									+ (leg.getRoute() == null ? "no route"
 											: ("a route that is not of type NetworkRoute but "
 													+ leg.getRoute().getClass().getSimpleName())));
 					this.noNetworkRouteWarningCnt++;
 					if (this.noNetworkRouteWarningCnt == 10) {
-						Logger.getLogger(this.getClass()).warn("Suppressing further warnings of this type.");
+						LogManager.getLogger(this.getClass()).warn("Suppressing further warnings of this type.");
 					}
 				}
 			}
@@ -308,7 +308,7 @@ class KernelPopulationDistance extends AbstractPopulationDistance {
 	ConcurrentHashMap<Id<Person>, ConcurrentHashMap<Id<Person>, Double>> getPersonId2personId2aCoeff() {
 		return this.personId2personId2aCoeff;
 	}
-	
+
 	@Override
 	double getACoefficient(final Id<Person> personId1, final Id<Person> personId2) {
 		if (this.personId2personId2aCoeff.containsKey(personId1)) {

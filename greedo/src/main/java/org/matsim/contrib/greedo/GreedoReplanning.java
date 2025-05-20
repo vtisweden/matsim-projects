@@ -31,7 +31,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.emulation.EmulationEngine;
@@ -63,7 +64,7 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 	// -------------------- CONSTANTS --------------------
 
 	@SuppressWarnings("unused")
-	private final static Logger log = Logger.getLogger(GreedoReplanning.class);
+	private final static Logger log = LogManager.getLogger(GreedoReplanning.class);
 
 	private final GreedoConfigGroup greedoConfig;
 
@@ -110,9 +111,13 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 		final int percentileStep = 10; // TODO
 		this.gapAnalyzer = new GapAnalyzer(percentileStep);
 
+//		this.statsWriter = new StatisticsWriter<>(
+//				new File(services.getConfig().controler().getOutputDirectory(), "GreedoReplanning.log").toString(),
+//				false);
 		this.statsWriter = new StatisticsWriter<>(
-				new File(services.getConfig().controler().getOutputDirectory(), "GreedoReplanning.log").toString(),
+				new File(services.getConfig().controller().getOutputDirectory(), "GreedoReplanning.log").toString(),
 				false);
+
 		this.statsWriter.addSearchStatistic(new TimeStampStatistic<>());
 		this.statsWriter.addSearchStatistic(new Statistic<>() {
 			@Override
@@ -463,9 +468,9 @@ public final class GreedoReplanning implements PlansReplanning, ReplanningListen
 			this.gapAnalyzer.registerPlansAfterReplanning(this.services.getScenario().getPopulation());
 
 			if (this.gapAnalyzer.linkCntAndAbsoluteGap != null && (this.replanIteration % 100 == 0
-					|| this.replanIteration == this.services.getConfig().controler().getLastIteration() - 1)) {
+					|| this.replanIteration == this.services.getConfig().controller().getLastIteration() - 1)) {
 				this.gapAnalyzer.writeLinkCntAndAbsoluteGapScatterplot(
-						new File(services.getConfig().controler().getOutputDirectory(),
+						new File(services.getConfig().controller().getOutputDirectory(),
 								"linkCnt_vs_absGap." + this.replanIteration + ".txt").toString());
 			}
 		}

@@ -47,7 +47,8 @@ public class LinkTravelTimeCopy implements TravelTime {
 //		final TravelTime travelTimes = services.getLinkTravelTimes();
 //		final Config config = services.getConfig();
 
-		final int binSize_s = config.travelTimeCalculator().getTraveltimeBinSize();
+		// TODO 2025-05-20 Added cast to int when updating to matsim 2024. Gunnar
+		final int binSize_s = (int) Math.round(config.travelTimeCalculator().getTraveltimeBinSize());
 		final int binCnt = (int) ceil(((double) config.travelTimeCalculator().getMaxTime()) / binSize_s);
 
 		this.data_s = new UpdatedDynamicData<Id<Link>>(0, binSize_s, binCnt);

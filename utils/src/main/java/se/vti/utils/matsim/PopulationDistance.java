@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -99,7 +99,7 @@ public class PopulationDistance {
 				if ((leg.getRoute() != null) && (leg.getRoute() instanceof NetworkRoute)) {
 					legs.add(leg);
 				} else {
-					Logger.getLogger(this.getClass())
+					LogManager.getLogger(this.getClass())
 							.warn("Person " + plan.getPerson().getId() + " has a selected plan with "
 									+ (leg.getRoute() == null ? "no route"
 											: ("a route that is not of type NetworkRoute but "

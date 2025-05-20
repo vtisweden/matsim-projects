@@ -72,12 +72,12 @@ public class LinkTravelTimeCopy implements TravelTime {
 			}
 		}
 	}
-	
+
 	private final ModifiableDynamicData<Id<Link>> data_s;
 
 	public LinkTravelTimeCopy(final TravelTime travelTimes, final Config config, final Network network) {
 
-		final int binSize_s = config.travelTimeCalculator().getTraveltimeBinSize();
+		final int binSize_s = (int) Math.round(config.travelTimeCalculator().getTraveltimeBinSize());
 		final int binCnt = (int) ceil(((double) config.travelTimeCalculator().getMaxTime()) / binSize_s);
 
 		this.data_s = new ModifiableDynamicData<Id<Link>>(0, binSize_s, binCnt);
@@ -110,7 +110,7 @@ public class LinkTravelTimeCopy implements TravelTime {
 
 	public static LinkTravelTimeCopy newWeightedSum(final List<LinkTravelTimeCopy> addends,
 			final List<Double> weights) {
-		assert(addends.size() == weights.size());
+		assert (addends.size() == weights.size());
 		final LinkTravelTimeCopy result = new LinkTravelTimeCopy(addends.get(0));
 		result.multiply(weights.get(0));
 		for (int i = 1; i < addends.size(); i++) {
