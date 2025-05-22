@@ -53,7 +53,12 @@ public class OnlyStartEndActivityEmulator extends AbstractPlanElementEmulator im
 			this.eventsManager.processEvent(new ActivityStartEvent(time_s, person.getId(), activity.getLinkId(),
 					activity.getFacilityId(), activity.getType(), activity.getCoord()));
 			if (this.overwritePlanTimes) {
-				activity.setStartTime(time_s);
+				// 2025-05-22 Added try/catch to deal with removed setter in InteractionActivity. Gunnar
+				try {
+					activity.setStartTime(time_s);
+				} catch (UnsupportedOperationException e) {
+					// happens in InteractionActivity TODO likely a slow solution
+				}
 			}
 		}
 		if (!isLastElement) {
@@ -61,7 +66,12 @@ public class OnlyStartEndActivityEmulator extends AbstractPlanElementEmulator im
 			this.eventsManager.processEvent(new ActivityEndEvent(time_s, person.getId(), activity.getLinkId(),
 					activity.getFacilityId(), activity.getType(), activity.getCoord()));
 			if (this.overwritePlanTimes) {
+				// 2025-05-22 Added try/catch to deal with removed setter in InteractionActivity. Gunnar
+				try {
 				activity.setEndTime(time_s);
+				} catch (UnsupportedOperationException e) {
+					// happens in InteractionActivity TODO likely a slow solution
+				}
 			}
 			return time_s;
 		} else {
