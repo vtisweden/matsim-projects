@@ -15,6 +15,7 @@
   </properties>
 
   <modules>
+	<module>atap</module>
   	<module>dynameq</module>
   	<module>emulation</module>
   	<module>greedo</module>
