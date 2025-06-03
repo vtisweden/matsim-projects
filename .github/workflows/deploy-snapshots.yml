@@ -27,4 +27,4 @@ jobs:
         run: mvn clean deploy -N
 
       - name: Deploy selected snapshot modules
-        run: mvn clean deploy -pl "dynameq,emulation,greedo,roundtrips,samgods,utils" -am
+        run: mvn clean deploy -pl "dynameq,emulation,greedo,roundtrips,samgods,utils,atap" -am
