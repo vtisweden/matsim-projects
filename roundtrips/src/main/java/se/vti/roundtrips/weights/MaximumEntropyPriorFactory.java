@@ -1,4 +1,4 @@
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.weights;
 
 import java.util.Arrays;
 
@@ -6,8 +6,9 @@ import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 
+import se.vti.roundtrips.model.Scenario;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -15,7 +16,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class MaximumEntropyPriorFactory<L extends Location> {
+public class MaximumEntropyPriorFactory<L extends Node> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -39,6 +40,10 @@ public class MaximumEntropyPriorFactory<L extends Location> {
 		}
 	}
 
+	public MaximumEntropyPriorFactory(Scenario<L> scenario) {
+		this(scenario.getLocationCnt(), scenario.getTimeBinCnt(), scenario.getMaxStayEpisodes());
+	}
+	
 	// -------------------- INTERNALS --------------------
 
 	private double[] createSingleLogWeights(double meanRoundTripLength, boolean correctForCombinatorics) {
@@ -72,8 +77,8 @@ public class MaximumEntropyPriorFactory<L extends Location> {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public PreferenceComponent<RoundTrip<L>> createSingle(double meanJ) {
-		return new PreferenceComponent<RoundTrip<L>>() {
+	public Weight<RoundTrip<L>> createSingle(double meanJ) {
+		return new Weight<RoundTrip<L>>() {
 			private final double[] logWeights = createSingleLogWeights(meanJ, true);
 
 			@Override
@@ -83,11 +88,11 @@ public class MaximumEntropyPriorFactory<L extends Location> {
 		};
 	}
 
-	public PreferenceComponent<MultiRoundTrip<L>> createSingles(int _N, double meanRoundTripLength) {
-		return new SingleToMultiComponent<>(this.createSingle(meanRoundTripLength));
+	public Weight<MultiRoundTrip<L>> createSingles(int _N, double meanRoundTripLength) {
+		return new SingleToMultiWeight<>(this.createSingle(meanRoundTripLength));
 	}
 
-	public PreferenceComponent<MultiRoundTrip<L>> createMultiple(int _N) {
+	public Weight<MultiRoundTrip<L>> createMultiple(int _N) {
 
 		/*
 		 * singleProbasGivenMeanLength[meanLength][j] is the probability of sampling a
@@ -101,7 +106,7 @@ public class MaximumEntropyPriorFactory<L extends Location> {
 
 		final ChiSquaredDistribution chi2distr = new ChiSquaredDistribution(_N);
 
-		return new PreferenceComponent<MultiRoundTrip<L>>() {
+		return new Weight<MultiRoundTrip<L>>() {
 
 			@Override
 			public double logWeight(MultiRoundTrip<L> roundTrips) {

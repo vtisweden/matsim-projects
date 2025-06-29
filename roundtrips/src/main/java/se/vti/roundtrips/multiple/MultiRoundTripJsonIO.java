@@ -41,7 +41,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripJsonIO;
 
@@ -56,19 +56,19 @@ import se.vti.roundtrips.single.RoundTripJsonIO;
  */
 public class MultiRoundTripJsonIO {
 
-	public static class Serializer extends JsonSerializer<MultiRoundTrip<? extends Location>> {
+	public static class Serializer extends JsonSerializer<MultiRoundTrip<? extends Node>> {
 		@Override
-		public void serialize(MultiRoundTrip<? extends Location> value, JsonGenerator gen,
+		public void serialize(MultiRoundTrip<? extends Node> value, JsonGenerator gen,
 				SerializerProvider serializers) throws IOException {
 			gen.writeStartArray();
-			for (RoundTrip<? extends Location> roundTrip : value) {
+			for (RoundTrip<? extends Node> roundTrip : value) {
 				gen.writeObject(roundTrip);
 			}
 			gen.writeEndArray();
 		}
 	}
 
-	public static void writeToFile(MultiRoundTrip<? extends Location> multiRoundTrip, String fileName)
+	public static void writeToFile(MultiRoundTrip<? extends Node> multiRoundTrip, String fileName)
 			throws JsonGenerationException, JsonMappingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -79,17 +79,17 @@ public class MultiRoundTripJsonIO {
 		mapper.writeValue(new File(fileName), multiRoundTrip);
 	}
 
-	public static class Deserializer extends JsonDeserializer<MultiRoundTrip<Location>> {
+	public static class Deserializer extends JsonDeserializer<MultiRoundTrip<Node>> {
 		@Override
-		public MultiRoundTrip<Location> deserialize(JsonParser p, DeserializationContext ctxt)
+		public MultiRoundTrip<Node> deserialize(JsonParser p, DeserializationContext ctxt)
 				throws IOException, JsonProcessingException {
 			JsonNode root = p.getCodec().readTree(p);
-			List<RoundTrip<Location>> roundTrips = new ArrayList<>();
+			List<RoundTrip<Node>> roundTrips = new ArrayList<>();
 			for (JsonNode roundTripNode : root) {
-				RoundTrip<Location> roundTrip = p.getCodec().treeToValue(roundTripNode, RoundTrip.class);
+				RoundTrip<Node> roundTrip = p.getCodec().treeToValue(roundTripNode, RoundTrip.class);
 				roundTrips.add(roundTrip);
 			}
-			MultiRoundTrip<Location> result = new MultiRoundTrip<>(roundTrips.size());
+			MultiRoundTrip<Node> result = new MultiRoundTrip<>(roundTrips.size());
 			for (int i = 0; i < roundTrips.size(); i++) {
 				result.setRoundTripAndUpdateSummaries(i, roundTrips.get(i));
 			}
@@ -97,7 +97,7 @@ public class MultiRoundTripJsonIO {
 		}
 	}
 
-	public static MultiRoundTrip<Location> readFromFile(Scenario<Location> scenario, String fileName)
+	public static MultiRoundTrip<Node> readFromFile(Scenario<Node> scenario, String fileName)
 			throws JsonGenerationException, JsonMappingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		SimpleModule module = new SimpleModule();
@@ -106,17 +106,17 @@ public class MultiRoundTripJsonIO {
 		mapper.registerModule(module);
 		ObjectReader reader = mapper.readerFor(MultiRoundTrip.class);
 		JsonParser parser = mapper.getFactory().createParser(new File(fileName));
-		MultiRoundTrip<Location> result = reader.readValue(parser);
+		MultiRoundTrip<Node> result = reader.readValue(parser);
 		parser.close();
 		return result;
 	}
 
 	public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException {
-		Scenario<Location> scenario = new Scenario<>();
-		Location home = scenario.getOrCreateLocationWithSameName(new Location("home"));
-		Location work = scenario.getOrCreateLocationWithSameName(new Location("work"));
-		Location school = scenario.getOrCreateLocationWithSameName(new Location("school"));
-		MultiRoundTrip<Location> multiRoundTrip = new MultiRoundTrip<>(2);
+		Scenario<Node> scenario = new Scenario<>();
+		Node home = scenario.getOrCreateLocationWithSameName(new Node("home"));
+		Node work = scenario.getOrCreateLocationWithSameName(new Node("work"));
+		Node school = scenario.getOrCreateLocationWithSameName(new Node("school"));
+		MultiRoundTrip<Node> multiRoundTrip = new MultiRoundTrip<>(2);
 		multiRoundTrip.setRoundTripAndUpdateSummaries(0,
 				new RoundTrip<>(Arrays.asList(home, work), Arrays.asList(7, 18)));
 		multiRoundTrip.setRoundTripAndUpdateSummaries(1,

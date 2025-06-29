@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -33,7 +33,7 @@ import se.vti.roundtrips.single.RoundTrip;
  *
  * @param <L>
  */
-public abstract class ByPopulationGroupSummary<L extends Location, S extends MultiRoundTripSummary<L>>
+public abstract class ByPopulationGroupSummary<L extends Node, S extends MultiRoundTripSummary<L>>
 		implements MultiRoundTripSummary<L> {
 
 	// -------------------- MEMBERS --------------------

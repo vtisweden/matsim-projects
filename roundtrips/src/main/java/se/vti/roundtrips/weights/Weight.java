@@ -17,13 +17,13 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.weights;
 
 /**
  * 
  * @author GunnarF
  */
-public abstract class PreferenceComponent<X> {
+public abstract class Weight<X> {
 
 //	private double logWeightThreshold = Double.NEGATIVE_INFINITY;
 //

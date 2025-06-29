@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips.single
+ * se.vti.roundtrips
  * 
- * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,30 +17,28 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.legacy.possibletransitions;
+package se.vti.roundtrips.single;
 
-import se.vti.roundtrips.single.Location;
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public class Node {
 
-public interface PossibleTransitions_DEPRECATED<L extends Location> {
+	private final String name;
 
-	double getInsertProba();
-	double getRemoveProba();
-	double getFlipProba();
-	
-	int drawInsertIndex();
+	public Node(String name) {
+		this.name = name;
+	}
 
-	L drawInsertValue(int index);
+	public String getName() {
+		return this.name;
+	}
 
-	int drawRemoveIndex();
-
-	int drawFlipIndex();
-
-	L drawFlipValue(int index);
-
-	double concreteInsertProba(int index);
-
-	double concreteRemoveProba();
-
-	double concreteFlipProba(int index);
+	@Override
+	public String toString() {
+		return this.name;
+	}
 
 }

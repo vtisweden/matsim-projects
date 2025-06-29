@@ -20,7 +20,7 @@
 package se.vti.roundtrips.model;
 
 import se.vti.roundtrips.model.DefaultSimulator.MoveSimulator;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.SimulatorState;
 
@@ -29,7 +29,7 @@ import se.vti.roundtrips.single.SimulatorState;
  * @author GunnarF
  *
  */
-public class DefaultMoveSimulator<L extends Location> implements MoveSimulator<L> {
+public class DefaultMoveSimulator<L extends Node> implements MoveSimulator<L> {
 
 	protected final Scenario<L> scenario;
 

@@ -73,7 +73,7 @@ public class Episode {
 	public void setDuration_h(Double duration_h) {
 		this.duration_h = duration_h;
 	}
-
+	
 	public Object getInitialState() {
 		return initialState;
 	}

@@ -21,7 +21,7 @@ package se.vti.roundtrips.multiple;
 
 import java.util.Iterator;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -29,7 +29,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class PopulationGroupFilter<L extends Location> {
+public class PopulationGroupFilter<L extends Node> {
 
 	// -------------------- MEMBERS --------------------
 

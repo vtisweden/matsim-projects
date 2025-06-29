@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.Simulator;
 
@@ -36,7 +36,7 @@ import se.vti.roundtrips.single.Simulator;
  *
  * @param <L>
  */
-public class MultiRoundTrip<L extends Location> implements Iterable<RoundTrip<L>> {
+public class MultiRoundTrip<L extends Node> implements Iterable<RoundTrip<L>> {
 
 	// -------------------- MEMBERS --------------------
 

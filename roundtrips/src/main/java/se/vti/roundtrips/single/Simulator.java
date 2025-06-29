@@ -28,7 +28,7 @@ import se.vti.roundtrips.model.Episode;
  * @author GunnarF
  *
  */
-public interface Simulator<L extends Location> {
+public interface Simulator<L extends Node> {
 
 	List<Episode> simulate(RoundTrip<L> roundTrip);
 

@@ -17,11 +17,11 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.weights;
 
 import se.vti.roundtrips.model.MoveEpisode;
 import se.vti.roundtrips.model.StayEpisode;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -29,22 +29,22 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class PeriodicSchedulePreference<R extends RoundTrip<L>, L extends Location> extends PreferenceComponent<R> {
+public class PeriodicScheduleWeight<L extends Node> extends Weight<RoundTrip<L>> {
 
 	private final double minHomeDuration_h;
 
 	private final double periodLength_h;
 
-	public PeriodicSchedulePreference(double minHomeDuration_h, double periodLength_h) {
+	public PeriodicScheduleWeight(double minHomeDuration_h, double periodLength_h) {
 		this.minHomeDuration_h = minHomeDuration_h;
 		this.periodLength_h = periodLength_h;
 	}
 
-	public PeriodicSchedulePreference(double periodLength_h) {
+	public PeriodicScheduleWeight(double periodLength_h) {
 		this(0.0, periodLength_h);
 	}
 
-	public double discrepancy_h(R roundTrip) {
+	public double discrepancy_h(RoundTrip<L> roundTrip) {
 		if (roundTrip.locationCnt() == 1) {
 			return 0.0;
 		} else {
@@ -57,7 +57,7 @@ public class PeriodicSchedulePreference<R extends RoundTrip<L>, L extends Locati
 	}
 
 	@Override
-	public double logWeight(R roundTrip) {
+	public double logWeight(RoundTrip<L> roundTrip) {
 		return -this.discrepancy_h(roundTrip) / this.periodLength_h;
 	}
 }

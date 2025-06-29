@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 
 /**
  * 
@@ -80,7 +80,7 @@ public class PopulationGrouping {
 		return this.group2indices;
 	}
 
-	public <L extends Location> PopulationGroupFilter<L> createFilter(String group) {
+	public <L extends Node> PopulationGroupFilter<L> createFilter(String group) {
 		this.ensureIndexing();
 		return new PopulationGroupFilter<>(group, this.group2indices.get(group));
 	}

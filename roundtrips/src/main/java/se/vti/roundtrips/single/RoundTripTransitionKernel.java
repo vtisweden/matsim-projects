@@ -31,7 +31,7 @@ import se.vti.roundtrips.model.Scenario;
  *
  * @param <L>
  */
-class RoundTripTransitionKernel<L extends Location> {
+class RoundTripTransitionKernel<L extends Node> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -53,15 +53,15 @@ class RoundTripTransitionKernel<L extends Location> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	RoundTripTransitionKernel(RoundTrip<L> from, Scenario<L> scenario, SimplifiedRoundTripProposalParameters params) {
+	RoundTripTransitionKernel(RoundTrip<L> from, Scenario<L> scenario, RoundTripProposalParameters params) {
 		this.from = from;
 		this.scenario = scenario;
 
 		double effectiveInsertWeight = (from.locationCnt() < Math.min(scenario.getMaxStayEpisodes(),
-				scenario.getBinCnt()) ? params.insertWeight : 0.0);
+				scenario.getTimeBinCnt()) ? params.insertWeight : 0.0);
 		double effectiveRemoveWeight = (from.locationCnt() > 1 ? params.removeWeight : 0.0);
 		double effectiveFlipLocationWeight = params.flipLocationWeight;
-		double effectiveFlipDepTimeWeight = (from.locationCnt() < scenario.getBinCnt() ? params.flipDepTimeWeight
+		double effectiveFlipDepTimeWeight = (from.locationCnt() < scenario.getTimeBinCnt() ? params.flipDepTimeWeight
 				: 0.0);
 		final double effectiveWeightSum = effectiveInsertWeight + effectiveRemoveWeight + effectiveFlipLocationWeight
 				+ effectiveFlipDepTimeWeight;
@@ -75,11 +75,11 @@ class RoundTripTransitionKernel<L extends Location> {
 				1.0 - this.insertProba - this.removeProba - this.flipLocationProba - this.flipDepTimeProba) < 1e-8);
 
 		this.transitionProbaGivenFlipLocation = 1.0 / from.locationCnt() / (scenario.getLocationCnt() - 1);
-		this.transitionProbaGivenFlipDepTime = 1.0 / from.locationCnt() / (scenario.getBinCnt() - from.locationCnt());
+		this.transitionProbaGivenFlipDepTime = 1.0 / from.locationCnt() / (scenario.getTimeBinCnt() - from.locationCnt());
 	}
 
 	RoundTripTransitionKernel(RoundTrip<L> from, Scenario<L> scenario) {
-		this(from, scenario, new SimplifiedRoundTripProposalParameters());
+		this(from, scenario, new RoundTripProposalParameters());
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -102,7 +102,7 @@ class RoundTripTransitionKernel<L extends Location> {
 	private double transitionProbaGivenInsert(RoundTrip<?> to) {
 		return this.numberOfInsertionPoints(this.from.getLocationsView(), to.getLocationsView())
 				/ (this.from.locationCnt() + 1.0) / this.scenario.getLocationCnt()
-				/ (this.scenario.getBinCnt() - this.from.locationCnt());
+				/ (this.scenario.getTimeBinCnt() - this.from.locationCnt());
 	}
 
 	private double numberOfRemovalPoints(List<?> longer, List<?> shorter) {

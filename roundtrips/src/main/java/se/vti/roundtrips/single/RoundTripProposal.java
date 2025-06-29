@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 
+import se.vti.roundtrips.model.DefaultSimulator;
 import se.vti.roundtrips.model.Scenario;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
@@ -33,11 +34,11 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  *
  * @param <L> the location type
  */
-public class SimplifiedRoundTripProposal<L extends Location> implements MHProposal<RoundTrip<L>> {
+public class RoundTripProposal<L extends Node> implements MHProposal<RoundTrip<L>> {
 
 	// -------------------- MEMBERS --------------------
 
-	private final SimplifiedRoundTripProposalParameters proposalParams;
+	private final RoundTripProposalParameters proposalParams;
 
 	private final Scenario<L> scenario;
 
@@ -49,7 +50,7 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public SimplifiedRoundTripProposal(SimplifiedRoundTripProposalParameters proposalParams, Scenario<L> scenario,
+	public RoundTripProposal(RoundTripProposalParameters proposalParams, Scenario<L> scenario,
 			Simulator<L> simulator) {
 		this.proposalParams = proposalParams;
 		this.scenario = scenario;
@@ -58,8 +59,8 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 		this.rnd = scenario.getRandom();
 	}
 
-	public SimplifiedRoundTripProposal(Scenario<L> scenario, Simulator<L> simulator) {
-		this(new SimplifiedRoundTripProposalParameters(), scenario, simulator);
+	public RoundTripProposal(Scenario<L> scenario, Simulator<L> simulator) {
+		this(new RoundTripProposalParameters(), scenario, simulator);
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -77,11 +78,11 @@ public class SimplifiedRoundTripProposal<L extends Location> implements MHPropos
 	}
 
 	private Integer drawUnusedDepartureTime(RoundTrip<?> state) {
-		if (state.locationCnt() == this.scenario.getBinCnt()) {
+		if (state.locationCnt() == this.scenario.getTimeBinCnt()) {
 			throw new RuntimeException("No space for inserting a departure time bin.");
 		}
 		while (true) {
-			final Integer depTime = this.rnd.nextInt(this.scenario.getBinCnt());
+			final Integer depTime = this.rnd.nextInt(this.scenario.getTimeBinCnt());
 			if (!state.containsDeparture(depTime)) {
 				return depTime;
 			}

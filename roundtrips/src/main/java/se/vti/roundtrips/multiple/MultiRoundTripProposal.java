@@ -21,8 +21,11 @@ package se.vti.roundtrips.multiple;
 
 import java.util.Random;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.single.RoundTripProposal;
+import se.vti.roundtrips.single.Simulator;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -31,7 +34,7 @@ import se.vti.utils.misc.metropolishastings.MHTransition;
  * @author GunnarF
  *
  */
-public class MultiRoundTripProposal<L extends Location> implements MHProposal<MultiRoundTrip<L>> {
+public class MultiRoundTripProposal<L extends Node> implements MHProposal<MultiRoundTrip<L>> {
 
 	// -------------------- MEMBERS --------------------
 
@@ -48,6 +51,10 @@ public class MultiRoundTripProposal<L extends Location> implements MHProposal<Mu
 		this.singleProposal = singleProposal;
 	}
 
+	public MultiRoundTripProposal(Scenario<L> scenario, Simulator<L> simulator) {
+		this(scenario.getRandom(), new RoundTripProposal<>(scenario, simulator));
+	}
+
 	public MultiRoundTripProposal<L> setFlipProbability(double flipProbability) {
 		this.flipProba = flipProbability;
 		return this;
@@ -62,7 +69,7 @@ public class MultiRoundTripProposal<L extends Location> implements MHProposal<Mu
 
 	@Override
 	public MHTransition<MultiRoundTrip<L>> newTransition(MultiRoundTrip<L> from) {
-		
+
 		final double minFlipProba = 1.0 / Math.max(1.0, from.size());
 		final double flipProba = (this.flipProba != null ? Math.max(this.flipProba, minFlipProba) : minFlipProba);
 		final double atLeastOneFlipProba = 1.0 - Math.pow(1.0 - flipProba, from.size());

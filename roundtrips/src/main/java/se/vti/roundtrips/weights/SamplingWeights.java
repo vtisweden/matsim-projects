@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.weights;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,26 +30,26 @@ import se.vti.utils.misc.metropolishastings.MHWeight;
  * @author GunnarF
  *
  */
-public class Preferences<X> implements MHWeight<X> {
+public class SamplingWeights<X> implements MHWeight<X> {
 
-	private List<PreferenceComponent<X>> components = new ArrayList<>();
+	private List<Weight<X>> components = new ArrayList<>();
 
 	private List<Double> weights = new ArrayList<>();
 
-	public Preferences() {
+	public SamplingWeights() {
 	}
 
-	public List<PreferenceComponent<X>> getComponentsView() {
+	public List<Weight<X>> getComponentsView() {
 		return Collections.unmodifiableList(this.components);
 	}
 	
-	public void addComponent(PreferenceComponent<X> component, double weight) {
+	public void add(Weight<X> component, double weight) {
 		this.components.add(component);
 		this.weights.add(weight);
 	}
 
-	public void addComponent(PreferenceComponent<X> component) {
-		this.addComponent(component, 1.0);
+	public void addComponent(Weight<X> component) {
+		this.add(component, 1.0);
 	}
 
 //	public boolean thresholdPassed(X state) {
@@ -62,7 +62,7 @@ public class Preferences<X> implements MHWeight<X> {
 //	}
 
 	public boolean accept(X state) {
-		for (PreferenceComponent<X> component : this.components) {
+		for (Weight<X> component : this.components) {
 			if (!component.accept(state)) {
 				return false;
 			}

@@ -19,14 +19,14 @@
  */
 package se.vti.roundtrips.model;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class MoveEpisode<L extends Location> extends Episode {
+public class MoveEpisode<L extends Node> extends Episode {
 
 	private final L origin;
 	private final L destination;

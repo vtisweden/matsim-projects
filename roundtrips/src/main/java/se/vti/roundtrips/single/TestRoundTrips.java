@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.Random;
 
 import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.preferences.MaximumEntropyPriorFactory;
-import se.vti.roundtrips.preferences.Preferences;
+import se.vti.roundtrips.weights.MaximumEntropyPriorFactory;
+import se.vti.roundtrips.weights.SamplingWeights;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -60,9 +60,9 @@ public class TestRoundTrips {
 		final double locationProba = 0.1;
 		final double departureProba = 0.9;
 
-		final Scenario<Location> scenario = new Scenario<>();
+		final Scenario<Node> scenario = new Scenario<>();
 		for (int i = 1; i <= 3; i++) {
-			scenario.getOrCreateLocationWithSameName(new Location("" + i));
+			scenario.getOrCreateLocationWithSameName(new Node("" + i));
 		}
 		scenario.setMaxStayEpisodes(10);
 		scenario.setTimeBinCnt(24);
@@ -70,13 +70,13 @@ public class TestRoundTrips {
 //		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
 //		proposal.addProposal(new RoundTripLocationProposal<>(scenario), locationProba);
 //		proposal.addProposal(new RoundTripDepartureProposal<>(scenario), departureProba);
-		SimplifiedRoundTripProposal<Location> proposal = new SimplifiedRoundTripProposal<>(scenario, roundTrip -> null);
+		RoundTripProposal<Node> proposal = new RoundTripProposal<>(scenario, roundTrip -> null);
 
-		MHStateProcessor<RoundTrip<Location>> prn = new MHStateProcessor<>() {
+		MHStateProcessor<RoundTrip<Node>> prn = new MHStateProcessor<>() {
 
 			long it = 0;
-			Map<RoundTrip<Location>, Long> roundTrip2cnt = new LinkedHashMap<>();
-			private long[] binCnts = new long[scenario.getBinCnt()];
+			Map<RoundTrip<Node>, Long> roundTrip2cnt = new LinkedHashMap<>();
+			private long[] binCnts = new long[scenario.getTimeBinCnt()];
 			Map<Integer, Long> size2cnt = new LinkedHashMap<>();
 
 			@Override
@@ -84,7 +84,7 @@ public class TestRoundTrips {
 			}
 
 			@Override
-			public void processState(RoundTrip<Location> state) {
+			public void processState(RoundTrip<Node> state) {
 				if (it++ > totalIts / 2) {
 					this.roundTrip2cnt.compute(state, (s, c) -> c == null ? 1 : c + 1);
 					for (int i = 0; i < state.locationCnt(); i++) {
@@ -98,7 +98,7 @@ public class TestRoundTrips {
 			public void end() {
 				List<Long> counts = new ArrayList<>(this.roundTrip2cnt.size());
 
-				for (Map.Entry<RoundTrip<Location>, Long> e : this.roundTrip2cnt.entrySet()) {
+				for (Map.Entry<RoundTrip<Node>, Long> e : this.roundTrip2cnt.entrySet()) {
 //					System.out.println(e.getKey() + "\t" + e.getValue());
 					counts.add(e.getValue());
 				}
@@ -111,7 +111,7 @@ public class TestRoundTrips {
 				System.out.println();
 
 				System.out.println("sizes");
-				for (int size = 1; size <= Math.min(scenario.getBinCnt(), scenario.getMaxStayEpisodes()); size++) {
+				for (int size = 1; size <= Math.min(scenario.getTimeBinCnt(), scenario.getMaxStayEpisodes()); size++) {
 					System.out.println(size + "\t" + this.size2cnt.getOrDefault(size, 0l));
 				}
 
@@ -131,13 +131,13 @@ public class TestRoundTrips {
 
 		};
 
-		Preferences<RoundTrip<Location>> pref = new Preferences<>();
+		SamplingWeights<RoundTrip<Node>> pref = new SamplingWeights<>();
 //		pref.addComponent(new MaximumEntropyPrior<>(scenario.getLocationCnt(), scenario.getBinCnt(), 3.0));
-		pref.addComponent(new MaximumEntropyPriorFactory<>(scenario.getLocationCnt(), scenario.getBinCnt(), scenario.getMaxStayEpisodes()).createSingle(3.0));
+		pref.addComponent(new MaximumEntropyPriorFactory<>(scenario.getLocationCnt(), scenario.getTimeBinCnt(), scenario.getMaxStayEpisodes()).createSingle(3.0));
 		
-		RoundTrip<Location> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1")), Arrays.asList(12));
+		RoundTrip<Node> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1")), Arrays.asList(12));
 
-		MHAlgorithm<RoundTrip<Location>> algo = new MHAlgorithm<>(proposal, 
+		MHAlgorithm<RoundTrip<Node>> algo = new MHAlgorithm<>(proposal, 
 				pref,
 				rnd);
 

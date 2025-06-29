@@ -46,27 +46,27 @@ public class TestTransitionProbabilities {
 	static RoundTripTransitionKernel.Action action = RoundTripTransitionKernel.Action.INS;
 
 	public static void main(String[] args) {
-		Scenario<Location> scenario = new Scenario<>();
+		Scenario<Node> scenario = new Scenario<>();
 		for (int i = 1; i <= locCnt; i++) {
-			scenario.getOrCreateLocationWithSameName(new Location("" + i));
+			scenario.getOrCreateLocationWithSameName(new Node("" + i));
 		}
 		scenario.setMaxStayEpisodes(maxStayEpisodes);
 		scenario.setTimeBinCnt(binCnt);
 
-		SimplifiedRoundTripProposalParameters params = new SimplifiedRoundTripProposalParameters(growShrink ? 1 : 0,
+		RoundTripProposalParameters params = new RoundTripProposalParameters(growShrink ? 1 : 0,
 				growShrink ? 1 : 0, flip ? 1 : 0, flip ? 1 : 0);
-		SimplifiedRoundTripProposal<Location> proposal = new SimplifiedRoundTripProposal<>(params, scenario,
+		RoundTripProposal<Node> proposal = new RoundTripProposal<>(params, scenario,
 				roundTrip -> null);
 
 		int failures = 0;
 		for (int sample = 0; sample < samples; sample++) {
 
-			RoundTrip<Location> from;
-			MHTransition<RoundTrip<Location>> target;
-			RoundTripTransitionKernel<Location> fwdKernel;
+			RoundTrip<Node> from;
+			MHTransition<RoundTrip<Node>> target;
+			RoundTripTransitionKernel<Node> fwdKernel;
 			do {
 				int size = scenario.getRandom().nextInt(1, Math.min(maxStayEpisodes, binCnt));
-				List<Location> locations = new ArrayList<>(size);
+				List<Node> locations = new ArrayList<>(size);
 				for (int i = 0; i < size; i++) {
 					locations.add(
 							scenario.getLocationsView().get(scenario.getRandom().nextInt(scenario.getLocationCnt())));
@@ -90,7 +90,7 @@ public class TestTransitionProbabilities {
 
 			int recoveredCnt = 0;
 			for (int it = 0; it < itsPerSample; it++) {
-				RoundTrip<Location> trial = proposal.newTransition(from).getNewState();
+				RoundTrip<Node> trial = proposal.newTransition(from).getNewState();
 				if (trial.getLocationsView().equals(target.getNewState().getLocationsView())
 						&& trial.getDeparturesView().equals(target.getNewState().getDeparturesView())) {
 					recoveredCnt++;

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.Simulator;
 import se.vti.roundtrips.single.SimulatorState;
@@ -33,17 +33,17 @@ import se.vti.roundtrips.single.SimulatorState;
  * @author GunnarF
  *
  */
-public class DefaultSimulator<L extends Location> implements Simulator<L> {
+public class DefaultSimulator<L extends Node> implements Simulator<L> {
 
 	// -------------------- INTERFACES --------------------
 
-	public interface StaySimulator<L extends Location> {
+	public interface StaySimulator<L extends Node> {
 
 		StayEpisode<L> newStayEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double initialTime_h,
 				SimulatorState initialState);
 	}
 
-	public interface MoveSimulator<L extends Location> {
+	public interface MoveSimulator<L extends Node> {
 
 		MoveEpisode<L> newMoveEpisode(RoundTrip<L> roundTrip, int roundTripStartIndex, double initialTime_h,
 				SimulatorState initialState);

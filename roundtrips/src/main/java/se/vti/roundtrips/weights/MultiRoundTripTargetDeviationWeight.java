@@ -17,22 +17,22 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.weights;
 
 import java.util.Arrays;
 import java.util.function.Function;
 
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.multiple.PopulationGroupFilter;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends Location>
-		extends PreferenceComponent<MultiRoundTrip<L>> {
+public abstract class MultiRoundTripTargetDeviationWeight<L extends Node>
+		extends Weight<MultiRoundTrip<L>> {
 
 	// -------------------- MEMBERS --------------------
 
@@ -48,7 +48,7 @@ public abstract class MultiRoundTripTargetDeviationPreferenceComponent<L extends
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public MultiRoundTripTargetDeviationPreferenceComponent() {
+	public MultiRoundTripTargetDeviationWeight() {
 		this.setToTwoSidedExponential();
 	}
 

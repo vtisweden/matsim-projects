@@ -19,9 +19,9 @@
  */
 package se.vti.roundtrips.model;
 
-import se.vti.roundtrips.preferences.Preferences;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.weights.SamplingWeights;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
 /**
@@ -29,13 +29,13 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public abstract class RoundTripAnalyzer<R extends RoundTrip<L>, L extends Location> implements MHStateProcessor<R> {
+public abstract class RoundTripAnalyzer<R extends RoundTrip<L>, L extends Node> implements MHStateProcessor<R> {
 
 	private final long burnInIterations;
 
 	private final long samplingInterval;
 
-	private final Preferences<R> importanceSamplingPreferences;
+	private final SamplingWeights<R> importanceSamplingPreferences;
 
 	protected long iteration = 0;
 
@@ -44,7 +44,7 @@ public abstract class RoundTripAnalyzer<R extends RoundTrip<L>, L extends Locati
 	private double acceptedSampleWeightSum = 0.0;
 
 	public RoundTripAnalyzer(long burnInIterations, long samplingInterval,
-			Preferences<R> importanceSamplingPreferences) {
+			SamplingWeights<R> importanceSamplingPreferences) {
 		this.burnInIterations = burnInIterations;
 		this.samplingInterval = samplingInterval;
 		this.importanceSamplingPreferences = importanceSamplingPreferences;

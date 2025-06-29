@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.utils.misc.Tuple;
 
 /**
@@ -34,7 +34,7 @@ import se.vti.utils.misc.Tuple;
  * @author GunnarF
  *
  */
-public class Scenario<L extends Location> {
+public class Scenario<L extends Node> {
 
 	private final Random rnd = new Random();
 
@@ -42,7 +42,7 @@ public class Scenario<L extends Location> {
 	
 	private double binSize_h = 1.0;
 	
-	private int maxStayEpisodes = 4;
+	private int maxStayEpisodes = Integer.MAX_VALUE;
 
 	private final Map<String, L> name2location = new LinkedHashMap<>();
 
@@ -56,7 +56,7 @@ public class Scenario<L extends Location> {
 	}
 
 	// TODO new
-	public L setLocation(L location) {
+	public L addLocation(L location) {
 		this.name2location.put(location.getName(), location);
 		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
 		return location;
@@ -141,7 +141,7 @@ public class Scenario<L extends Location> {
 		this.binSize_h = binSize_h;
 	}
 
-	public int getBinCnt() {
+	public int getTimeBinCnt() {
 		return this.timeBinCnt;
 	}
 	

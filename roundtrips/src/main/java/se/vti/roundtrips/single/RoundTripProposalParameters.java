@@ -24,14 +24,14 @@ package se.vti.roundtrips.single;
  * @author GunnarF
  *
  */
-public class SimplifiedRoundTripProposalParameters {
+public class RoundTripProposalParameters {
 
 	public final double insertWeight;
 	public final double removeWeight;
 	public final double flipLocationWeight;
 	public final double flipDepTimeWeight;
 
-	public SimplifiedRoundTripProposalParameters(double insertWeight, double removeWeight, double flipLocationWeight,
+	public RoundTripProposalParameters(double insertWeight, double removeWeight, double flipLocationWeight,
 			double flipDepTimeWeight) {
 		this.insertWeight = insertWeight;
 		this.removeWeight = removeWeight;
@@ -39,7 +39,7 @@ public class SimplifiedRoundTripProposalParameters {
 		this.flipDepTimeWeight = flipDepTimeWeight;
 	}
 
-	public SimplifiedRoundTripProposalParameters() {
+	public RoundTripProposalParameters() {
 		this(1.0, 1.0, 1.0, 1.0);
 	}
 }

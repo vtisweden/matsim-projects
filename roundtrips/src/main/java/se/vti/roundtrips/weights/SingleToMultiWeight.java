@@ -17,14 +17,14 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.weights;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import se.vti.roundtrips.multiple.MultiRoundTrip;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -32,15 +32,15 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class SingleToMultiComponent<L extends Location> extends PreferenceComponent<MultiRoundTrip<L>> {
+public class SingleToMultiWeight<L extends Node> extends Weight<MultiRoundTrip<L>> {
 
-	private final PreferenceComponent<RoundTrip<L>> singleComponent;
+	private final Weight<RoundTrip<L>> singleComponent;
 
 	private List<RoundTrip<L>> previousRoundTrips = null;
 	
 	private List<Double> previousLogWeights = null;
 
-	public SingleToMultiComponent(PreferenceComponent<RoundTrip<L>> singleComponent) {
+	public SingleToMultiWeight(Weight<RoundTrip<L>> singleComponent) {
 		this.singleComponent = singleComponent;
 	}
 

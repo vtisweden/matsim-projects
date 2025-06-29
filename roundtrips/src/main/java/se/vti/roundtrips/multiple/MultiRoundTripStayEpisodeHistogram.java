@@ -24,7 +24,7 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -33,7 +33,7 @@ import se.vti.utils.misc.metropolishastings.MHStateProcessor;
  * @author GunnarF
  *
  */
-public class MultiRoundTripStayEpisodeHistogram<L extends Location> implements MHStateProcessor<MultiRoundTrip<L>> {
+public class MultiRoundTripStayEpisodeHistogram<L extends Node> implements MHStateProcessor<MultiRoundTrip<L>> {
 
 	private final String fileName;
 

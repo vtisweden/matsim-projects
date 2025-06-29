@@ -17,11 +17,11 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.preferences;
+package se.vti.roundtrips.weights;
 
 import se.vti.roundtrips.model.StayEpisode;
 import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -29,11 +29,11 @@ import se.vti.roundtrips.single.RoundTrip;
  * @author GunnarF
  *
  */
-public class StrategyRealizationPreference<R extends RoundTrip<L>, L extends Location> extends PreferenceComponent<R> {
+public class StrategyRealizationWeight<R extends RoundTrip<L>, L extends Node> extends Weight<R> {
 
 	private final Scenario<?> scenario;
 
-	public StrategyRealizationPreference(Scenario<?> scenario) {
+	public StrategyRealizationWeight(Scenario<?> scenario) {
 		this.scenario = scenario;
 	}
 

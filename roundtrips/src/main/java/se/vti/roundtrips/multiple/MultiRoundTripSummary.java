@@ -19,7 +19,7 @@
  */
 package se.vti.roundtrips.multiple;
 
-import se.vti.roundtrips.single.Location;
+import se.vti.roundtrips.single.Node;
 import se.vti.roundtrips.single.RoundTrip;
 
 /**
@@ -29,7 +29,7 @@ import se.vti.roundtrips.single.RoundTrip;
  * @param <L> the location type
  * 
  */
-public interface MultiRoundTripSummary<L extends Location> {
+public interface MultiRoundTripSummary<L extends Node> {
 
 	public void clear();
 
