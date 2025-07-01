@@ -9,7 +9,7 @@ Published under GPL, see [LICENSE](LICENSE), [COPYING](COPYING), [WARRANTY](WARR
 	<dependency>
 		<groupId>se.vti.matsim-projects</groupId>
 		<artifactId>utils</artifactId>
-		<version>0.1.0</version>
+		<version>0.1.1</version>
 	</dependency>
 
 	
