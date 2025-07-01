@@ -28,9 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.weights.MaximumEntropyPriorFactory;
-import se.vti.roundtrips.weights.SamplingWeights;
+import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.samplingweights.SamplingWeights;
+import se.vti.roundtrips.samplingweights.priors.MaximumEntropyPriorFactory;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 import se.vti.utils.misc.metropolishastings.MHStateProcessor;
 
@@ -64,7 +65,7 @@ public class TestRoundTrips {
 		for (int i = 1; i <= 3; i++) {
 			scenario.getOrCreateLocationWithSameName(new Node("" + i));
 		}
-		scenario.setMaxStayEpisodes(10);
+		scenario.setUpperBoundOnStayEpisodes(10);
 		scenario.setTimeBinCnt(24);
 
 //		RoundTripProposal<Location> proposal = new RoundTripProposal<>(roundTrip -> null, scenario.getRandom());
@@ -87,10 +88,10 @@ public class TestRoundTrips {
 			public void processState(RoundTrip<Node> state) {
 				if (it++ > totalIts / 2) {
 					this.roundTrip2cnt.compute(state, (s, c) -> c == null ? 1 : c + 1);
-					for (int i = 0; i < state.locationCnt(); i++) {
+					for (int i = 0; i < state.size(); i++) {
 						this.binCnts[state.getDeparture(i)]++;
 					}
-					this.size2cnt.compute(state.locationCnt(), (s, c) -> c == null ? 1 : c + 1);
+					this.size2cnt.compute(state.size(), (s, c) -> c == null ? 1 : c + 1);
 				}
 			}
 
@@ -111,7 +112,7 @@ public class TestRoundTrips {
 				System.out.println();
 
 				System.out.println("sizes");
-				for (int size = 1; size <= Math.min(scenario.getTimeBinCnt(), scenario.getMaxStayEpisodes()); size++) {
+				for (int size = 1; size <= Math.min(scenario.getTimeBinCnt(), scenario.getUpperBoundOnStayEpisodes()); size++) {
 					System.out.println(size + "\t" + this.size2cnt.getOrDefault(size, 0l));
 				}
 
@@ -133,7 +134,7 @@ public class TestRoundTrips {
 
 		SamplingWeights<RoundTrip<Node>> pref = new SamplingWeights<>();
 //		pref.addComponent(new MaximumEntropyPrior<>(scenario.getLocationCnt(), scenario.getBinCnt(), 3.0));
-		pref.addComponent(new MaximumEntropyPriorFactory<>(scenario.getLocationCnt(), scenario.getTimeBinCnt(), scenario.getMaxStayEpisodes()).createSingle(3.0));
+		pref.add(new MaximumEntropyPriorFactory<>(scenario.getLocationCnt(), scenario.getTimeBinCnt(), scenario.getUpperBoundOnStayEpisodes()).createSingle(3.0));
 		
 		RoundTrip<Node> initialState = new RoundTrip<>(Arrays.asList(scenario.getLocation("1")), Arrays.asList(12));
 

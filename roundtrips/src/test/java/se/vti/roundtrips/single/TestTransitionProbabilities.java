@@ -24,7 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.common.Scenario;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
 /**
@@ -50,7 +51,7 @@ public class TestTransitionProbabilities {
 		for (int i = 1; i <= locCnt; i++) {
 			scenario.getOrCreateLocationWithSameName(new Node("" + i));
 		}
-		scenario.setMaxStayEpisodes(maxStayEpisodes);
+		scenario.setUpperBoundOnStayEpisodes(maxStayEpisodes);
 		scenario.setTimeBinCnt(binCnt);
 
 		RoundTripProposalParameters params = new RoundTripProposalParameters(growShrink ? 1 : 0,
