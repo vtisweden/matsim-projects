@@ -97,10 +97,11 @@
 				</configuration>
 			</plugin>
 
+		<!--
     	<plugin>
 	      	<groupId>org.apache.maven.plugins</groupId>
     	  	<artifactId>maven-source-plugin</artifactId>
-      		<version>3.2.1</version> <!-- or latest -->
+      		<version>3.2.1</version>
       		<executions>
         		<execution>
           		<id>attach-sources</id>
@@ -110,6 +111,8 @@
         		</execution>
    	   		</executions>
     	</plugin>
+    	-->
+    	
   	</plugins>
 	</build>
 
