@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips.multiple
+ * se.vti.roundtrips.preferences
  * 
- * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,24 +17,20 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.multiple;
+package se.vti.roundtrips.samplingweights;
 
-import se.vti.roundtrips.common.Node;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.utils.misc.metropolishastings.MHWeight;
 
 /**
  * 
  * @author GunnarF
- *
- * @param <L> the location type
- * 
  */
-public interface MultiRoundTripSummary<L extends Node> {
+public interface SamplingWeight<X> extends MHWeight<X> {
 
-	public void clear();
+	double logWeight(X roundTrip);
 
-	public void update(int roundTripIndex, RoundTrip<L> oldRoundTrip, RoundTrip<L> newRoundTrip);
-
-	public MultiRoundTripSummary<L> clone();
-
+	default String name() {
+		return this.getClass().getSimpleName();
+	}
+	
 }

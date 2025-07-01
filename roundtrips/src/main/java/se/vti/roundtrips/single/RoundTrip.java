@@ -24,7 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import se.vti.roundtrips.model.Episode;
+import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.simulator.Episode;
 
 /**
  * 
@@ -65,12 +66,12 @@ public class RoundTrip<L extends Node> {
 		if (i > 0) {
 			return i - 1;
 		} else {
-			return this.locationCnt() - 1;
+			return this.size() - 1;
 		}
 	}
 
 	public int successorIndex(int i) {
-		if (i < this.locationCnt() - 1) {
+		if (i < this.size() - 1) {
 			return i + 1;
 		} else {
 			return 0;
@@ -83,7 +84,7 @@ public class RoundTrip<L extends Node> {
 		return this.attributes;
 	}
 
-	public int locationCnt() {
+	public int size() {
 		return this.locations.size();
 	}
 

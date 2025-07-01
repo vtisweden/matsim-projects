@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import se.vti.roundtrips.single.Node;
+import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.simulator.Simulator;
 import se.vti.roundtrips.single.RoundTrip;
-import se.vti.roundtrips.single.Simulator;
 
 /**
  * 

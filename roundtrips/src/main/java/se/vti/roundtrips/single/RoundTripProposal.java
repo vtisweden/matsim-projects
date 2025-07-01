@@ -23,8 +23,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 
-import se.vti.roundtrips.model.DefaultSimulator;
-import se.vti.roundtrips.model.Scenario;
+import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.simulator.DefaultSimulator;
+import se.vti.roundtrips.simulator.Simulator;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -78,7 +80,7 @@ public class RoundTripProposal<L extends Node> implements MHProposal<RoundTrip<L
 	}
 
 	private Integer drawUnusedDepartureTime(RoundTrip<?> state) {
-		if (state.locationCnt() == this.scenario.getTimeBinCnt()) {
+		if (state.size() == this.scenario.getTimeBinCnt()) {
 			throw new RuntimeException("No space for inserting a departure time bin.");
 		}
 		while (true) {
@@ -133,7 +135,7 @@ public class RoundTripProposal<L extends Node> implements MHProposal<RoundTrip<L
 		if (_U < fwdTransitionKernel.insertProba) { // INSERT
 
 			realizedFwdAction = RoundTripTransitionKernel.Action.INS;
-			final int whereToInsert = this.rnd.nextInt(from.locationCnt() + 1);
+			final int whereToInsert = this.rnd.nextInt(from.size() + 1);
 			final L whatLocationToInsert = this.allLocations.get(this.rnd.nextInt(this.allLocations.size()));
 			final Integer whatDepTimeToInsert = this.drawUnusedDepartureTime(from);
 			to.addAndEnsureSortedDepartures(whereToInsert, whatLocationToInsert, whatDepTimeToInsert);
@@ -146,22 +148,22 @@ public class RoundTripProposal<L extends Node> implements MHProposal<RoundTrip<L
 			 * insert.
 			 */
 			realizedFwdAction = RoundTripTransitionKernel.Action.REM;
-			final int whereToRemoveLoc = this.rnd.nextInt(from.locationCnt());
-			final int whereToRemoveDep = this.rnd.nextInt(from.locationCnt());
+			final int whereToRemoveLoc = this.rnd.nextInt(from.size());
+			final int whereToRemoveDep = this.rnd.nextInt(from.size());
 			to.remove(whereToRemoveLoc, whereToRemoveDep);
 
 		} else if (_U < fwdTransitionKernel.insertProba + fwdTransitionKernel.removeProba
 				+ fwdTransitionKernel.flipLocationProba) { // FLIP LOCATION
 
 			realizedFwdAction = RoundTripTransitionKernel.Action.FLIP_LOC;
-			final int whereToFlip = this.rnd.nextInt(from.locationCnt());
+			final int whereToFlip = this.rnd.nextInt(from.size());
 			final L newLocation = this.drawLocationDifferentFrom(from.getLocation(whereToFlip));
 			to.setLocation(whereToFlip, newLocation);
 
 		} else { // FLIP DEPARTURE TIME
 
 			realizedFwdAction = RoundTripTransitionKernel.Action.FLIP_DEP;
-			final int whereToFlip = this.rnd.nextInt(from.locationCnt());
+			final int whereToFlip = this.rnd.nextInt(from.size());
 			final Integer newDptTime = this.drawUnusedDepartureTime(from);
 			to.setDepartureAndEnsureOrdering(whereToFlip, newDptTime);
 		}

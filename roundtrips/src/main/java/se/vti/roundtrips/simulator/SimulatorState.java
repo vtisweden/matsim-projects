@@ -1,5 +1,5 @@
 /**
- * se.vti.roundtrips.multiple
+ * se.vti.roundtrips.single
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,24 +17,14 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.multiple;
-
-import se.vti.roundtrips.common.Node;
-import se.vti.roundtrips.single.RoundTrip;
-
+package se.vti.roundtrips.simulator;
 /**
  * 
  * @author GunnarF
  *
- * @param <L> the location type
- * 
  */
-public interface MultiRoundTripSummary<L extends Node> {
+public interface SimulatorState {
 
-	public void clear();
-
-	public void update(int roundTripIndex, RoundTrip<L> oldRoundTrip, RoundTrip<L> newRoundTrip);
-
-	public MultiRoundTripSummary<L> clone();
-
+	SimulatorState clone();
+	
 }

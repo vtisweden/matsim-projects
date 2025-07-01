@@ -40,8 +40,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.single.Node;
+import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.common.Scenario;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripJsonIO;
 

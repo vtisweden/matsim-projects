@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips.multiple
+ * se.vti.roundtrips
  * 
- * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,24 +17,28 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.multiple;
-
-import se.vti.roundtrips.common.Node;
-import se.vti.roundtrips.single.RoundTrip;
+package se.vti.roundtrips.common;
 
 /**
  * 
  * @author GunnarF
  *
- * @param <L> the location type
- * 
  */
-public interface MultiRoundTripSummary<L extends Node> {
+public class Node {
 
-	public void clear();
+	private final String name;
 
-	public void update(int roundTripIndex, RoundTrip<L> oldRoundTrip, RoundTrip<L> newRoundTrip);
+	public Node(String name) {
+		this.name = name;
+	}
 
-	public MultiRoundTripSummary<L> clone();
+	public String getName() {
+		return this.name;
+	}
+
+	@Override
+	public String toString() {
+		return this.name;
+	}
 
 }

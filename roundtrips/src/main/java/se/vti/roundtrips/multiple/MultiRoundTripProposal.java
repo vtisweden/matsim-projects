@@ -21,11 +21,11 @@ package se.vti.roundtrips.multiple;
 
 import java.util.Random;
 
-import se.vti.roundtrips.model.Scenario;
-import se.vti.roundtrips.single.Node;
+import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.simulator.Simulator;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripProposal;
-import se.vti.roundtrips.single.Simulator;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 

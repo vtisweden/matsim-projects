@@ -1,7 +1,7 @@
 /**
- * se.vti.roundtrips.multiple
+ * se.vti.roundtrips
  * 
- * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2023,2024 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,24 +17,44 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.multiple;
+package se.vti.roundtrips.simulator;
 
 import se.vti.roundtrips.common.Node;
-import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
- * @param <L> the location type
- * 
  */
-public interface MultiRoundTripSummary<L extends Node> {
+public class StayEpisode<L extends Node> extends Episode {
+	
+	private final L location;
+	
+	// TODO NEW
+	@Override
+	public void deepCopyInto(Episode target) {
+		throw new RuntimeException("Use clone().");
+	}
+	
+	// TODO NEW
+	@Override
+	public StayEpisode<L> clone() {
+		StayEpisode<L> result = new StayEpisode<>(this.location);
+		super.deepCopyInto(result);
+		return result;
+	}
 
-	public void clear();
+	public StayEpisode(L location) {
+		this.location = location;
+	}
 
-	public void update(int roundTripIndex, RoundTrip<L> oldRoundTrip, RoundTrip<L> newRoundTrip);
-
-	public MultiRoundTripSummary<L> clone();
+	public L getLocation() {
+		return location;
+	}
+	
+	@Override
+	public String toString() {
+		return super.toString() + ",loc(" + this.location + ")";
+	}
 
 }
