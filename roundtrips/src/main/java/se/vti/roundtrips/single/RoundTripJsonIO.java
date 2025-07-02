@@ -40,8 +40,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import se.vti.roundtrips.common.Node;
 import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.common.Node;
 
 /**
  * 
@@ -85,11 +85,10 @@ public class RoundTripJsonIO {
 
 			JsonNode node = p.getCodec().readTree(p);
 
-			List<Node> locations = new ArrayList<>();
-			JsonNode nodes = node.get("nodes");
-			for (JsonNode n : nodes) {
-				String name = n.asText();
-				locations.add(scenario.getOrCreateLocationWithSameName(new Node(name)));
+			List<Node> scenarioNodes = new ArrayList<>();
+			JsonNode jsonNodes = node.get("nodes");
+			for (JsonNode n : jsonNodes) {
+				scenarioNodes.add(this.scenario.getNode(n.asText()));
 			}
 
 			List<Integer> departures = new ArrayList<>();
@@ -98,7 +97,7 @@ public class RoundTripJsonIO {
 				departures.add(dpt.asInt());
 			}
 
-			return new RoundTrip<>(locations, departures);
+			return new RoundTrip<>(scenarioNodes, departures);
 		}
 
 	}
@@ -128,8 +127,8 @@ public class RoundTripJsonIO {
 
 	public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException {
 		Scenario<Node> scenario = new Scenario<>();
-		Node home = scenario.getOrCreateLocationWithSameName(new Node("home"));
-		Node work = scenario.getOrCreateLocationWithSameName(new Node("work"));
+		Node home = scenario.addNode(new Node("home"));
+		Node work = scenario.addNode(new Node("work"));
 		RoundTrip<Node> roundTrip = new RoundTrip<>(Arrays.asList(home, work), Arrays.asList(7, 18));
 		writeToFile(roundTrip, "test.json");
 		roundTrip = null;

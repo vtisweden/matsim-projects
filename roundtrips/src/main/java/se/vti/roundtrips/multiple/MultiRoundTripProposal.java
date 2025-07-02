@@ -23,7 +23,6 @@ import java.util.Random;
 
 import se.vti.roundtrips.common.Node;
 import se.vti.roundtrips.common.Scenario;
-import se.vti.roundtrips.simulator.Simulator;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripProposal;
 import se.vti.utils.misc.metropolishastings.MHProposal;
@@ -51,8 +50,8 @@ public class MultiRoundTripProposal<L extends Node> implements MHProposal<MultiR
 		this.singleProposal = singleProposal;
 	}
 
-	public MultiRoundTripProposal(Scenario<L> scenario, Simulator<L> simulator) {
-		this(scenario.getRandom(), new RoundTripProposal<>(scenario, simulator));
+	public MultiRoundTripProposal(Scenario<L> scenario) {
+		this(scenario.getRandom(), new RoundTripProposal<>(scenario));
 	}
 
 	public MultiRoundTripProposal<L> setFlipProbability(double flipProbability) {

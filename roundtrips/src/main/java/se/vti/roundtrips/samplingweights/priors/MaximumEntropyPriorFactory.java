@@ -43,7 +43,7 @@ public class MaximumEntropyPriorFactory<L extends Node> {
 	}
 
 	public MaximumEntropyPriorFactory(Scenario<L> scenario) {
-		this(scenario.getLocationCnt(), scenario.getTimeBinCnt(), scenario.getUpperBoundOnStayEpisodes());
+		this(scenario.getNodesCnt(), scenario.getTimeBinCnt(), scenario.getUpperBoundOnStayEpisodes());
 	}
 	
 	// -------------------- INTERNALS --------------------

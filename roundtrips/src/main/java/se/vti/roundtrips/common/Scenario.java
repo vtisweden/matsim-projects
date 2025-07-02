@@ -20,12 +20,17 @@
 package se.vti.roundtrips.common;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import se.vti.roundtrips.multiple.MultiRoundTrip;
+import se.vti.roundtrips.simulator.DefaultSimulator;
+import se.vti.roundtrips.simulator.Simulator;
+import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.Tuple;
 
 /**
@@ -33,9 +38,13 @@ import se.vti.utils.misc.Tuple;
  * @author GunnarF
  *
  */
-public class Scenario<L extends Node> {
+public class Scenario<N extends Node> {
+
+	// -------------------- CONSTANTS --------------------
 
 	private final Random rnd = new Random();
+
+	// -------------------- PARAMETER MEMBERS --------------------
 
 	private Integer timeBinCnt = null;
 
@@ -43,94 +52,24 @@ public class Scenario<L extends Node> {
 
 	private int upperBoundOnStayEpisodes = Integer.MAX_VALUE;
 
-	private final Map<String, L> name2location = new LinkedHashMap<>();
+	// -------------------- NETWORK MEMBERS --------------------
 
-	private final Map<Tuple<L, L>, Double> od2distance_km = new LinkedHashMap<>();
+	private Simulator<N> simulator = null;
 
-	private final Map<Tuple<L, L>, Double> od2time_h = new LinkedHashMap<>();
+	private final Map<String, N> name2node = new LinkedHashMap<>();
 
-	private List<L> locationsView = Collections.unmodifiableList(new ArrayList<>(0));
+	private final Map<Tuple<N, N>, Double> od2distance_km = new LinkedHashMap<>();
+
+	private final Map<Tuple<N, N>, Double> od2time_h = new LinkedHashMap<>();
+
+	private List<N> locationsView = Collections.unmodifiableList(new ArrayList<>(0));
+
+	// -------------------- CONSTRUCTION --------------------
 
 	public Scenario() {
 	}
 
-	// TODO new
-	public L addLocation(L location) {
-		this.name2location.put(location.getName(), location);
-		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
-		return location;
-	}
-
-	public L getOrCreateLocationWithSameName(L location) {
-		if (this.name2location.containsKey(location.getName())) {
-			return this.name2location.get(location.getName());
-		} else {
-			this.name2location.put(location.getName(), location);
-			this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2location.values()));
-			return location;
-		}
-	}
-
-	public Random getRandom() {
-		return this.rnd;
-	}
-
-	public List<L> getLocationsView() {
-		return this.locationsView;
-	}
-
-	public int getLocationCnt() {
-		return this.name2location.size();
-	}
-
-	public L getLocation(String name) {
-		return this.name2location.get(name);
-	}
-
-	public void setDistance_km(L from, L to, double dist_km) {
-		Tuple<L, L> od = new Tuple<>(from, to);
-		this.od2distance_km.put(od, dist_km);
-	}
-
-	public void setSymmetricDistance_km(L loc1, L loc2, double dist_km) {
-		this.setDistance_km(loc1, loc2, dist_km);
-		this.setDistance_km(loc2, loc1, dist_km);
-	}
-
-	public void setDistance_km(String from, String to, double dist_km) {
-		this.setDistance_km(this.name2location.get(from), this.name2location.get(to), dist_km);
-	}
-
-	public void setSymmetricDistance_km(String from, String to, double dist_km) {
-		this.setDistance_km(from, to, dist_km);
-		this.setDistance_km(to, from, dist_km);
-	}
-
-	public Double getDistance_km(L from, L to) {
-		return this.od2distance_km.get(new Tuple<>(from, to));
-	}
-
-	public void setTime_h(L from, L to, double time_h) {
-		this.od2time_h.put(new Tuple<>(from, to), time_h);
-	}
-
-	public void setSymmetricTime_h(L loc1, L loc2, double time_h) {
-		this.setTime_h(loc1, loc2, time_h);
-		this.setTime_h(loc2, loc1, time_h);
-	}
-
-	public void setTime_h(String from, String to, double time_h) {
-		this.od2time_h.put(new Tuple<>(this.name2location.get(from), this.name2location.get(to)), time_h);
-	}
-
-	public void setSymmetricTime_h(String from, String to, double time_h) {
-		this.setTime_h(from, to, time_h);
-		this.setTime_h(to, from, time_h);
-	}
-
-	public Double getTime_h(L from, L to) {
-		return this.od2time_h.get(new Tuple<>(from, to));
-	}
+	// -------------------- PARAMETER SETTER/GETTER --------------------
 
 	public Double getBinSize_h() {
 		return this.binSize_h;
@@ -166,6 +105,90 @@ public class Scenario<L extends Node> {
 
 	public int getMaxPossibleStayEpisodes() {
 		return Math.min(this.timeBinCnt, this.upperBoundOnStayEpisodes);
+	}
+
+	// -------------------- NETWORK SETTER/GETTER --------------------
+
+	public void setSimulator(Simulator<N> simulator) {
+		this.simulator = simulator;
+	}
+
+	public Simulator<N> getOrCreateSimulator() {
+		if (this.simulator == null) {
+			this.simulator = new DefaultSimulator<>(this);
+		}
+		return this.simulator;
+	}
+
+	public N addNode(N node) {
+		this.name2node.put(node.getName(), node);
+		this.locationsView = Collections.unmodifiableList(new ArrayList<>(this.name2node.values()));
+		return node;
+	}
+
+	public N getNode(String name) {
+		return this.name2node.get(name);
+	}
+
+	public Random getRandom() {
+		return this.rnd;
+	}
+
+	public List<N> getNodesView() {
+		return this.locationsView;
+	}
+
+	public int getNodesCnt() {
+		return this.name2node.size();
+	}
+
+	public void setDistance_km(N from, N to, double dist_km) {
+		Tuple<N, N> od = new Tuple<>(from, to);
+		this.od2distance_km.put(od, dist_km);
+	}
+
+	public void setSymmetricDistance_km(N loc1, N loc2, double dist_km) {
+		this.setDistance_km(loc1, loc2, dist_km);
+		this.setDistance_km(loc2, loc1, dist_km);
+	}
+
+	public Double getDistance_km(N from, N to) {
+		return this.od2distance_km.get(new Tuple<>(from, to));
+	}
+
+	public void setTime_h(N from, N to, double time_h) {
+		this.od2time_h.put(new Tuple<>(from, to), time_h);
+	}
+
+	public void setSymmetricTime_h(N loc1, N loc2, double time_h) {
+		this.setTime_h(loc1, loc2, time_h);
+		this.setTime_h(loc2, loc1, time_h);
+	}
+
+	public Double getTime_h(N from, N to) {
+		return this.od2time_h.get(new Tuple<>(from, to));
+	}
+
+	// -------------------- UTILITIES --------------------
+
+	public RoundTrip<N> createInitialRoundTrip(N node, Integer departure) {
+		if (node == null) {
+			node = this.locationsView.get(this.getRandom().nextInt(this.locationsView.size()));
+		}
+		if (departure == null) {
+			departure = this.getRandom().nextInt(this.timeBinCnt);
+		}
+		var result = new RoundTrip<N>(new ArrayList<>(Arrays.asList(node)), new ArrayList<>(Arrays.asList(departure)));
+		result.setEpisodes(this.getOrCreateSimulator().simulate(result));
+		return result;
+	}
+
+	public MultiRoundTrip<N> createInitialMultiRoundTrip(N node, Integer departure, int numberOfRoundTrips) {
+		MultiRoundTrip<N> result = new MultiRoundTrip<>(numberOfRoundTrips);
+		for (int i = 0; i < numberOfRoundTrips; i++) {
+			result.setRoundTripAndUpdateSummaries(i, this.createInitialRoundTrip(node, departure));
+		}
+		return result;
 	}
 
 }

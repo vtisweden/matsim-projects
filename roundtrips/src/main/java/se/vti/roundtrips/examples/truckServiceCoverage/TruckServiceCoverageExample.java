@@ -19,9 +19,6 @@
  */
 package se.vti.roundtrips.examples.truckServiceCoverage;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import se.vti.roundtrips.common.Scenario;
 import se.vti.roundtrips.logging.SamplingWeightLogger;
 import se.vti.roundtrips.logging.multiple.SizeDistributionLogger;
@@ -32,8 +29,6 @@ import se.vti.roundtrips.samplingweights.SingleToMultiWeight;
 import se.vti.roundtrips.samplingweights.misc.StrictlyForbidShortStays;
 import se.vti.roundtrips.samplingweights.misc.StrictlyPeriodicSchedule;
 import se.vti.roundtrips.samplingweights.priors.MaximumEntropyPriorFactory;
-import se.vti.roundtrips.simulator.DefaultSimulator;
-import se.vti.roundtrips.single.RoundTrip;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
@@ -91,7 +86,7 @@ class TruckServiceCoverageExample {
 		for (int row = 0; row < gridSize; row++) {
 			for (int col = 0; col < gridSize; col++) {
 				nodes[row][col] = new GridNode(row, col);
-				scenario.addLocation(nodes[row][col]);
+				scenario.addNode(nodes[row][col]);
 			}
 		}
 		GridNode depot = nodes[0][0];
@@ -134,20 +129,10 @@ class TruckServiceCoverageExample {
 		 * Ready to set up the sampling machinery.
 		 */
 
-		// To evaluate realized realized movement pattern through the system.
-		var simulator = new DefaultSimulator<>(scenario);
+		var algo = new MHAlgorithm<>(new MultiRoundTripProposal<>(scenario), weights, scenario.getRandom());
 
 		// Initialize all trucks to just stay at the depot.
-		MultiRoundTrip<GridNode> initialRoundTrips = new MultiRoundTrip<>(fleetSize);
-		for (int n = 0; n < fleetSize; n++) {
-			var roundTrip = new RoundTrip<>(new ArrayList<>(Arrays.asList(nodes[0][0])),
-					new ArrayList<>(Arrays.asList(0)));
-			roundTrip.setEpisodes(simulator.simulate(roundTrip));
-			initialRoundTrips.setRoundTripAndUpdateSummaries(n, roundTrip);
-		}
-
-		var algo = new MHAlgorithm<>(new MultiRoundTripProposal<>(scenario, simulator), weights, scenario.getRandom());
-		algo.setInitialState(initialRoundTrips);
+		algo.setInitialState(scenario.createInitialMultiRoundTrip(nodes[0][0], 0, fleetSize));
 
 		// Log summary statistics over sampling iterations. See code for interpretation
 		algo.addStateProcessor(new SamplingWeightLogger<>(totalIterations / 100, weights,

@@ -25,8 +25,6 @@ import java.util.Random;
 
 import se.vti.roundtrips.common.Node;
 import se.vti.roundtrips.common.Scenario;
-import se.vti.roundtrips.simulator.DefaultSimulator;
-import se.vti.roundtrips.simulator.Simulator;
 import se.vti.utils.misc.metropolishastings.MHProposal;
 import se.vti.utils.misc.metropolishastings.MHTransition;
 
@@ -44,25 +42,21 @@ public class RoundTripProposal<L extends Node> implements MHProposal<RoundTrip<L
 
 	private final Scenario<L> scenario;
 
-	private final Simulator<L> simulator;
-
 	private final List<L> allLocations;
 
 	private final Random rnd;
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTripProposal(RoundTripProposalParameters proposalParams, Scenario<L> scenario,
-			Simulator<L> simulator) {
+	public RoundTripProposal(RoundTripProposalParameters proposalParams, Scenario<L> scenario) {
 		this.proposalParams = proposalParams;
 		this.scenario = scenario;
-		this.simulator = simulator;
-		this.allLocations = scenario.getLocationsView();
+		this.allLocations = scenario.getNodesView();
 		this.rnd = scenario.getRandom();
 	}
 
-	public RoundTripProposal(Scenario<L> scenario, Simulator<L> simulator) {
-		this(new RoundTripProposalParameters(), scenario, simulator);
+	public RoundTripProposal(Scenario<L> scenario) {
+		this(new RoundTripProposalParameters(), scenario);
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -168,7 +162,7 @@ public class RoundTripProposal<L extends Node> implements MHProposal<RoundTrip<L
 			to.setDepartureAndEnsureOrdering(whereToFlip, newDptTime);
 		}
 
-		to.setEpisodes(this.simulator.simulate(to));
+		to.setEpisodes(this.scenario.getOrCreateSimulator().simulate(to));
 		final RoundTripTransitionKernel<L> bwdTransitionKernel = new RoundTripTransitionKernel<>(to, this.scenario,
 				this.proposalParams);
 

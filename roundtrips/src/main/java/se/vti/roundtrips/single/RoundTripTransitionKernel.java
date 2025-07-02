@@ -75,7 +75,7 @@ class RoundTripTransitionKernel<L extends Node> {
 		assert (Math.abs(
 				1.0 - this.insertProba - this.removeProba - this.flipLocationProba - this.flipDepTimeProba) < 1e-8);
 
-		this.transitionProbaGivenFlipLocation = 1.0 / from.size() / (scenario.getLocationCnt() - 1);
+		this.transitionProbaGivenFlipLocation = 1.0 / from.size() / (scenario.getNodesCnt() - 1);
 		this.transitionProbaGivenFlipDepTime = 1.0 / from.size() / (scenario.getTimeBinCnt() - from.size());
 	}
 
@@ -102,7 +102,7 @@ class RoundTripTransitionKernel<L extends Node> {
 
 	private double transitionProbaGivenInsert(RoundTrip<?> to) {
 		return this.numberOfInsertionPoints(this.from.getLocationsView(), to.getLocationsView())
-				/ (this.from.size() + 1.0) / this.scenario.getLocationCnt()
+				/ (this.from.size() + 1.0) / this.scenario.getNodesCnt()
 				/ (this.scenario.getTimeBinCnt() - this.from.size());
 	}
 

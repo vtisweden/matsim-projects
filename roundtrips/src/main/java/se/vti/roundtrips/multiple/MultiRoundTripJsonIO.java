@@ -40,8 +40,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import se.vti.roundtrips.common.Node;
 import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.common.Node;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripJsonIO;
 
@@ -113,9 +113,9 @@ public class MultiRoundTripJsonIO {
 
 	public static void main(String[] args) throws JsonGenerationException, JsonMappingException, IOException {
 		Scenario<Node> scenario = new Scenario<>();
-		Node home = scenario.getOrCreateLocationWithSameName(new Node("home"));
-		Node work = scenario.getOrCreateLocationWithSameName(new Node("work"));
-		Node school = scenario.getOrCreateLocationWithSameName(new Node("school"));
+		Node home = scenario.addNode(new Node("home"));
+		Node work = scenario.addNode(new Node("work"));
+		Node school = scenario.addNode(new Node("school"));
 		MultiRoundTrip<Node> multiRoundTrip = new MultiRoundTrip<>(2);
 		multiRoundTrip.setRoundTripAndUpdateSummaries(0,
 				new RoundTrip<>(Arrays.asList(home, work), Arrays.asList(7, 18)));
