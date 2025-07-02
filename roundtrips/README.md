@@ -9,7 +9,7 @@ Published under GPL, see [LICENSE](LICENSE), [COPYING](COPYING), [WARRANTY](WARR
 	<dependency>
 		<groupId>se.vti.matsim-projects</groupId>
 		<artifactId>roundtrips</artifactId>
-		<version>0.1.3</version>
+		<version>0.1.5</version>
 	</dependency>
 
 	
