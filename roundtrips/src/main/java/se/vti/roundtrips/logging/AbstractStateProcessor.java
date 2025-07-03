@@ -65,7 +65,6 @@ public abstract class AbstractStateProcessor<X> implements MHStateProcessor<X> {
 
 	@Override
 	public void end() {
-
 	}
 
 	public abstract void processStateHook(X state);

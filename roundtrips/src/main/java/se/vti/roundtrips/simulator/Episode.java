@@ -156,6 +156,14 @@ public class Episode {
 		return overlap_h;
 	}
 
+	public double overlap_h(Tuple<Double, Double> interval, double periodLength_h) {
+		double overlap_h = 0.0;
+		for (Tuple<Double, Double> myInterval : this.effectiveIntervals(periodLength_h)) {
+			overlap_h += MathHelpers.overlap(myInterval.getA(), myInterval.getB(), interval.getA(), interval.getB());
+		}
+		return overlap_h;
+	}
+
 	public synchronized static List<Tuple<Double, Double>> effectiveIntervals(double duration_h, double end_h,
 			double periodLength_h) {
 		Episode e = new Episode();

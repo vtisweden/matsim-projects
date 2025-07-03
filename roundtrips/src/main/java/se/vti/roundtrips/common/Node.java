@@ -19,6 +19,12 @@
  */
 package se.vti.roundtrips.common;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * 
  * @author GunnarF
@@ -26,19 +32,69 @@ package se.vti.roundtrips.common;
  */
 public class Node {
 
+	// -------------------- CONSTANTS --------------------
+
 	private final String name;
 
-	public Node(String name) {
-		this.name = name;
+	private final String basicName;
+
+	private final List<? extends Enum<?>> labels;
+
+	// -------------------- CONSTRUCTION --------------------
+
+	public Node(String basicName, List<? extends Enum<?>> labels) {
+		this.basicName = basicName;
+		if (labels == null) {
+			this.name = basicName;
+			this.labels = null;
+		} else {
+			this.name = basicName + "[" + labels.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "]";
+			this.labels = Collections.unmodifiableList(new ArrayList<>(labels));
+		}
 	}
+
+	public Node(String basicName, Enum<?>... labels) {
+		this(basicName, Arrays.asList(labels));
+	}
+
+	// -------------------- IMPLEMENTATION --------------------
 
 	public String getName() {
 		return this.name;
 	}
 
+	public String getBasicName() {
+		return this.basicName;
+	}
+
+	public List<? extends Enum<?>> getLabels() {
+		return this.labels;
+	}
+
 	@Override
 	public String toString() {
 		return this.name;
+	}
+
+	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
+
+	public static void main(String[] args) {
+		System.out.println("STARTED ...");
+		
+		enum Activity {
+			home, work, shop, leisure
+		}
+		enum DepartureMode {
+			car, pt, bike, walk
+		}
+		Node node = new Node("n1", Activity.work, DepartureMode.pt);
+		System.out.println(node);
+		System.out.println(node.getLabels());
+		System.out.println(node.getLabels().equals(Arrays.asList(Activity.work, DepartureMode.car)));
+		System.out.println((Activity) node.getLabels().get(0));
+		System.out.println((DepartureMode) node.getLabels().get(1));
+		
+		System.out.println("... DONE");
 	}
 
 }
