@@ -45,7 +45,7 @@ public class DefaultMoveSimulator<L extends Node> implements MoveSimulator<L> {
 	public MoveEpisode<L> newMoveEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
 			SimulatorState initialState) {
 		L origin = roundTrip.getLocation(roundTripIndex);
-		L destination = roundTrip.getSuccessorLocation(roundTripIndex);
+		L destination = roundTrip.getSuccessorNode(roundTripIndex);
 
 		final MoveEpisode<L> move = new MoveEpisode<>(origin, destination);
 		move.setInitialState(initialState);

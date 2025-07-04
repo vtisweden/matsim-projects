@@ -49,7 +49,7 @@ class MissionLogger extends ToFileLogger<MultiRoundTrip<GridNode>> {
 		for (var roundTrip : state) {
 			if (roundTrip.size() < 2) {
 				unused++;
-			} else if (roundTrip.getLocationsView().contains(this.depot)) {
+			} else if (roundTrip.getNodesView().contains(this.depot)) {
 				goingThroughDepot++;
 			} else {
 				neverAtDepot++;

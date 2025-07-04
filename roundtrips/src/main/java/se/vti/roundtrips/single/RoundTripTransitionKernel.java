@@ -101,7 +101,7 @@ class RoundTripTransitionKernel<L extends Node> {
 	}
 
 	private double transitionProbaGivenInsert(RoundTrip<?> to) {
-		return this.numberOfInsertionPoints(this.from.getLocationsView(), to.getLocationsView())
+		return this.numberOfInsertionPoints(this.from.getNodesView(), to.getNodesView())
 				/ (this.from.size() + 1.0) / this.scenario.getNodesCnt()
 				/ (this.scenario.getTimeBinCnt() - this.from.size());
 	}
@@ -124,7 +124,7 @@ class RoundTripTransitionKernel<L extends Node> {
 	}
 
 	private double transitionProbaGivenRemove(RoundTrip<?> to) {
-		double result = this.numberOfRemovalPoints(this.from.getLocationsView(), to.getLocationsView())
+		double result = this.numberOfRemovalPoints(this.from.getNodesView(), to.getNodesView())
 				/ this.from.size() / this.from.size();
 		assert (result > 0);
 		return result;
@@ -136,7 +136,7 @@ class RoundTripTransitionKernel<L extends Node> {
 			return Action.INS;
 		} else if (this.from.size() - 1 == to.size()) {
 			return Action.REM;
-		} else if (!this.from.getLocationsView().equals(to.getLocationsView())) {
+		} else if (!this.from.getNodesView().equals(to.getNodesView())) {
 			return Action.FLIP_LOC;
 		} else if (!this.from.getDeparturesView().equals(to.getDeparturesView())) {
 			return Action.FLIP_DEP;
@@ -205,14 +205,14 @@ class RoundTripTransitionKernel<L extends Node> {
 
 		if (this.from.size() + 1 == to.size()) {
 
-			if (this.locationInsertWasPossible(this.from.getLocationsView(), to.getLocationsView())
+			if (this.locationInsertWasPossible(this.from.getNodesView(), to.getNodesView())
 					&& this.departuresInsertWasPossible(this.from.getDeparturesView(), to.getDeparturesView())) {
 				return this.insertProba * this.transitionProbaGivenInsert(to);
 			}
 
 		} else if (this.from.size() - 1 == to.size()) {
 
-			if (this.locationInsertWasPossible(to.getLocationsView(), this.from.getLocationsView())
+			if (this.locationInsertWasPossible(to.getNodesView(), this.from.getNodesView())
 					&& this.departuresInsertWasPossible(to.getDeparturesView(), this.from.getDeparturesView())) {
 				return this.removeProba * this.transitionProbaGivenRemove(to);
 			}
@@ -221,11 +221,11 @@ class RoundTripTransitionKernel<L extends Node> {
 
 			if (this.from.getDeparturesView().equals(to.getDeparturesView())) {
 
-				if (this.locationFlipWasPossible(this.from.getLocationsView(), to.getLocationsView())) {
+				if (this.locationFlipWasPossible(this.from.getNodesView(), to.getNodesView())) {
 					return this.flipLocationProba * this.transitionProbaGivenFlipLocation;
 				}
 
-			} else if (this.from.getLocationsView().equals(to.getLocationsView())) {
+			} else if (this.from.getNodesView().equals(to.getNodesView())) {
 
 				if (this.departureFlipWasPossible(this.from.getDeparturesView(), to.getDeparturesView())) {
 					return this.flipDepTimeProba * this.transitionProbaGivenFlipDepTime;
@@ -246,7 +246,7 @@ class RoundTripTransitionKernel<L extends Node> {
 		} else if (this.from.size() - 1 == to.size()) {
 			assert (this.removeProba * this.transitionProbaGivenRemove(to) > 0);
 			result = this.removeProba * this.transitionProbaGivenRemove(to);
-		} else if (!this.from.getLocationsView().equals(to.getLocationsView())) {
+		} else if (!this.from.getNodesView().equals(to.getNodesView())) {
 			assert (this.flipLocationProba * this.transitionProbaGivenFlipLocation > 0);
 			result = this.flipLocationProba * this.transitionProbaGivenFlipLocation;
 		} else if (!this.from.getDeparturesView().equals(to.getDeparturesView())) {

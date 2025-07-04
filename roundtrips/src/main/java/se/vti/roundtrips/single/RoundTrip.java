@@ -31,10 +31,10 @@ import se.vti.roundtrips.simulator.Episode;
  * 
  * @author GunnarF
  *
- * @param <L> the location type
+ * @param <N> the location type
  * 
  */
-public class RoundTrip<L extends Node> {
+public class RoundTrip<N extends Node> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -42,7 +42,7 @@ public class RoundTrip<L extends Node> {
 
 	// -------------------- MEMBERS --------------------
 
-	private List<L> locations;
+	private List<N> nodes;
 
 	private List<Integer> departures;
 
@@ -50,14 +50,14 @@ public class RoundTrip<L extends Node> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTrip(List<L> locations, List<Integer> departures, Object attributes) {
-		this.locations = locations;
+	public RoundTrip(List<N> nodes, List<Integer> departures, Object attributes) {
+		this.nodes = nodes;
 		this.departures = departures;
 		this.attributes = attributes;
 	}
 
-	public RoundTrip(List<L> locations, List<Integer> departures) {
-		this(locations, departures, null);
+	public RoundTrip(List<N> nodes, List<Integer> departures) {
+		this(nodes, departures, null);
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -85,27 +85,27 @@ public class RoundTrip<L extends Node> {
 	}
 
 	public int size() {
-		return this.locations.size();
+		return this.nodes.size();
 	}
 
-	public L getPredecessorLocation(int i) {
-		return this.locations.get(this.predecessorIndex(i));
+	public N getPredecessorNode(int i) {
+		return this.nodes.get(this.predecessorIndex(i));
 	}
 
-	public L getLocation(int i) {
-		return this.locations.get(i);
+	public N getLocation(int i) {
+		return this.nodes.get(i);
 	}
 
-	public L getSuccessorLocation(int i) {
-		return this.locations.get(this.successorIndex(i));
+	public N getSuccessorNode(int i) {
+		return this.nodes.get(this.successorIndex(i));
 	}
 
-	public List<L> getLocationsView() {
-		return Collections.unmodifiableList(this.locations);
+	public List<N> getNodesView() {
+		return Collections.unmodifiableList(this.nodes);
 	}
 
-	public void setLocation(int i, L location) {
-		this.locations.set(i, location);
+	public void setNode(int i, N node) {
+		this.nodes.set(i, node);
 	}
 
 	public void setDepartureAndEnsureOrdering(int i, Integer departureBin) {
@@ -129,14 +129,14 @@ public class RoundTrip<L extends Node> {
 		return Collections.unmodifiableList(this.departures);
 	}
 
-	public void addAndEnsureSortedDepartures(int i, L location, Integer departureBin) {
-		this.locations.add(i, location);
+	public void addAndEnsureSortedDepartures(int i, N node, Integer departureBin) {
+		this.nodes.add(i, node);
 		this.departures.add(i, departureBin);
 		Collections.sort(this.departures);
 	}
 
-	public void remove(int locationIndex, int departureIndex) {
-		this.locations.remove(locationIndex);
+	public void remove(int nodeIndex, int departureIndex) {
+		this.nodes.remove(nodeIndex);
 		this.departures.remove(departureIndex);
 	}
 
@@ -144,8 +144,8 @@ public class RoundTrip<L extends Node> {
 		this.remove(i, i);
 	}
 
-	public ArrayList<L> cloneLocations() {
-		return new ArrayList<>(this.locations);
+	public ArrayList<N> cloneNodes() {
+		return new ArrayList<>(this.nodes);
 	}
 
 	public ArrayList<Integer> cloneDepartures() {
@@ -161,7 +161,7 @@ public class RoundTrip<L extends Node> {
 	}
 	
 	// TODO NEW
-	public void cloneEpisodes(RoundTrip<L> other) {
+	public void cloneEpisodes(RoundTrip<N> other) {
 		// Deliberately not checking for this.episodes==null, should fail clearly.
 		this.episodes = new ArrayList<>(other.episodes.size());
 		for (Episode episode : other.episodes) {
@@ -172,10 +172,10 @@ public class RoundTrip<L extends Node> {
 	// -------------------- OVERRIDING OF Object --------------------
 
 	@Override
-	public RoundTrip<L> clone() {
+	public RoundTrip<N> clone() {
 		// TODO for this to work, attributes have to be immutable, as they are shared by
 		// round trips
-		final RoundTrip<L> result = new RoundTrip<>(this.cloneLocations(), this.cloneDepartures(), this.attributes);
+		final RoundTrip<N> result = new RoundTrip<>(this.cloneNodes(), this.cloneDepartures(), this.attributes);
 		if (this.episodes != null) {
 			result.cloneEpisodes(this);
 		}
@@ -186,7 +186,7 @@ public class RoundTrip<L extends Node> {
 	public boolean equals(Object other) {
 		if (other instanceof RoundTrip) {
 			RoundTrip<?> otherRoundTrip = (RoundTrip<?>) other;
-			return this.locations.equals(otherRoundTrip.locations) && this.departures.equals(otherRoundTrip.departures);
+			return this.nodes.equals(otherRoundTrip.nodes) && this.departures.equals(otherRoundTrip.departures);
 		} else {
 			return false;
 		}
@@ -194,12 +194,12 @@ public class RoundTrip<L extends Node> {
 
 	@Override
 	public int hashCode() {
-		return this.locations.hashCode() + 31 * this.departures.hashCode();
+		return this.nodes.hashCode() + 31 * this.departures.hashCode();
 	}
 
 	@Override
 	public String toString() {
-		return "locs[" + this.locations.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],bins["
+		return "nodes[" + this.nodes.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],bins["
 				+ this.departures.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "]";
 	}
 }

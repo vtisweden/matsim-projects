@@ -57,7 +57,7 @@ public class RoundTripJsonIO {
 			gen.writeStartObject();
 			gen.writeFieldName("nodes");
 			gen.writeStartArray();
-			for (Node location : value.getLocationsView()) {
+			for (Node location : value.getNodesView()) {
 				gen.writeString(location.getName());
 			}
 			gen.writeEndArray();

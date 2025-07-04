@@ -61,7 +61,7 @@ public class SizeDistributionLogger<N extends Node> extends ToFileLogger<MultiRo
 			} else {
 				int size = 0;
 				for (int i = 0; i < roundTrip.size(); i++) {
-					if (!roundTrip.getLocation(i).equals(roundTrip.getSuccessorLocation(i))) {
+					if (!roundTrip.getLocation(i).equals(roundTrip.getSuccessorNode(i))) {
 						size++;
 					}
 				}
