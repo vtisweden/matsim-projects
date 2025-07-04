@@ -55,9 +55,13 @@ public class MultiRoundTrip<L extends Node> implements Iterable<RoundTrip<L>> {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public final void setRoundTripAndUpdateSummaries(int i, RoundTrip<L> roundTrip) {		
+	public final void setRoundTripAndUpdateSummaries(int i, RoundTrip<L> roundTrip) {
 		if (roundTrip == this.getRoundTrip(i)) {
 			return;
+		}
+		if ((roundTrip != null) && (i != roundTrip.getIndex())) {
+			throw new RuntimeException(
+					"Trying to add RoundTrip #" + i + ", but added RoundTrip has index " + roundTrip.getIndex());
 		}
 		for (MultiRoundTripSummary<L> summaryStats : this.class2summary.values()) {
 			summaryStats.update(i, this.getRoundTrip(i), roundTrip);

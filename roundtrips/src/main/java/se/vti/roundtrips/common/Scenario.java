@@ -171,22 +171,27 @@ public class Scenario<N extends Node> {
 
 	// -------------------- UTILITIES --------------------
 
-	public RoundTrip<N> createInitialRoundTrip(N node, Integer departure) {
+	private RoundTrip<N> createInitialRoundTrip(int index, N node, Integer departure) {
 		if (node == null) {
 			node = this.locationsView.get(this.getRandom().nextInt(this.locationsView.size()));
 		}
 		if (departure == null) {
 			departure = this.getRandom().nextInt(this.timeBinCnt);
 		}
-		var result = new RoundTrip<N>(new ArrayList<>(Arrays.asList(node)), new ArrayList<>(Arrays.asList(departure)));
+		var result = new RoundTrip<N>(index, new ArrayList<>(Arrays.asList(node)),
+				new ArrayList<>(Arrays.asList(departure)));
 		result.setEpisodes(this.getOrCreateSimulator().simulate(result));
 		return result;
+	}
+
+	public RoundTrip<N> createInitialRoundTrip(N node, Integer departure) {
+		return this.createInitialRoundTrip(0, node, departure);
 	}
 
 	public MultiRoundTrip<N> createInitialMultiRoundTrip(N node, Integer departure, int numberOfRoundTrips) {
 		MultiRoundTrip<N> result = new MultiRoundTrip<>(numberOfRoundTrips);
 		for (int i = 0; i < numberOfRoundTrips; i++) {
-			result.setRoundTripAndUpdateSummaries(i, this.createInitialRoundTrip(node, departure));
+			result.setRoundTripAndUpdateSummaries(i, this.createInitialRoundTrip(i, node, departure));
 		}
 		return result;
 	}

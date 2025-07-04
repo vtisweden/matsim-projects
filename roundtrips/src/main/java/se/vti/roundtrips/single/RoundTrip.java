@@ -38,7 +38,9 @@ public class RoundTrip<N extends Node> {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final Object attributes;
+	private final int index;
+
+//	private final Object attributes;
 
 	// -------------------- MEMBERS --------------------
 
@@ -50,15 +52,16 @@ public class RoundTrip<N extends Node> {
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public RoundTrip(List<N> nodes, List<Integer> departures, Object attributes) {
+	public RoundTrip(int index, List<N> nodes, List<Integer> departures) {
+		this.index = index;
 		this.nodes = nodes;
 		this.departures = departures;
-		this.attributes = attributes;
+//		this.attributes = attributes;
 	}
 
-	public RoundTrip(List<N> nodes, List<Integer> departures) {
-		this(nodes, departures, null);
-	}
+//	public RoundTrip(List<N> nodes, List<Integer> departures) {
+//		this(0, nodes, departures);
+//	}
 
 	// -------------------- INTERNALS --------------------
 
@@ -80,9 +83,13 @@ public class RoundTrip<N extends Node> {
 
 	// -------------------- IMPLEMENTATION --------------------
 
-	public Object getAttributes() {
-		return this.attributes;
+	public int getIndex() {
+		return this.index;
 	}
+
+//	public Object getAttributes() {
+//		return this.attributes;
+//	}
 
 	public int size() {
 		return this.nodes.size();
@@ -159,8 +166,7 @@ public class RoundTrip<N extends Node> {
 	public void setEpisodes(List<Episode> episodes) {
 		this.episodes = episodes;
 	}
-	
-	// TODO NEW
+
 	public void cloneEpisodes(RoundTrip<N> other) {
 		// Deliberately not checking for this.episodes==null, should fail clearly.
 		this.episodes = new ArrayList<>(other.episodes.size());
@@ -168,14 +174,14 @@ public class RoundTrip<N extends Node> {
 			this.episodes.add(episode.clone());
 		}
 	}
-	
+
 	// -------------------- OVERRIDING OF Object --------------------
 
 	@Override
 	public RoundTrip<N> clone() {
 		// TODO for this to work, attributes have to be immutable, as they are shared by
 		// round trips
-		final RoundTrip<N> result = new RoundTrip<>(this.cloneNodes(), this.cloneDepartures(), this.attributes);
+		final RoundTrip<N> result = new RoundTrip<>(this.index, this.cloneNodes(), this.cloneDepartures());
 		if (this.episodes != null) {
 			result.cloneEpisodes(this);
 		}
@@ -184,22 +190,26 @@ public class RoundTrip<N extends Node> {
 
 	@Override
 	public boolean equals(Object other) {
-		if (other instanceof RoundTrip) {
-			RoundTrip<?> otherRoundTrip = (RoundTrip<?>) other;
-			return this.nodes.equals(otherRoundTrip.nodes) && this.departures.equals(otherRoundTrip.departures);
-		} else {
-			return false;
-		}
+		throw new UnsupportedOperationException("Don't want to use this method, talk to Gunnar.");
+//		if (other instanceof RoundTrip) {
+//			RoundTrip<?> otherRoundTrip = (RoundTrip<?>) other;
+//			return (this.index == otherRoundTrip.index) && this.nodes.equals(otherRoundTrip.nodes)
+//					&& this.departures.equals(otherRoundTrip.departures);
+//		} else {
+//			return false;
+//		}
 	}
 
 	@Override
 	public int hashCode() {
-		return this.nodes.hashCode() + 31 * this.departures.hashCode();
+		throw new UnsupportedOperationException("Don't want to use this method, talk to Gunnar.");
+//		return this.nodes.hashCode() + 31 * this.departures.hashCode();
 	}
 
 	@Override
 	public String toString() {
-		return "nodes[" + this.nodes.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],bins["
+		return "index=" + this.index + ",nodes["
+				+ this.nodes.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "],bins["
 				+ this.departures.stream().map(l -> l.toString()).collect(Collectors.joining(",")) + "]";
 	}
 }

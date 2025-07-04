@@ -135,10 +135,11 @@ class ActivityTimeUseExample {
 
 		var algo = new MHAlgorithm<>(new RoundTripProposal<>(scenario), weights, scenario.getRandom());
 
-		var initialRoundTrip = new RoundTrip<>(new ArrayList<>(Arrays.asList(home)), new ArrayList<>(Arrays.asList(0)));
-		initialRoundTrip.setEpisodes(scenario.getOrCreateSimulator().simulate(initialRoundTrip));
+//		var initialRoundTrip = new RoundTrip<>(new ArrayList<>(Arrays.asList(home)), new ArrayList<>(Arrays.asList(0)));
+//		initialRoundTrip.setEpisodes(scenario.getOrCreateSimulator().simulate(initialRoundTrip));
+		var initialRoundTrip = scenario.createInitialRoundTrip(home, 0);
 		algo.setInitialState(initialRoundTrip);
-
+		
 		// Log summary statistics over sampling iterations. See code for interpretation
 		algo.addStateProcessor(new SamplingWeightLogger<>(totalIterations / 100, weights,
 				"./output/activityExpansion/logWeights.log"));

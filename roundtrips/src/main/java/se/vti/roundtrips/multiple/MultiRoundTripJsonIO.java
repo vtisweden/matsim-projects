@@ -118,9 +118,9 @@ public class MultiRoundTripJsonIO {
 		Node school = scenario.addNode(new Node("school"));
 		MultiRoundTrip<Node> multiRoundTrip = new MultiRoundTrip<>(2);
 		multiRoundTrip.setRoundTripAndUpdateSummaries(0,
-				new RoundTrip<>(Arrays.asList(home, work), Arrays.asList(7, 18)));
+				new RoundTrip<>(0, Arrays.asList(home, work), Arrays.asList(7, 18)));
 		multiRoundTrip.setRoundTripAndUpdateSummaries(1,
-				new RoundTrip<>(Arrays.asList(home, school), Arrays.asList(9, 13)));
+				new RoundTrip<>(1, Arrays.asList(home, school), Arrays.asList(9, 13)));
 		writeToFile(multiRoundTrip, "test.json");
 		multiRoundTrip = null;
 		multiRoundTrip = readFromFile(scenario, "test.json");
