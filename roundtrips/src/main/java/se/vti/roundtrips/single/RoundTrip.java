@@ -21,6 +21,7 @@ package se.vti.roundtrips.single;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,7 @@ import se.vti.roundtrips.simulator.Episode;
  * @param <N> the location type
  * 
  */
-public class RoundTrip<N extends Node> {
+public class RoundTrip<N extends Node> implements Iterable<RoundTrip<N>> {
 
 	// -------------------- CONSTANTS --------------------
 
@@ -173,6 +174,13 @@ public class RoundTrip<N extends Node> {
 		for (Episode episode : other.episodes) {
 			this.episodes.add(episode.clone());
 		}
+	}
+
+	// -------------------- IMPLEMENTATION OF Iterable --------------------
+	
+	@Override
+	public Iterator<RoundTrip<N>> iterator() {
+		return Collections.singleton(this).iterator();
 	}
 
 	// -------------------- OVERRIDING OF Object --------------------
