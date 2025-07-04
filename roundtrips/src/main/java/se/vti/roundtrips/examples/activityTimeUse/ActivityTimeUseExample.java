@@ -19,14 +19,12 @@
  */
 package se.vti.roundtrips.examples.activityTimeUse;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import se.vti.roundtrips.common.Scenario;
 import se.vti.roundtrips.logging.SamplingWeightLogger;
 import se.vti.roundtrips.samplingweights.SamplingWeights;
-import se.vti.roundtrips.samplingweights.misc.LogarithmicTimeUse;
 import se.vti.roundtrips.samplingweights.misc.StrictlyPeriodicSchedule;
+import se.vti.roundtrips.samplingweights.misc.timeUse.LogarithmicSingleDayTimeUse;
+import se.vti.roundtrips.samplingweights.misc.timeUse.LogarithmicTimeUse;
 import se.vti.roundtrips.samplingweights.priors.UniformPrior;
 import se.vti.roundtrips.single.RoundTrip;
 import se.vti.roundtrips.single.RoundTripProposal;
@@ -111,7 +109,7 @@ class ActivityTimeUseExample {
 
 		// Sample round trips according to time use assumptions. See LogarithmicTimeUse
 		// implementation for details.
-		LogarithmicTimeUse<GridNodeWithActivity> timeUse = new LogarithmicTimeUse<>();
+		LogarithmicSingleDayTimeUse<GridNodeWithActivity> timeUse = new LogarithmicSingleDayTimeUse<>();
 		LogarithmicTimeUse.Component homeComponent = new LogarithmicTimeUse.Component(12.0, 24.0)
 				.setMinEnBlockDurationAtLeastOnce_h(8.0);
 		LogarithmicTimeUse.Component workComponent = new LogarithmicTimeUse.Component(9.0, 24.0)
@@ -139,7 +137,7 @@ class ActivityTimeUseExample {
 //		initialRoundTrip.setEpisodes(scenario.getOrCreateSimulator().simulate(initialRoundTrip));
 		var initialRoundTrip = scenario.createInitialRoundTrip(home, 0);
 		algo.setInitialState(initialRoundTrip);
-		
+
 		// Log summary statistics over sampling iterations. See code for interpretation
 		algo.addStateProcessor(new SamplingWeightLogger<>(totalIterations / 100, weights,
 				"./output/activityExpansion/logWeights.log"));

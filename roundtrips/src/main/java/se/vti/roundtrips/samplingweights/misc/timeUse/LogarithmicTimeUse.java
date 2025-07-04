@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.samplingweights.misc;
+package se.vti.roundtrips.samplingweights.misc.timeUse;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 import se.vti.roundtrips.common.Node;
-import se.vti.roundtrips.samplingweights.SamplingWeight;
 import se.vti.roundtrips.simulator.Episode;
 import se.vti.roundtrips.simulator.StayEpisode;
 import se.vti.roundtrips.single.RoundTrip;
@@ -37,14 +37,14 @@ import se.vti.utils.misc.Tuple;
  * @author GunnarF
  *
  */
-public class LogarithmicTimeUse<N extends Node> implements SamplingWeight<RoundTrip<N>> {
+public class LogarithmicTimeUse<N extends Node> {
 
 	public static class Component {
 
 		private final double targetDuration_h;
 		private final double period_h;
 
-		private Tuple<Double, Double> openInterval_h;
+		private List<Tuple<Double, Double>> openInterval_h;
 		private double minEnBlockDurationAtLeastOnce_h;
 		private double minEnBlockDurationEachTime_h;
 
@@ -54,13 +54,18 @@ public class LogarithmicTimeUse<N extends Node> implements SamplingWeight<RoundT
 		public Component(double targetDuration_h, double period_h) {
 			this.targetDuration_h = targetDuration_h;
 			this.period_h = period_h;
-			this.openInterval_h = new Tuple<>(0.0, period_h);
+			this.openInterval_h = Arrays.asList(new Tuple<>(0.0, period_h));
 			this.minEnBlockDurationAtLeastOnce_h = 0.0;
 			this.minEnBlockDurationEachTime_h = 0.0;
 		}
 
 		public Component setOpeningTimes_h(double start_h, double end_h) {
-			this.openInterval_h = new Tuple<>(start_h, end_h);
+			if (start_h < end_h) {
+				this.openInterval_h = Arrays.asList(new Tuple<>(start_h, end_h));
+			} else {
+				// wraparound
+				this.openInterval_h = Arrays.asList(new Tuple<>(0.0, end_h), new Tuple<>(start_h, this.period_h));				
+			}
 			return this;
 		}
 
@@ -87,7 +92,7 @@ public class LogarithmicTimeUse<N extends Node> implements SamplingWeight<RoundT
 			}
 		}
 
-		private double getEffectiveDuration_h() {
+		public double getEffectiveDuration_h() {
 			return this.valid ? this.effectiveDurationSum_h : 0.0;
 		}
 
@@ -95,31 +100,37 @@ public class LogarithmicTimeUse<N extends Node> implements SamplingWeight<RoundT
 
 	private final double minDur_h = 0.001;
 
-	private final Map<N, Component> node2component = new LinkedHashMap<>();
+	private final Map<Tuple<N, Integer>, Component> nodeAndIndex2component = new LinkedHashMap<>();
 
 	private final Set<Component> components = new LinkedHashSet<>();
 
-	public LogarithmicTimeUse() {
+	LogarithmicTimeUse() {
 	}
 
-	public void assignComponent(N node, Component component) {
-		this.node2component.put(node, component);
+	void assignComponent(Component component, N node, int index) {
+		this.nodeAndIndex2component.put(new Tuple<>(node, index), component);
 		this.components.add(component);
 	}
 
-	@Override
-	public double logWeight(RoundTrip<N> roundTrip) {
+	public void update(Iterable<RoundTrip<N>> roundTrips) {
 		for (var component : this.components) {
 			component.resetEffectiveDuration_h();
 		}
-		List<Episode> episodes = roundTrip.getEpisodes();
-		for (int i = 0; i < episodes.size(); i += 2) {
-			StayEpisode<?> stay = (StayEpisode<?>) episodes.get(i);
-			Component component = this.node2component.get(stay.getLocation());
-			if (component != null) {
-				component.update(stay);
+		for (RoundTrip<N> roundTrip : roundTrips) {
+			List<Episode> episodes = roundTrip.getEpisodes();
+			for (int i = 0; i < episodes.size(); i += 2) {
+				StayEpisode<?> stay = (StayEpisode<?>) episodes.get(i);
+				Component component = this.nodeAndIndex2component
+						.get(new Tuple<>(stay.getLocation(), roundTrip.getIndex()));
+				if (component != null) {
+					component.update(stay);
+				}
 			}
 		}
+	}
+
+	double computeLogWeight(Iterable<RoundTrip<N>> roundTrips) {
+		this.update(roundTrips);
 		double result = 0.0;
 		for (var component : this.components) {
 			result += component.targetDuration_h
@@ -127,5 +138,4 @@ public class LogarithmicTimeUse<N extends Node> implements SamplingWeight<RoundT
 		}
 		return result;
 	}
-
 }

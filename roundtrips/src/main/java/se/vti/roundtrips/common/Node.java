@@ -44,7 +44,7 @@ public class Node {
 
 	public Node(String basicName, List<? extends Enum<?>> labels) {
 		this.basicName = basicName;
-		if (labels == null) {
+		if (labels == null || labels.size() == 0) {
 			this.name = basicName;
 			this.labels = null;
 		} else {
@@ -80,7 +80,7 @@ public class Node {
 
 	public static void main(String[] args) {
 		System.out.println("STARTED ...");
-		
+
 		enum Activity {
 			home, work, shop, leisure
 		}
@@ -93,7 +93,7 @@ public class Node {
 		System.out.println(node.getLabels().equals(Arrays.asList(Activity.work, DepartureMode.car)));
 		System.out.println((Activity) node.getLabels().get(0));
 		System.out.println((DepartureMode) node.getLabels().get(1));
-		
+
 		System.out.println("... DONE");
 	}
 
