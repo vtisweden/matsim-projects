@@ -107,9 +107,9 @@ class ActivityTimeUseExample {
 		// Enforce that every single round trip is completed within the day.
 		weights.add(new StrictlyPeriodicSchedule<GridNodeWithActivity>(scenario.getPeriodLength_h()));
 
-		// TODO enforce that all round trips start and end at home!
-		
-		
+		// Enforce that all round trips start and end their unique home location.
+		weights.add(new StrictlyEnforceUniqueHomeLocation());
+
 		// Sample round trips according to time use assumptions. See LogarithmicTimeUse
 		// implementation for details.
 		LogarithmicSingleDayTimeUse<GridNodeWithActivity> timeUse = new LogarithmicSingleDayTimeUse<>();

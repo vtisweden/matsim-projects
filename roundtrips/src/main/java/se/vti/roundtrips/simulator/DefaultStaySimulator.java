@@ -44,7 +44,7 @@ public class DefaultStaySimulator<L extends Node> implements StaySimulator<L> {
 	@Override
 	public StayEpisode<L> newStayEpisode(RoundTrip<L> roundTrip, int roundTripIndex, double time_h,
 			SimulatorState initialState) {
-		final StayEpisode<L> stay = new StayEpisode<>(roundTrip.getLocation(roundTripIndex));
+		final StayEpisode<L> stay = new StayEpisode<>(roundTrip.getNode(roundTripIndex));
 		stay.setInitialState(initialState);
 
 		stay.setEndTime_h(Math.max(time_h, this.scenario.getBinSize_h() * roundTrip.getDeparture(roundTripIndex)));

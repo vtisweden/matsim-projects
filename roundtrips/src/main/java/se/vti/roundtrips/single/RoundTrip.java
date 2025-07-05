@@ -100,7 +100,7 @@ public class RoundTrip<N extends Node> implements Iterable<RoundTrip<N>> {
 		return this.nodes.get(this.predecessorIndex(i));
 	}
 
-	public N getLocation(int i) {
+	public N getNode(int i) {
 		return this.nodes.get(i);
 	}
 

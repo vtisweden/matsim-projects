@@ -1,5 +1,5 @@
 /**
- * se.vti.roundtrips.examples.truckServiceCoverage
+ * se.vti.roundtrips.examples.travelSurveyExpansion
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,32 +17,31 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.examples.travelSurveyExpansion;
+package se.vti.roundtrips.examples.activityTimeUse;
 
-import se.vti.roundtrips.common.Node;
+import se.vti.roundtrips.samplingweights.SamplingWeight;
+import se.vti.roundtrips.single.RoundTrip;
 
 /**
  * 
  * @author GunnarF
  *
  */
-class GridNodeWithActivity extends Node {
+public class StrictlyEnforceUniqueHomeLocation implements SamplingWeight<RoundTrip<GridNodeWithActivity>> {
 
-	final int row;
-
-	final int column;
-
-	GridNodeWithActivity(int row, int column, Activity activity) {
-		super("(" + row + "," + column + ")", activity);
-		this.row = row;
-		this.column = column;
-	}
-
-	Activity getActivity() {
-		return (Activity) this.getLabels().get(0);
-	}
-
-	int computeGridDistance(GridNodeWithActivity other) {
-		return Math.abs(this.row - other.row) + Math.abs(this.column - other.column);
+	@Override
+	public double logWeight(RoundTrip<GridNodeWithActivity> roundTrip) {
+		GridNodeWithActivity firstNode = roundTrip.getNode(0);
+		if (Activity.home.equals(firstNode.getActivity())) {
+			for (int i = 1; i < roundTrip.size(); i++) {
+				GridNodeWithActivity node = roundTrip.getNode(i);
+				if (Activity.home.equals(node.getActivity()) && !(firstNode.equals(node))) {
+					return Double.NEGATIVE_INFINITY;
+				}
+			}
+			return 0;
+		} else {
+			return Double.NEGATIVE_INFINITY;
+		}
 	}
 }

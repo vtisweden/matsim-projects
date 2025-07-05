@@ -84,7 +84,7 @@ public class DefaultSimulator<L extends Node> implements Simulator<L> {
 	}
 
 	public StayEpisode<L> createHomeOnlyEpisode(RoundTrip<L> roundTrip) {
-		StayEpisode<L> home = new StayEpisode<>(roundTrip.getLocation(0));
+		StayEpisode<L> home = new StayEpisode<>(roundTrip.getNode(0));
 		home.setDuration_h(this.scenario.getPeriodLength_h());
 		home.setEndTime_h(this.scenario.getPeriodLength_h() - 1e-8); // wraparound
 		home.setInitialState(this.createAndInitializeState());

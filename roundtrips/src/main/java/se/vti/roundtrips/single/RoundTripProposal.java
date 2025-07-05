@@ -151,7 +151,7 @@ public class RoundTripProposal<L extends Node> implements MHProposal<RoundTrip<L
 
 			realizedFwdAction = RoundTripTransitionKernel.Action.FLIP_LOC;
 			final int whereToFlip = this.rnd.nextInt(from.size());
-			final L newLocation = this.drawLocationDifferentFrom(from.getLocation(whereToFlip));
+			final L newLocation = this.drawLocationDifferentFrom(from.getNode(whereToFlip));
 			to.setNode(whereToFlip, newLocation);
 
 		} else { // FLIP DEPARTURE TIME

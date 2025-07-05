@@ -19,6 +19,7 @@
  */
 package se.vti.roundtrips.examples.travelSurveyExpansion;
 
+import java.util.Arrays;
 import java.util.List;
 
 import se.vti.roundtrips.multiple.MultiRoundTrip;
@@ -31,26 +32,45 @@ import se.vti.roundtrips.samplingweights.SamplingWeight;
  */
 public class SurveyLogLikelihood implements SamplingWeight<MultiRoundTrip<GridNodeWithActivity>> {
 
-	private final List<SurveyResponse> respondents;
+	private final List<SurveyResponse> responses;
 
 	private final List<Person> syntheticPopulation;
 
-	SurveyLogLikelihood(List<SurveyResponse> respondents, List<Person> syntheticPopulation) {
-		this.respondents = respondents;
+	private final double[][] personLikelihood;
+
+	SurveyLogLikelihood(List<SurveyResponse> responses, List<Person> syntheticPopulation) {
+		this.responses = responses;
 		this.syntheticPopulation = syntheticPopulation;
+
+		this.personLikelihood = new double[responses.size()][syntheticPopulation.size()];
+		for (int responseIndex = 0; responseIndex < responses.size(); responseIndex++) {
+			SurveyResponse response = this.responses.get(responseIndex);
+			for (int personIndex = 0; personIndex < syntheticPopulation.size(); personIndex++) {
+				this.personLikelihood[responseIndex][personIndex] = response
+						.personLikelihood(syntheticPopulation.get(personIndex));
+			}
+//			double sum = Arrays.stream(this.personWeights[responseIndex]).sum();
+//			for (int personIndex = 0; personIndex < syntheticPopulation.size(); personIndex++) {
+//				this.personWeights[responseIndex][personIndex] /= sum;
+//			}
+		}
 	}
 
 	@Override
 	public double logWeight(MultiRoundTrip<GridNodeWithActivity> multiRoundTrip) {
-		double similaritySum = 0.0;
-		for (int syntheticPersonIndex = 0; syntheticPersonIndex < multiRoundTrip.size(); syntheticPersonIndex++) {
-			var syntheticPerson = this.syntheticPopulation.get(syntheticPersonIndex);
-			var simulatedTravel = multiRoundTrip.getRoundTrip(syntheticPersonIndex);
-			for (var response : this.respondents) {
-				similaritySum += response.personSimilarity(syntheticPerson)
-						* response.travelSimilarity(simulatedTravel);
+		double result = 0.0;
+		// This double look is slow. The inner loop could be parallelized.
+		for (int responseIndex = 0; responseIndex < this.responses.size(); responseIndex++) {
+			SurveyResponse response = this.responses.get(responseIndex);
+			double[] weights = this.personLikelihood[responseIndex];
+			double responseLikelihood = 0.0;
+			for (int personIndex = 0; personIndex < this.syntheticPopulation.size(); personIndex++) {
+				responseLikelihood += weights[personIndex]
+						* response.travelLikelihood(multiRoundTrip.getRoundTrip(personIndex));
 			}
+			responseLikelihood /= multiRoundTrip.size();
+			result += Math.log(Math.max(1e-8, responseLikelihood));
 		}
-		return Math.log(Math.max(1e-8, similaritySum));
+		return result;
 	}
 }

@@ -23,14 +23,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.logging.SamplingWeightLogger;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.multiple.MultiRoundTripProposal;
-import se.vti.roundtrips.samplingweights.SamplingWeight;
 import se.vti.roundtrips.samplingweights.SamplingWeights;
 import se.vti.roundtrips.samplingweights.SingleToMultiWeight;
 import se.vti.roundtrips.samplingweights.misc.StrictlyPeriodicSchedule;
 import se.vti.roundtrips.samplingweights.priors.MaximumEntropyPriorFactory;
-import se.vti.roundtrips.single.RoundTrip;
+import se.vti.roundtrips.samplingweights.priors.UniformPrior;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
 /**
@@ -48,7 +48,7 @@ public class TravelSurveyExansionExample {
 
 	void run(long totalIterations) {
 
-		int syntheticPopulationSize = 100;
+		int syntheticPopulationSize = 50;
 
 		int gridSize = 5;
 		double edgeLength_km = 1;
@@ -101,14 +101,10 @@ public class TravelSurveyExansionExample {
 		/*
 		 * Construct the survey
 		 */
-		var teenager = new SurveyResponse(new Person(15), 0, 6, 6, 1.5);
-		var universityStudent = new SurveyResponse(new Person(22), 2, 8, 4, 2);
-		var partTimeWorker = new SurveyResponse(new Person(45), 4, 2, 4, 3);
-		var fullTimeWorker1 = new SurveyResponse(new Person(35), 8, 0, 3, 3);
-		var fullTimeWorker2 = new SurveyResponse(new Person(58), 12, 0, 1, 2);
-		var retiree = new SurveyResponse(new Person(72), 0, 0, 4, 1);
-		var responses = Arrays.asList(teenager, universityStudent, partTimeWorker, fullTimeWorker1, fullTimeWorker2,
-				retiree);
+		var teenager = new SurveyResponse(new Person(15), 0, 6, 6);
+		var worker = new SurveyResponse(new Person(35), 9, 0, 2);
+		var retiree = new SurveyResponse(new Person(72), 0, 0, 4);
+		var responses = Arrays.asList(teenager, worker, retiree);
 
 		/*
 		 * Construct the synthetic population
@@ -127,23 +123,14 @@ public class TravelSurveyExansionExample {
 		var weights = new SamplingWeights<MultiRoundTrip<GridNodeWithActivity>>();
 
 		// Uniformed prior
-		weights.add(new MaximumEntropyPriorFactory<>(scenario).createMultiple(syntheticPopulationSize));
+		weights.add(new SingleToMultiWeight<>(new UniformPrior<>(scenario.getNodesCnt(), scenario.getTimeBinCnt())));
 
 		// Enforce that all round trips are completed within the day.
 		weights.add(new SingleToMultiWeight<>(
 				new StrictlyPeriodicSchedule<GridNodeWithActivity>(scenario.getPeriodLength_h())));
 
-		// Enforce that all round trips start and end at home.
-		weights.add(new SingleToMultiWeight<>(new SamplingWeight<RoundTrip<GridNodeWithActivity>>() {
-			@Override
-			public double logWeight(RoundTrip<GridNodeWithActivity> roundTrip) {
-				if (Activity.HOME.equals(roundTrip.getLocation(0).getActivity())) {
-					return 0;
-				} else {
-					return Double.NEGATIVE_INFINITY;
-				}
-			}
-		}));
+		// Enforce that all round trips start and end their unique home location.
+		weights.add(new SingleToMultiWeight<>(new StrictlyEnforceUniqueHomeLocation()));
 
 		// Prefer round trips that are compatible with the survey
 		weights.add(new SurveyLogLikelihood(responses, syntheticPopulation));
@@ -154,15 +141,13 @@ public class TravelSurveyExansionExample {
 
 		var algo = new MHAlgorithm<>(new MultiRoundTripProposal<>(scenario), weights, scenario.getRandom());
 
-//		var initialRoundTrip = new RoundTrip<>(new ArrayList<>(Arrays.asList(home)), new ArrayList<>(Arrays.asList(0)));
-//		initialRoundTrip.setEpisodes(scenario.getOrCreateSimulator().simulate(initialRoundTrip));
-		var initialRoundTrip = scenario.createInitialMultiRoundTrip(homes.get(0), 0, syntheticPopulationSize);
+		var initialRoundTrip = scenario.createInitialMultiRoundTrip(homes, Arrays.asList(0), syntheticPopulationSize);
 		algo.setInitialState(initialRoundTrip);
 
-		// Log summary statistics over sampling iterations. See code for interpretation
-//		algo.addStateProcessor(new SamplingWeightLogger<>(totalIterations / 100, weights,
-//				"./output/activityExpansion/logWeights.log"));
-//		algo.addStateProcessor(new PlotTimeUseHistogram(totalIterations / 2, totalIterations / 100));
+		// Log summary statistics over sampling iterations. See code for interpretation.
+		algo.addStateProcessor(new SamplingWeightLogger<>(totalIterations / 100, weights,
+				"./output/travelSurveyExpansion/logWeights.log"));
+		algo.addStateProcessor(new AgeStats(totalIterations / 2, totalIterations / 100, syntheticPopulation));
 
 		algo.setMsgInterval(totalIterations / 100);
 		algo.run(totalIterations);

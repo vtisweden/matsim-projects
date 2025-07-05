@@ -19,18 +19,19 @@
  */
 package se.vti.roundtrips.examples.travelSurveyExpansion;
 
-import java.util.Random;
-
 /**
  * 
  * @author GunnarF
  *
  */
-
 class Person {
 	
 	final int age;
 
+	Person(int age) {
+		this.age = age;
+	}
+	
 	boolean inStudentAge() {
 		return this.age <= 25;
 	}
@@ -41,10 +42,6 @@ class Person {
 	
 	boolean inRetirementAge() {
 		return this.age >= 60;
-	}
-	
-	Person(int age) {
-		this.age = age;
 	}
 	
 }

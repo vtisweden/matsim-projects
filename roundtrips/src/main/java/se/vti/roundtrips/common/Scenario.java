@@ -196,4 +196,15 @@ public class Scenario<N extends Node> {
 		return result;
 	}
 
+	public MultiRoundTrip<N> createInitialMultiRoundTrip(List<N> nodes, List<Integer> departures,
+			int numberOfRoundTrips) {
+		MultiRoundTrip<N> result = new MultiRoundTrip<>(numberOfRoundTrips);
+		for (int i = 0; i < numberOfRoundTrips; i++) {
+			N node = nodes.get(this.rnd.nextInt(nodes.size()));
+			Integer departure = departures.get(this.rnd.nextInt(departures.size()));
+			result.setRoundTripAndUpdateSummaries(i, this.createInitialRoundTrip(i, node, departure));
+		}
+		return result;
+	}
+
 }
