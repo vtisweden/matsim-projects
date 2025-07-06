@@ -40,11 +40,11 @@ import se.vti.utils.misc.metropolishastings.MHAlgorithm;
  * @author GunnarF
  *
  */
-public class TravelSurveyExansionExample {
+public class TravelSurveyExpansionExample {
 
 	private final long seed;
 
-	TravelSurveyExansionExample(long seed) {
+	TravelSurveyExpansionExample(long seed) {
 		this.seed = seed;
 	}
 
@@ -84,7 +84,7 @@ public class TravelSurveyExansionExample {
 		scenario.addNode(new GridNodeWithActivity(3, 1, Activity.EDUCATION));
 		scenario.addNode(new GridNodeWithActivity(3, 3, Activity.EDUCATION));
 
-		// All nodes allow for "other" activities:
+		// All nodes allow for "other" activities.
 		for (int row = 0; row < gridSize; row++) {
 			for (int col = 0; col < gridSize; col++) {
 				scenario.addNode(new GridNodeWithActivity(row, col, Activity.OTHER));
@@ -157,7 +157,7 @@ public class TravelSurveyExansionExample {
 	}
 
 	public static void main(String[] args) {
-		var example = new TravelSurveyExansionExample(4711);
+		var example = new TravelSurveyExpansionExample(4711);
 		example.run(1000 * 1000);
 	}
 

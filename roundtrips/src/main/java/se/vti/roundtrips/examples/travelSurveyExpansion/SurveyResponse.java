@@ -94,27 +94,5 @@ class SurveyResponse {
 
 		return this.timeWeight(this.reportedWork_h, simWork_h) * this.timeWeight(this.reportedEdu_h, simEdu_h)
 				* this.timeWeight(this.reportedOther_h, simOther_h);
-
-//		if (this.respondent.inStudentAge()) {
-//			if (simWork_h < 1.0 && simEdu_h >= 1.0 && simOther_h >= 1.0) {
-//				return 1.0;
-//			} else {
-//				return 1e-3;
-//			}
-//		} else if (this.respondent.inWorkingAge()) {
-//			if (simWork_h >= 1.0 && simEdu_h < 1.0 && simOther_h >= 1.0) {
-//				return 1.0;
-//			} else {
-//				return 1e-3;
-//			}
-//		} else if (this.respondent.inRetirementAge()) {
-//			if (simWork_h < 1.0 && simEdu_h < 1.0 && simOther_h >= 1.0) {
-//				return 1.0;
-//			} else {
-//				return 1e-3;
-//			}
-//		} else {
-//			throw new RuntimeException("Respondent age belongs to no group.");
-//		}
 	}
 }
