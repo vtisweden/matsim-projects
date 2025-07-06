@@ -1,5 +1,5 @@
 /**
- * se.vti.roundtrips.examples.travelSurveyExpansion
+ * se.vti.roundtrips.examples.activityModeExpansion
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,31 +17,13 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.examples.travelSurveyExpansion;
-
-import se.vti.roundtrips.samplingweights.SamplingWeight;
-import se.vti.roundtrips.single.RoundTrip;
+package se.vti.roundtrips.examples.activityExpandedGridNetwork;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class StrictlyEnforceUniqueHomeLocation implements SamplingWeight<RoundTrip<GridNodeWithActivity>> {
-
-	@Override
-	public double logWeight(RoundTrip<GridNodeWithActivity> roundTrip) {
-		GridNodeWithActivity firstNode = roundTrip.getNode(0);
-		if (Activity.HOME.equals(firstNode.getActivity())) {
-			for (int i = 1; i < roundTrip.size(); i++) {
-				GridNodeWithActivity node = roundTrip.getNode(i);
-				if (Activity.HOME.equals(node.getActivity()) && !(firstNode.equals(node))) {
-					return Double.NEGATIVE_INFINITY;
-				}
-			}
-			return 0;
-		} else {
-			return Double.NEGATIVE_INFINITY;
-		}
-	}
+public enum Activity {
+	HOME, WORK, EDUCATION, OTHER
 }

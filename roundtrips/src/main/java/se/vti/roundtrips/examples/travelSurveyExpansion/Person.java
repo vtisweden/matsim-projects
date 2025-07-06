@@ -36,7 +36,7 @@ class Person {
 		return this.age <= 25;
 	}
 	
-	boolean inMidlifeAge() {
+	boolean inWorkingAge() {
 		return this.age >= 20 && this.age <= 70;
 	}
 	

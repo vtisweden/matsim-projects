@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.Activity;
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.GridNodeWithActivity;
 import se.vti.roundtrips.logging.AbstractStateProcessor;
 import se.vti.roundtrips.simulator.Episode;
 import se.vti.roundtrips.simulator.MoveEpisode;
@@ -42,9 +44,9 @@ class PlotTimeUseHistogram extends AbstractStateProcessor<RoundTrip<GridNodeWith
 	public PlotTimeUseHistogram(long burnInIterations, long samplingInterval) {
 		super(burnInIterations, samplingInterval);
 		this.activity2histogram = new LinkedHashMap<>();
-		this.activity2histogram.put(Activity.home, new long[24]);
-		this.activity2histogram.put(Activity.work, new long[24]);
-		this.activity2histogram.put(Activity.other, new long[24]);
+		this.activity2histogram.put(Activity.HOME, new long[24]);
+		this.activity2histogram.put(Activity.WORK, new long[24]);
+		this.activity2histogram.put(Activity.OTHER, new long[24]);
 	}
 
 	@Override
@@ -67,9 +69,9 @@ class PlotTimeUseHistogram extends AbstractStateProcessor<RoundTrip<GridNodeWith
 		System.out.println("----------------------------------------");
 		System.out.println("hour\thome\twork\tother");
 		for (int hour = 0; hour < 24; hour++) {
-			System.out.println(hour + "\t" + this.activity2histogram.get(Activity.home)[hour] + "\t"
-					+ this.activity2histogram.get(Activity.work)[hour] + "\t"
-					+ this.activity2histogram.get(Activity.other)[hour]);
+			System.out.println(hour + "\t" + this.activity2histogram.get(Activity.HOME)[hour] + "\t"
+					+ this.activity2histogram.get(Activity.WORK)[hour] + "\t"
+					+ this.activity2histogram.get(Activity.OTHER)[hour]);
 		}
 		System.out.println("----------------------------------------");
 	}

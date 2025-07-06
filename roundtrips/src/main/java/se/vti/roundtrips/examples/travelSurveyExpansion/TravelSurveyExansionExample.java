@@ -23,13 +23,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.Activity;
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.GridNodeWithActivity;
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.StrictlyEnforceUniqueHomeLocation;
 import se.vti.roundtrips.logging.SamplingWeightLogger;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.multiple.MultiRoundTripProposal;
 import se.vti.roundtrips.samplingweights.SamplingWeights;
 import se.vti.roundtrips.samplingweights.SingleToMultiWeight;
 import se.vti.roundtrips.samplingweights.misc.StrictlyPeriodicSchedule;
-import se.vti.roundtrips.samplingweights.priors.MaximumEntropyPriorFactory;
 import se.vti.roundtrips.samplingweights.priors.UniformPrior;
 import se.vti.utils.misc.metropolishastings.MHAlgorithm;
 
@@ -133,7 +135,8 @@ public class TravelSurveyExansionExample {
 		weights.add(new SingleToMultiWeight<>(new StrictlyEnforceUniqueHomeLocation()));
 
 		// Prefer round trips that are compatible with the survey
-		weights.add(new SurveyLogLikelihood(responses, syntheticPopulation));
+//		weights.add(new ExplainResponsesByRoundTrips(responses, syntheticPopulation));
+		weights.add(new ExplainRoundTripsByResponses(responses, syntheticPopulation));
 
 		/*
 		 * Ready to set up the sampling machinery.
@@ -147,7 +150,7 @@ public class TravelSurveyExansionExample {
 		// Log summary statistics over sampling iterations. See code for interpretation.
 		algo.addStateProcessor(new SamplingWeightLogger<>(totalIterations / 100, weights,
 				"./output/travelSurveyExpansion/logWeights.log"));
-		algo.addStateProcessor(new AgeStats(totalIterations / 2, totalIterations / 100, syntheticPopulation));
+		algo.addStateProcessor(new PlotAgeByActivityHistogram(totalIterations / 2, totalIterations / 100, syntheticPopulation));
 
 		algo.setMsgInterval(totalIterations / 100);
 		algo.run(totalIterations);

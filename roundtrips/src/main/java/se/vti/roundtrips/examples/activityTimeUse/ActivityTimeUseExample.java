@@ -20,6 +20,9 @@
 package se.vti.roundtrips.examples.activityTimeUse;
 
 import se.vti.roundtrips.common.Scenario;
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.Activity;
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.GridNodeWithActivity;
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.StrictlyEnforceUniqueHomeLocation;
 import se.vti.roundtrips.logging.SamplingWeightLogger;
 import se.vti.roundtrips.samplingweights.SamplingWeights;
 import se.vti.roundtrips.samplingweights.misc.StrictlyPeriodicSchedule;
@@ -68,20 +71,20 @@ class ActivityTimeUseExample {
 		scenario.setTimeBinCnt(4 * 24);
 
 		// A single corner node allows for "home" activities (could be a suburb).
-		GridNodeWithActivity home = new GridNodeWithActivity(0, 0, Activity.home);
+		GridNodeWithActivity home = new GridNodeWithActivity(0, 0, Activity.HOME);
 		scenario.addNode(home);
 
 		// Only the center nodes allow for "work" activities (could be CBD).
 		for (int row = 1; row < gridSize - 1; row++) {
 			for (int col = 1; col < gridSize - 1; col++) {
-				scenario.addNode(new GridNodeWithActivity(row, col, Activity.work));
+				scenario.addNode(new GridNodeWithActivity(row, col, Activity.WORK));
 			}
 		}
 
 		// All nodes allow for "other" activities:
 		for (int row = 0; row < gridSize; row++) {
 			for (int col = 0; col < gridSize; col++) {
-				scenario.addNode(new GridNodeWithActivity(row, col, Activity.other));
+				scenario.addNode(new GridNodeWithActivity(row, col, Activity.OTHER));
 			}
 		}
 
@@ -120,11 +123,11 @@ class ActivityTimeUseExample {
 		LogarithmicTimeUse.Component otherComponent = new LogarithmicTimeUse.Component(3.0, 24.0).setOpeningTimes_h(10,
 				20.0);
 		for (var node : scenario.getNodesView()) {
-			if (Activity.home.equals(node.getActivity())) {
+			if (Activity.HOME.equals(node.getActivity())) {
 				timeUse.assignComponent(node, homeComponent);
-			} else if (Activity.work.equals(node.getActivity())) {
+			} else if (Activity.WORK.equals(node.getActivity())) {
 				timeUse.assignComponent(node, workComponent);
-			} else if (Activity.other.equals(node.getActivity())) {
+			} else if (Activity.OTHER.equals(node.getActivity())) {
 				timeUse.assignComponent(node, otherComponent);
 			}
 		}

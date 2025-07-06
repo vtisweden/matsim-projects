@@ -1,5 +1,5 @@
 /**
- * se.vti.roundtrips.examples.activityModeExpansion
+ * se.vti.roundtrips.examples.truckServiceCoverage
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,13 +17,33 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.roundtrips.examples.activityTimeUse;
+package se.vti.roundtrips.examples.activityExpandedGridNetwork;
+
+import se.vti.roundtrips.common.Node;
 
 /**
  * 
  * @author GunnarF
  *
  */
-enum Activity {
-	home, work, other
+public class GridNodeWithActivity extends Node {
+
+	public final int row;
+
+	public final int column;
+
+	public GridNodeWithActivity(int row, int column, Activity activity) {
+		super("(" + row + "," + column + ")", activity);
+		this.row = row;
+		this.column = column;
+	}
+
+	public int computeGridDistance(GridNodeWithActivity other) {
+		return Math.abs(this.row - other.row) + Math.abs(this.column - other.column);
+	}
+
+	public Activity getActivity() {
+		return (Activity) this.getLabels().get(0);
+	}
+
 }

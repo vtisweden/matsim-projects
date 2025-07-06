@@ -22,54 +22,61 @@ package se.vti.roundtrips.examples.travelSurveyExpansion;
 import java.util.Arrays;
 import java.util.List;
 
+import se.vti.roundtrips.examples.activityExpandedGridNetwork.GridNodeWithActivity;
 import se.vti.roundtrips.multiple.MultiRoundTrip;
 import se.vti.roundtrips.samplingweights.SamplingWeight;
 
 /**
+ * This weight function does not work well: For any response, it is enough to
+ * have one round trip that explains this response, but this does not keep
+ * possibly many other round trips to behave completely incompatible with the
+ * survey.
  * 
+ * For a better approach, see {@link ExplainRoundTripsByResponses}.
+ * 
+ * @deprecated
  * @author GunnarF
  *
  */
-public class SurveyLogLikelihood implements SamplingWeight<MultiRoundTrip<GridNodeWithActivity>> {
+class ExplainResponsesByRoundTrips implements SamplingWeight<MultiRoundTrip<GridNodeWithActivity>> {
 
 	private final List<SurveyResponse> responses;
 
-	private final List<Person> syntheticPopulation;
+	private final double[][] responsePersonWeights;
 
-	private final double[][] personLikelihood;
-
-	SurveyLogLikelihood(List<SurveyResponse> responses, List<Person> syntheticPopulation) {
+	ExplainResponsesByRoundTrips(List<SurveyResponse> responses, List<Person> syntheticPopulation) {
 		this.responses = responses;
-		this.syntheticPopulation = syntheticPopulation;
-
-		this.personLikelihood = new double[responses.size()][syntheticPopulation.size()];
+		// Precomputing the person weights for speed.
+		this.responsePersonWeights = new double[responses.size()][syntheticPopulation.size()];
 		for (int responseIndex = 0; responseIndex < responses.size(); responseIndex++) {
 			SurveyResponse response = this.responses.get(responseIndex);
+			double[] weights = this.responsePersonWeights[responseIndex];
 			for (int personIndex = 0; personIndex < syntheticPopulation.size(); personIndex++) {
-				this.personLikelihood[responseIndex][personIndex] = response
-						.personLikelihood(syntheticPopulation.get(personIndex));
+				weights[personIndex] = response.matchesRespondentWeight(syntheticPopulation.get(personIndex));
 			}
-//			double sum = Arrays.stream(this.personWeights[responseIndex]).sum();
-//			for (int personIndex = 0; personIndex < syntheticPopulation.size(); personIndex++) {
-//				this.personWeights[responseIndex][personIndex] /= sum;
-//			}
+			double sum = Arrays.stream(weights).sum();
+			if (sum < 1e-8) {
+				throw new RuntimeException("Response does not match the synthetic population.");
+			}
+			for (int personIndex = 0; personIndex < syntheticPopulation.size(); personIndex++) {
+				weights[personIndex] /= sum;
+			}
 		}
 	}
 
 	@Override
 	public double logWeight(MultiRoundTrip<GridNodeWithActivity> multiRoundTrip) {
 		double result = 0.0;
-		// This double look is slow. The inner loop could be parallelized.
+		// This double loop is slow. The inner loop could be parallelized.
 		for (int responseIndex = 0; responseIndex < this.responses.size(); responseIndex++) {
 			SurveyResponse response = this.responses.get(responseIndex);
-			double[] weights = this.personLikelihood[responseIndex];
-			double responseLikelihood = 0.0;
-			for (int personIndex = 0; personIndex < this.syntheticPopulation.size(); personIndex++) {
-				responseLikelihood += weights[personIndex]
-						* response.travelLikelihood(multiRoundTrip.getRoundTrip(personIndex));
+			double[] weights = this.responsePersonWeights[responseIndex];
+			double responseWeight = 0.0;
+			for (int personIndex = 0; personIndex < weights.length; personIndex++) {
+				responseWeight += weights[personIndex]
+						* response.matchesResponseWeight(multiRoundTrip.getRoundTrip(personIndex));
 			}
-			responseLikelihood /= multiRoundTrip.size();
-			result += Math.log(Math.max(1e-8, responseLikelihood));
+			result += Math.log(Math.max(1e-8, responseWeight));
 		}
 		return result;
 	}
