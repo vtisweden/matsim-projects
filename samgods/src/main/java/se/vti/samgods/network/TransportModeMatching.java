@@ -22,7 +22,7 @@ package se.vti.samgods.network;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
 
 /**
  * Putting this into its own class to keep the special ferry cases in one place.

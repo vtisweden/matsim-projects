@@ -1,7 +1,7 @@
 /**
  * se.vti.samgods
  * 
- * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024,2025 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -31,9 +31,9 @@ public class BasicTransportCost {
 	public final double duration_h;
 	public final double length_km;
 
-	public BasicTransportCost(double amount_ton, double cost, double duration_h, double length_km) {
+	public BasicTransportCost(double amount_ton, double monetaryCost, double duration_h, double length_km) {
 		this.amount_ton = amount_ton;
-		this.monetaryCost = cost;
+		this.monetaryCost = monetaryCost;
 		this.duration_h = duration_h;
 		this.length_km = length_km;
 	}

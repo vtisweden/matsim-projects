@@ -23,8 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.common.OD;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
 
 /**
  * 

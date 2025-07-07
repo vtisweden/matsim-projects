@@ -44,8 +44,8 @@ import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.NetworkAndFleetData;
-import se.vti.samgods.NetworkAndFleetDataProvider;
+import se.vti.samgods.common.NetworkAndFleetData;
+import se.vti.samgods.common.NetworkAndFleetDataProvider;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 
 /**

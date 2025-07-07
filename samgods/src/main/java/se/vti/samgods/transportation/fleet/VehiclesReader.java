@@ -29,15 +29,14 @@ import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.math3.exception.InsufficientDataException;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
 
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.utils.ParseNumberUtils;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.utils.ParseNumberUtils;
 
 /**
  * 
@@ -161,87 +160,52 @@ public class VehiclesReader {
 		}
 
 		for (SamgodsVehicleAttributes.Builder builder : vehicleNr2builder.values()) {
-			try {
-				final VehicleType vehicleType = builder.buildVehicleType();
-				this.vehicles.addVehicleType(vehicleType);
-				{ // This block is just for logging.
-					final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
-							.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+			final VehicleType vehicleType = builder.buildVehicleType();
+			this.vehicles.addVehicleType(vehicleType);
+			// Following block is just for logging.
+			{
+				final SamgodsVehicleAttributes attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+						.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
 
-					if (attrs.onFerryCost_1_h == null) {
-						log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
-					}
-					if (attrs.onFerryCost_1_km == null) {
-						log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_km.");
-					}
-					if (attrs.speed_km_h == null) {
-						log.warn("Vehicle type " + vehicleType.getId() + " has null speed_km_h.");
-					}
-
-					Set<SamgodsConstants.Commodity> commodities = new LinkedHashSet<>(
-							Arrays.asList(SamgodsConstants.Commodity.values()));
-					commodities.removeAll(attrs.loadCost_1_ton.keySet());
-					if (commodities.size() > 0) {
-						log.warn("Vehicle type " + vehicleType.getId() + " has no loadCost_1_ton for commodities: "
-								+ commodities);
-					}
-
-					commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
-					commodities.removeAll(attrs.loadTime_h.keySet());
-					if (commodities.size() > 0) {
-						log.warn("Vehicle type " + vehicleType.getId() + " has no loadTime_h for commodities: "
-								+ commodities);
-					}
-
-					commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
-					commodities.removeAll(attrs.transferCost_1_ton.keySet());
-					if (commodities.size() > 0) {
-						log.warn("Vehicle type " + vehicleType.getId() + " has no transferCost_1_ton for commodities: "
-								+ commodities);
-					}
-
-					commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
-					commodities.removeAll(attrs.transferTime_h.keySet());
-					if (commodities.size() > 0) {
-						log.warn("Vehicle type " + vehicleType.getId() + " has no transferTime_h for commodities: "
-								+ commodities);
-					}
+				if (attrs.onFerryCost_1_h == null) {
+					log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_h.");
 				}
-			} catch (InsufficientDataException e) {
-				log.warn("Failed to build vehicle type " + builder.id);
+				if (attrs.onFerryCost_1_km == null) {
+					log.warn("Vehicle type " + vehicleType.getId() + " has null onFerryCost_1_km.");
+				}
+				if (attrs.speed_km_h == null) {
+					log.warn("Vehicle type " + vehicleType.getId() + " has null speed_km_h.");
+				}
+
+				Set<SamgodsConstants.Commodity> commodities = new LinkedHashSet<>(
+						Arrays.asList(SamgodsConstants.Commodity.values()));
+				commodities.removeAll(attrs.loadCost_1_ton.keySet());
+				if (commodities.size() > 0) {
+					log.warn("Vehicle type " + vehicleType.getId() + " has no loadCost_1_ton for commodities: "
+							+ commodities);
+				}
+
+				commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
+				commodities.removeAll(attrs.loadTime_h.keySet());
+				if (commodities.size() > 0) {
+					log.warn("Vehicle type " + vehicleType.getId() + " has no loadTime_h for commodities: "
+							+ commodities);
+				}
+
+				commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
+				commodities.removeAll(attrs.transferCost_1_ton.keySet());
+				if (commodities.size() > 0) {
+					log.warn("Vehicle type " + vehicleType.getId() + " has no transferCost_1_ton for commodities: "
+							+ commodities);
+				}
+
+				commodities = new LinkedHashSet<>(Arrays.asList(SamgodsConstants.Commodity.values()));
+				commodities.removeAll(attrs.transferTime_h.keySet());
+				if (commodities.size() > 0) {
+					log.warn("Vehicle type " + vehicleType.getId() + " has no transferTime_h for commodities: "
+							+ commodities);
+				}
 			}
 		}
 	}
-
-	// -------------------- MAIN-FUNCTION, ONLY FOR TESTING --------------------
-
-	public static void main(String[] args) throws Exception {
-		Vehicles vehicles = VehicleUtils.createVehiclesContainer();
-
-		VehiclesReader reader = new VehiclesReader(vehicles);
-		reader.load_v12("./input_2024/vehicleparameters_air.csv", "./input_2024/transferparameters_air.csv",
-				SamgodsConstants.TransportMode.Air);
-		reader.load_v12("./input_2024/vehicleparameters_rail.csv", "./input_2024/transferparameters_rail.csv",
-				SamgodsConstants.TransportMode.Rail);
-		reader.load_v12("./input_2024/vehicleparameters_road.csv", "./input_2024/transferparameters_road.csv",
-				SamgodsConstants.TransportMode.Road);
-		reader.load_v12("./input_2024/vehicleparameters_sea.csv", "./input_2024/transferparameters_sea.csv",
-				SamgodsConstants.TransportMode.Sea);
-
-		FleetStatsTable table = new FleetStatsTable(vehicles);
-
-		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Air));
-		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Air));
-
-		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Rail));
-		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Rail));
-
-		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Road));
-		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Road));
-
-		System.out.println(table.createVehicleTypeTable(SamgodsConstants.TransportMode.Sea));
-		System.out.println(table.createVehicleTransferCostTable(SamgodsConstants.TransportMode.Sea));
-
-	}
-
 }

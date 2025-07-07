@@ -21,8 +21,8 @@ package se.vti.samgods.logistics.choice;
 
 import java.util.List;
 
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.common.OD;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;
 

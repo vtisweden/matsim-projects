@@ -23,7 +23,7 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
 import de.vandermeer.asciitable.AsciiTable;
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants;
 
 /**
  * Just for testing.

@@ -54,23 +54,10 @@ public class DetailedTransportCost extends BasicTransportCost {
 		this.moveDuration_h = moveDuration_h;
 	}
 
-	public DetailedTransportCost createWithScaledMonetaryCost(double factor) {
-		return new DetailedTransportCost(this.amount_ton, factor * this.loadingCost, factor * this.unloadingCost,
-				factor * this.transferCost, factor * this.moveCost, this.loadingDuration_h, this.unloadingDuration_h,
-				this.transferDuration_h, this.moveDuration_h, this.length_km);
-	}
-
 	public DetailedTransportCost createUnitCost_1_ton() {
 		return new DetailedTransportCost(1.0, this.loadingCost / this.amount_ton, this.unloadingCost / this.amount_ton,
 				this.transferCost / this.amount_ton, this.moveCost / this.amount_ton, this.loadingDuration_h,
 				this.unloadingDuration_h, this.transferDuration_h, this.moveDuration_h, this.length_km);
-	}
-
-	public DetailedTransportCost createUnitCost_1_tonKm() {
-		final double tonKm = this.amount_ton * this.length_km;
-		return new DetailedTransportCost(1.0, this.loadingCost / tonKm, this.unloadingCost / tonKm,
-				this.transferCost / tonKm, this.moveCost / tonKm, this.loadingDuration_h, this.unloadingDuration_h,
-				this.transferDuration_h, this.moveDuration_h, 1.0);
 	}
 
 	// -------------------- BUILDER --------------------

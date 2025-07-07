@@ -25,8 +25,8 @@ import java.util.Map;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;

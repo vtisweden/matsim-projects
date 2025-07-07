@@ -22,7 +22,7 @@ package se.vti.samgods.logistics.costs;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants;
 
 /**
  * 

@@ -19,8 +19,8 @@
  */
 package se.vti.samgods.logistics;
 
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.common.OD;
+import se.vti.samgods.common.SamgodsConstants;
 
 /**
  * Represents the annual shipments of one or more independent shippers. Meaning

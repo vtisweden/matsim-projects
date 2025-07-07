@@ -52,11 +52,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import se.vti.samgods.NetworkAndFleetData;
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.common.NetworkAndFleetData;
+import se.vti.samgods.common.OD;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.utils.misc.Units;
 

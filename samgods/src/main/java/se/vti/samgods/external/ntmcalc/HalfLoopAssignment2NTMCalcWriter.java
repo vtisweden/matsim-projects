@@ -38,8 +38,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import se.vti.samgods.NetworkAndFleetData;
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.common.NetworkAndFleetData;
+import se.vti.samgods.common.SamgodsConstants;
 import se.vti.samgods.network.SamgodsLinkAttributes;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;

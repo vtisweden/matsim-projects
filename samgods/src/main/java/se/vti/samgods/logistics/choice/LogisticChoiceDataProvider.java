@@ -28,13 +28,13 @@ import java.util.stream.Collectors;
 
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.NetworkAndFleetData;
-import se.vti.samgods.NetworkAndFleetDataProvider;
+import se.vti.samgods.common.NetworkAndFleetData;
+import se.vti.samgods.common.NetworkAndFleetDataProvider;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
+import se.vti.samgods.transportation.costs.RealizedInVehicleCostCalculator;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
 /**
@@ -48,7 +48,7 @@ public class LogisticChoiceDataProvider {
 
 	private final double initialTransportEfficiency = 0.7;
 
-	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
+	private final RealizedInVehicleCostCalculator realizedInVehicleCost = new RealizedInVehicleCostCalculator();
 
 	private final NetworkAndFleetData internalNetworkAndFleetData;
 

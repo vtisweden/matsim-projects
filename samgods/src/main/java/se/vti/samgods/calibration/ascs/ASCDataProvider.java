@@ -42,7 +42,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
 
 /**
  * 

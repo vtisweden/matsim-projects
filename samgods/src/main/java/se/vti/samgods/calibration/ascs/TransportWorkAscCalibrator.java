@@ -27,9 +27,9 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.utils.MiscUtils;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
+import se.vti.utils.MiscUtils;
 
 /**
  * 

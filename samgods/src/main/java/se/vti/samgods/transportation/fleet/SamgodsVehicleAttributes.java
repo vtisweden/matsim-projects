@@ -26,12 +26,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.commons.math3.exception.InsufficientDataException;
 import org.matsim.api.core.v01.Id;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
 
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants;
 
 /**
  * 
@@ -152,7 +151,7 @@ public class SamgodsVehicleAttributes {
 					this.container, this.loadCost_1_ton, this.loadTime_h, this.transferCost_1_ton, this.transferTime_h);
 		}
 
-		public VehicleType buildVehicleType() throws InsufficientDataException {
+		public VehicleType buildVehicleType() {
 			final VehicleType type = VehicleUtils.createVehicleType(this.id);
 			type.setDescription(this.description);
 			type.getAttributes().putAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME, this.buildVehicleAttributes());

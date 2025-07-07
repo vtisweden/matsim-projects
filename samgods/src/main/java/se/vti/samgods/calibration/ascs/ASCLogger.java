@@ -22,7 +22,7 @@ package se.vti.samgods.calibration.ascs;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.Vehicles;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
 import se.vti.utils.misc.iterationlogging.LogEntry;
 import se.vti.utils.misc.iterationlogging.LogWriter;
 

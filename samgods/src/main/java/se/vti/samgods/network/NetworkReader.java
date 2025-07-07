@@ -37,9 +37,9 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.TransportMode;
-import se.vti.samgods.utils.ParseNumberUtils;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
+import se.vti.utils.ParseNumberUtils;
 import se.vti.utils.misc.Units;
 
 /**

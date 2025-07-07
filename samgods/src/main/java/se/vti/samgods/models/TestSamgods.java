@@ -29,11 +29,11 @@ import org.apache.logging.log4j.LogManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 
-import se.vti.samgods.SamgodsConfigGroup;
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.calibration.ascs.TransportWorkAscCalibrator;
-import se.vti.samgods.SamgodsRunner;
+import se.vti.samgods.common.SamgodsConfigGroup;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.samgods.common.SamgodsRunner;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
 
 /**
  * 

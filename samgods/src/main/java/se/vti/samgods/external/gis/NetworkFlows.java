@@ -30,7 +30,7 @@ import org.matsim.api.core.v01.network.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.consolidation.HalfLoopConsolidationJobProcessor.FleetAssignment;
 

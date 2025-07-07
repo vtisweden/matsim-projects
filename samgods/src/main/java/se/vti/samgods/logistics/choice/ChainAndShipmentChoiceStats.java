@@ -29,9 +29,9 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 
 import de.vandermeer.asciitable.AsciiTable;
-import se.vti.samgods.NetworkAndFleetData;
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.utils.MiscUtils;
+import se.vti.samgods.common.NetworkAndFleetData;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.utils.MiscUtils;
 
 /**
  * JUST FOR TESTING

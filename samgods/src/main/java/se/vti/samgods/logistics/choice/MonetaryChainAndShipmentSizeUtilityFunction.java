@@ -23,8 +23,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
 import se.vti.samgods.logistics.TransportChain;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.costs.NonTransportCost;

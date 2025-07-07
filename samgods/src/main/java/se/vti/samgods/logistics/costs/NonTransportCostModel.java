@@ -19,7 +19,7 @@
  */
 package se.vti.samgods.logistics.costs;
 
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants;
 
 /**
  * 

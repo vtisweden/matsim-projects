@@ -32,9 +32,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Id;
 
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.common.OD;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
 import se.vti.utils.misc.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import se.vti.utils.misc.tabularfileparser.TabularFileParser;
 

@@ -9,7 +9,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>samgods</artifactId>
-  <version>0.0.2-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
 
 	<repositories>
 		<!--Note that in general repositories are not transitive, so they need 
@@ -51,7 +51,13 @@
 		<dependency>
 			<groupId>se.vti.matsim-projects</groupId>
 			<artifactId>utils</artifactId>
-			<version>0.0.2-SNAPSHOT</version>
+			<version>0.1.2-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>se.vti.matsim-projects</groupId>
+			<artifactId>matsimutils</artifactId>
+			<version>0.1.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- This is the matsim "core": -->

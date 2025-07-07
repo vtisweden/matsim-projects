@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 
-import se.vti.samgods.OD;
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.common.OD;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 
 /**

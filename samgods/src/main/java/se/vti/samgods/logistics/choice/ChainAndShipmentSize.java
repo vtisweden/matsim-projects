@@ -21,7 +21,7 @@ package se.vti.samgods.logistics.choice;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import se.vti.samgods.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants;
 import se.vti.samgods.external.rail.ChainAndAnnualShipmentJsonSerializer;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.TransportChain;

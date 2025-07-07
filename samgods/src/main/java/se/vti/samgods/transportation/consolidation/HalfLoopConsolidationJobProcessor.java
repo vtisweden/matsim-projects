@@ -28,12 +28,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.matsim.vehicles.VehicleType;
 
-import se.vti.samgods.NetworkAndFleetData;
-import se.vti.samgods.SamgodsConstants.Commodity;
 import se.vti.samgods.calibration.ascs.ASCDataProvider;
+import se.vti.samgods.common.NetworkAndFleetData;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
 import se.vti.samgods.transportation.costs.DetailedTransportCost;
-import se.vti.samgods.transportation.costs.RealizedInVehicleCost;
+import se.vti.samgods.transportation.costs.RealizedInVehicleCostCalculator;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.utils.misc.Units;
 import se.vti.utils.misc.math.LogitChoiceModel;
@@ -49,7 +49,7 @@ public class HalfLoopConsolidationJobProcessor implements Runnable {
 
 	private static final Logger log = LogManager.getLogger(HalfLoopConsolidationJobProcessor.class);
 
-	private final RealizedInVehicleCost realizedInVehicleCost = new RealizedInVehicleCost();
+	private final RealizedInVehicleCostCalculator realizedInVehicleCost = new RealizedInVehicleCostCalculator();
 
 	private final NetworkAndFleetData networkAndFleetData;
 	private final ASCDataProvider ascDataProvider;

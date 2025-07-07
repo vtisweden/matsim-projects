@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import de.vandermeer.asciitable.AsciiTable;
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.Commodity;
-import se.vti.samgods.utils.MiscUtils;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants.Commodity;
+import se.vti.utils.MiscUtils;
 import se.vti.utils.misc.math.MathHelpers;
 
 /**

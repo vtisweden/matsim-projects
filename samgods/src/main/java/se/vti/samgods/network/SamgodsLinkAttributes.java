@@ -24,8 +24,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import se.vti.samgods.SamgodsConstants;
-import se.vti.samgods.SamgodsConstants.TransportMode;
+import se.vti.samgods.common.SamgodsConstants;
+import se.vti.samgods.common.SamgodsConstants.TransportMode;
 
 /**
  * 
