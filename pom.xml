@@ -19,6 +19,7 @@
   	<module>dynameq</module>
   	<module>emulation</module>
   	<module>greedo</module>
+  	<module>matsimutils</module>
 	<module>samgods</module>
 	<module>utils</module>
 	<module>tramodby</module>
