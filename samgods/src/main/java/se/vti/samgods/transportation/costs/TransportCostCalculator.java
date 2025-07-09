@@ -26,6 +26,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.VehicleType;
 
+import se.vti.samgods.common.NetworkAndFleetData;
 import se.vti.samgods.transportation.consolidation.ConsolidationUnit;
 import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 
@@ -34,13 +35,13 @@ import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
  * @author GunnarF
  *
  */
-public class RealizedInVehicleCostCalculator {
+public class TransportCostCalculator {
 
-	public RealizedInVehicleCostCalculator() {
+	public TransportCostCalculator() {
 	}
 
-	public DetailedTransportCost compute(SamgodsVehicleAttributes vehicleAttrs, double payload_ton,
-			ConsolidationUnit consolidationUnit, VehicleType vehicleType,
+	public DetailedTransportCost computeInVehicleCost(VehicleType vehicleType, SamgodsVehicleAttributes vehicleAttrs,
+			double payload_ton, ConsolidationUnit consolidationUnit,
 			Map<Id<Link>, BasicTransportCost> link2unitCost, Set<Id<Link>> ferryLinks) {
 		final DetailedTransportCost.Builder builder = new DetailedTransportCost.Builder().setToAllZeros()
 				.addAmount_ton(payload_ton);
@@ -58,4 +59,16 @@ public class RealizedInVehicleCostCalculator {
 		}
 		return builder.build();
 	}
+
+	public DetailedTransportCost computeInVehicleCost(VehicleType vehicleType, double payload_ton,
+			ConsolidationUnit consolidationUnit, NetworkAndFleetData networkAndFleetData) {
+		return this.computeInVehicleCost(vehicleType, networkAndFleetData.getVehicleType2attributes().get(vehicleType),
+				payload_ton, consolidationUnit, networkAndFleetData.getLinkId2unitCost(vehicleType),
+				networkAndFleetData.getFerryLinkIds());
+	}
+
+	public DetailedTransportCost computeLoadUnloadTransferCost() {
+		throw new RuntimeException("TODO");
+	}
+
 }

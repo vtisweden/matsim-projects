@@ -299,8 +299,8 @@ public class SamgodsRunner {
 						for (TransportEpisode episode : chain.getEpisodes()) {
 							episode.setConsolidationUnits(ConsolidationUnit.createUnrouted(episode));
 							for (ConsolidationUnit consolidationUnit : episode.getConsolidationUnits()) {
-								consolidationUnitPattern2representativeUnit
-										.put(consolidationUnit.createRoutingEquivalentTemplate(), consolidationUnit);
+								consolidationUnitPattern2representativeUnit.put(consolidationUnit.cloneWithoutRoutes(),
+										consolidationUnit);
 							}
 						}
 					}
@@ -352,7 +352,7 @@ public class SamgodsRunner {
 						for (TransportEpisode episode : chain.getEpisodes()) {
 							List<ConsolidationUnit> templates = new ArrayList<>(episode.getConsolidationUnits().size());
 							for (ConsolidationUnit tmpUnit : episode.getConsolidationUnits()) {
-								ConsolidationUnit routingEquivalent = tmpUnit.createRoutingEquivalentTemplate();
+								ConsolidationUnit routingEquivalent = tmpUnit.cloneWithoutRoutes();
 								ConsolidationUnit template = consolidationUnitPattern2representativeUnit
 										.get(routingEquivalent);
 								assert (template != null);
@@ -379,8 +379,8 @@ public class SamgodsRunner {
 			Map<ConsolidationUnit, ConsolidationUnit> consolidationUnitPattern2representativeUnit = new LinkedHashMap<>();
 			while (parser.nextToken() != null) {
 				ConsolidationUnit unit = reader.readValue(parser);
-				unit.compress(); // TODO not necessary when the file is already compressed
-				consolidationUnitPattern2representativeUnit.put(unit.createRoutingEquivalentTemplate(), unit);
+//				unit.compress(); // TODO not necessary when the file is already compressed
+				consolidationUnitPattern2representativeUnit.put(unit.cloneWithoutRoutes(), unit);
 			}
 			parser.close();
 
@@ -398,7 +398,7 @@ public class SamgodsRunner {
 							List<ConsolidationUnit> representativeUnits = new ArrayList<>(tmpUnits.size());
 							for (ConsolidationUnit tmpUnit : tmpUnits) {
 								ConsolidationUnit match = consolidationUnitPattern2representativeUnit
-										.get(tmpUnit.createRoutingEquivalentTemplate());
+										.get(tmpUnit.cloneWithoutRoutes());
 								if (match != null) {
 									representativeUnits.add(match);
 								} else {
@@ -575,8 +575,8 @@ public class SamgodsRunner {
 						NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider.getProviderInstance()
 								.createDataInstance();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								networkAndFleetData, this.ascDataProvider, jobQueue, consolidationUnit2assignment,
-								new LinkedHashMap<>(this.commodity2scale));
+								jobQueue, consolidationUnit2assignment, networkAndFleetData, new LinkedHashMap<>(this.commodity2scale),
+								this.ascDataProvider);
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
 						choiceThread.start();
@@ -593,7 +593,7 @@ public class SamgodsRunner {
 							final double totalDemand_ton = choices.stream()
 									.mapToDouble(c -> c.annualShipment.getTotalAmount_ton()).sum();
 							if (totalDemand_ton >= 1e-3
-									&& consolidationUnit.computeAverageLength_km(networkAndFleetData) >= 1e-3) {
+									&& consolidationUnit.computeLengthStats_km(networkAndFleetData).getMean() >= 1e-3) {
 								ConsolidationJob job = new ConsolidationJob(consolidationUnit, choices,
 										this.commodity2serviceInterval_days.get(consolidationUnit.commodity));
 								jobQueue.put(job);

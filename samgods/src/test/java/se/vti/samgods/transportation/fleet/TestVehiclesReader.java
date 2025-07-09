@@ -31,6 +31,8 @@ import org.matsim.vehicles.Vehicles;
 import se.vti.samgods.common.SamgodsConstants;
 
 /**
+ * This is not a junit test. It can be used to test if concrete vehicle files
+ * are correctly read into the model system.
  * 
  * @author GunnarF
  *

@@ -199,10 +199,10 @@ public class Router {
 				if (links != null) {
 //					final Map<Id<Link>, BasicTransportCost> linkId2withFerryUnitCost = this.networkData
 //							.getLinkId2unitCost(vehicleType);
-					consolidationUnit.setRouteLinks(vehicleType, links);
+					consolidationUnit.setRouteFromLinks(vehicleType, links);
 				}
 			}
-			consolidationUnit.compress();
+//			consolidationUnit.compress();
 		}
 
 		@Override
