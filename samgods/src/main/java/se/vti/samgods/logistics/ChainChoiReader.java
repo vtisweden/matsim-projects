@@ -22,19 +22,18 @@ package se.vti.samgods.logistics;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 
 import se.vti.samgods.common.OD;
 import se.vti.samgods.common.SamgodsConstants;
-import se.vti.samgods.common.SamgodsConstants.TransportMode;
+import se.vti.samgods.network.TransportModes;
 import se.vti.utils.misc.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import se.vti.utils.misc.tabularfileparser.TabularFileParser;
 
@@ -67,45 +66,6 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	private final static List<List<String>> destinationColumnsByChainLength = Arrays.asList(null, Arrays.asList(Dest),
 			Arrays.asList(Orig2, Dest), Arrays.asList(Orig2, Orig3, Dest), Arrays.asList(Orig2, Orig3, Orig4, Dest),
 			Arrays.asList(Orig2, Orig3, Orig4, Orig5, Dest));
-
-	private static final char SamgodsRoadFerryMode = 'P';
-	private static final char SamgodsRailFerryMode = 'Q';
-	private static final List<Character> SamgodsFerryModes = Collections
-			.unmodifiableList(Arrays.asList(SamgodsRoadFerryMode, SamgodsRailFerryMode));
-
-	private final static Map<Character, TransportMode> code2samgodsMode;
-	static {
-		code2samgodsMode = new LinkedHashMap<>();
-		code2samgodsMode.put('A', SamgodsConstants.TransportMode.Road);
-		code2samgodsMode.put('X', SamgodsConstants.TransportMode.Road);
-		code2samgodsMode.put('D', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('d', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('E', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('F', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('f', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('J', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put('K', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put('L', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put('V', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put('B', SamgodsConstants.TransportMode.Road);
-		code2samgodsMode.put('C', SamgodsConstants.TransportMode.Road);
-		code2samgodsMode.put('S', SamgodsConstants.TransportMode.Road);
-		code2samgodsMode.put('c', SamgodsConstants.TransportMode.Road);
-		code2samgodsMode.put('G', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('H', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('h', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('I', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('T', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('U', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('i', SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('M', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put('N', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put('O', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put('W', SamgodsConstants.TransportMode.Sea);
-		code2samgodsMode.put(SamgodsRoadFerryMode, SamgodsConstants.TransportMode.Road);
-		code2samgodsMode.put(SamgodsRailFerryMode, SamgodsConstants.TransportMode.Rail);
-		code2samgodsMode.put('R', SamgodsConstants.TransportMode.Air);
-	}
 
 	// -------------------- MEMBERS --------------------
 
@@ -208,19 +168,19 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 			final long intermedOrigin = Long.parseLong(this.getStringValue(originColumns.get(i)));
 			final long intermedDestination = Long.parseLong(this.getStringValue(destinationColumns.get(i)));
 			segmentODs.add(new OD(Id.createNodeId(intermedOrigin), Id.createNodeId(intermedDestination)));
-			modes.add(code2samgodsMode.get(chainType.charAt(i)));
+			modes.add(TransportModes.CODE_2_SAMGODSMODE.get(chainType.charAt(i)));
 		}
 
 		// filter out ferry episodes
 
-		assert (!SamgodsFerryModes.contains(chainType.charAt(0)));
-		assert (!SamgodsFerryModes.contains(chainType.charAt(chainType.length() - 1)));
+		assert (!TransportModes.SAMGODS_FERRYMODES.contains(chainType.charAt(0)));
+		assert (!TransportModes.SAMGODS_FERRYMODES.contains(chainType.charAt(chainType.length() - 1)));
 
 		int i = 1;
 		while (i < segmentODs.size() - 1) {
-			if (SamgodsFerryModes.contains(chainType.charAt(i))) {
-				assert (!SamgodsFerryModes.contains(chainType.charAt(i - 1)));
-				assert (!SamgodsFerryModes.contains(chainType.charAt(i + 1)));
+			if (TransportModes.SAMGODS_FERRYMODES.contains(chainType.charAt(i))) {
+				assert (!TransportModes.SAMGODS_FERRYMODES.contains(chainType.charAt(i - 1)));
+				assert (!TransportModes.SAMGODS_FERRYMODES.contains(chainType.charAt(i + 1)));
 				assert (modes.get(i - 1).equals(modes.get(i)));
 				assert (modes.get(i).equals(modes.get(i + 1)));
 

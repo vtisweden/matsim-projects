@@ -1,7 +1,7 @@
 /**
  * se.vti.samgods.network
  * 
- * Copyright (C) 2024 by Gunnar Flötteröd (VTI, LiU).
+ * Copyright (C) 2024, 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
  * VTI = Swedish National Road and Transport Institute
  * LiU = Linköping University, Sweden
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.samgods.network;
+package se.vti.samgods.misc;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -31,14 +31,16 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.network.NetworkUtils;
 
+import se.vti.samgods.network.NetworkReader;
+import se.vti.samgods.network.SamgodsNodeAttributes;
 import se.vti.utils.misc.Tuple;
 
 /**
@@ -91,7 +93,7 @@ public class LinkRegionsReader {
 					linkId2domesticWeightSumWithoutRegion.put(link.getId(), weight);
 				} else {
 					final long regionCode = Long.parseLong(regionStr);
-					if (regionCode < 2585) { // TODO magic number!!!
+					if (regionCode < 2585) {
 						linkId2domesticWeightSumUpToRegion2584.compute(link.getId(),
 								(l, s) -> s == null ? weight : s + weight);
 					} else {
@@ -103,23 +105,25 @@ public class LinkRegionsReader {
 
 		log.info(linkId2domesticWeightSumUpToRegion2584.values().stream().filter(s -> s > 0.0).count()
 				+ " links with positive weights.");
-		log.warn(linkId2domesticWeightSumUpToRegion2584.values().stream().filter(s -> s > 1.001).count()
+		log.warn(linkId2domesticWeightSumUpToRegion2584.values().stream().filter(s -> s > 1.0).count()
 				+ " links with weights larger than one.");
 		log.warn(missingLinkNodeIds.size() + " node pairs without links: " + missingLinkNodeIds);
 
 		int i = 0;
-		StringBuffer txt = new StringBuffer("Links with weights > 1:\n");
-		for (Map.Entry<Id<Link>, Double> e : linkId2domesticWeightSumUpToRegion2584.entrySet()) {
-			if (e.getValue() > 1.0) {
-				txt.append(e + "\t");
+		var txt = new StringBuffer("Links with weight > 1:\n");
+		for (var entry : linkId2domesticWeightSumUpToRegion2584.entrySet()) {
+			if (entry.getValue() > 1.0) {
+				txt.append(entry + "\t");
 				if (++i % 10 == 0) {
 					txt.append("\n");
 				}
 			}
 		}
 		log.warn(txt);
-		this.writeMATSimNetwork(linkId2domesticWeightSumUpToRegion2584.keySet(), "./input_2024/network_regionUpTo2584.xml");
-		this.writeMATSimNetwork(linkId2domesticWeightSumFromRegion2585.keySet(), "./input_2024/network_regionFrom2585.xml");
+		this.writeMATSimNetwork(linkId2domesticWeightSumUpToRegion2584.keySet(),
+				"./input_2024/network_regionUpTo2584.xml");
+		this.writeMATSimNetwork(linkId2domesticWeightSumFromRegion2585.keySet(),
+				"./input_2024/network_regionFrom2585.xml");
 		this.writeMATSimNetwork(linkId2domesticWeightSumWithoutRegion.keySet(), "./input_2024/network_regionNone.xml");
 
 		final Set<Id<Link>> linkIdsWithTwoDomesticNodes = new LinkedHashSet<>();
@@ -144,13 +148,9 @@ public class LinkRegionsReader {
 		}
 		this.writeMATSimNetwork(linkIdsWithTwoDomesticNodes, "./input_2024/network_twoDomesticNodes.xml");
 		this.writeMATSimNetwork(linkIdsWithOneDomesticNode, "./input_2024/network_oneDomesticNode.xml");
-		
 		NetworkUtils.writeNetwork(this.network, "./input_2024/entire_network.xml");
 
-//		NetworkUtils.runNetworkCleaner(this.network);
-//		NetworkUtils.writeNetwork(this.network, "./input_2024/entire_network_cleaned.xml");
-//		throw new RuntimeException();		
-		 return linkIdsWithTwoDomesticNodes.stream().collect(Collectors.toMap(id -> id, id -> 1.0));
+		return linkIdsWithTwoDomesticNodes.stream().collect(Collectors.toMap(id -> id, id -> 1.0));
 	}
 
 	private void writeMATSimNetwork(Set<Id<Link>> linkIds, String fileName) {
@@ -169,9 +169,9 @@ public class LinkRegionsReader {
 
 		final Set<Link> links = linkIds.stream().map(id -> this.network.getLinks().get(id)).collect(Collectors.toSet());
 		for (Link link : links) {
-			Link newLink = NetworkUtils.createAndAddLink(subnet, link.getId(), subnet.getNodes().get(link.getFromNode().getId()),
-					subnet.getNodes().get(link.getToNode().getId()), link.getLength(), link.getFreespeed(),
-					link.getCapacity(), link.getNumberOfLanes());
+			Link newLink = NetworkUtils.createAndAddLink(subnet, link.getId(),
+					subnet.getNodes().get(link.getFromNode().getId()), subnet.getNodes().get(link.getToNode().getId()),
+					link.getLength(), link.getFreespeed(), link.getCapacity(), link.getNumberOfLanes());
 			newLink.setAllowedModes(link.getAllowedModes());
 		}
 

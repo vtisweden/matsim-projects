@@ -36,10 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
@@ -72,7 +70,6 @@ import se.vti.samgods.logistics.choice.LogisticChoiceDataProvider;
 import se.vti.samgods.logistics.choice.MonetaryChainAndShipmentSizeUtilityFunction;
 import se.vti.samgods.logistics.costs.NonTransportCostModel;
 import se.vti.samgods.logistics.costs.NonTransportCostModel_v1_22;
-import se.vti.samgods.network.LinkRegionsReader;
 import se.vti.samgods.network.NetworkReader;
 import se.vti.samgods.network.Router;
 import se.vti.samgods.transportation.consolidation.ConsolidationJob;
@@ -135,8 +132,6 @@ public class SamgodsRunner {
 	private Vehicles vehicles = null;
 
 	private Network network = null;
-
-	private Map<Id<Link>, Double> linkId2domesticWeights = null;
 
 	private TransportDemand transportDemand = null;
 
@@ -265,14 +260,6 @@ public class SamgodsRunner {
 			new ChainChoiReader(commodity, transportDemand).setSamplingRate(this.samplingRate, new Random(4711))
 					.parse(demandFilePrefix + commodity.twoDigitCode() + demandFileSuffix);
 		}
-		return this;
-	}
-
-	//
-
-	// TODO Needed for NTMCalc.
-	public SamgodsRunner loadLinkRegionalWeights(String linkRegionFile) throws IOException {
-		this.linkId2domesticWeights = new LinkRegionsReader(this.network).read(linkRegionFile);
 		return this;
 	}
 
