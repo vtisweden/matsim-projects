@@ -32,26 +32,25 @@ import se.vti.samgods.common.SamgodsConstants.Commodity;
  * @author GunnarF
  *
  */
-public class TransportDemand {
+public class TransportDemandAndChains {
 
 	// -------------------- MEMBERS --------------------
 
-	// TODO Here we do not check for identical content of transport chains.
 	private final Map<Commodity, Map<OD, List<TransportChain>>> commodity2od2transportChains = new LinkedHashMap<>();
 
 	private final Map<Commodity, Map<OD, List<AnnualShipment>>> commodity2od2annualShipments = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION/COMPOSITION --------------------
 
-	public TransportDemand() {
+	public TransportDemandAndChains() {
 	}
 
-	public void add(TransportChain transportChain) {
+	public void addChain(TransportChain transportChain) {
 		this.commodity2od2transportChains.computeIfAbsent(transportChain.getCommodity(), c -> new LinkedHashMap<>())
 				.computeIfAbsent(transportChain.getOD(), od -> new LinkedList<>()).add(transportChain);
 	}
 
-	public void add(Commodity commodity, OD od, double singleInstanceAmount_ton, int numberOfInstances) {
+	public void addShipments(Commodity commodity, OD od, double singleInstanceAmount_ton, int numberOfInstances) {
 		this.commodity2od2annualShipments.computeIfAbsent(commodity, c -> new LinkedHashMap<>())
 				.computeIfAbsent(od, od2 -> new LinkedList<>())
 				.add(new AnnualShipment(commodity, od, singleInstanceAmount_ton, numberOfInstances));

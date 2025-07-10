@@ -71,14 +71,14 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private final SamgodsConstants.Commodity commodity;
 
-	private final TransportDemand transportDemand;
+	private final TransportDemandAndChains transportDemand;
 
 	private double samplingRate = 1.0;
 	private Random rnd = null;
 
 	// -------------------- CONSTRUCTION/CONFIGURATION --------------------
 
-	public ChainChoiReader(final SamgodsConstants.Commodity commodity, final TransportDemand transportDemand) {
+	public ChainChoiReader(final SamgodsConstants.Commodity commodity, final TransportDemandAndChains transportDemand) {
 		this.commodity = commodity;
 		this.transportDemand = transportDemand;
 	}
@@ -101,7 +101,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 				|| Math.abs(this.od2proba.values().stream().mapToDouble(p -> p).sum() - 1.0) <= 0.001);
 		final Map.Entry<OD, Double> odEntry = this.od2proba.entrySet().stream()
 				.max((e, f) -> e.getValue().compareTo(f.getValue())).get();
-		this.transportDemand.add(this.commodity, odEntry.getKey(), this.singleInstanceVolume_ton_yr,
+		this.transportDemand.addShipments(this.commodity, odEntry.getKey(), this.singleInstanceVolume_ton_yr,
 				this.numberOfInstances);
 
 		this.key = null;
@@ -116,8 +116,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	public void startCurrentDataRow() {
 
 		if ((this.samplingRate < 1.0) && (this.rnd.nextDouble() >= this.samplingRate)) {
-			// Only for testing.
-			return;
+			return; // Only for testing.
 		}
 
 		// Load chain parameters.
@@ -220,7 +219,7 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 					assert (currentEpisode.getMode().equals(segmentMode));
 					currentEpisode.addSegmentOD(segmentOD);
 				}
-				this.transportDemand.add(transportChain);
+				this.transportDemand.addChain(transportChain);
 			}
 		}
 	}

@@ -59,7 +59,7 @@ import se.vti.samgods.external.ntmcalc.HalfLoopAssignment2NTMCalcWriter;
 import se.vti.samgods.logistics.AnnualShipment;
 import se.vti.samgods.logistics.ChainChoiReader;
 import se.vti.samgods.logistics.TransportChain;
-import se.vti.samgods.logistics.TransportDemand;
+import se.vti.samgods.logistics.TransportDemandAndChains;
 import se.vti.samgods.logistics.TransportEpisode;
 import se.vti.samgods.logistics.choice.ChainAndShipmentChoiceStats;
 import se.vti.samgods.logistics.choice.ChainAndShipmentSize;
@@ -133,7 +133,7 @@ public class SamgodsRunner {
 
 	private Network network = null;
 
-	private TransportDemand transportDemand = null;
+	private TransportDemandAndChains transportDemand = null;
 
 	private TransportWorkAscCalibrator fleetCalibrator = null;
 	private ASCDataProvider ascDataProvider = null;
@@ -255,7 +255,7 @@ public class SamgodsRunner {
 	// -------------------- LOAD TRANSPORT DEMAND --------------------
 
 	public SamgodsRunner loadTransportDemand(String demandFilePrefix, String demandFileSuffix) {
-		this.transportDemand = new TransportDemand();
+		this.transportDemand = new TransportDemandAndChains();
 		for (Commodity commodity : this.consideredCommodities) {
 			new ChainChoiReader(commodity, transportDemand).setSamplingRate(this.samplingRate, new Random(4711))
 					.parse(demandFilePrefix + commodity.twoDigitCode() + demandFileSuffix);
