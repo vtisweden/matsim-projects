@@ -257,7 +257,8 @@ public class SamgodsRunner {
 	public SamgodsRunner loadTransportDemand(String demandFilePrefix, String demandFileSuffix) {
 		this.transportDemand = new TransportDemandAndChains();
 		for (Commodity commodity : this.consideredCommodities) {
-			new ChainChoiReader(commodity, transportDemand).setSamplingRate(this.samplingRate, new Random(4711))
+			new ChainChoiReader(commodity, this.transportDemand, this.vehicles)
+					.setSamplingRate(this.samplingRate, new Random(4711))
 					.parse(demandFilePrefix + commodity.twoDigitCode() + demandFileSuffix);
 		}
 		return this;
@@ -562,8 +563,8 @@ public class SamgodsRunner {
 						NetworkAndFleetData networkAndFleetData = NetworkAndFleetDataProvider.getProviderInstance()
 								.createDataInstance();
 						HalfLoopConsolidationJobProcessor consolidationProcessor = new HalfLoopConsolidationJobProcessor(
-								jobQueue, consolidationUnit2assignment, networkAndFleetData, new LinkedHashMap<>(this.commodity2scale),
-								this.ascDataProvider);
+								jobQueue, consolidationUnit2assignment, networkAndFleetData,
+								new LinkedHashMap<>(this.commodity2scale), this.ascDataProvider);
 						Thread choiceThread = new Thread(consolidationProcessor);
 						consolidationThreads.add(choiceThread);
 						choiceThread.start();

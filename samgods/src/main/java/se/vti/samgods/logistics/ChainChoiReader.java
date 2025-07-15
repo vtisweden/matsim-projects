@@ -30,10 +30,12 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
+import org.matsim.vehicles.Vehicles;
 
 import se.vti.samgods.common.OD;
 import se.vti.samgods.common.SamgodsConstants;
 import se.vti.samgods.network.TransportModes;
+import se.vti.samgods.transportation.fleet.SamgodsVehicleAttributes;
 import se.vti.utils.misc.tabularfileparser.AbstractTabularFileHandlerWithHeaderLine;
 import se.vti.utils.misc.tabularfileparser.TabularFileParser;
 
@@ -73,14 +75,32 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 
 	private final TransportDemandAndChains transportDemand;
 
+	private final boolean[] feasibleIsContainerValues;
+
 	private double samplingRate = 1.0;
 	private Random rnd = null;
 
 	// -------------------- CONSTRUCTION/CONFIGURATION --------------------
 
-	public ChainChoiReader(final SamgodsConstants.Commodity commodity, final TransportDemandAndChains transportDemand) {
+	public ChainChoiReader(final SamgodsConstants.Commodity commodity, final TransportDemandAndChains transportDemand,
+			Vehicles vehicles) {
 		this.commodity = commodity;
 		this.transportDemand = transportDemand;
+
+		if (this.thereIsAtLeastOneCompatibleVehicle(true, vehicles)) {
+			if (this.thereIsAtLeastOneCompatibleVehicle(false, vehicles)) {
+				this.feasibleIsContainerValues = new boolean[] { true, false };
+			} else {
+				this.feasibleIsContainerValues = new boolean[] { true };
+			}
+		} else {
+			if (this.thereIsAtLeastOneCompatibleVehicle(false, vehicles)) {
+				this.feasibleIsContainerValues = new boolean[] { false };
+			} else {
+				throw new RuntimeException(
+						"No vehicles (neither container nor bulk) available for commodity: " + commodity);
+			}
+		}
 	}
 
 	public ChainChoiReader setSamplingRate(double rate, Random rnd) {
@@ -90,6 +110,17 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 	}
 
 	// -------------------- INTERNALS --------------------
+
+	private boolean thereIsAtLeastOneCompatibleVehicle(boolean isContainer, Vehicles vehicles) {
+		for (var vehicleType : vehicles.getVehicleTypes().values()) {
+			var attrs = (SamgodsVehicleAttributes) vehicleType.getAttributes()
+					.getAttribute(SamgodsVehicleAttributes.ATTRIBUTE_NAME);
+			if ((isContainer == attrs.isContainer) && attrs.isCompatible(this.commodity)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	private Long key = null;
 	private Double singleInstanceVolume_ton_yr = null;
@@ -202,21 +233,23 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 		 */
 
 		if (segmentODs.size() > 0) {
-			// TODO Could already here filter out impossible commodity/container
-			// combinations.
-			for (boolean isContainer : new boolean[] { true, false }) {
-				final TransportChain transportChain = new TransportChain(this.commodity, isContainer);
+			for (boolean isContainer : this.feasibleIsContainerValues) {
+				var transportChain = new TransportChain(this.commodity, isContainer);
 				TransportEpisode currentEpisode = null;
 				for (int segmentIndex = 0; segmentIndex < segmentODs.size(); segmentIndex++) {
-					final OD segmentOD = segmentODs.get(segmentIndex);
-					final SamgodsConstants.TransportMode segmentMode = modes.get(segmentIndex);
-					if (currentEpisode == null || !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
-							|| !SamgodsConstants.TransportMode.Rail.equals(segmentMode)) {
-						// There are NOT two subsequent rail legs.
+					var segmentOD = segmentODs.get(segmentIndex);
+					var segmentMode = modes.get(segmentIndex);
+					if ((currentEpisode == null)
+							|| !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())) {
+//							|| !SamgodsConstants.TransportMode.Rail.equals(segmentMode)) {
 						currentEpisode = new TransportEpisode(segmentMode);
 						transportChain.addEpisode(currentEpisode);
 					}
-					assert (currentEpisode.getMode().equals(segmentMode));
+//					assert (currentEpisode.getMode().equals(segmentMode));
+					if (!currentEpisode.getMode().equals(segmentMode)) {
+						throw new RuntimeException(
+								"Episode mode is " + currentEpisode.getMode() + ", but segment mode is " + segmentMode);
+					}
 					currentEpisode.addSegmentOD(segmentOD);
 				}
 				this.transportDemand.addChain(transportChain);
