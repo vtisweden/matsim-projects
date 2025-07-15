@@ -240,17 +240,19 @@ public class ChainChoiReader extends AbstractTabularFileHandlerWithHeaderLine {
 					var segmentOD = segmentODs.get(segmentIndex);
 					var segmentMode = modes.get(segmentIndex);
 					if ((currentEpisode == null)
-							|| !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())) {
-//							|| !SamgodsConstants.TransportMode.Rail.equals(segmentMode)) {
+							|| !SamgodsConstants.TransportMode.Rail.equals(currentEpisode.getMode())
+							|| !SamgodsConstants.TransportMode.Rail.equals(segmentMode)) {
 						currentEpisode = new TransportEpisode(segmentMode);
 						transportChain.addEpisode(currentEpisode);
 					}
 //					assert (currentEpisode.getMode().equals(segmentMode));
-					if (!currentEpisode.getMode().equals(segmentMode)) {
-						throw new RuntimeException(
-								"Episode mode is " + currentEpisode.getMode() + ", but segment mode is " + segmentMode);
-					}
 					currentEpisode.addSegmentOD(segmentOD);
+					if (!currentEpisode.getMode().equals(segmentMode)) {
+						log.warn(
+								"Episode mode is " + currentEpisode.getMode() + ", but segment mode is " + segmentMode);
+						log.warn("  Current chain: " + transportChain);
+						log.warn("  Current episode: " + currentEpisode);
+					}
 				}
 				this.transportDemand.addChain(transportChain);
 			}
