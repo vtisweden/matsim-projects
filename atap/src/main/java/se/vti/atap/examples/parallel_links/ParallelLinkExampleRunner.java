@@ -46,71 +46,100 @@ public class ParallelLinkExampleRunner {
 	public ParallelLinkExampleRunner() {
 	}
 
-	public Scenario createMediumExample(String scenarioFolder, ATAPConfigGroup atapConfig) {
-		double inflowDuration_s = 1800.0;
+	private void writeConfig(Config config, String scenarioFolder) {
+		File folder = new File(scenarioFolder);
+		if (folder.exists()) {
+			try {
+				FileUtils.cleanDirectory(folder);
+			} catch (IOException e) {
+				throw new RuntimeException();
+			}
+		} else {
+			folder.mkdirs();
+		}
+		config.network().setInputFile("network.xml");
+		config.plans().setInputFile("population.xml");
+		ConfigUtils.writeMinimalConfig(config, Paths.get(scenarioFolder, "config.xml").toString());
+	}
 
-		ParallelLinkScenarioFactory factory = new ParallelLinkScenarioFactory(inflowDuration_s);
+	private void writeScenario(Scenario scenario, String scenarioFolder) {
+		NetworkUtils.writeNetwork(scenario.getNetwork(),
+				Paths.get(scenarioFolder, scenario.getConfig().network().getInputFile()).toString());
+		PopulationUtils.writePopulation(scenario.getPopulation(),
+				Paths.get(scenarioFolder, scenario.getConfig().plans().getInputFile()).toString());
+	}
+
+	public Scenario createSmallExample(String scenarioFolder, ATAPConfigGroup atapConfig) {
+		double sizeFactor = 3.0;
+		double inflowDuration_s = 900.0;
+
+		ParallelLinkScenarioFactory factory = new ParallelLinkScenarioFactory(inflowDuration_s, sizeFactor);
 		factory.setBottleneck(0, 500.0);
 		factory.setBottleneck(1, 500.0);
-		factory.setBottleneck(2, 500.0);
-		factory.setBottleneck(3, 500.0);
-		factory.setBottleneck(4, 500.0);
-		factory.setOD(1000, 0, 1, 2);
-		factory.setOD(1000, 1, 2, 3);
-		factory.setOD(1000, 2, 3, 4);
+		factory.setOD(2000, 0, 1);
 
 		Config config = factory.buildConfig();
 		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
-		config.controller().setLastIteration(100); // TODO
+		config.controller().setLastIteration(100);
+		config.travelTimeCalculator().setTraveltimeBinSize(60);
+		config.qsim().setStuckTime(Double.POSITIVE_INFINITY);
+		// default: config.qsim().setInsertingWaitingVehiclesBeforeDrivingVehicles(true);
 		config.addModule(new EmulationConfigGroup());
 		config.addModule(atapConfig);
-
 		if (scenarioFolder != null) {
-			File folder = new File(scenarioFolder);
-			if (folder.exists()) {
-				try {
-					FileUtils.cleanDirectory(folder);
-				} catch (IOException e) {
-					throw new RuntimeException();
-				}
-			} else {
-				folder.mkdirs();
-			}
-			config.network().setInputFile("network.xml");
-			config.plans().setInputFile("population.xml");
-			ConfigUtils.writeMinimalConfig(config, Paths.get(scenarioFolder, "config.xml").toString());
+			this.writeConfig(config, scenarioFolder);
 		}
 
 		Scenario scenario = factory.build(config);
-
 		if (scenarioFolder != null) {
-			NetworkUtils.writeNetwork(scenario.getNetwork(),
-					Paths.get(scenarioFolder, config.network().getInputFile()).toString());
-			PopulationUtils.writePopulation(scenario.getPopulation(),
-					Paths.get(scenarioFolder, config.plans().getInputFile()).toString());
+			this.writeScenario(scenario, scenarioFolder);
 		}
 
 		return scenario;
 	}
 
-	public Scenario createMediumExampleWithProposed(String scenarioFolder) {
+	public Scenario createSmallExampleWithUniform(String scenarioFolder) {
+		ATAPConfigGroup atapConfig = new ATAPConfigGroup();
+		atapConfig.setReplannerIdentifier(ReplannerIdentifierType.IID);
+		atapConfig.setReplanningRateIterationExponent(-1.0);
+		return this.createSmallExample(scenarioFolder, atapConfig);
+	}
+
+	public Scenario createSmallExampleWithSorting(String scenarioFolder) {
+		ATAPConfigGroup atapConfig = new ATAPConfigGroup();
+		atapConfig.setReplannerIdentifier(ReplannerIdentifierType.SBAYTI2007);
+		atapConfig.setReplanningRateIterationExponent(-0.5);
+		atapConfig.setMaxMemory(4);
+		atapConfig.setKernelHalftime_s(300);
+		atapConfig.setShuffleBeforeReplannerSelection(true);
+		return this.createSmallExample(scenarioFolder, atapConfig);
+	}
+
+	public Scenario createSmallExampleWithProposed(String scenarioFolder) {
 		ATAPConfigGroup atapConfig = new ATAPConfigGroup();
 		atapConfig.setReplannerIdentifier(ReplannerIdentifierType.UPPERBOUND_ATOMIC);
-		atapConfig.setReplanningRateIterationExponent(-1.0);
-		return this.createMediumExample(scenarioFolder, atapConfig);
+		atapConfig.setReplanningRateIterationExponent(-0.5);
+		atapConfig.setMaxMemory(4);
+		atapConfig.setKernelHalftime_s(60);
+		atapConfig.setShuffleBeforeReplannerSelection(true);
+		atapConfig.setUseQuadraticDistance(true);
+		return this.createSmallExample(scenarioFolder, atapConfig);
 	}
 
 	public void runScenario(Scenario scenario) {
-		ATAP atap = new ATAP();
+		var atap = new ATAP();
 		atap.meet(scenario.getConfig());
-		Controler controler = new Controler(scenario);
+		var controler = new Controler(scenario);
+		var flowListener = new CumulativeFlowListener();
+		controler.addControlerListener(flowListener);
+		controler.getEvents().addHandler(flowListener);
 		atap.meet(controler);
 		controler.run();
 	}
 
 	public static void main(String[] args) {
 		var example = new ParallelLinkExampleRunner();
-		Scenario scenario = example.createMediumExampleWithProposed("./medium");
+		Scenario scenario = example.createSmallExampleWithProposed("./small");
 		example.runScenario(scenario);
 	}
 

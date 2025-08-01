@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -38,21 +40,13 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.PopulationFactory;
 import org.matsim.api.core.v01.population.Route;
-import org.matsim.contrib.atap.ATAP;
-import org.matsim.contrib.atap.ATAPConfigGroup;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.ConfigWriter;
-import org.matsim.core.config.groups.QSimConfigGroup.InflowCapacitySetting;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
 import org.matsim.core.config.groups.ReplanningConfigGroup.StrategySettings;
 import org.matsim.core.config.groups.ScoringConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.ScoringConfigGroup.ModeParams;
-import org.matsim.core.controler.Controler;
-import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.network.io.NetworkWriter;
-import org.matsim.core.population.io.PopulationWriter;
 import org.matsim.core.population.routes.RouteUtils;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule.DefaultStrategy;
 import org.matsim.core.scenario.ScenarioUtils;
@@ -68,29 +62,40 @@ public class ParallelLinkScenarioFactory {
 
 	// -------------------- CONSTANTS --------------------
 
-	private final double bottleneckXSpacing_m = 250.0;
-
-	private final double entryNodeYCoord_m = 0.0;
-	private final double divergeNodeYCoord_m = 100.0;
-	private final double bottleneckTailYCoord_m = 1100.0;
-	private final double bottleneckHeadYCoord_m = 1200.0;
-	private final double mergeNodeYCoord_m = 2200.0;
-	private final double exitNodeYCoord_m = 2300.0;
+	private final double sizeFactor;
+	private final double bottleneckXSpacing_m;
+	private final double entryNodeYCoord_m;
+	private final double divergeNodeYCoord_m;
+	private final double bottleneckTailYCoord_m;
+	private final double bottleneckHeadYCoord_m;
+	private final double mergeNodeYCoord_m;
+	private final double exitNodeYCoord_m;
 
 	private final double freeSpeed_m_s = Units.M_S_PER_KM_H * 100.0;
-	private final double giganticCapacity_veh_h = 100_000.0;
+//	private final double giganticCapacity_veh_h = 10_000.0;
 
 	private final double inflowDuration_s;
+	private final double inflowDuration_h;
 
 	// -------------------- MEMBERS --------------------
 
 	private final Map<Integer, Double> bottleneck2capacity_veh_h = new LinkedHashMap<>();
-	private final Map<List<Integer>, Integer> od2demand_veh = new LinkedHashMap<>();
+	private final Map<List<Integer>, Double> od2demand_veh_h = new LinkedHashMap<>();
 
 	// -------------------- CONSTRUCTION --------------------
 
-	public ParallelLinkScenarioFactory(double inflowDuration_s) {
+	public ParallelLinkScenarioFactory(double inflowDuration_s, double sizeFactor) {
 		this.inflowDuration_s = inflowDuration_s;
+		this.inflowDuration_h = Units.H_PER_S * inflowDuration_s;
+
+		this.sizeFactor = sizeFactor;
+		this.bottleneckXSpacing_m = sizeFactor * 250.0;
+		this.entryNodeYCoord_m = sizeFactor * 0.0;
+		this.divergeNodeYCoord_m = sizeFactor * 100.0;
+		this.bottleneckTailYCoord_m = sizeFactor * 1100.0;
+		this.bottleneckHeadYCoord_m = sizeFactor * 1200.0;
+		this.mergeNodeYCoord_m = sizeFactor * 2200.0;
+		this.exitNodeYCoord_m = sizeFactor * 2300.0;
 	}
 
 	// -------------------- INTERNALS --------------------
@@ -105,9 +110,9 @@ public class ParallelLinkScenarioFactory {
 		this.bottleneck2capacity_veh_h.put(bottleneckIndex, capacity_veh_h);
 	}
 
-	public void setOD(int totalDemand_vehs, int... linkIndices) {
+	public void setOD(double demand_veh_h, int... linkIndices) {
 		List<Integer> od = Arrays.stream(linkIndices).boxed().toList();
-		this.od2demand_veh.put(od, totalDemand_vehs);
+		this.od2demand_veh_h.put(od, demand_veh_h);
 	}
 
 	public Config buildConfig() {
@@ -150,6 +155,8 @@ public class ParallelLinkScenarioFactory {
 
 		// CREATE (FIRST HALF OF) ODS
 
+		Map<Link, Double> bottleneck2maxArrival_veh_h = new LinkedHashMap<>();
+
 		Map<List<Integer>, Node> od2entryNode = new LinkedHashMap<>();
 		Map<List<Integer>, Node> od2divergeNode = new LinkedHashMap<>();
 		Map<List<Integer>, Node> od2mergeNode = new LinkedHashMap<>();
@@ -159,9 +166,14 @@ public class ParallelLinkScenarioFactory {
 
 		double maxApproachTime_s = Double.NEGATIVE_INFINITY;
 
-		for (List<Integer> od : this.od2demand_veh.keySet()) {
+		for (List<Integer> od : this.od2demand_veh_h.keySet()) {
 			String odName = "OD(" + od.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(",")) + ")";
 			List<? extends Link> usedBottlenecks = od.stream().map(i -> allBottlenecks.get(i)).toList();
+
+			double odFlow_veh_h = this.od2demand_veh_h.get(od);
+			for (Link bottleneck : usedBottlenecks) {
+				bottleneck2maxArrival_veh_h.compute(bottleneck, (b, a) -> a == null ? odFlow_veh_h : a + odFlow_veh_h);
+			}
 
 			double xCoord_m = usedBottlenecks.stream().mapToDouble(l -> l.getFromNode().getCoord().getX()).average()
 					.getAsDouble();
@@ -182,11 +194,11 @@ public class ParallelLinkScenarioFactory {
 					NetworkUtils.createAndAddLink(scenario.getNetwork(), this.linkId(entryNode, divergeNode), entryNode,
 							divergeNode,
 							NetworkUtils.getEuclideanDistance(entryNode.getCoord(), divergeNode.getCoord()),
-							this.freeSpeed_m_s, this.giganticCapacity_veh_h, 1, null, null));
+							this.freeSpeed_m_s, 2.0 * odFlow_veh_h, 1, null, null));
 			od2exitLink.put(od,
 					NetworkUtils.createAndAddLink(scenario.getNetwork(), this.linkId(mergeNode, exitNode), mergeNode,
 							exitNode, NetworkUtils.getEuclideanDistance(mergeNode.getCoord(), exitNode.getCoord()),
-							this.freeSpeed_m_s, this.giganticCapacity_veh_h, 1, null, null));
+							this.freeSpeed_m_s, 2.0 * odFlow_veh_h, 1, null, null));
 
 			for (Link bottleneck : usedBottlenecks) {
 				double approachDist_m = NetworkUtils.getEuclideanDistance(divergeNode.getCoord(),
@@ -197,7 +209,7 @@ public class ParallelLinkScenarioFactory {
 
 		// CREATE (SECOND HALF OF) ODS
 
-		for (List<Integer> od : this.od2demand_veh.keySet()) {
+		for (List<Integer> od : this.od2demand_veh_h.keySet()) {
 			List<? extends Link> usedBottlenecks = od.stream().map(i -> allBottlenecks.get(i)).toList();
 			Node divergeNode = od2divergeNode.get(od);
 			Node mergeNode = od2mergeNode.get(od);
@@ -208,12 +220,13 @@ public class ParallelLinkScenarioFactory {
 				double approachDist_m = NetworkUtils.getEuclideanDistance(divergeNode.getCoord(),
 						bottleneck.getFromNode().getCoord());
 				double approachSpeed_m_s = approachDist_m / maxApproachTime_s;
+				double capacity_veh_h = bottleneck2maxArrival_veh_h.get(bottleneck);
 				divergeLinks.add(NetworkUtils.createAndAddLink(scenario.getNetwork(),
 						this.linkId(divergeNode, bottleneck.getFromNode()), divergeNode, bottleneck.getFromNode(),
-						approachDist_m, approachSpeed_m_s, this.giganticCapacity_veh_h, 1, null, null));
+						approachDist_m, approachSpeed_m_s, capacity_veh_h, 1, null, null));
 				mergeLinks.add(NetworkUtils.createAndAddLink(scenario.getNetwork(),
 						this.linkId(bottleneck.getToNode(), mergeNode), bottleneck.getToNode(), mergeNode,
-						approachDist_m, approachSpeed_m_s, this.giganticCapacity_veh_h, 1, null, null));
+						approachDist_m, approachSpeed_m_s, capacity_veh_h, 1, null, null));
 			}
 
 			Id<Link> entryLinkId = od2entryLink.get(od).getId();
@@ -223,11 +236,12 @@ public class ParallelLinkScenarioFactory {
 			Id<Link> exitLinkId = od2exitLink.get(od).getId();
 
 			PopulationFactory factory = scenario.getPopulation().getFactory();
-			
-			double delta_s = this.inflowDuration_s / this.od2demand_veh.get(od);
+
+			double agentCnt = this.inflowDuration_h * this.od2demand_veh_h.get(od);
+			double delta_s = this.inflowDuration_s / agentCnt;
 			double time_s = 0.0;
-			for (int n = 0; n < this.od2demand_veh.get(od); n++) {
-				
+			for (int n = 0; n < agentCnt; n++) {
+
 				Plan plan = factory.createPlan();
 				Activity start = factory.createActivityFromLinkId("start", entryLinkId);
 				start.setEndTime(time_s);
@@ -238,12 +252,34 @@ public class ParallelLinkScenarioFactory {
 				leg.setRoute(route);
 				plan.addLeg(leg);
 				plan.addActivity(factory.createActivityFromLinkId("end", exitLinkId));
-				
+
 				Person person = factory.createPerson(Id.createPersonId(scenario.getPopulation().getPersons().size()));
 				person.addPlan(plan);
 				scenario.getPopulation().addPerson(person);
-				
+
 				time_s += delta_s;
+			}
+		}
+
+		// ENSURE THAT THERE IS NO SPILLBACK INTO UPSTREAM DIVERGES
+
+		Logger log = LogManager.getLogger(this.getClass());
+		for (int bottleneckIndex = 0; bottleneckIndex < bottleneckCnt; bottleneckIndex++) {
+			Link bottleneck = allBottlenecks.get(bottleneckIndex);
+			double maxQueueSize_veh = Math.max(0,
+					bottleneck2maxArrival_veh_h.get(bottleneck) - this.bottleneck2capacity_veh_h.get(bottleneckIndex))
+					* Units.H_PER_S * this.inflowDuration_s;
+			double maxQueueLength_m = scenario.getNetwork().getEffectiveCellSize() * maxQueueSize_veh;
+			log.info("Maximum queue length upstream of bottleneck " + bottleneck.getId() + " is " + maxQueueLength_m
+					+ "m");
+			for (Link approach : bottleneck.getFromNode().getInLinks().values()) {
+				log.info("  Length of upstream link " + approach.getId() + " is " + approach.getLength() + "m.");
+				if (approach.getLength() < maxQueueLength_m) {
+					throw new RuntimeException("Maximum queue length upstream of bottleneck " + bottleneck.getId()
+							+ " is " + maxQueueLength_m + "m but length of upstream link " + approach.getId()
+							+ " is just " + approach.getLength() + "m.\nPossible solution: Increase size factor to "
+							+ (this.sizeFactor * maxQueueLength_m / approach.getLength()) + ".");
+				}
 			}
 		}
 
