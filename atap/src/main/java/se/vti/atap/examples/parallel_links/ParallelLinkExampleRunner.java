@@ -32,6 +32,7 @@ import org.matsim.contrib.emulation.EmulationConfigGroup;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.PopulationUtils;
 
@@ -48,17 +49,18 @@ public class ParallelLinkExampleRunner {
 	public Scenario createMediumExample(String scenarioFolder, ATAPConfigGroup atapConfig) {
 		double inflowDuration_s = 1800.0;
 
-		ParallelLinkScenarioFactory factory = new ParallelLinkScenarioFactory();
+		ParallelLinkScenarioFactory factory = new ParallelLinkScenarioFactory(inflowDuration_s);
 		factory.setBottleneck(0, 500.0);
 		factory.setBottleneck(1, 500.0);
 		factory.setBottleneck(2, 500.0);
 		factory.setBottleneck(3, 500.0);
 		factory.setBottleneck(4, 500.0);
-		factory.setOD(1000, inflowDuration_s, 0, 1, 2);
-		factory.setOD(1000, inflowDuration_s, 1, 2, 3);
-		factory.setOD(1000, inflowDuration_s, 2, 3, 4);
+		factory.setOD(1000, 0, 1, 2);
+		factory.setOD(1000, 1, 2, 3);
+		factory.setOD(1000, 2, 3, 4);
 
 		Config config = factory.buildConfig();
+		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controller().setLastIteration(100); // TODO
 		config.addModule(new EmulationConfigGroup());
 		config.addModule(atapConfig);
