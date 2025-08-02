@@ -26,7 +26,7 @@ package se.vti.atap.minimalframework;
  */
 public interface Agent<P extends Plan> {
 
-	Object getId();
+	String getId();
 	
 	P getCurrentPlan();
 	

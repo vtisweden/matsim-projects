@@ -26,8 +26,8 @@ import java.util.Set;
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkLoading<T extends NetworkConditions, Q extends NetworkFlows, P extends Plan> {
+public interface ApproximateNetworkLoading<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<P>, P extends Plan> {
 
-	Q computeFlows(Set<Agent<P>> agents, T networkConditions);
+	Q computeFlows(Set<A> agentsUsingCurrentPlans, Set<A> agentsUsingCandidatePlans, T networkConditions);
 	
 }

@@ -26,8 +26,8 @@ import java.util.Set;
  * @author GunnarF
  *
  */
-public interface ExactNetworkLoading<T extends NetworkConditions, P extends Plan> {
+public interface ExactNetworkLoading<T extends NetworkConditions, A extends Agent> {
 
-	T computeNetworkLoading(Set<Agent<P>> agents);
+	T computeNetworkLoading(Set<A> agents);
 	
 }

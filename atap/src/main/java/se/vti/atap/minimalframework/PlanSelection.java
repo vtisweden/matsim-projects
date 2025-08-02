@@ -26,8 +26,8 @@ import java.util.Set;
  * @author GunnarF
  *
  */
-public interface PlanSelection<T extends NetworkConditions, P extends Plan> {
+public interface PlanSelection<T extends NetworkConditions, A extends Agent<?>> {
 
-	void selectPlans(Set<Agent<P>> agents, T NetworkConditions, int iteration);
+	void selectPlans(Set<A> agents, T NetworkConditions, double absoluteAmbitionLevel);
 	
 }

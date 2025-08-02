@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.framework
+ * se.vti.atap.examples.minimalframework.parallel_links
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,17 +17,25 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.examples.minimalframework.parallel_links;
+
+import se.vti.atap.minimalframework.BasicAgentImpl;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface PlanInnovation<T extends NetworkConditions, A extends Agent<P>, P extends Plan> {
+public class AgentImpl extends BasicAgentImpl<PlanImpl> {
 
-	public P computeInitialPlan(A agent);
+	private final int[] availableLinks;
+	
+	public AgentImpl(String id, int... availableLinks) {
+		super(id);
+		this.availableLinks = availableLinks;
+	}
 
-	public P computeCandidatePlan(A agent, T networkConditions);
-
+	public int[] getAvailableLinks() {
+		return this.availableLinks;
+	}
 }

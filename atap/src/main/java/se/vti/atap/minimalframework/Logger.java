@@ -26,8 +26,8 @@ import java.util.Set;
  * @author GunnarF
  *
  */
-public interface Logger<T extends NetworkConditions, P extends Plan> {
+public interface Logger<T extends NetworkConditions, A extends Agent<?>> {
 
-	void log(Set<Agent<P>> agents, T networkConditions);
+	void log(Set<A> agents, T networkConditions);
 	
 }

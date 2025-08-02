@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.framework
+ * se.vti.atap.examples.minimalframework.parallel_links
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -24,10 +24,40 @@ package se.vti.atap.minimalframework;
  * @author GunnarF
  *
  */
-public interface PlanInnovation<T extends NetworkConditions, A extends Agent<P>, P extends Plan> {
+public class BasicAgentImpl<P extends Plan> implements Agent<P> {
 
-	public P computeInitialPlan(A agent);
+	private final String id;
 
-	public P computeCandidatePlan(A agent, T networkConditions);
+	private P currentPlan = null;
+	private P candidatePlan = null;
+
+	public BasicAgentImpl(String id) {
+		this.id = id;
+	}
+
+	@Override
+	public String getId() {
+		return this.id;
+	}
+
+	@Override
+	public P getCurrentPlan() {
+		return this.currentPlan;
+	}
+
+	@Override
+	public P getCandidatePlan() {
+		return this.candidatePlan;
+	}
+
+	@Override
+	public void setCurrentPlan(P plan) {
+		this.currentPlan = plan;
+	}
+
+	@Override
+	public void setCandidatePlan(P plan) {
+		this.candidatePlan = plan;
+	}
 
 }
