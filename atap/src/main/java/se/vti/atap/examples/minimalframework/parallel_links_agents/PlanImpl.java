@@ -17,29 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links;
+package se.vti.atap.examples.minimalframework.parallel_links_agents;
 
-import java.util.Set;
-
-import se.vti.atap.minimalframework.common.BasicLoggerImpl;
-import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
+import se.vti.atap.minimalframework.common.BasicPlanImpl;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class LoggerImpl extends BasicLoggerImpl<DoubleArrayWrapper, AgentImpl> {
+public class PlanImpl extends BasicPlanImpl {
 
-	@Override
-	public String createHeader() {
-		return "iteration\taverageGap\ttravelTime[0]\ttravelTime[1]";
-	}
+	public final int linkIndex;
 
-	@Override
-	public String createLine(DoubleArrayWrapper travelTimes, Set<AgentImpl> agents) {
-		return super.getLogCounter() + "\t" + super.computeAverageGap(agents) + "\t" + travelTimes.data[0] + "\t"
-				+ travelTimes.data[1];
+	public PlanImpl(int linkIndex) {
+		this.linkIndex = linkIndex;
 	}
 
 }
