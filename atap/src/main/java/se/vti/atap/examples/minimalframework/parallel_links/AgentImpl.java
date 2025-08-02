@@ -19,7 +19,7 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links;
 
-import se.vti.atap.minimalframework.BasicAgentImpl;
+import se.vti.atap.minimalframework.common.BasicAgentImpl;
 
 /**
  * 
@@ -28,14 +28,10 @@ import se.vti.atap.minimalframework.BasicAgentImpl;
  */
 public class AgentImpl extends BasicAgentImpl<PlanImpl> {
 
-	private final int[] availableLinks;
+	public final int[] availableLinks;
 	
 	public AgentImpl(String id, int... availableLinks) {
 		super(id);
 		this.availableLinks = availableLinks;
-	}
-
-	public int[] getAvailableLinks() {
-		return this.availableLinks;
 	}
 }

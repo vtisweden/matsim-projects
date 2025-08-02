@@ -17,9 +17,18 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.minimalframework.common;
 
 import java.util.Set;
+
+import se.vti.atap.minimalframework.Agent;
+import se.vti.atap.minimalframework.ExactNetworkLoading;
+import se.vti.atap.minimalframework.Logger;
+import se.vti.atap.minimalframework.NetworkConditions;
+import se.vti.atap.minimalframework.Plan;
+import se.vti.atap.minimalframework.PlanInnovation;
+import se.vti.atap.minimalframework.PlanSelection;
+import se.vti.atap.minimalframework.UtilityFunction;
 
 /**
  * 
@@ -32,15 +41,15 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 
 	private ExactNetworkLoading<T, A> networkLoading = null;
 
-	private UtilityFunction<T, P> utilityFunction = null;
+	private UtilityFunction<T, A, P> utilityFunction = null;
 
-	private PlanInnovation<T, A, P> planInnovation = null;
+	private PlanInnovation<T, A> planInnovation = null;
 
 	private PlanSelection<T, A> planSelection = null;
 
-	private Logger<T, A> logger = null;
-
 	private Integer maxIterations = null;
+
+	private Logger<T, A> logger = null;
 
 	public Runner() {
 	}
@@ -55,12 +64,12 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 		return this;
 	}
 
-	public Runner<T, A, P> setUtilityFunction(UtilityFunction<T, P> utilityFunction) {
+	public Runner<T, A, P> setUtilityFunction(UtilityFunction<T, A, P> utilityFunction) {
 		this.utilityFunction = utilityFunction;
 		return this;
 	}
 
-	public Runner<T, A, P> setPlanInnovation(PlanInnovation<T, A, P> planInnovation) {
+	public Runner<T, A, P> setPlanInnovation(PlanInnovation<T, A> planInnovation) {
 		this.planInnovation = planInnovation;
 		return this;
 	}
@@ -70,19 +79,19 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 		return this;
 	}
 
+	public Runner<T, A, P> setIterations(int maxIterations) {
+		this.maxIterations = maxIterations;
+		return this;
+	}
+
 	public Runner<T, A, P> setLogger(Logger<T, A> logger) {
 		this.logger = logger;
 		return this;
 	}
 
-	public Runner<T, A, P> setMaxIterations(int maxIterations) {
-		this.maxIterations = maxIterations;
-		return this;
-	}
-
 	public void run() {
 
-		this.agents.stream().forEach(a -> a.setCurrentPlan(this.planInnovation.computeInitialPlan(a)));
+		this.agents.stream().forEach(a -> this.planInnovation.assignInitialPlan(a));
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
 
@@ -93,18 +102,25 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 				P currentPlan = agent.getCurrentPlan();
 				currentPlan.setUtility(this.utilityFunction.computeUtility(agent, currentPlan, networkConditions));
 
-				P candidatePlan = this.planInnovation.computeCandidatePlan(agent, networkConditions);
+				this.planInnovation.assignCandidatePlan(agent, networkConditions);
+				P candidatePlan = agent.getCandidatePlan();
 				if (candidatePlan.getUtility() == null) {
 					candidatePlan
 							.setUtility(this.utilityFunction.computeUtility(agent, candidatePlan, networkConditions));
 				}
 			}
 
-			this.logger.log(this.agents, networkConditions);
+			this.logger.log(networkConditions, this.agents);
 
 			if (iteration < this.maxIterations - 1) {
-				this.planSelection.selectPlans(this.agents, networkConditions, iteration);
+				this.planSelection.assignSelectedPlans(this.agents, networkConditions, iteration);
 			}
 		}
+		
+		System.out.println(this.logger);
+	}	
+	
+	public String getLogString() {
+		return this.logger.toString();
 	}
 }

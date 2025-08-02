@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.framework
+ * se.vti.atap.minimalframework
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -28,6 +28,6 @@ import java.util.Set;
  */
 public interface Logger<T extends NetworkConditions, A extends Agent<?>> {
 
-	void log(Set<A> agents, T networkConditions);
+	void log(T networkConditions, Set<A> agents);
 	
 }

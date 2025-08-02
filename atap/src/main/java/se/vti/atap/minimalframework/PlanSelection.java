@@ -28,6 +28,6 @@ import java.util.Set;
  */
 public interface PlanSelection<T extends NetworkConditions, A extends Agent<?>> {
 
-	void selectPlans(Set<A> agents, T NetworkConditions, double absoluteAmbitionLevel);
-	
+	void assignSelectedPlans(Set<A> agents, T NetworkConditions, int iteration);
+
 }

@@ -24,10 +24,10 @@ package se.vti.atap.minimalframework;
  * @author GunnarF
  *
  */
-public interface PlanInnovation<T extends NetworkConditions, A extends Agent<P>, P extends Plan> {
+public interface PlanInnovation<T extends NetworkConditions, A extends Agent<?>> {
 
-	public P computeInitialPlan(A agent);
+	void assignInitialPlan(A agent);
 
-	public P computeCandidatePlan(A agent, T networkConditions);
+	void assignCandidatePlan(A agent, T networkConditions);
 
 }

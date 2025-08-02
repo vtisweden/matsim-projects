@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.minimalframework
+ * se.vti.atap.examples.minimalframework.parallel_links
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,17 +17,22 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.minimalframework.common;
 
-import java.util.Set;
+import se.vti.atap.minimalframework.NetworkConditions;
+import se.vti.atap.minimalframework.NetworkFlows;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkLoading<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>> {
+public class DoubleArrayWrapper implements NetworkFlows, NetworkConditions {
 
-	Q computeFlows(Set<A> agentsUsingCurrentPlans, Set<A> agentsUsingCandidatePlans, T networkConditions);
+	public final double[] data;
 	
+	public DoubleArrayWrapper(int dimension) {
+		this.data = new double[dimension];
+	}
+
 }

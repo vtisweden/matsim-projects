@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.minimalframework
+ * se.vti.atap.minimalframework.common
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,17 +17,25 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.minimalframework.common;
 
-import java.util.Set;
+import se.vti.atap.minimalframework.NetworkFlowDistance;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkLoading<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>> {
+public class DoubleArrayDistance implements NetworkFlowDistance<DoubleArrayWrapper> {
 
-	Q computeFlows(Set<A> agentsUsingCurrentPlans, Set<A> agentsUsingCandidatePlans, T networkConditions);
-	
+	@Override
+	public double computeDistance(DoubleArrayWrapper a, DoubleArrayWrapper b) {
+		double sumOfSquares = 0.0;
+		for (int i = 0; i < Math.min(a.data.length, b.data.length); i++) {
+			double deviation = a.data[i] - b.data[i];
+			sumOfSquares = deviation * deviation;
+		}
+		return Math.sqrt(sumOfSquares);
+	}
+
 }

@@ -17,7 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.minimalframework.common;
+
+import se.vti.atap.minimalframework.Agent;
+import se.vti.atap.minimalframework.Plan;
 
 /**
  * 
@@ -29,6 +32,7 @@ public class BasicAgentImpl<P extends Plan> implements Agent<P> {
 	private final String id;
 
 	private P currentPlan = null;
+
 	private P candidatePlan = null;
 
 	public BasicAgentImpl(String id) {
@@ -58,6 +62,11 @@ public class BasicAgentImpl<P extends Plan> implements Agent<P> {
 	@Override
 	public void setCandidatePlan(P plan) {
 		this.candidatePlan = plan;
+	}
+
+	@Override
+	public void setCurrentPlanToCandidatePlan() {
+		this.currentPlan = this.candidatePlan;
 	}
 
 }

@@ -27,13 +27,19 @@ package se.vti.atap.minimalframework;
 public interface Agent<P extends Plan> {
 
 	String getId();
-	
+
 	P getCurrentPlan();
-	
+
 	P getCandidatePlan();
-	
+
 	void setCurrentPlan(P plan);
-	
+
 	void setCandidatePlan(P plan);
-	
+
+	void setCurrentPlanToCandidatePlan();
+
+	default double getGap() {
+		return this.getCandidatePlan().getUtility() - this.getCurrentPlan().getUtility();
+	}
+
 }

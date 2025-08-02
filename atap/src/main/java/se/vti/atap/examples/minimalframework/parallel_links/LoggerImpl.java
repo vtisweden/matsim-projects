@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.minimalframework
+ * se.vti.atap.examples.minimalframework.parallel_links
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,17 +17,29 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.examples.minimalframework.parallel_links;
 
 import java.util.Set;
+
+import se.vti.atap.minimalframework.common.BasicLoggerImpl;
+import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkLoading<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>> {
+public class LoggerImpl extends BasicLoggerImpl<DoubleArrayWrapper, AgentImpl> {
 
-	Q computeFlows(Set<A> agentsUsingCurrentPlans, Set<A> agentsUsingCandidatePlans, T networkConditions);
-	
+	@Override
+	public String createHeader() {
+		return "iteration\taverageGap\ttravelTime[0]\ttravelTime[1]";
+	}
+
+	@Override
+	public String createLine(DoubleArrayWrapper travelTimes, Set<AgentImpl> agents) {
+		return super.getLogCounter() + "\t" + super.computeAverageGap(agents) + "\t" + travelTimes.data[0] + "\t"
+				+ travelTimes.data[1];
+	}
+
 }

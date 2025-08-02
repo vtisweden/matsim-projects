@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.examples.minimalframework.parallel_links
+ * se.vti.atap.minimalframework
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,8 +17,15 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links;
+package se.vti.atap.minimalframework.common;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
 import se.vti.atap.minimalframework.NetworkFlows;
 
@@ -27,12 +34,22 @@ import se.vti.atap.minimalframework.NetworkFlows;
  * @author GunnarF
  *
  */
-public class DoubleArrayWrapper implements NetworkFlows, NetworkConditions {
+public class UniformPlanSelection<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>>
+		extends AbstractPlanSelection<T, A> {
 
-	public final double[] data;
-	
-	public DoubleArrayWrapper(int dimension) {
-		this.data = new double[dimension];
+	private final Random rnd = new Random(4711);
+
+	public UniformPlanSelection(double stepSizeIterationExponent) {
+		super(stepSizeIterationExponent);
 	}
 
+	@Override
+	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
+		List<A> allAgents = new ArrayList<>(agents);
+		Collections.shuffle(allAgents, this.rnd);
+		double numberOfReplanners = this.computeStepSize(iteration) * allAgents.size();
+		for (int n = 0; n < numberOfReplanners; n++) {
+			allAgents.get(n).setCurrentPlanToCandidatePlan();
+		}
+	}
 }

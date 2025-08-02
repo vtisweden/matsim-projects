@@ -19,35 +19,19 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links;
 
-import se.vti.atap.minimalframework.Plan;
+import se.vti.atap.minimalframework.common.BasicPlanImpl;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class PlanImpl implements Plan {
+public class PlanImpl extends BasicPlanImpl {
 
-	private final int linkIndex;
-	
-	private Double utility = null;
-	
+	public final int linkIndex;
+
 	public PlanImpl(int linkIndex) {
 		this.linkIndex = linkIndex;
-	}
-	
-	public int getLinkIndex() {
-		return this.linkIndex;
-	}
-	
-	@Override
-	public void setUtility(Double getUtility) {
-		this.utility = utility;
-	}
-
-	@Override
-	public Double getUtility() {
-		return this.utility;
 	}
 
 }

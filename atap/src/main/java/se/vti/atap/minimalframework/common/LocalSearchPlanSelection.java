@@ -17,30 +17,43 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.minimalframework.common;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
+
+import se.vti.atap.minimalframework.Agent;
+import se.vti.atap.minimalframework.ApproximateNetworkLoading;
+import se.vti.atap.minimalframework.NetworkConditions;
+import se.vti.atap.minimalframework.NetworkFlowDistance;
+import se.vti.atap.minimalframework.NetworkFlows;
+import se.vti.atap.minimalframework.PlanSelection;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<P>, P extends Plan>
+public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>>
 		implements PlanSelection<T, A> {
 
-	private final ApproximateNetworkLoading<T, Q, A, P> approximateNetworkLoading;
+	private final Random rnd = new Random(4711);
+	
+	private final ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading;
 
 	private final NetworkFlowDistance<Q> networkFlowDistance;
 
-	public LocalSearchPlanSelection(ApproximateNetworkLoading<T, Q, A, P> approximateNetworkLoading,
-			NetworkFlowDistance<Q> networkConditionDistance) {
+	private final double stepSizeIterationExponent;
+	
+	public LocalSearchPlanSelection(ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading,
+			NetworkFlowDistance<Q> networkConditionDistance, double stepSizeIterationExponent) {
 		this.approximateNetworkLoading = approximateNetworkLoading;
 		this.networkFlowDistance = networkConditionDistance;
+		this.stepSizeIterationExponent = stepSizeIterationExponent;
 	}
 
 	private double computeObjectiveFunction(Set<A> agentsUsingCandidatePlan, Q candidateFlows, Q originalFlows,
@@ -52,42 +65,48 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends Net
 	}
 
 	@Override
-	public void selectPlans(Set<A> agents, T networkConditions, double absoluteAmbitionLevel) {
+	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
 
-		List<A> allAgents = new ArrayList<>(agents);
+		double relativeAmbitionLevel = Math.pow(iteration + 1, this.stepSizeIterationExponent);
+		double absoluteAmbitionLevel = relativeAmbitionLevel *
+				agents.stream().mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
+		
+		Q originalFlows = this.approximateNetworkLoading.computeFlows(agents, Collections.emptySet(),
+				networkConditions);
 
 		Set<A> agentsUsingCurrentPlans = new LinkedHashSet<>();
 		Set<A> agentsUsingCandidatePlans = new LinkedHashSet<>(agents);
+		Q candidateFlows = this.approximateNetworkLoading.computeFlows(agentsUsingCurrentPlans,
+				agentsUsingCandidatePlans, networkConditions);
 
-		Q originalFlows = this.approximateNetworkLoading.computeFlows(agents, Collections.emptySet(),
-				networkConditions);
-		Q candidateFlows = this.approximateNetworkLoading.computeFlows(agentsUsingCurrentPlans, agentsUsingCandidatePlans, networkConditions);
-		double oldObjectiveFunction = this.computeObjectiveFunction(agentsUsingCandidatePlans, candidateFlows, originalFlows, absoluteAmbitionLevel);
-		
+		double objectiveFunctionValue = this.computeObjectiveFunction(agentsUsingCandidatePlans, candidateFlows,
+				originalFlows, absoluteAmbitionLevel);
+
+		List<A> allAgents = new ArrayList<>(agents);
 		boolean switched;
 		do {
 			switched = false;
-			Collections.shuffle(allAgents);
+			Collections.shuffle(allAgents, this.rnd);
 			for (A agent : allAgents) {
 				boolean agentWasUsingCandidatePlan = agentsUsingCandidatePlans.contains(agent);
 				if (agentWasUsingCandidatePlan) {
 					agentsUsingCandidatePlans.remove(agent);
 					agentsUsingCurrentPlans.add(agent);
 				} else {
-					agentsUsingCandidatePlans.add(agent);
 					agentsUsingCurrentPlans.remove(agent);
+					agentsUsingCandidatePlans.add(agent);
 				}
 				candidateFlows = this.approximateNetworkLoading.computeFlows(agentsUsingCurrentPlans,
 						agentsUsingCandidatePlans, networkConditions);
-				double newObjectiveFunction = this.computeObjectiveFunction(agentsUsingCandidatePlans, candidateFlows,
-						originalFlows, absoluteAmbitionLevel);
-				if (newObjectiveFunction > oldObjectiveFunction) {
-					oldObjectiveFunction = newObjectiveFunction;
+				double candidateObjectiveFunctionValue = this.computeObjectiveFunction(agentsUsingCandidatePlans,
+						candidateFlows, originalFlows, absoluteAmbitionLevel);
+				if (candidateObjectiveFunctionValue > objectiveFunctionValue) {
+					objectiveFunctionValue = candidateObjectiveFunctionValue;
 					switched = true;
 				} else {
 					if (agentWasUsingCandidatePlan) {
-						agentsUsingCandidatePlans.add(agent);
 						agentsUsingCurrentPlans.remove(agent);
+						agentsUsingCandidatePlans.add(agent);
 					} else {
 						agentsUsingCandidatePlans.remove(agent);
 						agentsUsingCurrentPlans.add(agent);
@@ -95,10 +114,10 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends Net
 				}
 			}
 		} while (switched);
-		
+
 		for (A a : agents) {
 			if (agentsUsingCandidatePlans.contains(a)) {
-				a.setCurrentPlan(a.getCandidatePlan());				
+				a.setCurrentPlanToCandidatePlan();
 			}
 			a.setCandidatePlan(null);
 		}
