@@ -32,7 +32,7 @@ public class ODPair extends BasicAgentImpl<Paths> {
 	public final double demand_veh;
 
 	public final int[] availableLinks;
-
+	
 	public ODPair(String id, Double demand_veh, int... availableLinks) {
 		super(id);
 		this.demand_veh = demand_veh;

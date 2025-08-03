@@ -19,6 +19,8 @@
  */
 package se.vti.atap.minimalframework.common;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
@@ -36,10 +38,11 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 
 	private int logCounter = 0;
 
-	private final StringBuffer log;
+	private final String header;
+	private final List<String> dataRows = new ArrayList<>();
 
 	public BasicLoggerImpl() {
-		this.log = new StringBuffer(this.createHeader() + "\n");
+		this.header = this.createHeader();
 	}
 
 	protected int getLogCounter() {
@@ -53,7 +56,7 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 
 	@Override
 	public final void log(T networkConditions, Set<A> agents) {
-		this.log.append(this.createLine(networkConditions, agents) + "\n");
+		this.dataRows.add(this.createLine(networkConditions, agents));
 		this.logCounter++;
 	}
 
@@ -66,7 +69,23 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 	}
 	
 	public String toString() {
-		return this.log.toString();
+		StringBuffer result = new StringBuffer(this.header);
+		result.append("\n");
+		for (String dataLine : this.dataRows) {
+			result.append(dataLine);
+			result.append("\n");
+		}
+		return result.toString();
+	}
+
+	@Override
+	public String getHeader() {
+		return this.header;
+	}
+
+	@Override
+	public List<String> getDataRows() {
+		return this.dataRows;
 	}
 
 }

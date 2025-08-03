@@ -19,6 +19,7 @@
  */
 package se.vti.atap.minimalframework;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -29,5 +30,9 @@ import java.util.Set;
 public interface Logger<T extends NetworkConditions, A extends Agent<?>> {
 
 	void log(T networkConditions, Set<A> agents);
-	
+
+	String getHeader();
+
+	List<String> getDataRows();
+
 }

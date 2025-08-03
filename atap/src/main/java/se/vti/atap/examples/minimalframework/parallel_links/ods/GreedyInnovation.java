@@ -91,6 +91,28 @@ public class GreedyInnovation implements PlanInnovation<DoubleArrayWrapper, ODPa
 		for (int h2 : _Hhat) {
 			f[h2] = (w - c[h2]) / s[h2];
 		}
-		odPair.setCandidatePlan(new Paths(f));
+
+		double feasible_veh = 0.0;
+		for (int h2 : _Hhat) {
+			if (f[h2] >= 0) {
+				feasible_veh += f[h2];
+			} else {
+				f[h2] = 0.0;
+			}
+		}
+		if (feasible_veh < 1e-8) {
+			throw new RuntimeException("no feasible flow");
+		}
+		for (int h2 : _Hhat) {
+			f[h2] *= odPair.demand_veh / feasible_veh;
+		}
+
+		Paths candidatePlan = new Paths(f);
+		if (odPair.computeCurrentTotalTravelTime_s(candidatePlan, travelTimes_s) < odPair
+				.computeCurrentTotalTravelTime_s(odPair.getCurrentPlan(), travelTimes_s)) {
+			odPair.setCandidatePlan(candidatePlan);
+		} else {
+			odPair.setCandidatePlan(odPair.getCurrentPlan());
+		}
 	}
 }

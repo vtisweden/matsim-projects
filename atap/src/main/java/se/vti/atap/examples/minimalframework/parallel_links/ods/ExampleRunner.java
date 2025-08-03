@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
+import se.vti.atap.examples.minimalframework.parallel_links.RandomScenarioGenerator;
 import se.vti.atap.minimalframework.ApproximateNetworkLoading;
 import se.vti.atap.minimalframework.ExactNetworkLoading;
 import se.vti.atap.minimalframework.PlanInnovation;
@@ -41,13 +42,13 @@ import se.vti.atap.minimalframework.common.UniformPlanSelection;
  * @author GunnarF
  *
  */
-public class Model {
+public class ExampleRunner {
 
-	private final Set<ODPair> agents = new LinkedHashSet<>();
+	private Set<ODPair> agents = new LinkedHashSet<>();
 
 	private Network network = null;
 
-	public Model() {
+	public ExampleRunner() {
 	}
 
 	public void createODPair(String id, Double demand_veh, int... availableLinks) {
@@ -56,6 +57,10 @@ public class Model {
 
 	public Set<ODPair> getAgents() {
 		return this.agents;
+	}
+	
+	public void setODPairs(Set<ODPair> agents) {
+		this.agents = agents;
 	}
 
 	public void setNetwork(Network network) {
@@ -107,14 +112,27 @@ public class Model {
 		return new GreedyInnovation(this.network);
 	}
 
-	public static Model createSmallExampleModel() {
-		Model model = new Model();
+	public static ExampleRunner createSmallExampleModel() {
+		ExampleRunner model = new ExampleRunner();
 		model.setNetwork(new Network(2).setAllBPRParameters(60.0, 50, 4));
 		model.createODPair("single od", 100.0, 0, 1);
 		return model;
 	}
 
-	public static Runner<DoubleArrayWrapper, ODPair, Paths> createBasicRunner(Model model) {
+	public static ExampleRunner createLargeRandomExample() {
+		ExampleRunner exampleRunner = new ExampleRunner();
+		RandomScenarioGenerator scenarioGenerator = new RandomScenarioGenerator(4711);
+		// 1000 links with avg capacity 1000.0
+		Network network = scenarioGenerator.createRandomNetwork(1000, 1000, 
+				60.0, 900.0, 100.0, 1900.0, 1.0, 2.0);
+		// 100 ods with avg demand 2000.0 und avg 100 route alternatives
+		Set<ODPair> odPairs = scenarioGenerator.createRandomOdDemand(100, 100, 1000.0, 3000.0, 2, 198, network);
+		exampleRunner.setNetwork(network);
+		exampleRunner.setODPairs(odPairs);
+		return exampleRunner;
+	}
+
+	public static Runner<DoubleArrayWrapper, ODPair, Paths> createBasicRunner(ExampleRunner model) {
 		var runner = new Runner<DoubleArrayWrapper, ODPair, Paths>();
 		runner.setAgents(model.getAgents()).setIterations(100).setNetworkLoading(model.createExactNetworkLoading())
 				.setPlanInnovation(model.createBestResponsePlanInnovation())
@@ -147,11 +165,41 @@ public class Model {
 		return runner.getLogString();
 	}
 
+	public static String runLargeRandomExampleWithUniformMethod() {
+		var model = createLargeRandomExample();
+		var runner = createBasicRunner(model);
+		runner.setPlanSelection(new UniformPlanSelection<>(-1.0));
+		runner.run();
+		return runner.getLogString();
+	}
+
+	public static String runLargeRandomExampleWithSortingMethod() {
+		var model = createLargeRandomExample();
+		var runner = createBasicRunner(model);
+		runner.setPlanSelection(new SortingPlanSelection<>(-1.0));
+		runner.run();
+		return runner.getLogString();
+	}
+
+	public static String runLargeRandomExampleWithProposedMethod() {
+		var model = createLargeRandomExample();
+		var runner = createBasicRunner(model);
+		runner.setPlanSelection(new LocalSearchPlanSelection<>(model.createApproximateNetworkLoading(),
+				new DoubleArrayDistance(), -1.0));
+		runner.run();
+		return runner.getLogString();
+	}
+
 	public static void main(String[] args) {
 		System.out.println("STARTED ...");
-		runSmallExampleWithUniformMethod();
-		runSmallExampleWithSortingMethod();
-		runSmallExampleWithProposedMethod();
+//		runSmallExampleWithUniformMethod();
+//		runSmallExampleWithSortingMethod();
+//		runSmallExampleWithProposedMethod();
+
+//		runLargeRandomExampleWithUniformMethod();
+//		runLargeRandomExampleWithSortingMethod();
+		runLargeRandomExampleWithProposedMethod();
+
 		System.out.println("... DONE");
 	}
 
