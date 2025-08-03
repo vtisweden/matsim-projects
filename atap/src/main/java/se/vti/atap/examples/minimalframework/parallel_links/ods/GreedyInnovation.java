@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links_ods;
+package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import se.vti.atap.examples.minimalframework.Network;
+import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.PlanInnovation;
 import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
 

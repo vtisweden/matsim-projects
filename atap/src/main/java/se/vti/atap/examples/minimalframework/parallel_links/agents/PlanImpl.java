@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links_ods;
+package se.vti.atap.examples.minimalframework.parallel_links.agents;
 
 import se.vti.atap.minimalframework.common.BasicPlanImpl;
 
@@ -26,16 +26,12 @@ import se.vti.atap.minimalframework.common.BasicPlanImpl;
  * @author GunnarF
  *
  */
-public class Paths extends BasicPlanImpl {
+public class PlanImpl extends BasicPlanImpl {
 
-	public final double[] flows_veh;
+	public final int linkIndex;
 
-	public Paths(double[] flows_veh) {
-		this.flows_veh = flows_veh;
-	}
-	
-	public int getNumberOfPaths() {
-		return this.flows_veh.length;
+	public PlanImpl(int linkIndex) {
+		this.linkIndex = linkIndex;
 	}
 
 }

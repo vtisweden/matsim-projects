@@ -17,21 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links_agents;
+package se.vti.atap.examples.minimalframework.parallel_links.agents;
 
-import se.vti.atap.minimalframework.common.BasicPlanImpl;
+import se.vti.atap.minimalframework.common.BasicAgentImpl;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class PlanImpl extends BasicPlanImpl {
+public class AgentImpl extends BasicAgentImpl<PlanImpl> {
 
-	public final int linkIndex;
-
-	public PlanImpl(int linkIndex) {
-		this.linkIndex = linkIndex;
+	public final int[] availableLinks;
+	
+	public AgentImpl(String id, int... availableLinks) {
+		super(id);
+		this.availableLinks = availableLinks;
 	}
-
 }

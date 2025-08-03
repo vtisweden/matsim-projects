@@ -17,13 +17,13 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links_ods;
+package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import se.vti.atap.examples.minimalframework.Network;
+import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.ApproximateNetworkLoading;
 import se.vti.atap.minimalframework.ExactNetworkLoading;
 import se.vti.atap.minimalframework.PlanInnovation;

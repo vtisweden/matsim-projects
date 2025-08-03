@@ -17,21 +17,25 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links_agents;
+package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import se.vti.atap.minimalframework.common.BasicAgentImpl;
+import se.vti.atap.minimalframework.common.BasicPlanImpl;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class AgentImpl extends BasicAgentImpl<PlanImpl> {
+public class Paths extends BasicPlanImpl {
 
-	public final int[] availableLinks;
-	
-	public AgentImpl(String id, int... availableLinks) {
-		super(id);
-		this.availableLinks = availableLinks;
+	public final double[] flows_veh;
+
+	public Paths(double[] flows_veh) {
+		this.flows_veh = flows_veh;
 	}
+	
+	public int getNumberOfPaths() {
+		return this.flows_veh.length;
+	}
+
 }
