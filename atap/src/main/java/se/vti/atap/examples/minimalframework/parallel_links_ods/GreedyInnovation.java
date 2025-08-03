@@ -1,0 +1,96 @@
+/**
+ * se.vti.atap.examples.minimalframework.parallel_links_ods
+ * 
+ * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
+ * 
+ * VTI = Swedish National Road and Transport Institute
+ * LiU = Linköping University, Sweden
+ * 
+ * This program is free software: you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License as published by the Free Software Foundation, either 
+ * version 3 of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with this program.
+ * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
+ */
+package se.vti.atap.examples.minimalframework.parallel_links_ods;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.IntStream;
+
+import se.vti.atap.examples.minimalframework.Network;
+import se.vti.atap.minimalframework.PlanInnovation;
+import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
+
+/**
+ * 
+ * @author GunnarF
+ *
+ */
+public class GreedyInnovation implements PlanInnovation<DoubleArrayWrapper, ODPair> {
+
+	private final Network network;
+
+	public GreedyInnovation(Network network) {
+		this.network = network;
+	}
+
+	@Override
+	public void assignInitialPlan(ODPair odPair) {
+		double[] pathFlows_veh = new double[odPair.getNumberOfPaths()];
+		pathFlows_veh[0] = odPair.demand_veh;
+		odPair.setCurrentPlan(new Paths(pathFlows_veh));
+	}
+
+	@Override
+	public void assignCandidatePlan(ODPair odPair, DoubleArrayWrapper travelTimes_s) {
+
+		double[] s = new double[odPair.getNumberOfPaths()];
+		double[] c = new double[odPair.getNumberOfPaths()];
+		for (int h = 0; h < odPair.getNumberOfPaths(); h++) {
+			int ij = odPair.availableLinks[h];
+			double g = this.network.computeFlow_veh(ij, travelTimes_s.data[ij]);
+			double v = travelTimes_s.data[ij];
+			s[h] = this.network.compute_dTravelTime_dFlow_s_veh(ij, g);
+			c[h] = v - s[h] * g;
+		}
+
+		List<Integer> _H = new ArrayList<>(IntStream.range(0, odPair.getNumberOfPaths()).boxed().toList());
+		Collections.sort(_H, new Comparator<>() {
+			@Override
+			public int compare(Integer h1, Integer h2) {
+				return Double.compare(c[h1], c[h2]);
+			}
+		});
+
+		List<Integer> _Hhat = new ArrayList<>(odPair.getNumberOfPaths());
+
+		double d = odPair.demand_veh;
+		double _B = 1.0 / (s[0] * d);
+		double _C = c[0] / (s[0] * d);
+		double w = (1.0 + _C) / _B;
+		_Hhat.add(0);
+
+		int h = 1;
+		while ((h < odPair.getNumberOfPaths()) && (c[h] < w)) {
+			_C += c[h] / (s[h] * d);
+			_B += 1.0 / (s[h] * d);
+			w = (1.0 + _C) / _B;
+			_Hhat.add(h);
+			h++;
+		}
+
+		double[] f = new double[odPair.getNumberOfPaths()];
+		for (int h2 : _Hhat) {
+			f[h2] = (w - c[h2]) / s[h2];
+		}
+		odPair.setCandidatePlan(new Paths(f));
+	}
+}

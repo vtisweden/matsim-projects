@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links_agents;
+package se.vti.atap.examples.minimalframework.parallel_links_ods;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -28,6 +28,7 @@ import se.vti.atap.minimalframework.ApproximateNetworkLoading;
 import se.vti.atap.minimalframework.ExactNetworkLoading;
 import se.vti.atap.minimalframework.PlanInnovation;
 import se.vti.atap.minimalframework.UtilityFunction;
+import se.vti.atap.minimalframework.common.BasicLoggerImpl;
 import se.vti.atap.minimalframework.common.DoubleArrayDistance;
 import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
 import se.vti.atap.minimalframework.common.LocalSearchPlanSelection;
@@ -42,18 +43,18 @@ import se.vti.atap.minimalframework.common.UniformPlanSelection;
  */
 public class Model {
 
-	private final Set<AgentImpl> agents = new LinkedHashSet<>();
+	private final Set<ODPair> agents = new LinkedHashSet<>();
 
 	private Network network = null;
 
 	public Model() {
 	}
 
-	public void createAgent(String id, int... availableLinks) {
-		this.agents.add(new AgentImpl(id, availableLinks));
+	public void createODPair(String id, Double demand_veh, int... availableLinks) {
+		this.agents.add(new ODPair(id, demand_veh, availableLinks));
 	}
 
-	public Set<AgentImpl> getAgents() {
+	public Set<ODPair> getAgents() {
 		return this.agents;
 	}
 
@@ -61,37 +62,36 @@ public class Model {
 		this.network = network;
 	}
 
-	public ApproximateNetworkLoading<DoubleArrayWrapper, DoubleArrayWrapper, AgentImpl> createApproximateNetworkLoading() {
+	public ApproximateNetworkLoading<DoubleArrayWrapper, DoubleArrayWrapper, ODPair> createApproximateNetworkLoading() {
 		return new ApproximateNetworkLoading<>() {
 			@Override
-			public DoubleArrayWrapper computeFlows(Set<AgentImpl> agentsUsingCurrentPlans,
-					Set<AgentImpl> agentsUsingCandidatePlans, DoubleArrayWrapper networkConditions) {
-				DoubleArrayWrapper result = new DoubleArrayWrapper(network.getNumberOfLinks());
-				for (var agent : agentsUsingCurrentPlans) {
-					result.data[agent.getCurrentPlan().linkIndex]++;
+			public DoubleArrayWrapper computeFlows(Set<ODPair> odPairsUsingCurrentPathFlows,
+					Set<ODPair> odPairsUsingCandidatePathFlows, DoubleArrayWrapper travelTimes) {
+				DoubleArrayWrapper linkFlows_veh = new DoubleArrayWrapper(network.getNumberOfLinks());
+				for (var odPair : odPairsUsingCurrentPathFlows) {
+					odPair.addCurrentPathFlowsToLinkFlows(linkFlows_veh);
 				}
-				for (var agent : agentsUsingCandidatePlans) {
-					result.data[agent.getCandidatePlan().linkIndex]++;
+				for (var odPair : odPairsUsingCandidatePathFlows) {
+					odPair.addCandidatePathFlowsToLinkFlows(linkFlows_veh);
 				}
-				return result;
+				return linkFlows_veh;
 			}
 		};
 	}
 
-	public UtilityFunction<DoubleArrayWrapper, AgentImpl, PlanImpl> createUtilityFunction() {
+	public UtilityFunction<DoubleArrayWrapper, ODPair, Paths> createUtilityFunction() {
 		return new UtilityFunction<>() {
 			@Override
-			public double computeUtility(AgentImpl agent, PlanImpl plan, DoubleArrayWrapper travelTimes) {
-				return (-1.0) * travelTimes.data[plan.linkIndex];
+			public double computeUtility(ODPair odPair, Paths paths, DoubleArrayWrapper travelTimes) {
+				return (-1.0) * odPair.computeCurrentTotalTravelTime_s(paths, travelTimes);
 			}
-
 		};
 	}
 
-	public ExactNetworkLoading<DoubleArrayWrapper, AgentImpl> createExactNetworkLoading() {
+	public ExactNetworkLoading<DoubleArrayWrapper, ODPair> createExactNetworkLoading() {
 		return new ExactNetworkLoading<>() {
 			@Override
-			public DoubleArrayWrapper computeNetworkLoading(Set<AgentImpl> agents) {
+			public DoubleArrayWrapper computeNetworkLoading(Set<ODPair> agents) {
 				double[] flows = createApproximateNetworkLoading().computeFlows(agents, Collections.emptySet(),
 						null).data;
 				DoubleArrayWrapper travelTimes = new DoubleArrayWrapper(network.getNumberOfLinks());
@@ -103,40 +103,22 @@ public class Model {
 		};
 	}
 
-	public PlanInnovation<DoubleArrayWrapper, AgentImpl> createBestResponsePlanInnovation() {
-		return new PlanInnovation<>() {
-			@Override
-			public void assignInitialPlan(AgentImpl agent) {
-				agent.setCurrentPlan(new PlanImpl(agent.availableLinks[0]));
-			}
-
-			@Override
-			public void assignCandidatePlan(AgentImpl agent, DoubleArrayWrapper travelTimes_s) {
-				PlanImpl bestPlan = null;
-				for (int i : agent.availableLinks) {
-					if ((bestPlan == null) || (travelTimes_s.data[i] < travelTimes_s.data[bestPlan.linkIndex])) {
-						bestPlan = new PlanImpl(i);
-					}
-				}
-				agent.setCandidatePlan(bestPlan);
-			}
-		};
+	public PlanInnovation<DoubleArrayWrapper, ODPair> createBestResponsePlanInnovation() {
+		return new GreedyInnovation(this.network);
 	}
 
 	public static Model createSmallExampleModel() {
 		Model model = new Model();
 		model.setNetwork(new Network(2).setAllBPRParameters(60.0, 50, 4));
-		for (int n = 0; n < 100; n++) {
-			model.createAgent(Integer.toString(n), 0, 1);
-		}
+		model.createODPair("single od", 100.0, 0, 1);
 		return model;
 	}
 
-	public static Runner<DoubleArrayWrapper, AgentImpl, PlanImpl> createBasicRunner(Model model) {
-		var runner = new Runner<DoubleArrayWrapper, AgentImpl, PlanImpl>();
+	public static Runner<DoubleArrayWrapper, ODPair, Paths> createBasicRunner(Model model) {
+		var runner = new Runner<DoubleArrayWrapper, ODPair, Paths>();
 		runner.setAgents(model.getAgents()).setIterations(100).setNetworkLoading(model.createExactNetworkLoading())
 				.setPlanInnovation(model.createBestResponsePlanInnovation())
-				.setUtilityFunction(model.createUtilityFunction()).setLogger(new LoggerImpl());
+				.setUtilityFunction(model.createUtilityFunction()).setLogger(new BasicLoggerImpl<>());
 		return runner;
 	}
 
