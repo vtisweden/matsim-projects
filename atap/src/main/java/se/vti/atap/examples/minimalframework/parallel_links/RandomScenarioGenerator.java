@@ -48,16 +48,16 @@ public class RandomScenarioGenerator {
 	}
 
 	public Network createRandomNetwork(int minNumberOfLinks, int maxNumberOfLinks, double minT0_s, double maxT0_s,
-			double minCap_veh, double maxCap_veh, double minExponent, double maxExponent) {
+			double minCap_veh, double maxCap_veh) {
 		Network network = new Network(this.rnd.nextInt(minNumberOfLinks, maxNumberOfLinks + 1));
 		for (int link = 0; link < network.getNumberOfLinks(); link++) {
 			network.setBPRParameters(link, this.rnd.nextDouble(minT0_s, maxT0_s),
-					this.rnd.nextDouble(minCap_veh, maxCap_veh), this.rnd.nextDouble(minExponent, maxExponent));
+					this.rnd.nextDouble(minCap_veh, maxCap_veh));
 		}
 		return network;
 	}
 
-	private List<int[]> createRandomRouteChoiceSets(int minNumberOfChoiceSets, int maxNumberOfChoiceSets,
+	private List<int[]> createRandomPathChoiceSets(int minNumberOfChoiceSets, int maxNumberOfChoiceSets,
 			int minNumberOfAlternatives, int maxNumberOfAlternatives, Network network) {
 		int numberOfChoiceSets = this.rnd.nextInt(minNumberOfChoiceSets, maxNumberOfChoiceSets + 1);
 		List<int[]> result = new ArrayList<>(numberOfChoiceSets);
@@ -65,14 +65,14 @@ public class RandomScenarioGenerator {
 		for (int i = 0; i < numberOfChoiceSets; i++) {
 			Collections.shuffle(links, this.rnd);
 			int choiceSetSize = this.rnd.nextInt(minNumberOfAlternatives, maxNumberOfAlternatives + 1);
-			result.add(links.subList(0, choiceSetSize - 1).stream().mapToInt(l -> l).toArray());
+			result.add(links.subList(0, choiceSetSize).stream().mapToInt(l -> l).toArray());
 		}
 		return result;
 	}
 
 	public Set<AgentImpl> createRandomAgentDemand(int minNumberOfAgents, int maxNumberOfAgents,
 			int minNumberOfAlternatives, int maxNumberOfAlternatives, Network network) {
-		List<int[]> choiceSets = this.createRandomRouteChoiceSets(minNumberOfAgents, maxNumberOfAgents,
+		List<int[]> choiceSets = this.createRandomPathChoiceSets(minNumberOfAgents, maxNumberOfAgents,
 				minNumberOfAlternatives, maxNumberOfAlternatives, network);
 		Set<AgentImpl> result = new LinkedHashSet<>(choiceSets.size());
 		int n = 0;
@@ -83,9 +83,9 @@ public class RandomScenarioGenerator {
 	}
 
 	public Set<ODPair> createRandomOdDemand(int minNumberOfODPairs, int maxNumberOfODPairs, double minDemand_veh,
-			double maxDemand_veh, int minNumberOfAlternatives, int maxNumberOfAlternatives, Network network) {
-		List<int[]> choiceSets = this.createRandomRouteChoiceSets(minNumberOfODPairs, maxNumberOfODPairs,
-				minNumberOfAlternatives, maxNumberOfAlternatives, network);
+			double maxDemand_veh, int minNumberOfPaths, int maxNumberOfPaths, Network network) {
+		List<int[]> choiceSets = this.createRandomPathChoiceSets(minNumberOfODPairs, maxNumberOfODPairs,
+				minNumberOfPaths, maxNumberOfPaths, network);
 		Set<ODPair> result = new LinkedHashSet<>(choiceSets.size());
 		int n = 0;
 		for (int[] choiceSet : choiceSets) {

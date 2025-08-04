@@ -125,7 +125,7 @@ public class Model {
 
 	public static Model createSmallExampleModel() {
 		Model model = new Model();
-		model.setNetwork(new Network(2).setAllBPRParameters(60.0, 50, 4));
+		model.setNetwork(new Network(2).setAllBPRParameters(60.0, 50));
 		for (int n = 0; n < 100; n++) {
 			model.createAgent(Integer.toString(n), 0, 1);
 		}
@@ -145,7 +145,7 @@ public class Model {
 		var runner = createBasicRunner(model);
 		runner.setPlanSelection(new UniformPlanSelection<>(-1.0));
 		runner.run();
-		return runner.getLogString();
+		return runner.getLogger().toString();
 	}
 
 	public static String runSmallExampleWithSortingMethod() {
@@ -153,7 +153,7 @@ public class Model {
 		var runner = createBasicRunner(model);
 		runner.setPlanSelection(new SortingPlanSelection<>(-1.0));
 		runner.run();
-		return runner.getLogString();
+		return runner.getLogger().toString();
 	}
 
 	public static String runSmallExampleWithProposedMethod() {
@@ -162,7 +162,7 @@ public class Model {
 		runner.setPlanSelection(new LocalSearchPlanSelection<>(model.createApproximateNetworkLoading(),
 				new DoubleArrayDistance(), -1.0));
 		runner.run();
-		return runner.getLogString();
+		return runner.getLogger().toString();
 	}
 
 	public static void main(String[] args) {

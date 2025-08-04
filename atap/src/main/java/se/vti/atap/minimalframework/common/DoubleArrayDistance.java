@@ -33,7 +33,7 @@ public class DoubleArrayDistance implements NetworkFlowDistance<DoubleArrayWrapp
 		double sumOfSquares = 0.0;
 		for (int i = 0; i < Math.min(a.data.length, b.data.length); i++) {
 			double deviation = a.data[i] - b.data[i];
-			sumOfSquares = deviation * deviation;
+			sumOfSquares += deviation * deviation;
 		}
 		return Math.sqrt(sumOfSquares);
 	}

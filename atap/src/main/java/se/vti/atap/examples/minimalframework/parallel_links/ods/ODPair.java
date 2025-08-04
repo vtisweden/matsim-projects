@@ -57,11 +57,11 @@ public class ODPair extends BasicAgentImpl<Paths> {
 		this.addPathFlowsToLinkFlows(this.getCandidatePlan(), linkFlows_veh);
 	}
 
-	public double computeCurrentTotalTravelTime_s(Paths paths, DoubleArrayWrapper travelTimes_s) {
-		double result_s = 0.0;
-		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
-			result_s += paths.flows_veh[pathIndex] * travelTimes_s.data[this.availableLinks[pathIndex]];
-		}
-		return result_s;
-	}
+//	public double computeCurrentTotalTravelTime_s(Paths paths, DoubleArrayWrapper travelTimes_s) {
+//		double result_s = 0.0;
+//		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
+//			result_s += paths.flows_veh[pathIndex] * travelTimes_s.data[this.availableLinks[pathIndex]];
+//		}
+//		return result_s;
+//	}
 }

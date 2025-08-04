@@ -20,6 +20,7 @@
 package se.vti.atap.minimalframework.common;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -41,6 +42,8 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 	private final String header;
 	private final List<String> dataRows = new ArrayList<>();
 
+	private final List<Double> averageGaps = new ArrayList<>();
+	
 	public BasicLoggerImpl() {
 		this.header = this.createHeader();
 	}
@@ -56,16 +59,17 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 
 	@Override
 	public final void log(T networkConditions, Set<A> agents) {
+		this.averageGaps.add(this.computeAverageGap(agents));
 		this.dataRows.add(this.createLine(networkConditions, agents));
 		this.logCounter++;
 	}
-
+	
 	public String createHeader() {
 		return "iteration\taverageGap";
 	}
 
 	public String createLine(T networkConditions, Set<A> agents) {
-		return this.logCounter + "\t" + computeAverageGap(agents);
+		return this.logCounter + "\t" + this.averageGaps.get(this.averageGaps.size() - 1);
 	}
 	
 	public String toString() {
@@ -86,6 +90,11 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 	@Override
 	public List<String> getDataRows() {
 		return this.dataRows;
+	}
+	
+	@Override
+	public List<Double> getAverageGaps() {
+		return this.averageGaps;
 	}
 
 }

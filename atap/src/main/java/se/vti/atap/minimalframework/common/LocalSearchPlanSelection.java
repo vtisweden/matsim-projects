@@ -85,6 +85,8 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends Net
 		List<A> allAgents = new ArrayList<>(agents);
 		boolean switched;
 		do {
+//			System.out.println("\t\tQ = " + objectiveFunctionValue);
+			
 			switched = false;
 			Collections.shuffle(allAgents, this.rnd);
 			for (A agent : allAgents) {

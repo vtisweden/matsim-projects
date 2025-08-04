@@ -91,8 +91,6 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 
 	public void run() {
 
-		System.out.println(this.logger.getHeader());
-
 		this.agents.stream().forEach(a -> this.planInnovation.assignInitialPlan(a));
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
@@ -110,20 +108,21 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 					candidatePlan
 							.setUtility(this.utilityFunction.computeUtility(agent, candidatePlan, networkConditions));
 				}
+				
+				if (candidatePlan.getUtility() < currentPlan.getUtility()) {
+					agent.setCandidatePlan(currentPlan);
+				}
 			}
 
 			this.logger.log(networkConditions, this.agents);
-			System.out.println(this.logger.getDataRows().get(this.logger.getDataRows().size() - 1));
 
 			if (iteration < this.maxIterations - 1) {
 				this.planSelection.assignSelectedPlans(this.agents, networkConditions, iteration);
 			}
 		}
-
-//		System.out.println(this.logger);
 	}
 
-	public String getLogString() {
-		return this.logger.toString();
-	}
+	public Logger<T,A> getLogger() {
+		return this.logger;
+	}	
 }
