@@ -31,7 +31,7 @@ import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
  * @author GunnarF
  *
  */
-public class ExactNetworkLoadingImpl implements NetworkLoading<DoubleArrayWrapper, ODPair> {
+public class ExactNetworkLoadingImpl implements NetworkLoading<ODPair, DoubleArrayWrapper> {
 
 	private final Network network;
 

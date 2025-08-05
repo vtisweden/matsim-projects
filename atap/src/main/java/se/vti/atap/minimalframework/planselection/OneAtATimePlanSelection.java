@@ -36,7 +36,7 @@ import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkCon
  *
  */
 public class OneAtATimePlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions, A extends Agent<?>>
-		implements PlanSelection<T, A> {
+		implements PlanSelection<A, T> {
 
 	private Random rnd = null;
 

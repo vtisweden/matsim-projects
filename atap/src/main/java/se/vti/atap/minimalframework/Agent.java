@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.framework
+ * se.vti.atap.minimalframework
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -38,8 +38,5 @@ public interface Agent<P extends Plan> {
 
 	void setCurrentPlanToCandidatePlan();
 
-	default double getGap() {
-		return this.getCandidatePlan().getUtility() - this.getCurrentPlan().getUtility();
-	}
-
+	double getGap();
 }

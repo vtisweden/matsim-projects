@@ -24,8 +24,8 @@ package se.vti.atap.minimalframework;
  * @author GunnarF
  *
  */
-public interface UtilityFunction<T extends NetworkConditions, A extends Agent<P>, P extends Plan> {
+public interface UtilityFunction<P extends Plan, A extends Agent<P>, T extends NetworkConditions> {
 
-	double computeUtility(A agent, P plan, T networkConditions);
+	double compute(P plan, A agent, T networkConditions);
 
 }

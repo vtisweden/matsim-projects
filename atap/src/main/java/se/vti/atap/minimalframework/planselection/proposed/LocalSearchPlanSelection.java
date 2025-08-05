@@ -28,7 +28,7 @@ import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.PlanSelection;
+import se.vti.atap.minimalframework.planselection.AbstractPlanSelection;
 
 /**
  * 
@@ -36,18 +36,16 @@ import se.vti.atap.minimalframework.PlanSelection;
  *
  */
 public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>, A extends Agent<?>>
-		implements PlanSelection<T, A> {
+		extends AbstractPlanSelection<T, A> {
 
 	private final Random rnd = new Random(4711);
-	
+
 	private final ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading;
 
-	private final double stepSizeIterationExponent;
-	
 	public LocalSearchPlanSelection(ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading,
 			double stepSizeIterationExponent) {
+		super(stepSizeIterationExponent);
 		this.approximateNetworkLoading = approximateNetworkLoading;
-		this.stepSizeIterationExponent = stepSizeIterationExponent;
 	}
 
 	private double computeObjectiveFunction(Set<A> agentsUsingCandidatePlan, Q candidateFlows, Q originalFlows,
@@ -62,12 +60,12 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends App
 	@Override
 	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
 
-		double relativeAmbitionLevel = Math.pow(iteration + 1, this.stepSizeIterationExponent);
-		double absoluteAmbitionLevel = relativeAmbitionLevel *
-				agents.stream().mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
-		
-		Q originalFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agents, Collections.emptySet(),
-				networkConditions);
+		double relativeAmbitionLevel = super.computeStepSize(iteration);
+		double absoluteAmbitionLevel = relativeAmbitionLevel * agents.stream()
+				.mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
+
+		Q originalFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agents,
+				Collections.emptySet(), networkConditions);
 
 		Set<A> agentsUsingCurrentPlans = new LinkedHashSet<>();
 		Set<A> agentsUsingCandidatePlans = new LinkedHashSet<>(agents);
@@ -81,7 +79,7 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends App
 		boolean switched;
 		do {
 //			System.out.println("\t\tQ = " + objectiveFunctionValue);
-			
+
 			switched = false;
 			Collections.shuffle(allAgents, this.rnd);
 			for (A agent : allAgents) {
@@ -93,8 +91,8 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends App
 					agentsUsingCurrentPlans.remove(agent);
 					agentsUsingCandidatePlans.add(agent);
 				}
-				candidateFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agentsUsingCurrentPlans,
-						agentsUsingCandidatePlans, networkConditions);
+				candidateFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(
+						agentsUsingCurrentPlans, agentsUsingCandidatePlans, networkConditions);
 				double candidateObjectiveFunctionValue = this.computeObjectiveFunction(agentsUsingCandidatePlans,
 						candidateFlows, originalFlows, absoluteAmbitionLevel);
 				if (candidateObjectiveFunctionValue > objectiveFunctionValue) {

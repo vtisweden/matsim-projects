@@ -68,5 +68,11 @@ public class BasicAgentImpl<P extends Plan> implements Agent<P> {
 	public void setCurrentPlanToCandidatePlan() {
 		this.currentPlan = this.candidatePlan;
 	}
+	
+	@Override
+	public double getGap() {
+		return this.getCandidatePlan().getUtility() - this.getCurrentPlan().getUtility();
+	}
+
 
 }

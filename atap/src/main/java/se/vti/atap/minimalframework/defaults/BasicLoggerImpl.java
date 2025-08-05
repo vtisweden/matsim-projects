@@ -32,10 +32,12 @@ import se.vti.atap.minimalframework.NetworkConditions;
  * 
  * @author GunnarF
  *
+ *         TODO change order of type parameters
+ *
  * @param <T>
  * @param <A>
  */
-public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> implements Logger<T, A> {
+public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> implements Logger<A, T> {
 
 	private int logCounter = 0;
 
@@ -43,7 +45,7 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 	private final List<String> dataRows = new ArrayList<>();
 
 	private final List<Double> averageGaps = new ArrayList<>();
-	
+
 	public BasicLoggerImpl() {
 		this.header = this.createHeader();
 	}
@@ -58,12 +60,13 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 	}
 
 	@Override
-	public final void log(T networkConditions, Set<A> agents) {
+	public final void log(Set<A> agents, T networkConditions, int iteration) {
+		// TODO ensure iteration consistency
 		this.averageGaps.add(this.computeAverageGap(agents));
 		this.dataRows.add(this.createLine(networkConditions, agents));
 		this.logCounter++;
 	}
-	
+
 	public String createHeader() {
 		return "iteration\taverageGap";
 	}
@@ -71,7 +74,7 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 	public String createLine(T networkConditions, Set<A> agents) {
 		return this.logCounter + "\t" + this.averageGaps.get(this.averageGaps.size() - 1);
 	}
-	
+
 	public String toString() {
 		StringBuffer result = new StringBuffer(this.header);
 		result.append("\n");
@@ -89,7 +92,7 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 	public List<String> getDataRows() {
 		return this.dataRows;
 	}
-	
+
 	public List<Double> getAverageGaps() {
 		return this.averageGaps;
 	}

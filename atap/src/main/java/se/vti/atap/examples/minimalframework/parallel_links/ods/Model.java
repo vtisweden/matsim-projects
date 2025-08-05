@@ -60,10 +60,10 @@ public class Model {
 		return this.agents;
 	}
 
-	public UtilityFunction<DoubleArrayWrapper, ODPair, Paths> createUtilityFunction() {
+	public UtilityFunction<Paths, ODPair, DoubleArrayWrapper> createUtilityFunction() {
 		return new UtilityFunction<>() {
 			@Override
-			public double computeUtility(ODPair odPair, Paths paths, DoubleArrayWrapper travelTimes_s) {
+			public double compute(Paths paths, ODPair odPair, DoubleArrayWrapper travelTimes_s) {
 				return (-1.0) * new SingleODBeckmanApproximation(odPair, travelTimes_s, network).compute(paths);
 			}
 		};
@@ -73,7 +73,7 @@ public class Model {
 		return new ExactNetworkLoadingImpl(this.network);
 	}
 
-	public PlanInnovation<DoubleArrayWrapper, ODPair> createBestResponsePlanInnovation() {
+	public PlanInnovation<ODPair, DoubleArrayWrapper> createBestResponsePlanInnovation() {
 		return new GreedyInnovation(this.network);
 	}
 
@@ -91,21 +91,23 @@ public class Model {
 		return new Model(network, odPairs);
 	}
 
-	public static Runner<DoubleArrayWrapper, ODPair, Paths> createRunner(Model model, int iterations) {
-		var runner = new Runner<DoubleArrayWrapper, ODPair, Paths>();
+	public static Runner<Paths, ODPair, DoubleArrayWrapper> createRunner(Model model, int iterations) {
+		var runner = new Runner<Paths, ODPair, DoubleArrayWrapper>();
 		runner.setAgents(model.getAgents()).setIterations(iterations)
 				.setNetworkLoading(model.createExactNetworkLoading())
 				.setPlanInnovation(model.createBestResponsePlanInnovation())
-				.setUtilityFunction(model.createUtilityFunction()).setLogger(new BasicLoggerImpl<>());
+				.setUtilityFunction(model.createUtilityFunction());
 		return runner;
 	}
 
 	public static BasicLoggerImpl<DoubleArrayWrapper, ODPair> runWithPlanSelection(Model model,
-			PlanSelection<DoubleArrayWrapper, ODPair> planSelection) {
+			PlanSelection<ODPair, DoubleArrayWrapper> planSelection) {
 		var runner = createRunner(model, 100);
 		runner.setPlanSelection(planSelection);
+		var logger = new BasicLoggerImpl<DoubleArrayWrapper, ODPair>();
+		runner.setLogger(logger);
 		runner.run();
-		return (BasicLoggerImpl<DoubleArrayWrapper, ODPair>) runner.getLogger();
+		return logger;
 	}
 
 	public static void runAllMethods(Model model) {

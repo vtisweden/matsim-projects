@@ -35,7 +35,7 @@ import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
  * @author GunnarF
  *
  */
-public class GreedyInnovation implements PlanInnovation<DoubleArrayWrapper, ODPair> {
+public class GreedyInnovation implements PlanInnovation<ODPair, DoubleArrayWrapper> {
 
 	private final Network network;
 

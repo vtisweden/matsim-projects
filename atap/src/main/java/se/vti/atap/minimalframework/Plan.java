@@ -27,7 +27,7 @@ package se.vti.atap.minimalframework;
 public interface Plan {
 
 	void setUtility(Double getUtility);
-	
+
 	Double getUtility();
-	
+
 }

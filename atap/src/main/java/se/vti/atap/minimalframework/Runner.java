@@ -26,56 +26,56 @@ import java.util.Set;
  * @author GunnarF
  *
  */
-public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends Plan> {
+public class Runner<P extends Plan, A extends Agent<P>, T extends NetworkConditions> {
 
 	private Set<A> agents = null;
 
-	private NetworkLoading<T, A> networkLoading = null;
+	private NetworkLoading<A, T> networkLoading = null;
 
-	private UtilityFunction<T, A, P> utilityFunction = null;
+	private UtilityFunction<P, A, T> utilityFunction = null;
 
-	private PlanInnovation<T, A> planInnovation = null;
+	private PlanInnovation<A, T> planInnovation = null;
 
-	private PlanSelection<T, A> planSelection = null;
+	private PlanSelection<A, T> planSelection = null;
 
 	private Integer maxIterations = null;
 
-	private Logger<T, A> logger = null;
+	private Logger<A, T> logger = null;
 
 	public Runner() {
 	}
 
-	public Runner<T, A, P> setAgents(Set<A> agents) {
+	public Runner<P, A, T> setAgents(Set<A> agents) {
 		this.agents = agents;
 		return this;
 	}
 
-	public Runner<T, A, P> setNetworkLoading(NetworkLoading<T, A> networkLoading) {
+	public Runner<P, A, T> setNetworkLoading(NetworkLoading<A, T> networkLoading) {
 		this.networkLoading = networkLoading;
 		return this;
 	}
 
-	public Runner<T, A, P> setUtilityFunction(UtilityFunction<T, A, P> utilityFunction) {
+	public Runner<P, A, T> setUtilityFunction(UtilityFunction<P, A, T> utilityFunction) {
 		this.utilityFunction = utilityFunction;
 		return this;
 	}
 
-	public Runner<T, A, P> setPlanInnovation(PlanInnovation<T, A> planInnovation) {
+	public Runner<P, A, T> setPlanInnovation(PlanInnovation<A, T> planInnovation) {
 		this.planInnovation = planInnovation;
 		return this;
 	}
 
-	public Runner<T, A, P> setPlanSelection(PlanSelection<T, A> planSelection) {
+	public Runner<P, A, T> setPlanSelection(PlanSelection<A, T> planSelection) {
 		this.planSelection = planSelection;
 		return this;
 	}
 
-	public Runner<T, A, P> setIterations(int maxIterations) {
+	public Runner<P, A, T> setIterations(int maxIterations) {
 		this.maxIterations = maxIterations;
 		return this;
 	}
 
-	public Runner<T, A, P> setLogger(Logger<T, A> logger) {
+	public Runner<P, A, T> setLogger(Logger<A, T> logger) {
 		this.logger = logger;
 		return this;
 	}
@@ -85,7 +85,6 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 		this.agents.stream().forEach(a -> this.planInnovation.assignInitialPlan(a));
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
-
 			System.out.println(iteration);
 
 			T networkConditions = this.networkLoading.compute(this.agents);
@@ -93,13 +92,12 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 			for (A agent : this.agents) {
 
 				P currentPlan = agent.getCurrentPlan();
-				currentPlan.setUtility(this.utilityFunction.computeUtility(agent, currentPlan, networkConditions));
+				currentPlan.setUtility(this.utilityFunction.compute(currentPlan, agent, networkConditions));
 
 				this.planInnovation.assignCandidatePlan(agent, networkConditions);
 				P candidatePlan = agent.getCandidatePlan();
 				if (candidatePlan.getUtility() == null) {
-					candidatePlan
-							.setUtility(this.utilityFunction.computeUtility(agent, candidatePlan, networkConditions));
+					candidatePlan.setUtility(this.utilityFunction.compute(candidatePlan, agent, networkConditions));
 				}
 
 				if (candidatePlan.getUtility() < currentPlan.getUtility()) {
@@ -107,15 +105,11 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 				}
 			}
 
-			this.logger.log(networkConditions, this.agents);
+			this.logger.log(this.agents, networkConditions, iteration);
 
 			if (iteration < this.maxIterations - 1) {
 				this.planSelection.assignSelectedPlans(this.agents, networkConditions, iteration);
 			}
 		}
-	}
-
-	public Logger<T, A> getLogger() {
-		return this.logger;
 	}
 }

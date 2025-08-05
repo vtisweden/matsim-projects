@@ -29,7 +29,7 @@ import se.vti.atap.minimalframework.PlanSelection;
  *
  */
 public abstract class AbstractPlanSelection<T extends NetworkConditions, A extends Agent<?>>
-		implements PlanSelection<T, A> {
+		implements PlanSelection<A, T> {
 
 	private final double stepSizeIterationExponent;
 

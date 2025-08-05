@@ -26,7 +26,7 @@ import java.util.Set;
  * @author GunnarF
  *
  */
-public interface NetworkLoading<T extends NetworkConditions, A extends Agent<?>> {
+public interface NetworkLoading<A extends Agent<?>, T extends NetworkConditions> {
 
 	T compute(Set<A> agents);
 	
