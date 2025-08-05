@@ -22,16 +22,16 @@ package se.vti.atap.examples.minimalframework.parallel_links.ods;
 import java.util.Collections;
 import java.util.Set;
 
+import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.NetworkLoading;
-import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ExactNetworkLoadingImpl implements NetworkLoading<ODPair, DoubleArrayWrapper> {
+public class ExactNetworkLoadingImpl implements NetworkLoading<ODPair, DoubleArrayNetworkConditions> {
 
 	private final Network network;
 
@@ -57,8 +57,8 @@ public class ExactNetworkLoadingImpl implements NetworkLoading<ODPair, DoubleArr
 	}
 
 
-	public DoubleArrayWrapper computeNetworkLoading(double[] linkFlows_veh) {
-		DoubleArrayWrapper travelTimes = new DoubleArrayWrapper(this.network.getNumberOfLinks());
+	public DoubleArrayNetworkConditions computeNetworkLoading(double[] linkFlows_veh) {
+		DoubleArrayNetworkConditions travelTimes = new DoubleArrayNetworkConditions(this.network.getNumberOfLinks());
 		for (int i = 0; i < this.network.getNumberOfLinks(); i++) {
 			travelTimes.data[i] = this.network.computeTravelTime_s(i, linkFlows_veh[i]);
 		}
@@ -77,10 +77,10 @@ public class ExactNetworkLoadingImpl implements NetworkLoading<ODPair, DoubleArr
 //	}
 
 	@Override
-	public DoubleArrayWrapper compute(Set<ODPair> agents) {
+	public DoubleArrayNetworkConditions compute(Set<ODPair> agents) {
 //		return this.computeNetworkLoading(agents, Collections.emptySet());
 		double[] linkFlows_veh = this.computeLinkFlows_veh(agents, Collections.emptySet());
-		DoubleArrayWrapper travelTimes = new DoubleArrayWrapper(this.network.getNumberOfLinks());
+		DoubleArrayNetworkConditions travelTimes = new DoubleArrayNetworkConditions(this.network.getNumberOfLinks());
 		for (int i = 0; i < this.network.getNumberOfLinks(); i++) {
 			travelTimes.data[i] = this.network.computeTravelTime_s(i, linkFlows_veh[i]);
 		}

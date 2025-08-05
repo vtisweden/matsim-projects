@@ -19,15 +19,15 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import se.vti.atap.minimalframework.defaults.BasicAgentImpl;
-import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
+import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
+import se.vti.atap.minimalframework.defaults.BasicAgent;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class ODPair extends BasicAgentImpl<Paths> {
+public class ODPair extends BasicAgent<Paths> {
 
 	public final double demand_veh;
 
@@ -43,17 +43,17 @@ public class ODPair extends BasicAgentImpl<Paths> {
 		return this.availableLinks.length;
 	}
 	
-	private void addPathFlowsToLinkFlows(Paths pathFlows, DoubleArrayWrapper linkFlows_veh) {
+	private void addPathFlowsToLinkFlows(Paths pathFlows, DoubleArrayNetworkConditions linkFlows_veh) {
 		for (int pathIndex = 0; pathIndex < pathFlows.getNumberOfPaths(); pathIndex++) {
 			linkFlows_veh.data[this.availableLinks[pathIndex]] += pathFlows.flows_veh[pathIndex];
 		}
 	}
 
-	public void addCurrentPathFlowsToLinkFlows(DoubleArrayWrapper linkFlows_veh) {
+	public void addCurrentPathFlowsToLinkFlows(DoubleArrayNetworkConditions linkFlows_veh) {
 		this.addPathFlowsToLinkFlows(this.getCurrentPlan(), linkFlows_veh);
 	}
 
-	public void addCandidatePathFlowsToLinkFlows(DoubleArrayWrapper linkFlows_veh) {
+	public void addCandidatePathFlowsToLinkFlows(DoubleArrayNetworkConditions linkFlows_veh) {
 		this.addPathFlowsToLinkFlows(this.getCandidatePlan(), linkFlows_veh);
 	}
 

@@ -48,7 +48,7 @@ public class SortingPlanSelection<T extends NetworkConditions, Q extends Approxi
 			@Override
 			public int compare(A agent1, A agent2) {
 				// sort in descending order
-				return Double.compare(agent2.getGap(), agent1.getGap());
+				return Double.compare(agent2.computeGap(), agent1.computeGap());
 			}
 
 		});

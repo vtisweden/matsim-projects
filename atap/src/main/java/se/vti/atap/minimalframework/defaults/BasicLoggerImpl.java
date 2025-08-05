@@ -20,7 +20,6 @@
 package se.vti.atap.minimalframework.defaults;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -32,69 +31,40 @@ import se.vti.atap.minimalframework.NetworkConditions;
  * 
  * @author GunnarF
  *
- *         TODO change order of type parameters
- *
- * @param <T>
  * @param <A>
+ * @param <T>
  */
-public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> implements Logger<A, T> {
+public class BasicLoggerImpl<A extends Agent<?>, T extends NetworkConditions> implements Logger<A, T> {
 
 	private int logCounter = 0;
-
-	private final String header;
-	private final List<String> dataRows = new ArrayList<>();
 
 	private final List<Double> averageGaps = new ArrayList<>();
 
 	public BasicLoggerImpl() {
-		this.header = this.createHeader();
 	}
 
 	protected int getLogCounter() {
 		return this.logCounter;
 	}
 
-	protected double computeAverageGap(Set<A> agents) {
-		return agents.stream().mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility())
-				.average().getAsDouble();
-	}
-
 	@Override
 	public final void log(Set<A> agents, T networkConditions, int iteration) {
-		// TODO ensure iteration consistency
-		this.averageGaps.add(this.computeAverageGap(agents));
-		this.dataRows.add(this.createLine(networkConditions, agents));
+		assert (this.logCounter == iteration);
+		this.averageGaps.add(agents.stream().mapToDouble(a -> a.computeGap()).average().getAsDouble());
 		this.logCounter++;
-	}
-
-	public String createHeader() {
-		return "iteration\taverageGap";
-	}
-
-	public String createLine(T networkConditions, Set<A> agents) {
-		return this.logCounter + "\t" + this.averageGaps.get(this.averageGaps.size() - 1);
-	}
-
-	public String toString() {
-		StringBuffer result = new StringBuffer(this.header);
-		result.append("\n");
-		for (String dataLine : this.dataRows) {
-			result.append(dataLine);
-			result.append("\n");
-		}
-		return result.toString();
-	}
-
-	public String getHeader() {
-		return this.header;
-	}
-
-	public List<String> getDataRows() {
-		return this.dataRows;
 	}
 
 	public List<Double> getAverageGaps() {
 		return this.averageGaps;
 	}
 
+	public String toString() {
+		StringBuffer result = new StringBuffer("averag gap");
+		result.append("\n");
+		for (double gap : this.averageGaps) {
+			result.append(gap);
+			result.append("\n");
+		}
+		return result.toString();
+	}
 }

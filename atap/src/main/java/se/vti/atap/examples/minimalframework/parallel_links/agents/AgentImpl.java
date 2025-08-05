@@ -19,14 +19,14 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.agents;
 
-import se.vti.atap.minimalframework.defaults.BasicAgentImpl;
+import se.vti.atap.minimalframework.defaults.BasicAgent;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class AgentImpl extends BasicAgentImpl<PlanImpl> {
+public class AgentImpl extends BasicAgent<PlanImpl> {
 
 	public final int[] availableLinks;
 	

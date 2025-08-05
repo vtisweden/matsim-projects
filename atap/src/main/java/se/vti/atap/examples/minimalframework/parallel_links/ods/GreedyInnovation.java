@@ -26,16 +26,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.PlanInnovation;
-import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class GreedyInnovation implements PlanInnovation<ODPair, DoubleArrayWrapper> {
+public class GreedyInnovation implements PlanInnovation<ODPair, DoubleArrayNetworkConditions> {
 
 	private final Network network;
 
@@ -51,7 +51,7 @@ public class GreedyInnovation implements PlanInnovation<ODPair, DoubleArrayWrapp
 	}
 
 	@Override
-	public void assignCandidatePlan(ODPair odPair, DoubleArrayWrapper travelTimes_s) {
+	public void assignCandidatePlan(ODPair odPair, DoubleArrayNetworkConditions travelTimes_s) {
 
 		SingleODBeckmanApproximation approx = new SingleODBeckmanApproximation(odPair, travelTimes_s, network);
 

@@ -21,8 +21,8 @@ package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import java.util.Set;
 
+import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
-import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkLoading;
 
 /**
@@ -31,7 +31,7 @@ import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkLoa
  *
  */
 public class ApproximateNetworkLoadingImpl
-		implements ApproximateNetworkLoading<DoubleArrayWrapper, ApproximateNetworkConditionsImpl, ODPair> {
+		implements ApproximateNetworkLoading<DoubleArrayNetworkConditions, ApproximateNetworkConditionsImpl, ODPair> {
 
 	private final Network network;
 
@@ -44,7 +44,7 @@ public class ApproximateNetworkLoadingImpl
 
 	@Override
 	public ApproximateNetworkConditionsImpl computeApproximateNetworkConditions(Set<ODPair> agentsUsingCurrentPlans,
-			Set<ODPair> agentsUsingCandidatePlans, DoubleArrayWrapper networkConditions) {
+			Set<ODPair> agentsUsingCandidatePlans, DoubleArrayNetworkConditions networkConditions) {
 		ApproximateNetworkConditionsImpl result = new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlans,
 				agentsUsingCandidatePlans, this.network);
 		if (this.unfair) {

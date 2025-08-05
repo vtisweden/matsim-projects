@@ -19,8 +19,8 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
+import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
-import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 
 /**
  * 
@@ -34,7 +34,7 @@ public class SingleODBeckmanApproximation {
 	public final double[] g;
 	public final double[] v;
 
-	public SingleODBeckmanApproximation(ODPair odPair, DoubleArrayWrapper travelTimes_s, Network network) {
+	public SingleODBeckmanApproximation(ODPair odPair, DoubleArrayNetworkConditions travelTimes_s, Network network) {
 		this.s = new double[odPair.getNumberOfPaths()];
 		this.c = new double[odPair.getNumberOfPaths()];
 		this.g = new double[odPair.getNumberOfPaths()];

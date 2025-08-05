@@ -17,62 +17,21 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.defaults;
+package se.vti.atap.examples.minimalframework.parallel_links;
 
-import se.vti.atap.minimalframework.Agent;
-import se.vti.atap.minimalframework.Plan;
+import se.vti.atap.minimalframework.NetworkConditions;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class BasicAgentImpl<P extends Plan> implements Agent<P> {
+public class DoubleArrayNetworkConditions implements NetworkConditions {
 
-	private final String id;
-
-	private P currentPlan = null;
-
-	private P candidatePlan = null;
-
-	public BasicAgentImpl(String id) {
-		this.id = id;
-	}
-
-	@Override
-	public String getId() {
-		return this.id;
-	}
-
-	@Override
-	public P getCurrentPlan() {
-		return this.currentPlan;
-	}
-
-	@Override
-	public P getCandidatePlan() {
-		return this.candidatePlan;
-	}
-
-	@Override
-	public void setCurrentPlan(P plan) {
-		this.currentPlan = plan;
-	}
-
-	@Override
-	public void setCandidatePlan(P plan) {
-		this.candidatePlan = plan;
-	}
-
-	@Override
-	public void setCurrentPlanToCandidatePlan() {
-		this.currentPlan = this.candidatePlan;
-	}
+	public final double[] data;
 	
-	@Override
-	public double getGap() {
-		return this.getCandidatePlan().getUtility() - this.getCurrentPlan().getUtility();
+	public DoubleArrayNetworkConditions(int dimension) {
+		this.data = new double[dimension];
 	}
-
 
 }

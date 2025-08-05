@@ -21,25 +21,25 @@ package se.vti.atap.examples.minimalframework.parallel_links.agents;
 
 import java.util.Set;
 
+import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
-import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class LoggerImpl extends BasicLoggerImpl<DoubleArrayWrapper, AgentImpl> {
+public class LoggerImpl extends BasicLoggerImpl<AgentImpl, DoubleArrayNetworkConditions> {
 
-	@Override
-	public String createHeader() {
-		return "iteration\taverageGap\ttravelTime[0]\ttravelTime[1]";
-	}
-
-	@Override
-	public String createLine(DoubleArrayWrapper travelTimes, Set<AgentImpl> agents) {
-		return super.getLogCounter() + "\t" + super.computeAverageGap(agents) + "\t" + travelTimes.data[0] + "\t"
-				+ travelTimes.data[1];
-	}
+//	@Override
+//	public String createHeader() {
+//		return "iteration\taverageGap\ttravelTime[0]\ttravelTime[1]";
+//	}
+//
+//	@Override
+//	public String createLine(DoubleArrayNetworkConditions travelTimes, Set<AgentImpl> agents) {
+//		return super.getLogCounter() + "\t" + super.computeAverageGap(agents) + "\t" + travelTimes.data[0] + "\t"
+//				+ travelTimes.data[1];
+//	}
 
 }

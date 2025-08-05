@@ -26,7 +26,7 @@ import se.vti.atap.minimalframework.Plan;
  * @author GunnarF
  *
  */
-public class BasicPlanImpl implements Plan {
+public class BasicPlan implements Plan {
 
 	private Double utility = null;
 	

@@ -22,6 +22,7 @@ package se.vti.atap.examples.minimalframework.parallel_links.ods;
 import java.util.List;
 import java.util.Set;
 
+import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.examples.minimalframework.parallel_links.RandomScenarioGenerator;
 import se.vti.atap.minimalframework.PlanInnovation;
@@ -29,7 +30,6 @@ import se.vti.atap.minimalframework.PlanSelection;
 import se.vti.atap.minimalframework.Runner;
 import se.vti.atap.minimalframework.UtilityFunction;
 import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
-import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 import se.vti.atap.minimalframework.planselection.OneAtATimePlanSelection;
 import se.vti.atap.minimalframework.planselection.OnlyBestPlanSelection;
 import se.vti.atap.minimalframework.planselection.SortingPlanSelection;
@@ -60,10 +60,10 @@ public class Model {
 		return this.agents;
 	}
 
-	public UtilityFunction<Paths, ODPair, DoubleArrayWrapper> createUtilityFunction() {
+	public UtilityFunction<Paths, ODPair, DoubleArrayNetworkConditions> createUtilityFunction() {
 		return new UtilityFunction<>() {
 			@Override
-			public double compute(Paths paths, ODPair odPair, DoubleArrayWrapper travelTimes_s) {
+			public double compute(Paths paths, ODPair odPair, DoubleArrayNetworkConditions travelTimes_s) {
 				return (-1.0) * new SingleODBeckmanApproximation(odPair, travelTimes_s, network).compute(paths);
 			}
 		};
@@ -73,7 +73,7 @@ public class Model {
 		return new ExactNetworkLoadingImpl(this.network);
 	}
 
-	public PlanInnovation<ODPair, DoubleArrayWrapper> createBestResponsePlanInnovation() {
+	public PlanInnovation<ODPair, DoubleArrayNetworkConditions> createBestResponsePlanInnovation() {
 		return new GreedyInnovation(this.network);
 	}
 
@@ -91,8 +91,8 @@ public class Model {
 		return new Model(network, odPairs);
 	}
 
-	public static Runner<Paths, ODPair, DoubleArrayWrapper> createRunner(Model model, int iterations) {
-		var runner = new Runner<Paths, ODPair, DoubleArrayWrapper>();
+	public static Runner<Paths, ODPair, DoubleArrayNetworkConditions> createRunner(Model model, int iterations) {
+		var runner = new Runner<Paths, ODPair, DoubleArrayNetworkConditions>();
 		runner.setAgents(model.getAgents()).setIterations(iterations)
 				.setNetworkLoading(model.createExactNetworkLoading())
 				.setPlanInnovation(model.createBestResponsePlanInnovation())
@@ -100,11 +100,11 @@ public class Model {
 		return runner;
 	}
 
-	public static BasicLoggerImpl<DoubleArrayWrapper, ODPair> runWithPlanSelection(Model model,
-			PlanSelection<ODPair, DoubleArrayWrapper> planSelection) {
-		var runner = createRunner(model, 100);
+	public static BasicLoggerImpl<ODPair, DoubleArrayNetworkConditions> runWithPlanSelection(Model model,
+			PlanSelection<ODPair, DoubleArrayNetworkConditions> planSelection) {
+		var runner = createRunner(model, 10);
 		runner.setPlanSelection(planSelection);
-		var logger = new BasicLoggerImpl<DoubleArrayWrapper, ODPair>();
+		var logger = new BasicLoggerImpl<ODPair, DoubleArrayNetworkConditions>();
 		runner.setLogger(logger);
 		runner.run();
 		return logger;
@@ -122,7 +122,7 @@ public class Model {
 //		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<DoubleArrayWrapper, NetworkFlowImpl, ODPair>(
 //				new NEW_ApproximateNetworkLoading(model.getNetwork().getNumberOfLinks(),true, model.getNetwork()), new NEW_NetworkFlowDistance<>(), -1.0)).getAverageGaps();
 		List<Double> proposedMethodGaps = runWithPlanSelection(model,
-				new LocalSearchPlanSelection<DoubleArrayWrapper, ApproximateNetworkConditionsImpl, ODPair>(
+				new LocalSearchPlanSelection<DoubleArrayNetworkConditions, ApproximateNetworkConditionsImpl, ODPair>(
 						new ApproximateNetworkLoadingImpl(model.getNetwork(), false), -1.0))
 				.getAverageGaps();
 

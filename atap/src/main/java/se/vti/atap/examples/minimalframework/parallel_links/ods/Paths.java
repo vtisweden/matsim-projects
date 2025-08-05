@@ -19,14 +19,14 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import se.vti.atap.minimalframework.defaults.BasicPlanImpl;
+import se.vti.atap.minimalframework.defaults.BasicPlan;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class Paths extends BasicPlanImpl {
+public class Paths extends BasicPlan {
 
 	public final double[] flows_veh;
 

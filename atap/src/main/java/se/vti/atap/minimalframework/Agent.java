@@ -38,5 +38,5 @@ public interface Agent<P extends Plan> {
 
 	void setCurrentPlanToCandidatePlan();
 
-	double getGap();
+	double computeGap();
 }

@@ -19,19 +19,58 @@
  */
 package se.vti.atap.minimalframework.defaults;
 
-import se.vti.atap.minimalframework.NetworkConditions;
+import se.vti.atap.minimalframework.Agent;
+import se.vti.atap.minimalframework.Plan;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class DoubleArrayWrapper implements NetworkConditions {
+public class BasicAgent<P extends Plan> implements Agent<P> {
 
-	public final double[] data;
-	
-	public DoubleArrayWrapper(int dimension) {
-		this.data = new double[dimension];
+	private final String id;
+
+	private P currentPlan = null;
+
+	private P candidatePlan = null;
+
+	public BasicAgent(String id) {
+		this.id = id;
 	}
 
+	@Override
+	public String getId() {
+		return this.id;
+	}
+
+	@Override
+	public P getCurrentPlan() {
+		return this.currentPlan;
+	}
+
+	@Override
+	public P getCandidatePlan() {
+		return this.candidatePlan;
+	}
+
+	@Override
+	public void setCurrentPlan(P plan) {
+		this.currentPlan = plan;
+	}
+
+	@Override
+	public void setCandidatePlan(P plan) {
+		this.candidatePlan = plan;
+	}
+
+	@Override
+	public void setCurrentPlanToCandidatePlan() {
+		this.currentPlan = this.candidatePlan;
+	}
+	
+	@Override
+	public double computeGap() {
+		return this.getCandidatePlan().getUtility() - this.getCurrentPlan().getUtility();
+	}
 }

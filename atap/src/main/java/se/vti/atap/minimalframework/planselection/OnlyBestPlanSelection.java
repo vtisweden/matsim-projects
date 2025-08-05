@@ -39,7 +39,7 @@ public class OnlyBestPlanSelection<T extends NetworkConditions, Q extends Approx
 
 	@Override
 	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
-		agents.stream().max((a1, a2) -> Double.compare(a1.getGap(), a2.getGap())).get().setCurrentPlanToCandidatePlan();
+		agents.stream().max((a1, a2) -> Double.compare(a1.computeGap(), a2.computeGap())).get().setCurrentPlanToCandidatePlan();
 	}
 	
 }
