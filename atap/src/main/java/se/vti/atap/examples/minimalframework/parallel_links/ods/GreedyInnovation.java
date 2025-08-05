@@ -20,14 +20,14 @@
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
+import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
+import se.vti.atap.examples.minimalframework.parallel_links.SingleODBeckmanApproximation;
 import se.vti.atap.minimalframework.PlanInnovation;
 
 /**
@@ -35,12 +35,9 @@ import se.vti.atap.minimalframework.PlanInnovation;
  * @author GunnarF
  *
  */
-public class GreedyInnovation implements PlanInnovation<ODPair, DoubleArrayNetworkConditions> {
+public class GreedyInnovation implements PlanInnovation<ODPair, NetworkConditionsImpl> {
 
-	private final Network network;
-
-	public GreedyInnovation(Network network) {
-		this.network = network;
+	public GreedyInnovation() {
 	}
 
 	@Override
@@ -51,19 +48,9 @@ public class GreedyInnovation implements PlanInnovation<ODPair, DoubleArrayNetwo
 	}
 
 	@Override
-	public void assignCandidatePlan(ODPair odPair, DoubleArrayNetworkConditions travelTimes_s) {
+	public void assignCandidatePlan(ODPair odPair, NetworkConditionsImpl networkConditions) {
 
-		SingleODBeckmanApproximation approx = new SingleODBeckmanApproximation(odPair, travelTimes_s, network);
-
-//		double[] s = new double[odPair.getNumberOfPaths()];
-//		double[] c = new double[odPair.getNumberOfPaths()];
-//		for (int h = 0; h < odPair.getNumberOfPaths(); h++) {
-//			int ij = odPair.availableLinks[h];
-//			double g = odPair.getCurrentPlan().flows_veh[h];
-//			double v = travelTimes_s.data[ij];
-//			s[h] = this.network.compute_dTravelTime_dFlow_s_veh(ij, this.network.computeFlow_veh(ij, v));
-//			c[h] = v - s[h] * g;
-//		}
+		SingleODBeckmanApproximation approx = networkConditions.od2beckmanApproximations.get(odPair);
 
 		List<Integer> _H = new ArrayList<>(IntStream.range(0, odPair.getNumberOfPaths()).boxed().toList());
 		Collections.sort(_H, new Comparator<>() {
@@ -106,18 +93,12 @@ public class GreedyInnovation implements PlanInnovation<ODPair, DoubleArrayNetwo
 		if (feasible_veh < 1e-8) {
 			throw new RuntimeException("no feasible flow");
 		}
-		for (int h2 : _Hhat) {
-			f[h2] *= odPair.demand_veh / feasible_veh;
+		if (Math.abs(feasible_veh - odPair.demand_veh) > 1e-8) {
+			for (int h2 : _Hhat) {
+				f[h2] *= odPair.demand_veh / feasible_veh;
+			}
 		}
 
 		odPair.setCandidatePlan(new Paths(f));
-
-//		double currentPotential = approx.compute(odPair.getCurrentPlan());
-//		double candidatePotential = approx.compute(odPair.getCandidatePlan());
-//		if (currentPotential < candidatePotential) {
-//			System.out.print("!!!\t");
-//		}
-//		System.out.println("current = " + currentPotential + ", candidate = " + candidatePotential);
-
 	}
 }

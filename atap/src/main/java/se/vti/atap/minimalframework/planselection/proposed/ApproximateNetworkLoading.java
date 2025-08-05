@@ -23,13 +23,14 @@ import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
+import se.vti.atap.minimalframework.Plan;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkLoading<A extends Agent<?>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>> {
+public interface ApproximateNetworkLoading<P extends Plan, A extends Agent<P>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<P, A, Q>> {
 
 	Q compute(Set<A> agentsUsingCurrentPlan, Set<A> agentsUsingCandidatePlan, T networkConditions);
 

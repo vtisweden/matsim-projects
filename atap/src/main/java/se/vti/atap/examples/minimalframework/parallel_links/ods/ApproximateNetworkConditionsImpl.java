@@ -22,8 +22,6 @@ package se.vti.atap.examples.minimalframework.parallel_links.ods;
 import java.util.Arrays;
 import java.util.Set;
 
-import com.google.common.base.Function;
-
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.planselection.proposed.AbstractApproximateNetworkConditions;
 
@@ -39,40 +37,63 @@ public class ApproximateNetworkConditionsImpl
 
 	private double[] memorizedLinkFlows_veh;
 
-	private Function<double[], double[]> transformation = new Function<>() {
-		@Override
-		public double[] apply(double[] data) {
-			return data;
-		}
-	};
+//	private Function<double[], double[]> transformation = new Function<>() {
+//		@Override
+//		public double[] apply(double[] data) {
+//			return data;
+//		}
+//	};
 
 	public ApproximateNetworkConditionsImpl(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan,
 			Network network) {
 		super(agentsUsingCurrentPlan, agentsUsingCandidatePlan, network);
-//		this.linkFlows_veh = new double[network.getNumberOfLinks()];
-//		for (Map.Entry<ODPair, Paths> entry : super.agent2plan.entrySet()) {
-//			this.addToInternalState(entry.getValue(), entry.getKey(), 1.0);
-//		}
 	}
 
-	public ApproximateNetworkConditionsImpl setFlowTransformation(Function<double[], double[]> transformation) {
-		this.transformation = transformation;
-		return this;
-	}
-
+//	public ApproximateNetworkConditionsImpl(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan,
+//			Network network, ApproximateNetworkConditionsImpl parent) {
+//		super(agentsUsingCurrentPlan, agentsUsingCandidatePlan, network, parent);
+//	}
+//
+//	public void setFlowTransformation(Function<double[], double[]> transformation) {
+//		this.transformation = transformation;
+//	}
 
 	@Override
 	public double computeDistance(ApproximateNetworkConditionsImpl other) {
-		double[] thisTransformed = this.transformation.apply(this.linkFlows_veh);
-		double[] otherTransformed = other.transformation.apply(other.linkFlows_veh);
+//		double[] thisTransformed = this.transformation.apply(this.linkFlows_veh);
+//		double[] otherTransformed = other.transformation.apply(other.linkFlows_veh);
 		double sumOfSquares = 0.0;
-		for (int linkIndex = 0; linkIndex < thisTransformed.length; linkIndex++) {
-			double diff = thisTransformed[linkIndex] - otherTransformed[linkIndex];
+		for (int link = 0; link < this.linkFlows_veh.length; link++) {
+			double diff = this.linkFlows_veh[link] - other.linkFlows_veh[link];
 			sumOfSquares += diff * diff;
 		}
 		return Math.sqrt(sumOfSquares);
 	}
 
+	@Override
+	protected void initializeInternalState(Network network) {
+		this.linkFlows_veh = new double[network.getNumberOfLinks()];
+	}
+
+	@Override
+	protected void copyInternalState(ApproximateNetworkConditionsImpl other) {
+		this.linkFlows_veh = Arrays.copyOf(other.linkFlows_veh, other.linkFlows_veh.length);
+	}
+
+	@Override
+	protected void addToInternalState(Paths paths, ODPair odPair) {
+		for (int path = 0; path < paths.getNumberOfPaths(); path++) {
+			this.linkFlows_veh[odPair.availableLinks[path]] += paths.pathFlows_veh[path];
+		}
+	}
+
+	@Override
+	protected void removeFromInternalState(Paths paths, ODPair odPair) {
+		for (int path = 0; path < paths.getNumberOfPaths(); path++) {
+			this.linkFlows_veh[odPair.availableLinks[path]] -= paths.pathFlows_veh[path];
+		}
+	}
+	
 	@Override
 	protected void memorizeInternalState() {
 		this.memorizedLinkFlows_veh = Arrays.copyOf(this.linkFlows_veh, this.linkFlows_veh.length);
@@ -82,24 +103,4 @@ public class ApproximateNetworkConditionsImpl
 	protected void restoreInternalState() {
 		this.linkFlows_veh = Arrays.copyOf(this.memorizedLinkFlows_veh, this.memorizedLinkFlows_veh.length);
 	}
-
-	@Override
-	protected void initializeInternalState(Network network) {
-		this.linkFlows_veh = new double[network.getNumberOfLinks()];
-	}
-
-	@Override
-	protected void addToInternalState(Paths paths, ODPair odPair) {
-		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
-			this.linkFlows_veh[odPair.availableLinks[pathIndex]] += paths.flows_veh[pathIndex];
-		}
-	}
-
-	@Override
-	protected void removeFromInternalState(Paths paths, ODPair odPair) {
-		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
-			this.linkFlows_veh[odPair.availableLinks[pathIndex]] -= paths.flows_veh[pathIndex];
-		}
-	}
-
 }

@@ -19,7 +19,6 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.minimalframework.defaults.BasicAgent;
 
 /**
@@ -32,7 +31,7 @@ public class ODPair extends BasicAgent<Paths> {
 	public final double demand_veh;
 
 	public final int[] availableLinks;
-	
+
 	public ODPair(String id, Double demand_veh, int... availableLinks) {
 		super(id);
 		this.demand_veh = demand_veh;
@@ -42,26 +41,4 @@ public class ODPair extends BasicAgent<Paths> {
 	public int getNumberOfPaths() {
 		return this.availableLinks.length;
 	}
-	
-	private void addPathFlowsToLinkFlows(Paths pathFlows, DoubleArrayNetworkConditions linkFlows_veh) {
-		for (int pathIndex = 0; pathIndex < pathFlows.getNumberOfPaths(); pathIndex++) {
-			linkFlows_veh.data[this.availableLinks[pathIndex]] += pathFlows.flows_veh[pathIndex];
-		}
-	}
-
-	public void addCurrentPathFlowsToLinkFlows(DoubleArrayNetworkConditions linkFlows_veh) {
-		this.addPathFlowsToLinkFlows(this.getCurrentPlan(), linkFlows_veh);
-	}
-
-	public void addCandidatePathFlowsToLinkFlows(DoubleArrayNetworkConditions linkFlows_veh) {
-		this.addPathFlowsToLinkFlows(this.getCandidatePlan(), linkFlows_veh);
-	}
-
-//	public double computeCurrentTotalTravelTime_s(Paths paths, DoubleArrayWrapper travelTimes_s) {
-//		double result_s = 0.0;
-//		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
-//			result_s += paths.flows_veh[pathIndex] * travelTimes_s.data[this.availableLinks[pathIndex]];
-//		}
-//		return result_s;
-//	}
 }

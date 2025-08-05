@@ -19,12 +19,17 @@
  */
 package se.vti.atap.minimalframework.planselection.proposed;
 
+import se.vti.atap.minimalframework.Agent;
+import se.vti.atap.minimalframework.Plan;
+
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkConditions<Q extends ApproximateNetworkConditions<Q>> {
+public interface ApproximateNetworkConditions<P extends Plan, A extends Agent<P>, Q extends ApproximateNetworkConditions<P, A, Q>> {
+
+	void switchPlan(P plan, A agent);
 
 	double computeLeaveOneOutDistance(Q other);
 

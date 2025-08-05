@@ -28,15 +28,13 @@ import java.util.Set;
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
 import se.vti.atap.minimalframework.PlanSelection;
-import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkConditions;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class OneAtATimePlanSelection<A extends Agent<?>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>>
-		implements PlanSelection<A, T> {
+public class OneAtATimePlanSelection<A extends Agent<?>, T extends NetworkConditions> implements PlanSelection<A, T> {
 
 	private final Random rnd;
 

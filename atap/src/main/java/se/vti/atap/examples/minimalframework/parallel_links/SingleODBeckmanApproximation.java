@@ -17,10 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.examples.minimalframework.parallel_links;
 
-import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
-import se.vti.atap.examples.minimalframework.parallel_links.Network;
+import se.vti.atap.examples.minimalframework.parallel_links.ods.ODPair;
+import se.vti.atap.examples.minimalframework.parallel_links.ods.Paths;
 
 /**
  * 
@@ -34,16 +34,16 @@ public class SingleODBeckmanApproximation {
 	public final double[] g;
 	public final double[] v;
 
-	public SingleODBeckmanApproximation(ODPair odPair, DoubleArrayNetworkConditions travelTimes_s, Network network) {
+	public SingleODBeckmanApproximation(ODPair odPair, NetworkConditionsImpl networkConditions) {
 		this.s = new double[odPair.getNumberOfPaths()];
 		this.c = new double[odPair.getNumberOfPaths()];
 		this.g = new double[odPair.getNumberOfPaths()];
 		this.v = new double[odPair.getNumberOfPaths()];
 		for (int h = 0; h < odPair.getNumberOfPaths(); h++) {
 			int ij = odPair.availableLinks[h];
-			this.g[h] = odPair.getCurrentPlan().flows_veh[h];
-			this.v[h] = travelTimes_s.data[ij];
-			this.s[h] = network.compute_dTravelTime_dFlow_s_veh(ij, network.computeFlow_veh(ij, this.v[h]));
+			this.g[h] = odPair.getCurrentPlan().pathFlows_veh[h];
+			this.v[h] = networkConditions.linkTravelTimes_s[ij];
+			this.s[h] = networkConditions.dLinkTravelTimes_dLinkFlows_s_veh[ij];
 			this.c[h] = this.v[h] - this.s[h] * this.g[h];
 		}
 	}
@@ -51,7 +51,7 @@ public class SingleODBeckmanApproximation {
 	public double compute(Paths paths) {
 		double result = 0.0;
 		for (int h = 0; h < paths.getNumberOfPaths(); h++) {
-			double f = paths.flows_veh[h];
+			double f = paths.pathFlows_veh[h];
 			result += (this.v[h] - this.s[h] * this.g[h]) * f + 0.5 * this.s[h] * f * f;
 		}
 		return result;

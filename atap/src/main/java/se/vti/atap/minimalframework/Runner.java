@@ -42,6 +42,8 @@ public class Runner<P extends Plan, A extends Agent<P>, T extends NetworkConditi
 
 	private Logger<A, T> logger = null;
 
+	private boolean verbose = true;
+	
 	public Runner() {
 	}
 
@@ -79,13 +81,20 @@ public class Runner<P extends Plan, A extends Agent<P>, T extends NetworkConditi
 		this.logger = logger;
 		return this;
 	}
+	
+	public Runner<P,A,T> setVerbose(boolean verbose) {
+		this.verbose = verbose;
+		return this;
+	}
 
 	public void run() {
 
 		this.agents.stream().forEach(a -> this.planInnovation.assignInitialPlan(a));
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
-			System.out.println(iteration);
+			if (this.verbose) {
+				System.out.println("Iteration " + iteration + " of " + this.maxIterations);
+			}
 
 			T networkConditions = this.networkLoading.compute(this.agents);
 

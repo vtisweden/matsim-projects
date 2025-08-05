@@ -21,8 +21,8 @@ package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import java.util.Set;
 
-import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
+import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
 import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkLoading;
 
 /**
@@ -31,26 +31,18 @@ import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkLoa
  *
  */
 public class ApproximateNetworkLoadingImpl
-		implements ApproximateNetworkLoading<ODPair, DoubleArrayNetworkConditions, ApproximateNetworkConditionsImpl> {
+		implements ApproximateNetworkLoading<Paths, ODPair, NetworkConditionsImpl, ApproximateNetworkConditionsImpl> {
 
 	private final Network network;
 
-	private final boolean unfair;
-
-	public ApproximateNetworkLoadingImpl(Network network, boolean unfair) {
+	public ApproximateNetworkLoadingImpl(Network network) {
 		this.network = network;
-		this.unfair = unfair;
 	}
 
 	@Override
-	public ApproximateNetworkConditionsImpl compute(Set<ODPair> agentsUsingCurrentPlans,
-			Set<ODPair> agentsUsingCandidatePlans, DoubleArrayNetworkConditions networkConditions) {
-		var result = new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlans, agentsUsingCandidatePlans,
-				this.network);
-		if (this.unfair) {
-			result.setFlowTransformation(f -> new ExactNetworkLoadingImpl(this.network).computeNetworkLoading(f).data);
-		}
-		return result;
+	public ApproximateNetworkConditionsImpl compute(Set<ODPair> agentsUsingCurrentPlan,
+			Set<ODPair> agentsUsingCandidatePlan, NetworkConditionsImpl travelTimes) {
+		return new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlan, agentsUsingCandidatePlan, this.network);
 	}
 
 }

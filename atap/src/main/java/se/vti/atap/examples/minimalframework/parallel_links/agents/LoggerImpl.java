@@ -21,7 +21,7 @@ package se.vti.atap.examples.minimalframework.parallel_links.agents;
 
 import java.util.Set;
 
-import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
+import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
 import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
 
 /**
@@ -29,7 +29,7 @@ import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
  * @author GunnarF
  *
  */
-public class LoggerImpl extends BasicLoggerImpl<AgentImpl, DoubleArrayNetworkConditions> {
+public class LoggerImpl extends BasicLoggerImpl<AgentImpl, NetworkConditionsImpl> {
 
 //	@Override
 //	public String createHeader() {

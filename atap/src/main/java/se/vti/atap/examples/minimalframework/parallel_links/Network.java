@@ -55,18 +55,13 @@ public class Network {
 		return this.t0_s.length;
 	}
 
-	public double computeTravelTime_s(int link, double flow_veh) {
+	public double computeLinkTravelTime_s(int link, double flow_veh) {
 		return this.t0_s[link]
 				* (1.0 + this.alpha * Math.pow((flow_veh + this.epsilon_veh) / this.cap_veh[link], this.beta));
 	}
 
-	public double compute_dTravelTime_dFlow_s_veh(int link, double flow_veh) {
+	public double compute_dLinkTravelTime_dLinkFlow_s_veh(int link, double flow_veh) {
 		return this.t0_s[link] * this.alpha * this.beta
 				* Math.pow((flow_veh + this.epsilon_veh) / this.cap_veh[link], this.beta - 1.0) / this.cap_veh[link];
-	}
-
-	public double computeFlow_veh(int link, double travelTime_s) {
-		return this.cap_veh[link] * Math.pow((travelTime_s / this.t0_s[link] - 1.0) / this.alpha, 1.0 / this.beta)
-				- this.epsilon_veh;
 	}
 }

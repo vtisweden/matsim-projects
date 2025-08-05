@@ -19,6 +19,11 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import se.vti.atap.examples.minimalframework.parallel_links.ods.ODPair;
 import se.vti.atap.minimalframework.NetworkConditions;
 
 /**
@@ -26,12 +31,23 @@ import se.vti.atap.minimalframework.NetworkConditions;
  * @author GunnarF
  *
  */
-public class DoubleArrayNetworkConditions implements NetworkConditions {
+public class NetworkConditionsImpl implements NetworkConditions {
 
-	public final double[] data;
-	
-	public DoubleArrayNetworkConditions(int dimension) {
-		this.data = new double[dimension];
+	public final double[] linkFlows_veh;
+
+	public final double[] linkTravelTimes_s;
+
+	public final double[] dLinkTravelTimes_dLinkFlows_s_veh;
+
+	public final Map<ODPair, SingleODBeckmanApproximation> od2beckmanApproximations;
+
+	public NetworkConditionsImpl(Set<ODPair> odPairs, double[] linkFlows_veh, double[] linkTravelTimes_s,
+			double[] dLinkTravelTimes_dLinkFlows_s_veh) {
+		this.linkFlows_veh = linkFlows_veh;
+		this.linkTravelTimes_s = linkTravelTimes_s;
+		this.dLinkTravelTimes_dLinkFlows_s_veh = dLinkTravelTimes_dLinkFlows_s_veh;
+		this.od2beckmanApproximations = odPairs.stream()
+				.collect(Collectors.toMap(od -> od, od -> new SingleODBeckmanApproximation(od, this)));
 	}
 
 }

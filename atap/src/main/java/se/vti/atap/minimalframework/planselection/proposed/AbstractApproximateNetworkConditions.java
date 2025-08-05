@@ -33,24 +33,37 @@ import se.vti.atap.minimalframework.Plan;
  *
  */
 public abstract class AbstractApproximateNetworkConditions<P extends Plan, A extends Agent<P>, Q extends AbstractApproximateNetworkConditions<P, A, Q>>
-		implements ApproximateNetworkConditions<Q> {
+		implements ApproximateNetworkConditions<P, A, Q> {
 
 	protected final Map<A, P> agent2plan;
-
+	
 	public AbstractApproximateNetworkConditions(Set<A> agentsUsingCurrentPlan, Set<A> agentsUsingCandidatePlan,
 			Network network) {
-		this.initializeInternalState(network);
-		this.agent2plan = new LinkedHashMap<>(agentsUsingCurrentPlan.size() + agentsUsingCandidatePlan.size());
+		
+		this.agent2plan  = new LinkedHashMap<>(agentsUsingCurrentPlan.size() + agentsUsingCandidatePlan.size());
 		for (A agent : agentsUsingCurrentPlan) {
 			this.agent2plan.put(agent, agent.getCurrentPlan());
-			this.addToInternalState(agent.getCurrentPlan(), agent);
 		}
 		for (A agent : agentsUsingCandidatePlan) {
 			this.agent2plan.put(agent, agent.getCandidatePlan());
+		}	
+
+		this.initializeInternalState(network);
+		for (A agent : agentsUsingCurrentPlan) {
+			this.addToInternalState(agent.getCurrentPlan(), agent);
+		}
+		for (A agent : agentsUsingCandidatePlan) {
 			this.addToInternalState(agent.getCandidatePlan(), agent);
 		}
 	}
-
+	
+	@Override
+	public void switchPlan(P plan, A agent) {
+		this.removeFromInternalState(this.agent2plan.get(agent), agent);
+		this.addToInternalState(plan, agent);
+		this.agent2plan.put(agent, plan);
+	}
+	
 	@Override
 	public double computeLeaveOneOutDistance(Q other) {
 		double result = 0.0;
@@ -71,6 +84,8 @@ public abstract class AbstractApproximateNetworkConditions<P extends Plan, A ext
 
 	abstract protected void initializeInternalState(Network network);
 
+	abstract protected void copyInternalState(Q other);
+	
 	abstract protected void addToInternalState(P plan, A agent);
 
 	abstract protected void removeFromInternalState(P plan, A agent);

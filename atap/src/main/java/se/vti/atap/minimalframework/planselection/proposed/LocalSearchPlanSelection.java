@@ -28,6 +28,7 @@ import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
+import se.vti.atap.minimalframework.Plan;
 import se.vti.atap.minimalframework.PlanSelection;
 import se.vti.atap.minimalframework.planselection.MSAStepSize;
 
@@ -36,27 +37,45 @@ import se.vti.atap.minimalframework.planselection.MSAStepSize;
  * @author GunnarF
  *
  */
-public class LocalSearchPlanSelection<A extends Agent<?>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>>
+public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<P, A, Q>>
 		implements PlanSelection<A, T> {
 
 	private final MSAStepSize stepSize;
 
 	private final Random rnd;
 
-	private final ApproximateNetworkLoading<A, T, Q> approximateNetworkLoading;
+	private final ApproximateNetworkLoading<P, A, T, Q> approximateNetworkLoading;
 
+	private boolean approximateDistance = false;
+
+	private double minimalImprovement = 1e-8;
+	
 	public LocalSearchPlanSelection(double stepSizeIterationExponent, Random rnd,
-			ApproximateNetworkLoading<A, T, Q> approximateNetworkLoading) {
+			ApproximateNetworkLoading<P, A, T, Q> approximateNetworkLoading) {
 		this.stepSize = new MSAStepSize(stepSizeIterationExponent);
 		this.rnd = rnd;
 		this.approximateNetworkLoading = approximateNetworkLoading;
 	}
 
-	private double computeObjectiveFunctionValue(Set<A> agentsUsingCandidatePlan, Q currentApproximateNetworkConditions,
+	public LocalSearchPlanSelection<P, A, T, Q> setApproximateDistance(boolean approximateDistance) {
+		this.approximateDistance = approximateDistance;
+		return this;
+	}
+
+	public LocalSearchPlanSelection<P, A, T, Q> setMinimalImprovement(double minimalImprovement) {
+		this.minimalImprovement = minimalImprovement;
+		return this;
+	}
+
+	private double computeObjectiveFunctionValue(double expectedImprovement, Q currentApproximateNetworkConditions,
 			Q candidateApproximatNetworkConditions, double absoluteAmbitionLevel) {
-		double expectedImprovement = agentsUsingCandidatePlan.stream().mapToDouble(a -> a.computeGap()).sum();
-		double distance = currentApproximateNetworkConditions
-				.computeLeaveOneOutDistance(candidateApproximatNetworkConditions);
+		double distance;
+		if (this.approximateDistance) {
+			distance = currentApproximateNetworkConditions.computeDistance(candidateApproximatNetworkConditions);
+		} else {
+			distance = currentApproximateNetworkConditions
+					.computeLeaveOneOutDistance(candidateApproximatNetworkConditions);
+		}
 		return (expectedImprovement - absoluteAmbitionLevel) / (distance + distance * distance + 1e-8);
 	}
 
@@ -74,7 +93,8 @@ public class LocalSearchPlanSelection<A extends Agent<?>, T extends NetworkCondi
 		Q candidateApproximateNetworkConditions = this.approximateNetworkLoading.compute(agentsUsingCurrentPlan,
 				agentsUsingCandidatePlan, networkConditions);
 
-		double objectiveFunctionValue = this.computeObjectiveFunctionValue(agentsUsingCandidatePlan,
+		double expectedImprovement = agentsUsingCandidatePlan.stream().mapToDouble(a -> a.computeGap()).sum();
+		double objectiveFunctionValue = this.computeObjectiveFunctionValue(expectedImprovement,
 				currentApproximateNetworkConditions, candidateApproximateNetworkConditions, absoluteAmbitionLevel);
 
 		List<A> allAgents = new ArrayList<>(agents);
@@ -87,25 +107,35 @@ public class LocalSearchPlanSelection<A extends Agent<?>, T extends NetworkCondi
 				if (agentWasUsingCandidatePlan) {
 					agentsUsingCandidatePlan.remove(agent);
 					agentsUsingCurrentPlan.add(agent);
+					candidateApproximateNetworkConditions.switchPlan(agent.getCurrentPlan(), agent);
+					expectedImprovement -= agent.computeGap();
 				} else {
 					agentsUsingCurrentPlan.remove(agent);
 					agentsUsingCandidatePlan.add(agent);
+					candidateApproximateNetworkConditions.switchPlan(agent.getCandidatePlan(), agent);
+					expectedImprovement += agent.computeGap();
 				}
-				candidateApproximateNetworkConditions = this.approximateNetworkLoading.compute(agentsUsingCurrentPlan,
-						agentsUsingCandidatePlan, networkConditions);
-				double candidateObjectiveFunctionValue = this.computeObjectiveFunctionValue(agentsUsingCandidatePlan,
+
+//				candidateApproximateNetworkConditions = this.approximateNetworkLoading.compute(agentsUsingCurrentPlan,
+//						agentsUsingCandidatePlan, networkConditions);
+
+				double candidateObjectiveFunctionValue = this.computeObjectiveFunctionValue(expectedImprovement,
 						currentApproximateNetworkConditions, candidateApproximateNetworkConditions,
 						absoluteAmbitionLevel);
-				if (candidateObjectiveFunctionValue > objectiveFunctionValue) {
+				if (candidateObjectiveFunctionValue > objectiveFunctionValue + this.minimalImprovement) {
 					objectiveFunctionValue = candidateObjectiveFunctionValue;
 					switched = true;
 				} else {
 					if (agentWasUsingCandidatePlan) {
 						agentsUsingCurrentPlan.remove(agent);
 						agentsUsingCandidatePlan.add(agent);
+						candidateApproximateNetworkConditions.switchPlan(agent.getCandidatePlan(), agent);
+						expectedImprovement += agent.computeGap();
 					} else {
 						agentsUsingCandidatePlan.remove(agent);
 						agentsUsingCurrentPlan.add(agent);
+						candidateApproximateNetworkConditions.switchPlan(agent.getCurrentPlan(), agent);
+						expectedImprovement -= agent.computeGap();
 					}
 				}
 			}

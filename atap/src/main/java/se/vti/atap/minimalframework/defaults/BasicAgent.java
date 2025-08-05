@@ -66,7 +66,7 @@ public class BasicAgent<P extends Plan> implements Agent<P> {
 
 	@Override
 	public void setCurrentPlanToCandidatePlan() {
-		this.currentPlan = this.candidatePlan;
+		this.setCurrentPlan(this.candidatePlan);
 	}
 	
 	@Override

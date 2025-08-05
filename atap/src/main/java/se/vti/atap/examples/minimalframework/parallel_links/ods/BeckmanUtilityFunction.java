@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.examples.minimalframework.parallel_links
+ * se.vti.atap.examples.minimalframework.parallel_links.ods
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,23 +19,18 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import se.vti.atap.minimalframework.defaults.BasicPlan;
+import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
+import se.vti.atap.minimalframework.UtilityFunction;
 
 /**
- * 
- * @author GunnarF
- *
  */
-public class Paths extends BasicPlan {
+public class BeckmanUtilityFunction implements UtilityFunction<Paths, ODPair, NetworkConditionsImpl> {
 
-	public final double[] pathFlows_veh;
-
-	public Paths(double[] pathFlows_veh) {
-		this.pathFlows_veh = pathFlows_veh;
+	public BeckmanUtilityFunction() {		
 	}
 	
-	public int getNumberOfPaths() {
-		return this.pathFlows_veh.length;
+	@Override
+	public double compute(Paths paths, ODPair odPair, NetworkConditionsImpl networkConditions) {
+		return (-1.0) * networkConditions.od2beckmanApproximations.get(odPair).compute(paths);
 	}
-
 }
