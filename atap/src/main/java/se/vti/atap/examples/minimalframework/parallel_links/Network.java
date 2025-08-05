@@ -66,8 +66,7 @@ public class Network {
 	}
 
 	public double computeFlow_veh(int link, double travelTime_s) {
-		return Math.pow((travelTime_s / this.t0_s[link] - 1.0) / this.alpha, 1.0 / this.beta) * this.cap_veh[link]
+		return this.cap_veh[link] * Math.pow((travelTime_s / this.t0_s[link] - 1.0) / this.alpha, 1.0 / this.beta)
 				- this.epsilon_veh;
 	}
-
 }

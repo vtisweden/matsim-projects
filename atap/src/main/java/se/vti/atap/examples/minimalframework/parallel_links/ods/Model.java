@@ -19,13 +19,15 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
 import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
-import se.vti.atap.examples.minimalframework.parallel_links.RandomScenarioGenerator;
+import se.vti.atap.examples.minimalframework.parallel_links.RandomChoiceSetGenerator;
+import se.vti.atap.examples.minimalframework.parallel_links.RandomNetworkGenerator;
 import se.vti.atap.minimalframework.PlanInnovation;
 import se.vti.atap.minimalframework.PlanSelection;
 import se.vti.atap.minimalframework.Runner;
@@ -83,16 +85,26 @@ public class Model {
 
 	// ==========
 
+	public static Set<ODPair> createRandomOdDemand(int numberOfODPairs, double demand_veh, int numberOfPaths,
+			Network network, Random rnd) {
+		List<int[]> choiceSets = RandomChoiceSetGenerator.createRandomChoiceSets(numberOfODPairs, numberOfPaths,
+				network, rnd);
+		Set<ODPair> result = new LinkedHashSet<>(choiceSets.size());
+		int n = 0;
+		for (int[] choiceSet : choiceSets) {
+			result.add(new ODPair("od pair " + (n++), demand_veh, choiceSet));
+		}
+		return result;
+	}
+
 	public static Model createRandomModel(long seed, int numberOfLinks, int numberOfODPairs, int numberOfPaths,
 			double demandScale) {
-		RandomScenarioGenerator gen = new RandomScenarioGenerator(seed);
-		Network network = gen.createRandomNetwork(numberOfLinks, numberOfLinks, 60.0 - 1e-8, 600.0 + 1e-8,
-				1000.0 - 1e-8, 3000.0 + 1e-8);
+		Random rnd = new Random(seed);
+		Network network = RandomNetworkGenerator.createRandomNetwork(numberOfLinks, 60.0, 600.0, 1000.0, 3000.0, rnd);
 		double baselineDemand_veh = (2000.0 * numberOfLinks) / numberOfODPairs;
-		Set<ODPair> odPairs = gen.createRandomOdDemand(numberOfODPairs, numberOfODPairs,
-				demandScale * baselineDemand_veh - 1e-8, demandScale * baselineDemand_veh + 1e-8, numberOfPaths,
-				numberOfPaths, network);
-		return new Model(network, odPairs, new Random(seed));
+		Set<ODPair> odPairs = createRandomOdDemand(numberOfODPairs, demandScale * baselineDemand_veh, numberOfPaths,
+				network, rnd);
+		return new Model(network, odPairs, rnd);
 	}
 
 	public static Runner<Paths, ODPair, DoubleArrayNetworkConditions> createRunner(Model model, int iterations) {
@@ -106,7 +118,7 @@ public class Model {
 
 	public static BasicLoggerImpl<ODPair, DoubleArrayNetworkConditions> runWithPlanSelection(Model model,
 			PlanSelection<ODPair, DoubleArrayNetworkConditions> planSelection) {
-		var runner = createRunner(model, 1000);
+		var runner = createRunner(model, 10);
 		runner.setPlanSelection(planSelection);
 		var logger = new BasicLoggerImpl<ODPair, DoubleArrayNetworkConditions>();
 		runner.setLogger(logger);
@@ -126,8 +138,8 @@ public class Model {
 //				model.createApproximateNetworkLoading(true), new DoubleArrayDistance(), -1.0)).getAverageGaps();
 //		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<DoubleArrayWrapper, NetworkFlowImpl, ODPair>(
 //				new NEW_ApproximateNetworkLoading(model.getNetwork().getNumberOfLinks(),true, model.getNetwork()), new NEW_NetworkFlowDistance<>(), -1.0)).getAverageGaps();
-		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<>(
-				-1.0, model.rnd, new ApproximateNetworkLoadingImpl(model.getNetwork(), false))).getAverageGaps();
+		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<>(-1.0, model.rnd,
+				new ApproximateNetworkLoadingImpl(model.getNetwork(), false))).getAverageGaps();
 
 		System.out.println("Iteration\tOneAtATime\tOnlyLargetGap\tUniform\tSorting\tProposed");
 		for (int i = 0; i < selectOnlyBestGaps.size(); i++) {
