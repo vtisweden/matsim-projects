@@ -27,18 +27,19 @@ import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkConditions;
+import se.vti.atap.minimalframework.PlanSelection;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class SortingPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions, A extends Agent<?>>
-		extends AbstractPlanSelection<T, A> {
+public class SortingPlanSelection<A extends Agent<?>, T extends NetworkConditions> implements PlanSelection<A, T> {
+
+	private final MSAStepSize stepSize;
 
 	public SortingPlanSelection(double stepSizeIterationExponent) {
-		super(stepSizeIterationExponent);
+		this.stepSize = new MSAStepSize(stepSizeIterationExponent);
 	}
 
 	@Override
@@ -46,13 +47,12 @@ public class SortingPlanSelection<T extends NetworkConditions, Q extends Approxi
 		List<A> allAgents = new ArrayList<>(agents);
 		Collections.sort(allAgents, new Comparator<>() {
 			@Override
-			public int compare(A agent1, A agent2) {
-				// sort in descending order
+			public int compare(A agent1, A agent2) { // sort in descending order
 				return Double.compare(agent2.computeGap(), agent1.computeGap());
 			}
 
 		});
-		double numberOfReplanners = this.computeStepSize(iteration) * allAgents.size();
+		double numberOfReplanners = this.stepSize.compute(iteration) * allAgents.size();
 		for (int n = 0; n < numberOfReplanners; n++) {
 			allAgents.get(n).setCurrentPlanToCandidatePlan();
 		}

@@ -35,21 +35,17 @@ import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkCon
  * @author GunnarF
  *
  */
-public class OneAtATimePlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions, A extends Agent<?>>
+public class OneAtATimePlanSelection<A extends Agent<?>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>>
 		implements PlanSelection<A, T> {
 
-	private Random rnd = null;
+	private final Random rnd;
 
 	private List<A> agents = null;
 
 	private int lastAgentIndex = -1;
 
-	public OneAtATimePlanSelection() {
-	}
-
-	public OneAtATimePlanSelection<T, Q, A> setIsRandomizing(Random rnd) {
+	public OneAtATimePlanSelection(Random rnd) {
 		this.rnd = rnd;
-		return this;
 	}
 
 	@Override
@@ -57,9 +53,8 @@ public class OneAtATimePlanSelection<T extends NetworkConditions, Q extends Appr
 
 		if (this.agents == null) {
 			this.agents = Collections.unmodifiableList(new ArrayList<>(agents));
-		} else if (!this.agents.containsAll(agents) || !agents.containsAll(this.agents)) {
-			throw new RuntimeException("Agent set has changed.");
 		}
+		assert (this.agents.containsAll(agents) && agents.containsAll(this.agents));
 
 		if (this.rnd != null) {
 			this.lastAgentIndex = this.rnd.nextInt(0, this.agents.size());

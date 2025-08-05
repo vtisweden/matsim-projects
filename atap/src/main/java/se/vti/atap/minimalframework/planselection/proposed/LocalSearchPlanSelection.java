@@ -28,7 +28,8 @@ import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.planselection.AbstractPlanSelection;
+import se.vti.atap.minimalframework.PlanSelection;
+import se.vti.atap.minimalframework.planselection.MSAStepSize;
 
 /**
  * 
@@ -36,15 +37,18 @@ import se.vti.atap.minimalframework.planselection.AbstractPlanSelection;
  *
  */
 public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>, A extends Agent<?>>
-		extends AbstractPlanSelection<T, A> {
-
-	private final Random rnd = new Random(4711);
+		implements PlanSelection<A, T> {
 
 	private final ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading;
 
+	private final MSAStepSize stepSize;
+
+	private final Random rnd;
+
 	public LocalSearchPlanSelection(ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading,
-			double stepSizeIterationExponent) {
-		super(stepSizeIterationExponent);
+			double stepSizeIterationExponent, Random rnd) {
+		this.stepSize = new MSAStepSize(stepSizeIterationExponent);
+		this.rnd = rnd;
 		this.approximateNetworkLoading = approximateNetworkLoading;
 	}
 
@@ -60,7 +64,7 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends App
 	@Override
 	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
 
-		double relativeAmbitionLevel = super.computeStepSize(iteration);
+		double relativeAmbitionLevel = this.stepSize.compute(iteration);
 		double absoluteAmbitionLevel = relativeAmbitionLevel * agents.stream()
 				.mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
 

@@ -27,27 +27,29 @@ import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkConditions;
+import se.vti.atap.minimalframework.PlanSelection;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class UniformPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions, A extends Agent<?>>
-		extends AbstractPlanSelection<T, A> {
+public class UniformPlanSelection<A extends Agent<?>, T extends NetworkConditions> implements PlanSelection<A, T> {
 
-	private final Random rnd = new Random(4711);
+	private final MSAStepSize stepSize;
 
-	public UniformPlanSelection(double stepSizeIterationExponent) {
-		super(stepSizeIterationExponent);
+	private final Random rnd;
+
+	public UniformPlanSelection(double stepSizeIterationExponent, Random rnd) {
+		this.stepSize = new MSAStepSize(stepSizeIterationExponent);
+		this.rnd = rnd;
 	}
 
 	@Override
 	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
 		List<A> allAgents = new ArrayList<>(agents);
 		Collections.shuffle(allAgents, this.rnd);
-		double numberOfReplanners = this.computeStepSize(iteration) * allAgents.size();
+		double numberOfReplanners = this.stepSize.compute(iteration) * allAgents.size();
 		for (int n = 0; n < numberOfReplanners; n++) {
 			allAgents.get(n).setCurrentPlanToCandidatePlan();
 		}

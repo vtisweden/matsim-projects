@@ -20,6 +20,7 @@
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import se.vti.atap.examples.minimalframework.parallel_links.DoubleArrayNetworkConditions;
@@ -47,9 +48,12 @@ public class Model {
 
 	private final Set<ODPair> agents;
 
-	public Model(Network network, Set<ODPair> agents) {
+	private final Random rnd;
+
+	public Model(Network network, Set<ODPair> agents, Random rnd) {
 		this.network = network;
 		this.agents = agents;
+		this.rnd = rnd;
 	}
 
 	public Network getNetwork() {
@@ -88,7 +92,7 @@ public class Model {
 		Set<ODPair> odPairs = gen.createRandomOdDemand(numberOfODPairs, numberOfODPairs,
 				demandScale * baselineDemand_veh - 1e-8, demandScale * baselineDemand_veh + 1e-8, numberOfPaths,
 				numberOfPaths, network);
-		return new Model(network, odPairs);
+		return new Model(network, odPairs, new Random(seed));
 	}
 
 	public static Runner<Paths, ODPair, DoubleArrayNetworkConditions> createRunner(Model model, int iterations) {
@@ -112,10 +116,11 @@ public class Model {
 
 	public static void runAllMethods(Model model) {
 
-		List<Double> selectOneAtATimeGaps = runWithPlanSelection(model, new OneAtATimePlanSelection<>())
+		List<Double> selectOneAtATimeGaps = runWithPlanSelection(model, new OneAtATimePlanSelection<>(model.rnd))
 				.getAverageGaps();
 		List<Double> selectOnlyBestGaps = runWithPlanSelection(model, new OnlyBestPlanSelection<>()).getAverageGaps();
-		List<Double> uniformMethodGaps = runWithPlanSelection(model, new UniformPlanSelection<>(-1.0)).getAverageGaps();
+		List<Double> uniformMethodGaps = runWithPlanSelection(model, new UniformPlanSelection<>(-1.0, model.rnd))
+				.getAverageGaps();
 		List<Double> sortingMethodGaps = runWithPlanSelection(model, new SortingPlanSelection<>(-1.0)).getAverageGaps();
 //		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<>(
 //				model.createApproximateNetworkLoading(true), new DoubleArrayDistance(), -1.0)).getAverageGaps();
@@ -123,7 +128,7 @@ public class Model {
 //				new NEW_ApproximateNetworkLoading(model.getNetwork().getNumberOfLinks(),true, model.getNetwork()), new NEW_NetworkFlowDistance<>(), -1.0)).getAverageGaps();
 		List<Double> proposedMethodGaps = runWithPlanSelection(model,
 				new LocalSearchPlanSelection<DoubleArrayNetworkConditions, ApproximateNetworkConditionsImpl, ODPair>(
-						new ApproximateNetworkLoadingImpl(model.getNetwork(), false), -1.0))
+						new ApproximateNetworkLoadingImpl(model.getNetwork(), false), -1.0, model.rnd))
 				.getAverageGaps();
 
 		System.out.println("Iteration\tOneAtATime\tOnlyLargetGap\tUniform\tSorting\tProposed");

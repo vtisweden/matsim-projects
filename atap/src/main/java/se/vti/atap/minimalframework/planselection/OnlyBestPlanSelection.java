@@ -24,22 +24,21 @@ import java.util.Set;
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
 import se.vti.atap.minimalframework.PlanSelection;
-import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkConditions;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class OnlyBestPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions, A extends Agent<?>>
-		implements PlanSelection<A, T> {
+public class OnlyBestPlanSelection<A extends Agent<?>, T extends NetworkConditions> implements PlanSelection<A, T> {
 
 	public OnlyBestPlanSelection() {
 	}
 
 	@Override
 	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
-		agents.stream().max((a1, a2) -> Double.compare(a1.computeGap(), a2.computeGap())).get().setCurrentPlanToCandidatePlan();
+		agents.stream().max((a1, a2) -> Double.compare(a1.computeGap(), a2.computeGap())).get()
+				.setCurrentPlanToCandidatePlan();
 	}
-	
+
 }

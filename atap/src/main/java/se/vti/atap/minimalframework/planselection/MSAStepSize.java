@@ -19,25 +19,21 @@
  */
 package se.vti.atap.minimalframework.planselection;
 
-import se.vti.atap.minimalframework.Agent;
-import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.PlanSelection;
-
 /**
  * 
  * @author GunnarF
  *
  */
-public abstract class AbstractPlanSelection<T extends NetworkConditions, A extends Agent<?>>
-		implements PlanSelection<A, T> {
+public class MSAStepSize {
 
-	private final double stepSizeIterationExponent;
+	private final Double iterationExponent;
 
-	public AbstractPlanSelection(double stepSizeIterationExponent) {
-		this.stepSizeIterationExponent = stepSizeIterationExponent;
+	public MSAStepSize(Double iterationExponent) {
+		assert(iterationExponent <= 0);
+		this.iterationExponent = iterationExponent;
 	}
 
-	protected double computeStepSize(int iteration) {
-		return Math.pow(iteration + 1, this.stepSizeIterationExponent);
+	public double compute(int iteration) {
+		return Math.pow(iteration + 1, this.iterationExponent);
 	}
 }
