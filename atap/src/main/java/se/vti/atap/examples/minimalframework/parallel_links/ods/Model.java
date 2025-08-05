@@ -106,7 +106,7 @@ public class Model {
 
 	public static BasicLoggerImpl<ODPair, DoubleArrayNetworkConditions> runWithPlanSelection(Model model,
 			PlanSelection<ODPair, DoubleArrayNetworkConditions> planSelection) {
-		var runner = createRunner(model, 10);
+		var runner = createRunner(model, 1000);
 		runner.setPlanSelection(planSelection);
 		var logger = new BasicLoggerImpl<ODPair, DoubleArrayNetworkConditions>();
 		runner.setLogger(logger);
@@ -126,10 +126,8 @@ public class Model {
 //				model.createApproximateNetworkLoading(true), new DoubleArrayDistance(), -1.0)).getAverageGaps();
 //		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<DoubleArrayWrapper, NetworkFlowImpl, ODPair>(
 //				new NEW_ApproximateNetworkLoading(model.getNetwork().getNumberOfLinks(),true, model.getNetwork()), new NEW_NetworkFlowDistance<>(), -1.0)).getAverageGaps();
-		List<Double> proposedMethodGaps = runWithPlanSelection(model,
-				new LocalSearchPlanSelection<DoubleArrayNetworkConditions, ApproximateNetworkConditionsImpl, ODPair>(
-						new ApproximateNetworkLoadingImpl(model.getNetwork(), false), -1.0, model.rnd))
-				.getAverageGaps();
+		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<>(
+				-1.0, model.rnd, new ApproximateNetworkLoadingImpl(model.getNetwork(), false))).getAverageGaps();
 
 		System.out.println("Iteration\tOneAtATime\tOnlyLargetGap\tUniform\tSorting\tProposed");
 		for (int i = 0; i < selectOnlyBestGaps.size(); i++) {

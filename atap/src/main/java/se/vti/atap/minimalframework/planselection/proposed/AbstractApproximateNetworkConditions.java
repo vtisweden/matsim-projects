@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.Plan;
 
@@ -31,32 +32,36 @@ import se.vti.atap.minimalframework.Plan;
  * @author GunnarF
  *
  */
-public abstract class AbstractApproximateNetworkConditions<Q extends AbstractApproximateNetworkConditions<Q, A, P>, A extends Agent<P>, P extends Plan>
+public abstract class AbstractApproximateNetworkConditions<P extends Plan, A extends Agent<P>, Q extends AbstractApproximateNetworkConditions<P, A, Q>>
 		implements ApproximateNetworkConditions<Q> {
 
 	protected final Map<A, P> agent2plan;
 
-	public AbstractApproximateNetworkConditions(Set<A> agentsUsingCurrentPlan, Set<A> agentsUsingCandidatePlan) {
+	public AbstractApproximateNetworkConditions(Set<A> agentsUsingCurrentPlan, Set<A> agentsUsingCandidatePlan,
+			Network network) {
+		this.initializeInternalState(network);
 		this.agent2plan = new LinkedHashMap<>(agentsUsingCurrentPlan.size() + agentsUsingCandidatePlan.size());
 		for (A agent : agentsUsingCurrentPlan) {
 			this.agent2plan.put(agent, agent.getCurrentPlan());
+			this.addToInternalState(agent.getCurrentPlan(), agent);
 		}
 		for (A agent : agentsUsingCandidatePlan) {
 			this.agent2plan.put(agent, agent.getCandidatePlan());
+			this.addToInternalState(agent.getCandidatePlan(), agent);
 		}
 	}
 
 	@Override
 	public double computeLeaveOneOutDistance(Q other) {
 		double result = 0.0;
-		this.memorizeInternalFlows();
-		other.memorizeInternalFlows();
+		this.memorizeInternalState();
+		other.memorizeInternalState();
 		for (A agent : this.agent2plan.keySet()) {
-			this.addToInternalFlows(agent, this.agent2plan.get(agent), -1.0);
-			other.addToInternalFlows(agent, other.agent2plan.get(agent), -1.0);
+			this.removeFromInternalState(this.agent2plan.get(agent), agent);
+			other.removeFromInternalState(other.agent2plan.get(agent), agent);
 			result += this.computeDistance(other);
-			this.restoreInternalFlows();
-			other.restoreInternalFlows();
+			this.restoreInternalState(); // not re-adding to avoid error propagation
+			other.restoreInternalState();
 		}
 		return result /= this.agent2plan.size();
 	}
@@ -64,10 +69,14 @@ public abstract class AbstractApproximateNetworkConditions<Q extends AbstractApp
 	@Override
 	abstract public double computeDistance(Q other);
 
-	abstract protected void memorizeInternalFlows();
+	abstract protected void initializeInternalState(Network network);
 
-	abstract protected void restoreInternalFlows();
+	abstract protected void addToInternalState(P plan, A agent);
 
-	abstract protected void addToInternalFlows(A agent, P plan, double weight);
+	abstract protected void removeFromInternalState(P plan, A agent);
+
+	abstract protected void memorizeInternalState();
+
+	abstract protected void restoreInternalState();
 
 }

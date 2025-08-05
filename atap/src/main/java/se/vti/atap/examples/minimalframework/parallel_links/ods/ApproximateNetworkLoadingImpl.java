@@ -31,7 +31,7 @@ import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkLoa
  *
  */
 public class ApproximateNetworkLoadingImpl
-		implements ApproximateNetworkLoading<DoubleArrayNetworkConditions, ApproximateNetworkConditionsImpl, ODPair> {
+		implements ApproximateNetworkLoading<ODPair, DoubleArrayNetworkConditions, ApproximateNetworkConditionsImpl> {
 
 	private final Network network;
 
@@ -43,10 +43,10 @@ public class ApproximateNetworkLoadingImpl
 	}
 
 	@Override
-	public ApproximateNetworkConditionsImpl computeApproximateNetworkConditions(Set<ODPair> agentsUsingCurrentPlans,
+	public ApproximateNetworkConditionsImpl compute(Set<ODPair> agentsUsingCurrentPlans,
 			Set<ODPair> agentsUsingCandidatePlans, DoubleArrayNetworkConditions networkConditions) {
-		ApproximateNetworkConditionsImpl result = new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlans,
-				agentsUsingCandidatePlans, this.network);
+		var result = new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlans, agentsUsingCandidatePlans,
+				this.network);
 		if (this.unfair) {
 			result.setFlowTransformation(f -> new ExactNetworkLoadingImpl(this.network).computeNetworkLoading(f).data);
 		}

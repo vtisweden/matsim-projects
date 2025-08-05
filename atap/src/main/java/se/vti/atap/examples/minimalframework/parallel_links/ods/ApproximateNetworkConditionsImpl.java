@@ -20,7 +20,6 @@
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Function;
@@ -33,7 +32,8 @@ import se.vti.atap.minimalframework.planselection.proposed.AbstractApproximateNe
  * @author GunnarF
  *
  */
-public class ApproximateNetworkConditionsImpl extends AbstractApproximateNetworkConditions<ApproximateNetworkConditionsImpl, ODPair, Paths> {
+public class ApproximateNetworkConditionsImpl
+		extends AbstractApproximateNetworkConditions<Paths, ODPair, ApproximateNetworkConditionsImpl> {
 
 	private double[] linkFlows_veh;
 
@@ -44,15 +44,15 @@ public class ApproximateNetworkConditionsImpl extends AbstractApproximateNetwork
 		public double[] apply(double[] data) {
 			return data;
 		}
-
 	};
 
-	public ApproximateNetworkConditionsImpl(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan, Network network) {
-		super(agentsUsingCurrentPlan, agentsUsingCandidatePlan);
-		this.linkFlows_veh = new double[network.getNumberOfLinks()];
-		for (Map.Entry<ODPair, Paths> entry : super.agent2plan.entrySet()) {
-			this.addToInternalFlows(entry.getKey(), entry.getValue(), 1.0);
-		}
+	public ApproximateNetworkConditionsImpl(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan,
+			Network network) {
+		super(agentsUsingCurrentPlan, agentsUsingCandidatePlan, network);
+//		this.linkFlows_veh = new double[network.getNumberOfLinks()];
+//		for (Map.Entry<ODPair, Paths> entry : super.agent2plan.entrySet()) {
+//			this.addToInternalState(entry.getValue(), entry.getKey(), 1.0);
+//		}
 	}
 
 	public ApproximateNetworkConditionsImpl setFlowTransformation(Function<double[], double[]> transformation) {
@@ -60,12 +60,6 @@ public class ApproximateNetworkConditionsImpl extends AbstractApproximateNetwork
 		return this;
 	}
 
-	@Override
-	protected void addToInternalFlows(ODPair odPair, Paths paths, double weight) {
-		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
-			this.linkFlows_veh[odPair.availableLinks[pathIndex]] += weight * paths.flows_veh[pathIndex];
-		}
-	}
 
 	@Override
 	public double computeDistance(ApproximateNetworkConditionsImpl other) {
@@ -80,13 +74,32 @@ public class ApproximateNetworkConditionsImpl extends AbstractApproximateNetwork
 	}
 
 	@Override
-	protected void memorizeInternalFlows() {
+	protected void memorizeInternalState() {
 		this.memorizedLinkFlows_veh = Arrays.copyOf(this.linkFlows_veh, this.linkFlows_veh.length);
 	}
 
 	@Override
-	protected void restoreInternalFlows() {
+	protected void restoreInternalState() {
 		this.linkFlows_veh = Arrays.copyOf(this.memorizedLinkFlows_veh, this.memorizedLinkFlows_veh.length);
+	}
+
+	@Override
+	protected void initializeInternalState(Network network) {
+		this.linkFlows_veh = new double[network.getNumberOfLinks()];
+	}
+
+	@Override
+	protected void addToInternalState(Paths paths, ODPair odPair) {
+		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
+			this.linkFlows_veh[odPair.availableLinks[pathIndex]] += paths.flows_veh[pathIndex];
+		}
+	}
+
+	@Override
+	protected void removeFromInternalState(Paths paths, ODPair odPair) {
+		for (int pathIndex = 0; pathIndex < paths.getNumberOfPaths(); pathIndex++) {
+			this.linkFlows_veh[odPair.availableLinks[pathIndex]] -= paths.flows_veh[pathIndex];
+		}
 	}
 
 }

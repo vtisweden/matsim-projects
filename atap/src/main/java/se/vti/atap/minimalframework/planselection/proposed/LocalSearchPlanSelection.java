@@ -36,89 +36,82 @@ import se.vti.atap.minimalframework.planselection.MSAStepSize;
  * @author GunnarF
  *
  */
-public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>, A extends Agent<?>>
+public class LocalSearchPlanSelection<A extends Agent<?>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>>
 		implements PlanSelection<A, T> {
-
-	private final ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading;
 
 	private final MSAStepSize stepSize;
 
 	private final Random rnd;
 
-	public LocalSearchPlanSelection(ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading,
-			double stepSizeIterationExponent, Random rnd) {
+	private final ApproximateNetworkLoading<A, T, Q> approximateNetworkLoading;
+
+	public LocalSearchPlanSelection(double stepSizeIterationExponent, Random rnd,
+			ApproximateNetworkLoading<A, T, Q> approximateNetworkLoading) {
 		this.stepSize = new MSAStepSize(stepSizeIterationExponent);
 		this.rnd = rnd;
 		this.approximateNetworkLoading = approximateNetworkLoading;
 	}
 
-	private double computeObjectiveFunction(Set<A> agentsUsingCandidatePlan, Q candidateFlows, Q originalFlows,
-			double absoluteAmbitionLevel) {
-		double expectedImprovement = agentsUsingCandidatePlan.stream()
-				.mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
-//		double distance = this.networkFlowDistance.computeDistance(candidateFlows, originalFlows);
-		double distance = candidateFlows.computeLeaveOneOutDistance(originalFlows);
+	private double computeObjectiveFunctionValue(Set<A> agentsUsingCandidatePlan, Q currentApproximateNetworkConditions,
+			Q candidateApproximatNetworkConditions, double absoluteAmbitionLevel) {
+		double expectedImprovement = agentsUsingCandidatePlan.stream().mapToDouble(a -> a.computeGap()).sum();
+		double distance = currentApproximateNetworkConditions
+				.computeLeaveOneOutDistance(candidateApproximatNetworkConditions);
 		return (expectedImprovement - absoluteAmbitionLevel) / (distance + distance * distance + 1e-8);
 	}
 
 	@Override
 	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
 
-		double relativeAmbitionLevel = this.stepSize.compute(iteration);
-		double absoluteAmbitionLevel = relativeAmbitionLevel * agents.stream()
-				.mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
+		double absoluteAmbitionLevel = this.stepSize.compute(iteration)
+				* agents.stream().mapToDouble(a -> a.computeGap()).sum();
 
-		Q originalFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agents,
-				Collections.emptySet(), networkConditions);
+		Q currentApproximateNetworkConditions = this.approximateNetworkLoading.compute(agents, Collections.emptySet(),
+				networkConditions);
 
-		Set<A> agentsUsingCurrentPlans = new LinkedHashSet<>();
-		Set<A> agentsUsingCandidatePlans = new LinkedHashSet<>(agents);
-		Q candidateFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agentsUsingCurrentPlans,
-				agentsUsingCandidatePlans, networkConditions);
+		Set<A> agentsUsingCurrentPlan = new LinkedHashSet<>();
+		Set<A> agentsUsingCandidatePlan = new LinkedHashSet<>(agents);
+		Q candidateApproximateNetworkConditions = this.approximateNetworkLoading.compute(agentsUsingCurrentPlan,
+				agentsUsingCandidatePlan, networkConditions);
 
-		double objectiveFunctionValue = this.computeObjectiveFunction(agentsUsingCandidatePlans, candidateFlows,
-				originalFlows, absoluteAmbitionLevel);
+		double objectiveFunctionValue = this.computeObjectiveFunctionValue(agentsUsingCandidatePlan,
+				currentApproximateNetworkConditions, candidateApproximateNetworkConditions, absoluteAmbitionLevel);
 
 		List<A> allAgents = new ArrayList<>(agents);
 		boolean switched;
 		do {
-//			System.out.println("\t\tQ = " + objectiveFunctionValue);
-
 			switched = false;
 			Collections.shuffle(allAgents, this.rnd);
 			for (A agent : allAgents) {
-				boolean agentWasUsingCandidatePlan = agentsUsingCandidatePlans.contains(agent);
+				boolean agentWasUsingCandidatePlan = agentsUsingCandidatePlan.contains(agent);
 				if (agentWasUsingCandidatePlan) {
-					agentsUsingCandidatePlans.remove(agent);
-					agentsUsingCurrentPlans.add(agent);
+					agentsUsingCandidatePlan.remove(agent);
+					agentsUsingCurrentPlan.add(agent);
 				} else {
-					agentsUsingCurrentPlans.remove(agent);
-					agentsUsingCandidatePlans.add(agent);
+					agentsUsingCurrentPlan.remove(agent);
+					agentsUsingCandidatePlan.add(agent);
 				}
-				candidateFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(
-						agentsUsingCurrentPlans, agentsUsingCandidatePlans, networkConditions);
-				double candidateObjectiveFunctionValue = this.computeObjectiveFunction(agentsUsingCandidatePlans,
-						candidateFlows, originalFlows, absoluteAmbitionLevel);
+				candidateApproximateNetworkConditions = this.approximateNetworkLoading.compute(agentsUsingCurrentPlan,
+						agentsUsingCandidatePlan, networkConditions);
+				double candidateObjectiveFunctionValue = this.computeObjectiveFunctionValue(agentsUsingCandidatePlan,
+						currentApproximateNetworkConditions, candidateApproximateNetworkConditions,
+						absoluteAmbitionLevel);
 				if (candidateObjectiveFunctionValue > objectiveFunctionValue) {
 					objectiveFunctionValue = candidateObjectiveFunctionValue;
 					switched = true;
 				} else {
 					if (agentWasUsingCandidatePlan) {
-						agentsUsingCurrentPlans.remove(agent);
-						agentsUsingCandidatePlans.add(agent);
+						agentsUsingCurrentPlan.remove(agent);
+						agentsUsingCandidatePlan.add(agent);
 					} else {
-						agentsUsingCandidatePlans.remove(agent);
-						agentsUsingCurrentPlans.add(agent);
+						agentsUsingCandidatePlan.remove(agent);
+						agentsUsingCurrentPlan.add(agent);
 					}
 				}
 			}
 		} while (switched);
 
-		for (A a : agents) {
-			if (agentsUsingCandidatePlans.contains(a)) {
-				a.setCurrentPlanToCandidatePlan();
-			}
-			a.setCandidatePlan(null);
-		}
+		agentsUsingCandidatePlan.stream().forEach(a -> a.setCurrentPlanToCandidatePlan());
+		agents.stream().forEach(a -> a.setCandidatePlan(null));
 	}
 }

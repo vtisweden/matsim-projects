@@ -29,8 +29,8 @@ import se.vti.atap.minimalframework.NetworkConditions;
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkLoading<T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>, A extends Agent<?>> {
+public interface ApproximateNetworkLoading<A extends Agent<?>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>> {
 
-	Q computeApproximateNetworkConditions(Set<A> agentsUsingCurrentPlans, Set<A> agentsUsingCandidatePlans, T networkConditions);
-	
+	Q compute(Set<A> agentsUsingCurrentPlan, Set<A> agentsUsingCandidatePlan, T networkConditions);
+
 }

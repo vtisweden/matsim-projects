@@ -26,8 +26,8 @@ package se.vti.atap.minimalframework.planselection.proposed;
  */
 public interface ApproximateNetworkConditions<Q extends ApproximateNetworkConditions<Q>> {
 
-	public double computeLeaveOneOutDistance(Q other);
+	double computeLeaveOneOutDistance(Q other);
 
-	public double computeDistance(Q other);
-	
+	double computeDistance(Q other);
+
 }
