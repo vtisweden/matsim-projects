@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.common;
+package se.vti.atap.minimalframework.planselection;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,14 +27,14 @@ import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.NetworkFlows;
+import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkConditions;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class SortingPlanSelection<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>>
+public class SortingPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions, A extends Agent<?>>
 		extends AbstractPlanSelection<T, A> {
 
 	public SortingPlanSelection(double stepSizeIterationExponent) {

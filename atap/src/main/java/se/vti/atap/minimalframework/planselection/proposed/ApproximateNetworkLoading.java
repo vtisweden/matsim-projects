@@ -17,39 +17,20 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.common;
+package se.vti.atap.minimalframework.planselection.proposed;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.NetworkFlows;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class UniformPlanSelection<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>>
-		extends AbstractPlanSelection<T, A> {
+public interface ApproximateNetworkLoading<T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>, A extends Agent<?>> {
 
-	private final Random rnd = new Random(4711);
-
-	public UniformPlanSelection(double stepSizeIterationExponent) {
-		super(stepSizeIterationExponent);
-	}
-
-	@Override
-	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
-		List<A> allAgents = new ArrayList<>(agents);
-		Collections.shuffle(allAgents, this.rnd);
-		double numberOfReplanners = this.computeStepSize(iteration) * allAgents.size();
-		for (int n = 0; n < numberOfReplanners; n++) {
-			allAgents.get(n).setCurrentPlanToCandidatePlan();
-		}
-	}
+	Q computeApproximateNetworkConditions(Set<A> agentsUsingCurrentPlans, Set<A> agentsUsingCandidatePlans, T networkConditions);
+	
 }

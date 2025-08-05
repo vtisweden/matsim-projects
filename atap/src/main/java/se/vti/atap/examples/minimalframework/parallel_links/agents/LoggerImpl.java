@@ -21,8 +21,8 @@ package se.vti.atap.examples.minimalframework.parallel_links.agents;
 
 import java.util.Set;
 
-import se.vti.atap.minimalframework.common.BasicLoggerImpl;
-import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
+import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
+import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 
 /**
  * 

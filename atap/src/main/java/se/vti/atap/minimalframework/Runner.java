@@ -17,18 +17,9 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.common;
+package se.vti.atap.minimalframework;
 
 import java.util.Set;
-
-import se.vti.atap.minimalframework.Agent;
-import se.vti.atap.minimalframework.ExactNetworkLoading;
-import se.vti.atap.minimalframework.Logger;
-import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.Plan;
-import se.vti.atap.minimalframework.PlanInnovation;
-import se.vti.atap.minimalframework.PlanSelection;
-import se.vti.atap.minimalframework.UtilityFunction;
 
 /**
  * 
@@ -39,7 +30,7 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 
 	private Set<A> agents = null;
 
-	private ExactNetworkLoading<T, A> networkLoading = null;
+	private NetworkLoading<T, A> networkLoading = null;
 
 	private UtilityFunction<T, A, P> utilityFunction = null;
 
@@ -59,7 +50,7 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 		return this;
 	}
 
-	public Runner<T, A, P> setNetworkLoading(ExactNetworkLoading<T, A> networkLoading) {
+	public Runner<T, A, P> setNetworkLoading(NetworkLoading<T, A> networkLoading) {
 		this.networkLoading = networkLoading;
 		return this;
 	}
@@ -95,7 +86,9 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 
 		for (int iteration = 0; iteration < this.maxIterations; iteration++) {
 
-			T networkConditions = this.networkLoading.computeNetworkLoading(this.agents);
+			System.out.println(iteration);
+
+			T networkConditions = this.networkLoading.compute(this.agents);
 
 			for (A agent : this.agents) {
 
@@ -108,7 +101,7 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 					candidatePlan
 							.setUtility(this.utilityFunction.computeUtility(agent, candidatePlan, networkConditions));
 				}
-				
+
 				if (candidatePlan.getUtility() < currentPlan.getUtility()) {
 					agent.setCandidatePlan(currentPlan);
 				}
@@ -122,7 +115,7 @@ public class Runner<T extends NetworkConditions, A extends Agent<P>, P extends P
 		}
 	}
 
-	public Logger<T,A> getLogger() {
+	public Logger<T, A> getLogger() {
 		return this.logger;
-	}	
+	}
 }

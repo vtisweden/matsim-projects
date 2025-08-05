@@ -19,7 +19,7 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.agents;
 
-import se.vti.atap.minimalframework.common.BasicPlanImpl;
+import se.vti.atap.minimalframework.defaults.BasicPlanImpl;
 
 /**
  * 

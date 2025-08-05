@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.framework
+ * se.vti.atap.examples.minimalframework.parallel_links
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,17 +17,27 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.minimalframework.defaults;
 
-import java.util.Set;
+import se.vti.atap.minimalframework.Plan;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ExactNetworkLoading<T extends NetworkConditions, A extends Agent<?>> {
+public class BasicPlanImpl implements Plan {
 
-	T computeNetworkLoading(Set<A> agents);
+	private Double utility = null;
 	
+	@Override
+	public void setUtility(Double utility) {
+		this.utility = utility;
+	}
+
+	@Override
+	public Double getUtility() {
+		return this.utility;
+	}
+
 }

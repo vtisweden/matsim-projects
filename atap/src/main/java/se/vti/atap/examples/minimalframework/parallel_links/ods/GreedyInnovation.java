@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.PlanInnovation;
-import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
+import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 
 /**
  * 

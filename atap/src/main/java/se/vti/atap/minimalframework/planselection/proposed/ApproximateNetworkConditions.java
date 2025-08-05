@@ -17,15 +17,17 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework;
+package se.vti.atap.minimalframework.planselection.proposed;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface NetworkFlowDistance<Q extends NetworkFlows> {
+public interface ApproximateNetworkConditions<Q extends ApproximateNetworkConditions<Q>> {
 
-	double computeDistance(Q a, Q b);
+	public double computeLeaveOneOutDistance(Q other);
 
+	public double computeDistance(Q other);
+	
 }

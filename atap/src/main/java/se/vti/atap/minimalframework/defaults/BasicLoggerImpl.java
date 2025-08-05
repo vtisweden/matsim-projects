@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.common;
+package se.vti.atap.minimalframework.defaults;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -82,17 +82,14 @@ public class BasicLoggerImpl<T extends NetworkConditions, A extends Agent<?>> im
 		return result.toString();
 	}
 
-	@Override
 	public String getHeader() {
 		return this.header;
 	}
 
-	@Override
 	public List<String> getDataRows() {
 		return this.dataRows;
 	}
 	
-	@Override
 	public List<Double> getAverageGaps() {
 		return this.averageGaps;
 	}

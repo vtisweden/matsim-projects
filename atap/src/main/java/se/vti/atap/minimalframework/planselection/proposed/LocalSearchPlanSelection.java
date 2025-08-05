@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.common;
+package se.vti.atap.minimalframework.planselection.proposed;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,10 +27,7 @@ import java.util.Random;
 import java.util.Set;
 
 import se.vti.atap.minimalframework.Agent;
-import se.vti.atap.minimalframework.ApproximateNetworkLoading;
 import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.NetworkFlowDistance;
-import se.vti.atap.minimalframework.NetworkFlows;
 import se.vti.atap.minimalframework.PlanSelection;
 
 /**
@@ -38,21 +35,18 @@ import se.vti.atap.minimalframework.PlanSelection;
  * @author GunnarF
  *
  */
-public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends NetworkFlows, A extends Agent<?>>
+public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends ApproximateNetworkConditions<Q>, A extends Agent<?>>
 		implements PlanSelection<T, A> {
 
 	private final Random rnd = new Random(4711);
 	
 	private final ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading;
 
-	private final NetworkFlowDistance<Q> networkFlowDistance;
-
 	private final double stepSizeIterationExponent;
 	
 	public LocalSearchPlanSelection(ApproximateNetworkLoading<T, Q, A> approximateNetworkLoading,
-			NetworkFlowDistance<Q> networkConditionDistance, double stepSizeIterationExponent) {
+			double stepSizeIterationExponent) {
 		this.approximateNetworkLoading = approximateNetworkLoading;
-		this.networkFlowDistance = networkConditionDistance;
 		this.stepSizeIterationExponent = stepSizeIterationExponent;
 	}
 
@@ -60,7 +54,8 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends Net
 			double absoluteAmbitionLevel) {
 		double expectedImprovement = agentsUsingCandidatePlan.stream()
 				.mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
-		double distance = this.networkFlowDistance.computeDistance(candidateFlows, originalFlows);
+//		double distance = this.networkFlowDistance.computeDistance(candidateFlows, originalFlows);
+		double distance = candidateFlows.computeLeaveOneOutDistance(originalFlows);
 		return (expectedImprovement - absoluteAmbitionLevel) / (distance + distance * distance + 1e-8);
 	}
 
@@ -71,12 +66,12 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends Net
 		double absoluteAmbitionLevel = relativeAmbitionLevel *
 				agents.stream().mapToDouble(a -> a.getCandidatePlan().getUtility() - a.getCurrentPlan().getUtility()).sum();
 		
-		Q originalFlows = this.approximateNetworkLoading.computeFlows(agents, Collections.emptySet(),
+		Q originalFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agents, Collections.emptySet(),
 				networkConditions);
 
 		Set<A> agentsUsingCurrentPlans = new LinkedHashSet<>();
 		Set<A> agentsUsingCandidatePlans = new LinkedHashSet<>(agents);
-		Q candidateFlows = this.approximateNetworkLoading.computeFlows(agentsUsingCurrentPlans,
+		Q candidateFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agentsUsingCurrentPlans,
 				agentsUsingCandidatePlans, networkConditions);
 
 		double objectiveFunctionValue = this.computeObjectiveFunction(agentsUsingCandidatePlans, candidateFlows,
@@ -98,7 +93,7 @@ public class LocalSearchPlanSelection<T extends NetworkConditions, Q extends Net
 					agentsUsingCurrentPlans.remove(agent);
 					agentsUsingCandidatePlans.add(agent);
 				}
-				candidateFlows = this.approximateNetworkLoading.computeFlows(agentsUsingCurrentPlans,
+				candidateFlows = this.approximateNetworkLoading.computeApproximateNetworkConditions(agentsUsingCurrentPlans,
 						agentsUsingCandidatePlans, networkConditions);
 				double candidateObjectiveFunctionValue = this.computeObjectiveFunction(agentsUsingCandidatePlans,
 						candidateFlows, originalFlows, absoluteAmbitionLevel);

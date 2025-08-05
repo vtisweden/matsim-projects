@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.minimalframework
+ * se.vti.atap.examples.minimalframework.parallel_links
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,27 +17,56 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.common;
+package se.vti.atap.minimalframework.defaults;
 
 import se.vti.atap.minimalframework.Agent;
-import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.PlanSelection;
+import se.vti.atap.minimalframework.Plan;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public abstract class AbstractPlanSelection<T extends NetworkConditions, A extends Agent<?>>
-		implements PlanSelection<T, A> {
+public class BasicAgentImpl<P extends Plan> implements Agent<P> {
 
-	private final double stepSizeIterationExponent;
+	private final String id;
 
-	public AbstractPlanSelection(double stepSizeIterationExponent) {
-		this.stepSizeIterationExponent = stepSizeIterationExponent;
+	private P currentPlan = null;
+
+	private P candidatePlan = null;
+
+	public BasicAgentImpl(String id) {
+		this.id = id;
 	}
 
-	protected double computeStepSize(int iteration) {
-		return Math.pow(iteration + 1, this.stepSizeIterationExponent);
+	@Override
+	public String getId() {
+		return this.id;
 	}
+
+	@Override
+	public P getCurrentPlan() {
+		return this.currentPlan;
+	}
+
+	@Override
+	public P getCandidatePlan() {
+		return this.candidatePlan;
+	}
+
+	@Override
+	public void setCurrentPlan(P plan) {
+		this.currentPlan = plan;
+	}
+
+	@Override
+	public void setCandidatePlan(P plan) {
+		this.candidatePlan = plan;
+	}
+
+	@Override
+	public void setCurrentPlanToCandidatePlan() {
+		this.currentPlan = this.candidatePlan;
+	}
+
 }

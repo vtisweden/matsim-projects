@@ -19,8 +19,8 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import se.vti.atap.minimalframework.common.BasicAgentImpl;
-import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
+import se.vti.atap.minimalframework.defaults.BasicAgentImpl;
+import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
 
 /**
  * 

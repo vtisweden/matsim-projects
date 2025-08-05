@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.examples.minimalframework.parallel_links.ods
+ * se.vti.atap.minimalframework.common
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -19,40 +19,36 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
+import java.util.Set;
+
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
+import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkLoading;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class SingleODBeckmanApproximation {
+public class ApproximateNetworkLoadingImpl
+		implements ApproximateNetworkLoading<DoubleArrayWrapper, ApproximateNetworkConditionsImpl, ODPair> {
 
-	public final double[] s;
-	public final double[] c;
-	public final double[] g;
-	public final double[] v;
+	private final Network network;
 
-	public SingleODBeckmanApproximation(ODPair odPair, DoubleArrayWrapper travelTimes_s, Network network) {
-		this.s = new double[odPair.getNumberOfPaths()];
-		this.c = new double[odPair.getNumberOfPaths()];
-		this.g = new double[odPair.getNumberOfPaths()];
-		this.v = new double[odPair.getNumberOfPaths()];
-		for (int h = 0; h < odPair.getNumberOfPaths(); h++) {
-			int ij = odPair.availableLinks[h];
-			this.g[h] = odPair.getCurrentPlan().flows_veh[h];
-			this.v[h] = travelTimes_s.data[ij];
-			this.s[h] = network.compute_dTravelTime_dFlow_s_veh(ij, network.computeFlow_veh(ij, this.v[h]));
-			this.c[h] = this.v[h] - this.s[h] * this.g[h];
-		}
+	private final boolean unfair;
+
+	public ApproximateNetworkLoadingImpl(Network network, boolean unfair) {
+		this.network = network;
+		this.unfair = unfair;
 	}
 
-	public double compute(Paths paths) {
-		double result = 0.0;
-		for (int h = 0; h < paths.getNumberOfPaths(); h++) {
-			double f = paths.flows_veh[h];
-			result += (this.v[h] - this.s[h] * this.g[h]) * f + 0.5 * this.s[h] * f * f;
+	@Override
+	public ApproximateNetworkConditionsImpl computeApproximateNetworkConditions(Set<ODPair> agentsUsingCurrentPlans,
+			Set<ODPair> agentsUsingCandidatePlans, DoubleArrayWrapper networkConditions) {
+		ApproximateNetworkConditionsImpl result = new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlans,
+				agentsUsingCandidatePlans, this.network);
+		if (this.unfair) {
+			result.setFlowTransformation(f -> new ExactNetworkLoadingImpl(this.network).computeNetworkLoading(f).data);
 		}
 		return result;
 	}

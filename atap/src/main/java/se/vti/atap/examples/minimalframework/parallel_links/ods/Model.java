@@ -19,28 +19,22 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.examples.minimalframework.parallel_links.RandomScenarioGenerator;
-import se.vti.atap.minimalframework.ApproximateNetworkLoading;
-import se.vti.atap.minimalframework.ExactNetworkLoading;
-import se.vti.atap.minimalframework.Logger;
 import se.vti.atap.minimalframework.PlanInnovation;
 import se.vti.atap.minimalframework.PlanSelection;
+import se.vti.atap.minimalframework.Runner;
 import se.vti.atap.minimalframework.UtilityFunction;
-import se.vti.atap.minimalframework.common.BasicLoggerImpl;
-import se.vti.atap.minimalframework.common.DoubleArrayDistance;
-import se.vti.atap.minimalframework.common.DoubleArrayWrapper;
-import se.vti.atap.minimalframework.common.LocalSearchPlanSelection;
-import se.vti.atap.minimalframework.common.OneAtATimePlanSelection;
-import se.vti.atap.minimalframework.common.OnlyBestPlanSelection;
-import se.vti.atap.minimalframework.common.Runner;
-import se.vti.atap.minimalframework.common.SortingPlanSelection;
-import se.vti.atap.minimalframework.common.UniformPlanSelection;
+import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
+import se.vti.atap.minimalframework.defaults.DoubleArrayWrapper;
+import se.vti.atap.minimalframework.planselection.OneAtATimePlanSelection;
+import se.vti.atap.minimalframework.planselection.OnlyBestPlanSelection;
+import se.vti.atap.minimalframework.planselection.SortingPlanSelection;
+import se.vti.atap.minimalframework.planselection.UniformPlanSelection;
+import se.vti.atap.minimalframework.planselection.proposed.LocalSearchPlanSelection;
 
 /**
  * 
@@ -66,29 +60,6 @@ public class Model {
 		return this.agents;
 	}
 
-	public ApproximateNetworkLoading<DoubleArrayWrapper, DoubleArrayWrapper, ODPair> createApproximateNetworkLoading(
-			boolean scaleWithCapacity) {
-		return new ApproximateNetworkLoading<>() {
-			@Override
-			public DoubleArrayWrapper computeFlows(Set<ODPair> odPairsUsingCurrentPathFlows,
-					Set<ODPair> odPairsUsingCandidatePathFlows, DoubleArrayWrapper travelTimes) {
-				DoubleArrayWrapper linkFlows_veh = new DoubleArrayWrapper(network.getNumberOfLinks());
-				for (var odPair : odPairsUsingCurrentPathFlows) {
-					odPair.addCurrentPathFlowsToLinkFlows(linkFlows_veh);
-				}
-				for (var odPair : odPairsUsingCandidatePathFlows) {
-					odPair.addCandidatePathFlowsToLinkFlows(linkFlows_veh);
-				}
-				if (scaleWithCapacity) {
-					for (int link = 0; link < network.getNumberOfLinks(); link++) {
-						linkFlows_veh.data[link] /= network.cap_veh[link];
-					}
-				}
-				return linkFlows_veh;
-			}
-		};
-	}
-
 	public UtilityFunction<DoubleArrayWrapper, ODPair, Paths> createUtilityFunction() {
 		return new UtilityFunction<>() {
 			@Override
@@ -98,19 +69,8 @@ public class Model {
 		};
 	}
 
-	public ExactNetworkLoading<DoubleArrayWrapper, ODPair> createExactNetworkLoading() {
-		return new ExactNetworkLoading<>() {
-			@Override
-			public DoubleArrayWrapper computeNetworkLoading(Set<ODPair> agents) {
-				double[] flows = createApproximateNetworkLoading(false).computeFlows(agents, Collections.emptySet(),
-						null).data;
-				DoubleArrayWrapper travelTimes = new DoubleArrayWrapper(network.getNumberOfLinks());
-				for (int i = 0; i < network.getNumberOfLinks(); i++) {
-					travelTimes.data[i] = network.computeTravelTime_s(i, flows[i]);
-				}
-				return travelTimes;
-			}
-		};
+	public ExactNetworkLoadingImpl createExactNetworkLoading() {
+		return new ExactNetworkLoadingImpl(this.network);
 	}
 
 	public PlanInnovation<DoubleArrayWrapper, ODPair> createBestResponsePlanInnovation() {
@@ -122,8 +82,8 @@ public class Model {
 	public static Model createRandomModel(long seed, int numberOfLinks, int numberOfODPairs, int numberOfPaths,
 			double demandScale) {
 		RandomScenarioGenerator gen = new RandomScenarioGenerator(seed);
-		Network network = gen.createRandomNetwork(numberOfLinks, numberOfLinks, 60.0 - 1e-8, 600.0 + 1e-8, 1000.0 - 1e-8,
-				3000.0 + 1e-8);
+		Network network = gen.createRandomNetwork(numberOfLinks, numberOfLinks, 60.0 - 1e-8, 600.0 + 1e-8,
+				1000.0 - 1e-8, 3000.0 + 1e-8);
 		double baselineDemand_veh = (2000.0 * numberOfLinks) / numberOfODPairs;
 		Set<ODPair> odPairs = gen.createRandomOdDemand(numberOfODPairs, numberOfODPairs,
 				demandScale * baselineDemand_veh - 1e-8, demandScale * baselineDemand_veh + 1e-8, numberOfPaths,
@@ -133,41 +93,36 @@ public class Model {
 
 	public static Runner<DoubleArrayWrapper, ODPair, Paths> createRunner(Model model, int iterations) {
 		var runner = new Runner<DoubleArrayWrapper, ODPair, Paths>();
-		runner.setAgents(model.getAgents()).setIterations(iterations).setNetworkLoading(model.createExactNetworkLoading())
+		runner.setAgents(model.getAgents()).setIterations(iterations)
+				.setNetworkLoading(model.createExactNetworkLoading())
 				.setPlanInnovation(model.createBestResponsePlanInnovation())
 				.setUtilityFunction(model.createUtilityFunction()).setLogger(new BasicLoggerImpl<>());
 		return runner;
 	}
 
-	public static Logger<DoubleArrayWrapper, ODPair> runWithPlanSelection(Model model,
+	public static BasicLoggerImpl<DoubleArrayWrapper, ODPair> runWithPlanSelection(Model model,
 			PlanSelection<DoubleArrayWrapper, ODPair> planSelection) {
-		var runner = createRunner(model, 1000);
+		var runner = createRunner(model, 100);
 		runner.setPlanSelection(planSelection);
 		runner.run();
-		return runner.getLogger();
+		return (BasicLoggerImpl<DoubleArrayWrapper, ODPair>) runner.getLogger();
 	}
 
 	public static void runAllMethods(Model model) {
 
-//		System.out.println();
-//		System.out.println("one at a time");
 		List<Double> selectOneAtATimeGaps = runWithPlanSelection(model, new OneAtATimePlanSelection<>())
 				.getAverageGaps();
-//		System.out.println();
-//		System.out.println("only best");
 		List<Double> selectOnlyBestGaps = runWithPlanSelection(model, new OnlyBestPlanSelection<>()).getAverageGaps();
-//		System.out.println();
-//		System.out.println("uniform");
 		List<Double> uniformMethodGaps = runWithPlanSelection(model, new UniformPlanSelection<>(-1.0)).getAverageGaps();
-//		System.out.println();
-//		System.out.println("sorting");
 		List<Double> sortingMethodGaps = runWithPlanSelection(model, new SortingPlanSelection<>(-1.0)).getAverageGaps();
-//		System.out.println();
-//		System.out.println("proposed");
 //		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<>(
 //				model.createApproximateNetworkLoading(true), new DoubleArrayDistance(), -1.0)).getAverageGaps();
-		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<>(
-				model.createApproximateNetworkLoading(true), new DoubleArrayDistance(), -1.0)).getAverageGaps();
+//		List<Double> proposedMethodGaps = runWithPlanSelection(model, new LocalSearchPlanSelection<DoubleArrayWrapper, NetworkFlowImpl, ODPair>(
+//				new NEW_ApproximateNetworkLoading(model.getNetwork().getNumberOfLinks(),true, model.getNetwork()), new NEW_NetworkFlowDistance<>(), -1.0)).getAverageGaps();
+		List<Double> proposedMethodGaps = runWithPlanSelection(model,
+				new LocalSearchPlanSelection<DoubleArrayWrapper, ApproximateNetworkConditionsImpl, ODPair>(
+						new ApproximateNetworkLoadingImpl(model.getNetwork(), false), -1.0))
+				.getAverageGaps();
 
 		System.out.println("Iteration\tOneAtATime\tOnlyLargetGap\tUniform\tSorting\tProposed");
 		for (int i = 0; i < selectOnlyBestGaps.size(); i++) {
@@ -188,8 +143,10 @@ public class Model {
 
 	public static void main(String[] args) {
 
-		runAllMethods(createRandomModel(new Random().nextLong(), 1000, 100, 100, 1.0));
-//		runAllMethods(createRandomModel(new Random().nextLong(), 1000, 1000, 10, 4.0));
+		runAllMethods(createRandomModel(4711, 100, 100, 10, 4.0));
+
+//		runAllMethods(createRandomModel(new Random().nextLong(), 1000, 100, 100, 1.0));
+//		runAllMethods(createRandomModel(4711, 1000, 1000, 10, 4.0));
 //		runAllMethods(createRandomModel(new Random().nextLong(), 1000, 10, 1000, 4.0));
 
 	}
