@@ -29,8 +29,10 @@ import se.vti.atap.minimalframework.Plan;
  */
 public interface ApproximateNetworkConditions<P extends Plan, A extends Agent<P>, Q extends ApproximateNetworkConditions<P, A, Q>> {
 
-	void switchPlan(P plan, A agent);
+	void switchToPlan(P plan, A agent);
 
+	void undoLastSwitch();
+	
 	double computeLeaveOneOutDistance(Q other);
 
 	double computeDistance(Q other);

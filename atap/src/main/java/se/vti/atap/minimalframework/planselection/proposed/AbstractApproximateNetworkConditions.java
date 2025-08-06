@@ -35,63 +35,84 @@ import se.vti.atap.minimalframework.Plan;
 public abstract class AbstractApproximateNetworkConditions<P extends Plan, A extends Agent<P>, Q extends AbstractApproximateNetworkConditions<P, A, Q>>
 		implements ApproximateNetworkConditions<P, A, Q> {
 
+//	protected final Network network;
+	
 	protected final Map<A, P> agent2plan;
 	
 	public AbstractApproximateNetworkConditions(Set<A> agentsUsingCurrentPlan, Set<A> agentsUsingCandidatePlan,
 			Network network) {
 		
-		this.agent2plan  = new LinkedHashMap<>(agentsUsingCurrentPlan.size() + agentsUsingCandidatePlan.size());
-		for (A agent : agentsUsingCurrentPlan) {
-			this.agent2plan.put(agent, agent.getCurrentPlan());
-		}
-		for (A agent : agentsUsingCandidatePlan) {
-			this.agent2plan.put(agent, agent.getCandidatePlan());
-		}	
+//		this.network = network;
+		this.agent2plan = new LinkedHashMap<>(agentsUsingCurrentPlan.size() + agentsUsingCandidatePlan.size());
+//		for (A agent : agentsUsingCurrentPlan) {
+//			this.agent2plan.put(agent, agent.getCurrentPlan());
+//		}
+//		for (A agent : agentsUsingCandidatePlan) {
+//			this.agent2plan.put(agent, agent.getCandidatePlan());
+//		}	
 
 		this.initializeInternalState(network);
 		for (A agent : agentsUsingCurrentPlan) {
-			this.addToInternalState(agent.getCurrentPlan(), agent);
+//			this.addToInternalState(agent.getCurrentPlan(), agent);
+			this.switchToPlan(agent.getCurrentPlan(), agent);
 		}
 		for (A agent : agentsUsingCandidatePlan) {
-			this.addToInternalState(agent.getCandidatePlan(), agent);
+//			this.addToInternalState(agent.getCandidatePlan(), agent);
+			this.switchToPlan(agent.getCandidatePlan(), agent);
 		}
-	}
-	
-	@Override
-	public void switchPlan(P plan, A agent) {
-		this.removeFromInternalState(this.agent2plan.get(agent), agent);
-		this.addToInternalState(plan, agent);
-		this.agent2plan.put(agent, plan);
 	}
 	
 	@Override
 	public double computeLeaveOneOutDistance(Q other) {
+//		double result = 0.0;
+//		this.memorizeInternalState();
+//		other.memorizeInternalState();
+//		for (A agent : this.agent2plan.keySet()) {
+//			this.removeFromInternalState(this.agent2plan.get(agent), agent);
+//			other.removeFromInternalState(other.agent2plan.get(agent), agent);
+//			result += this.computeDistance(other);
+//			this.restoreInternalState(); // not re-adding to avoid error propagation
+//			other.restoreInternalState();
+//		}
+//		return result /= this.agent2plan.size();
+
 		double result = 0.0;
-		this.memorizeInternalState();
-		other.memorizeInternalState();
+//		this.memorizeInternalState();
+//		other.memorizeInternalState();
 		for (A agent : this.agent2plan.keySet()) {
-			this.removeFromInternalState(this.agent2plan.get(agent), agent);
-			other.removeFromInternalState(other.agent2plan.get(agent), agent);
+			this.switchToPlan(null, agent);
+			other.switchToPlan(null, agent);
 			result += this.computeDistance(other);
-			this.restoreInternalState(); // not re-adding to avoid error propagation
-			other.restoreInternalState();
+			this.undoLastSwitch();
+			other.undoLastSwitch();
 		}
 		return result /= this.agent2plan.size();
 	}
 
 	@Override
+	public abstract void switchToPlan(P plan, A agent);
+//	{
+//		this.removeFromInternalState(this.agent2plan.get(agent), agent);
+//		this.addToInternalState(plan, agent);
+//		this.agent2plan.put(agent, plan);
+//	}
+
+	@Override
+	abstract public void undoLastSwitch();
+	
+	@Override
 	abstract public double computeDistance(Q other);
 
 	abstract protected void initializeInternalState(Network network);
 
-	abstract protected void copyInternalState(Q other);
+//	abstract protected void copyInternalState(Q other);
 	
-	abstract protected void addToInternalState(P plan, A agent);
+//	abstract protected void addToInternalState(P plan, A agent);
 
-	abstract protected void removeFromInternalState(P plan, A agent);
+//	abstract protected void removeFromInternalState(P plan, A agent);
 
-	abstract protected void memorizeInternalState();
+//	abstract protected void memorizeInternalState();
 
-	abstract protected void restoreInternalState();
+//	abstract protected void restoreInternalState();
 
 }

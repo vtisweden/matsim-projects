@@ -133,7 +133,7 @@ public class Examples {
 			proposedStats = computeUpdated(proposedStats,
 					runWithPlanSelection(createRandomModelRunner(network, odPairs),
 							new LocalSearchPlanSelection<>(-1.0, rnd, new ApproximateNetworkLoadingImpl(network))
-									.setApproximateDistance(true).setMinimalImprovement(1e-8),
+									.setApproximateDistance(true).setMinimalRelativeImprovement(1e-8),
 							iterations).getAverageGaps());
 
 			try {
