@@ -21,7 +21,6 @@ package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
-import se.vti.atap.examples.minimalframework.parallel_links.SingleODBeckmanApproximation;
 import se.vti.atap.minimalframework.PlanInnovation;
 
 /**
@@ -42,11 +41,10 @@ public class GreedyInnovation implements PlanInnovation<ODPair, NetworkCondition
 		double[] pathFlows_veh = new double[odPair.getNumberOfPaths()];
 		pathFlows_veh[odPair.computeBestPath(this.initialNetworkConditions)] = odPair.demand_veh;
 		odPair.setCurrentPlan(new Paths(pathFlows_veh));
-		odPair.beckmanApproximation = new SingleODBeckmanApproximation(odPair, this.initialNetworkConditions);
 	}
 
 	@Override
 	public void assignCandidatePlan(ODPair odPair, NetworkConditionsImpl networkConditions) {
-		odPair.setCandidatePlan(new Paths(odPair.beckmanApproximation.createBestResponsePathFlows()));
+		odPair.setCandidatePlan(new Paths(odPair.computeApproximatelyEquilibratedPathFlows_veh(networkConditions)));
 	}
 }

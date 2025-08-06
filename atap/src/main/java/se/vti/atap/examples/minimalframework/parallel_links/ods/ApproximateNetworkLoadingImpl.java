@@ -41,7 +41,7 @@ public class ApproximateNetworkLoadingImpl
 
 	@Override
 	public ApproximateNetworkConditionsImpl compute(Set<ODPair> agentsUsingCurrentPlan,
-			Set<ODPair> agentsUsingCandidatePlan, NetworkConditionsImpl travelTimes) {
+			Set<ODPair> agentsUsingCandidatePlan, NetworkConditionsImpl networkConditions) {
 		return new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlan, agentsUsingCandidatePlan, this.network);
 	}
 

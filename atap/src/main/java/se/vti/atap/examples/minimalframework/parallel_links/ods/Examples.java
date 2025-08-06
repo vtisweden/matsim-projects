@@ -66,7 +66,7 @@ public class Examples {
 			Random rnd) {
 		return new Runner<Paths, ODPair, NetworkConditionsImpl>().setAgents(odPairs)
 				.setNetworkLoading(new NetworkLoadingImpl(network)).setPlanInnovation(new GreedyInnovation(network))
-				.setUtilityFunction(new BeckmanUtilityFunction()).setVerbose(false);
+				.setUtilityFunction(new UtilityFunctionImpl()).setVerbose(false);
 	}
 
 	public static LoggerImpl runWithPlanSelection(Runner<Paths, ODPair, NetworkConditionsImpl> runner,

@@ -34,48 +34,47 @@ public class ApproximateNetworkConditionsImpl
 
 	private double[] linkFlows_veh;
 
-//	private double[] memorizedLinkFlows_veh;
-
-//	private Function<double[], double[]> transformation = new Function<>() {
-//		@Override
-//		public double[] apply(double[] data) {
-//			return data;
-//		}
-//	};
+	private Paths lastSwitchedPaths = null;
+	private ODPair lastSwitchedODPair = null;
+	private double[] lastLinkFlowsBeforeSwitch_veh = null;
 
 	public ApproximateNetworkConditionsImpl(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan,
 			Network network) {
 		super(agentsUsingCurrentPlan, agentsUsingCandidatePlan, network);
 	}
 
-//	public ApproximateNetworkConditionsImpl(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan,
-//			Network network, ApproximateNetworkConditionsImpl parent) {
-//		super(agentsUsingCurrentPlan, agentsUsingCandidatePlan, network, parent);
-//	}
-//
-//	public void setFlowTransformation(Function<double[], double[]> transformation) {
-//		this.transformation = transformation;
-//	}
-
-	private Paths lastSwitchedPaths = null;
-	private ODPair lastSwitchedODPair = null;
-	private double[] lastSwitchedLinkFlows_veh = null;
+	@Override
+	protected void initializeInternalState(Network network) {
+		this.linkFlows_veh = new double[network.getNumberOfLinks()];
+	}
+	
+	@Override
+	public double computeDistance(ApproximateNetworkConditionsImpl other) {
+		double sumOfSquares = 0.0;
+		for (int link = 0; link < this.linkFlows_veh.length; link++) {
+			double diff = this.linkFlows_veh[link] - other.linkFlows_veh[link];
+			sumOfSquares += diff * diff;
+		}
+		return Math.sqrt(sumOfSquares);
+	}
 
 	@Override
 	public void switchToPlan(Paths paths, ODPair odPair) {
+		
 		this.lastSwitchedPaths = this.agent2plan.get(odPair);
 		this.lastSwitchedODPair = odPair;
-		this.lastSwitchedLinkFlows_veh = new double[odPair.getNumberOfPaths()];
+		this.lastLinkFlowsBeforeSwitch_veh = new double[odPair.getNumberOfPaths()];
 		for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
-			this.lastSwitchedLinkFlows_veh[path] = this.linkFlows_veh[odPair.availableLinks[path]];
+			this.lastLinkFlowsBeforeSwitch_veh[path] = this.linkFlows_veh[odPair.availableLinks[path]];
 		}
+		
 		if (paths != null) {
 			this.agent2plan.put(odPair, paths);
 			for (int path = 0; path < paths.getNumberOfPaths(); path++) {
 				this.linkFlows_veh[odPair.availableLinks[path]] += paths.pathFlows_veh[path];
 			}
 		} else {
-			this.agent2plan.remove(odPair);			
+			this.agent2plan.remove(odPair);
 		}
 		if (this.lastSwitchedPaths != null) {
 			for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
@@ -87,58 +86,12 @@ public class ApproximateNetworkConditionsImpl
 	@Override
 	public void undoLastSwitch() {
 		for (int path = 0; path < this.lastSwitchedODPair.getNumberOfPaths(); path++) {
-			this.linkFlows_veh[this.lastSwitchedODPair.availableLinks[path]] = this.lastSwitchedLinkFlows_veh[path];
+			this.linkFlows_veh[this.lastSwitchedODPair.availableLinks[path]] = this.lastLinkFlowsBeforeSwitch_veh[path];
 		}
 		this.agent2plan.put(this.lastSwitchedODPair, this.lastSwitchedPaths);
+		
 		this.lastSwitchedPaths = null;
 		this.lastSwitchedODPair = null;
-		this.lastSwitchedLinkFlows_veh = null;
+		this.lastLinkFlowsBeforeSwitch_veh = null;
 	}
-
-	@Override
-	public double computeDistance(ApproximateNetworkConditionsImpl other) {
-//		double[] thisTransformed = this.transformation.apply(this.linkFlows_veh);
-//		double[] otherTransformed = other.transformation.apply(other.linkFlows_veh);
-		double sumOfSquares = 0.0;
-		for (int link = 0; link < this.linkFlows_veh.length; link++) {
-			double diff = this.linkFlows_veh[link] - other.linkFlows_veh[link];
-//			double diff = (this.linkFlows_veh[link] - other.linkFlows_veh[link]) / this.network.cap_veh[link];
-			sumOfSquares += diff * diff;
-		}
-		return Math.sqrt(sumOfSquares);
-	}
-
-	@Override
-	protected void initializeInternalState(Network network) {
-		this.linkFlows_veh = new double[network.getNumberOfLinks()];
-	}
-
-//	@Override
-//	protected void copyInternalState(ApproximateNetworkConditionsImpl other) {
-//		this.linkFlows_veh = Arrays.copyOf(other.linkFlows_veh, other.linkFlows_veh.length);
-//	}
-
-//	@Override
-//	protected void addToInternalState(Paths paths, ODPair odPair) {
-//		for (int path = 0; path < paths.getNumberOfPaths(); path++) {
-//			this.linkFlows_veh[odPair.availableLinks[path]] += paths.pathFlows_veh[path];
-//		}
-//	}
-
-//	@Override
-//	protected void removeFromInternalState(Paths paths, ODPair odPair) {
-//		for (int path = 0; path < paths.getNumberOfPaths(); path++) {
-//			this.linkFlows_veh[odPair.availableLinks[path]] -= paths.pathFlows_veh[path];
-//		}
-//	}
-
-//	@Override
-//	protected void memorizeInternalState() {
-//		this.memorizedLinkFlows_veh = Arrays.copyOf(this.linkFlows_veh, this.linkFlows_veh.length);
-//	}
-
-//	@Override
-//	protected void restoreInternalState() {
-//		this.linkFlows_veh = Arrays.copyOf(this.memorizedLinkFlows_veh, this.memorizedLinkFlows_veh.length);
-//	}
 }
