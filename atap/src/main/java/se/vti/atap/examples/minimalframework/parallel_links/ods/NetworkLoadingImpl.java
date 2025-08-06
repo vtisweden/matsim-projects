@@ -74,7 +74,9 @@ public class NetworkLoadingImpl implements NetworkLoading<ODPair, NetworkConditi
 	@Override
 	public NetworkConditionsImpl compute(Set<ODPair> odPairs) {
 		double[] linkFlows_veh = this.computeLinkFlows_veh(odPairs, Collections.emptySet());
-		return new NetworkConditionsImpl(odPairs, linkFlows_veh, this.computeLinkTravelTimes_s(linkFlows_veh),
+		var networkConditions = new NetworkConditionsImpl(linkFlows_veh, this.computeLinkTravelTimes_s(linkFlows_veh),
 				this.compute_dLinkTravelTimes_dLinkFlows_s_veh(linkFlows_veh));
+		odPairs.stream().forEach(od -> od.beckmanApproximation.updateAfterNetworkLoading(od, networkConditions));
+		return networkConditions;
 	}
 }

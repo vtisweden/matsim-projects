@@ -62,20 +62,18 @@ public class Examples {
 		return odPairs;
 	}
 
-	public static Runner<Paths, ODPair, NetworkConditionsImpl> createRandomModelRunner(Network network,
-			Set<ODPair> odPairs) {
+	public static Runner<Paths, ODPair, NetworkConditionsImpl> createModelRunner(Network network, Set<ODPair> odPairs,
+			Random rnd) {
 		return new Runner<Paths, ODPair, NetworkConditionsImpl>().setAgents(odPairs)
-				.setNetworkLoading(new NetworkLoadingImpl(network)).setPlanInnovation(new GreedyInnovation())
+				.setNetworkLoading(new NetworkLoadingImpl(network)).setPlanInnovation(new GreedyInnovation(network))
 				.setUtilityFunction(new BeckmanUtilityFunction()).setVerbose(false);
-
 	}
 
-	public static BasicLoggerImpl<ODPair, NetworkConditionsImpl> runWithPlanSelection(
-			Runner<Paths, ODPair, NetworkConditionsImpl> runner,
+	public static LoggerImpl runWithPlanSelection(Runner<Paths, ODPair, NetworkConditionsImpl> runner,
 			PlanSelection<ODPair, NetworkConditionsImpl> planSelection, int iterations) {
 		runner.setPlanSelection(planSelection);
 		runner.setIterations(iterations);
-		var logger = new BasicLoggerImpl<ODPair, NetworkConditionsImpl>();
+		var logger = new LoggerImpl();
 		runner.setLogger(logger);
 		runner.run();
 		return logger;
@@ -120,18 +118,22 @@ public class Examples {
 					rnd);
 			Set<ODPair> odPairs = createRandomODPairs(network, numberOfODPairs, numberOfPaths, demandScale, rnd);
 
+			Random rndForRunner = null;
+
 			oneAtATimeStats = computeUpdated(oneAtATimeStats,
-					runWithPlanSelection(createRandomModelRunner(network, odPairs), new OneAtATimePlanSelection<>(null),
-							iterations).getAverageGaps());
+					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
+							new OneAtATimePlanSelection<>(null), iterations).getAverageGaps());
 			onlyBestStats = computeUpdated(onlyBestStats,
-					runWithPlanSelection(createRandomModelRunner(network, odPairs), new OnlyBestPlanSelection<>(),
-							iterations).getAverageGaps());
-			uniformStats = computeUpdated(uniformStats, runWithPlanSelection(createRandomModelRunner(network, odPairs),
-					new UniformPlanSelection<>(-1.0, rnd), iterations).getAverageGaps());
-			sortingStats = computeUpdated(sortingStats, runWithPlanSelection(createRandomModelRunner(network, odPairs),
-					new SortingPlanSelection<>(-1.0), iterations).getAverageGaps());
+					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
+							new OnlyBestPlanSelection<>(), iterations).getAverageGaps());
+			uniformStats = computeUpdated(uniformStats,
+					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
+							new UniformPlanSelection<>(-1.0, rnd), iterations).getAverageGaps());
+			sortingStats = computeUpdated(sortingStats,
+					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
+							new SortingPlanSelection<>(-1.0), iterations).getAverageGaps());			
 			proposedStats = computeUpdated(proposedStats,
-					runWithPlanSelection(createRandomModelRunner(network, odPairs),
+					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
 							new LocalSearchPlanSelection<>(-1.0, rnd, new ApproximateNetworkLoadingImpl(network))
 									.setApproximateDistance(true).setMinimalRelativeImprovement(1e-8),
 							iterations).getAverageGaps());
@@ -170,7 +172,8 @@ public class Examples {
 		int iterations = Integer.parseInt(args[4]);
 		int replications = Integer.parseInt(args[5]);
 
-		runAllMethodsOnRandomNetwork(4711, numberOfLinks, numberOfODPairs, numberOfRoutes, demandScale, iterations, replications,
+		runAllMethodsOnRandomNetwork(4711, numberOfLinks, numberOfODPairs, numberOfRoutes, demandScale, iterations,
+				replications,
 				numberOfLinks + "links_" + numberOfODPairs + "odPairs_" + numberOfRoutes + "routes_" + demandScale
 						+ "demandScale_" + iterations + "iterations_" + replications + "replications.tsv");
 	}

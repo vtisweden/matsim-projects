@@ -19,12 +19,6 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.IntStream;
-
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
 import se.vti.atap.examples.minimalframework.parallel_links.SingleODBeckmanApproximation;
@@ -37,68 +31,22 @@ import se.vti.atap.minimalframework.PlanInnovation;
  */
 public class GreedyInnovation implements PlanInnovation<ODPair, NetworkConditionsImpl> {
 
-	public GreedyInnovation() {
+	private final NetworkConditionsImpl initialNetworkConditions;
+
+	public GreedyInnovation(Network network) {
+		this.initialNetworkConditions = NetworkConditionsImpl.createEmptyNetworkConditions(network);
 	}
 
 	@Override
 	public void assignInitialPlan(ODPair odPair) {
 		double[] pathFlows_veh = new double[odPair.getNumberOfPaths()];
-		pathFlows_veh[0] = odPair.demand_veh;
+		pathFlows_veh[odPair.computeBestPath(this.initialNetworkConditions)] = odPair.demand_veh;
 		odPair.setCurrentPlan(new Paths(pathFlows_veh));
+		odPair.beckmanApproximation = new SingleODBeckmanApproximation(odPair, this.initialNetworkConditions);
 	}
 
 	@Override
 	public void assignCandidatePlan(ODPair odPair, NetworkConditionsImpl networkConditions) {
-
-		SingleODBeckmanApproximation approx = networkConditions.od2beckmanApproximations.get(odPair);
-
-		List<Integer> _H = new ArrayList<>(IntStream.range(0, odPair.getNumberOfPaths()).boxed().toList());
-		Collections.sort(_H, new Comparator<>() {
-			@Override
-			public int compare(Integer h1, Integer h2) {
-				return Double.compare(approx.c[h1], approx.c[h2]);
-			}
-		});
-
-		List<Integer> _Hhat = new ArrayList<>(odPair.getNumberOfPaths());
-
-		double d = odPair.demand_veh;
-		double _B = 1.0 / (approx.s[0] * d);
-		double _C = approx.c[0] / (approx.s[0] * d);
-		double w = (1.0 + _C) / _B;
-		_Hhat.add(0);
-
-		int h = 1;
-		while ((h < odPair.getNumberOfPaths()) && (approx.c[h] < w)) {
-			_C += approx.c[h] / (approx.s[h] * d);
-			_B += 1.0 / (approx.s[h] * d);
-			w = (1.0 + _C) / _B;
-			_Hhat.add(h);
-			h++;
-		}
-
-		double[] f = new double[odPair.getNumberOfPaths()];
-		for (int h2 : _Hhat) {
-			f[h2] = (w - approx.c[h2]) / approx.s[h2];
-		}
-
-		double feasible_veh = 0.0;
-		for (int h2 : _Hhat) {
-			if (f[h2] >= 0) {
-				feasible_veh += f[h2];
-			} else {
-				f[h2] = 0.0;
-			}
-		}
-		if (feasible_veh < 1e-8) {
-			throw new RuntimeException("no feasible flow");
-		}
-		if (Math.abs(feasible_veh - odPair.demand_veh) > 1e-8) {
-			for (int h2 : _Hhat) {
-				f[h2] *= odPair.demand_veh / feasible_veh;
-			}
-		}
-
-		odPair.setCandidatePlan(new Paths(f));
+		odPair.setCandidatePlan(new Paths(odPair.beckmanApproximation.createBestResponsePathFlows()));
 	}
 }

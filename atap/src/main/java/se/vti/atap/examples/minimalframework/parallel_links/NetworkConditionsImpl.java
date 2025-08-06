@@ -19,9 +19,8 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links;
 
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import se.vti.atap.examples.minimalframework.parallel_links.ods.ODPair;
 import se.vti.atap.minimalframework.NetworkConditions;
@@ -39,15 +38,23 @@ public class NetworkConditionsImpl implements NetworkConditions {
 
 	public final double[] dLinkTravelTimes_dLinkFlows_s_veh;
 
-	public final Map<ODPair, SingleODBeckmanApproximation> od2beckmanApproximations;
-
-	public NetworkConditionsImpl(Set<ODPair> odPairs, double[] linkFlows_veh, double[] linkTravelTimes_s,
+	public NetworkConditionsImpl(double[] linkFlows_veh, double[] linkTravelTimes_s,
 			double[] dLinkTravelTimes_dLinkFlows_s_veh) {
 		this.linkFlows_veh = linkFlows_veh;
 		this.linkTravelTimes_s = linkTravelTimes_s;
 		this.dLinkTravelTimes_dLinkFlows_s_veh = dLinkTravelTimes_dLinkFlows_s_veh;
-		this.od2beckmanApproximations = odPairs.stream()
-				.collect(Collectors.toMap(od -> od, od -> new SingleODBeckmanApproximation(od, this)));
+//		this.od2beckmanApproximations = odPairs.stream()
+//				.collect(Collectors.toMap(od -> od, od -> new SingleODBeckmanApproximation(od, this)));
+	}
+
+	public static NetworkConditionsImpl createEmptyNetworkConditions(Network network) {
+		double[] linkFlows_veh = new double[network.getNumberOfLinks()];
+		double[] linkTravelTimes_s = Arrays.copyOf(network.t0_s, network.t0_s.length);
+		double[] dLinkTravelTimes_dLinkFlows_s_veh = new double[network.getNumberOfLinks()];
+		for (int link = 0; link < network.getNumberOfLinks(); link++) {
+			dLinkTravelTimes_dLinkFlows_s_veh[link] = network.compute_dLinkTravelTime_dLinkFlow_s_veh(link, 0);
+		}
+		return new NetworkConditionsImpl(linkFlows_veh, linkTravelTimes_s, dLinkTravelTimes_dLinkFlows_s_veh);
 	}
 
 }

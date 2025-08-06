@@ -26,11 +26,25 @@ import se.vti.atap.minimalframework.UtilityFunction;
  */
 public class BeckmanUtilityFunction implements UtilityFunction<Paths, ODPair, NetworkConditionsImpl> {
 
-	public BeckmanUtilityFunction() {		
+	public BeckmanUtilityFunction() {
 	}
-	
+
 	@Override
 	public double compute(Paths paths, ODPair odPair, NetworkConditionsImpl networkConditions) {
-		return (-1.0) * networkConditions.od2beckmanApproximations.get(odPair).compute(paths);
+//		return (-1.0) * networkConditions.od2beckmanApproximations.get(odPair).compute(paths);
+//		return (-1.0) * odPair.beckmanApproximation.computeBeckmanFunctionValue(paths);
+
+		int bestPath = odPair.computeBestPath(networkConditions);
+		double minTT_s = networkConditions.linkTravelTimes_s[odPair.availableLinks[bestPath]];
+		double min = minTT_s * odPair.demand_veh;
+
+		double avg = 0.0;
+		for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
+			int link = odPair.availableLinks[path];
+			avg += paths.pathFlows_veh[path] * networkConditions.linkTravelTimes_s[link];
+		}
+
+		double gap = avg - min;
+		return -gap;
 	}
 }

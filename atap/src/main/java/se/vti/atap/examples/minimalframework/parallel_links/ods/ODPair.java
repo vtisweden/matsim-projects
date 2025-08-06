@@ -19,6 +19,8 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
+import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
+import se.vti.atap.examples.minimalframework.parallel_links.SingleODBeckmanApproximation;
 import se.vti.atap.minimalframework.defaults.BasicAgent;
 
 /**
@@ -32,12 +34,27 @@ public class ODPair extends BasicAgent<Paths> {
 
 	public final int[] availableLinks;
 
+	public SingleODBeckmanApproximation beckmanApproximation = null;
+	
 	public ODPair(String id, Double demand_veh, int... availableLinks) {
 		super(id);
 		this.demand_veh = demand_veh;
 		this.availableLinks = availableLinks;
 	}
 
+	public int computeBestPath(NetworkConditionsImpl networkConditions) {
+		int bestPath = 0;
+		double shortestTT_s = Double.POSITIVE_INFINITY;
+		for (int path = 0; path < this.getNumberOfPaths(); path++) {
+			int link = this.availableLinks[path];
+			if (networkConditions.linkTravelTimes_s[link] < shortestTT_s) {
+				bestPath = path;
+				shortestTT_s = networkConditions.linkTravelTimes_s[link];
+			}
+		}
+		return bestPath;
+	}
+	
 	public int getNumberOfPaths() {
 		return this.availableLinks.length;
 	}
