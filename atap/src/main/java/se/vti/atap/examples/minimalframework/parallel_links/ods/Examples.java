@@ -22,6 +22,7 @@ package se.vti.atap.examples.minimalframework.parallel_links.ods;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
@@ -51,13 +52,14 @@ public class Examples {
 
 	static Set<ODPair> createRandomODPairs(Network network, int numberOfODPairs, int numberOfPaths, double demandScale,
 			Random rnd) {
-		double baselineDemand_veh = (2000.0 * network.getNumberOfLinks()) / numberOfODPairs;
+		double networkCapacity_veh = Arrays.stream(network.cap_veh).sum();		
+		double baselineODDemand_veh = networkCapacity_veh / numberOfODPairs;
 		List<int[]> choiceSets = RandomChoiceSetGenerator.createRandomChoiceSets(numberOfODPairs, numberOfPaths,
 				network, rnd);
 		Set<ODPair> odPairs = new LinkedHashSet<>(choiceSets.size());
 		int n = 0;
 		for (int[] choiceSet : choiceSets) {
-			odPairs.add(new ODPair("od pair " + (n++), demandScale * baselineDemand_veh, choiceSet));
+			odPairs.add(new ODPair("od pair " + (n++), demandScale * baselineODDemand_veh, choiceSet));
 		}
 		return odPairs;
 	}
@@ -138,21 +140,35 @@ public class Examples {
 									.setApproximateDistance(true).setMinimalRelativeImprovement(1e-8),
 							iterations).getAverageGaps());
 
+			double lower = 10.0;
+			double upper = 100.0 - lower;
 			try {
 				PrintWriter writer = new PrintWriter(fileName);
-				writer.println("Iteration\tOneAtATimeGap\tOnlyLargestGap\tUniform\tSorting\tProposed");
+				writer.println("Iteration\tOneAtATime(" + lower + ")\tOneAtATimeUpperGap\tOnlyLargestGap(" + lower
+						+ ")\tOnlyLargestGap(" + upper + ")\tUniform(" + lower + ")\tUniform(" + upper + ")\tSorting("
+						+ lower + ")\tSorting(" + upper + ")\tProposed("+lower+")\tProposedUpper");
 				for (int i = 0; i < oneAtATimeStats.size(); i++) {
 					writer.print(i);
 					writer.print("\t");
-					writer.print(oneAtATimeStats.get(i).getMean());
+					writer.print(oneAtATimeStats.get(i).getPercentile(lower));
 					writer.print("\t");
-					writer.print(onlyBestStats.get(i).getMean());
+					writer.print(oneAtATimeStats.get(i).getPercentile(upper));
 					writer.print("\t");
-					writer.print(uniformStats.get(i).getMean());
+					writer.print(onlyBestStats.get(i).getPercentile(lower));
 					writer.print("\t");
-					writer.print(sortingStats.get(i).getMean());
+					writer.print(onlyBestStats.get(i).getPercentile(upper));
 					writer.print("\t");
-					writer.print(proposedStats.get(i).getMean());
+					writer.print(uniformStats.get(i).getPercentile(lower));
+					writer.print("\t");
+					writer.print(uniformStats.get(i).getPercentile(upper));
+					writer.print("\t");
+					writer.print(sortingStats.get(i).getPercentile(lower));
+					writer.print("\t");
+					writer.print(sortingStats.get(i).getPercentile(upper));
+					writer.print("\t");
+					writer.print(proposedStats.get(i).getPercentile(lower));
+					writer.print("\t");
+					writer.print(proposedStats.get(i).getPercentile(upper));
 					writer.println();
 				}
 				writer.flush();

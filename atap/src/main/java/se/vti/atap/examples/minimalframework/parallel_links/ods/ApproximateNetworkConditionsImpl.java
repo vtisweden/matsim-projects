@@ -60,7 +60,6 @@ public class ApproximateNetworkConditionsImpl
 
 	@Override
 	public void switchToPlan(Paths paths, ODPair odPair) {
-		
 		this.lastSwitchedPaths = this.agent2plan.get(odPair);
 		this.lastSwitchedODPair = odPair;
 		this.lastLinkFlowsBeforeSwitch_veh = new double[odPair.getNumberOfPaths()];
