@@ -21,6 +21,7 @@ package se.vti.atap.minimalframework.defaults.planselection.proposed;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
@@ -49,7 +50,7 @@ public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T exte
 	private boolean approximateDistance = false;
 
 	private double minimalRelativeImprovement = 1e-8;
-
+	
 	public LocalSearchPlanSelection(double stepSizeIterationExponent, Random rnd,
 			ApproximateNetworkLoading<P, A, T, Q> approximateNetworkLoading) {
 		this.stepSize = new MSAStepSize(stepSizeIterationExponent);
@@ -67,8 +68,11 @@ public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T exte
 		return this;
 	}
 
+	private Double objectiveFunctionNumeratorScale = null;
+	private Double objectiveFunctionDenominatorScale = null;
+
 	private double computeObjectiveFunctionValue(double expectedImprovement, Q currentApproximateNetworkConditions,
-			Q candidateApproximatNetworkConditions, double absoluteAmbitionLevel) {
+			Q candidateApproximatNetworkConditions, double absoluteAmbitionLevel) {		
 		double distance;
 		if (this.approximateDistance) {
 			distance = currentApproximateNetworkConditions.computeDistance(candidateApproximatNetworkConditions);
@@ -76,7 +80,13 @@ public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T exte
 			distance = currentApproximateNetworkConditions
 					.computeLeaveOneOutDistance(candidateApproximatNetworkConditions);
 		}
-		return (expectedImprovement - absoluteAmbitionLevel) / (distance + distance * distance + 1e-8);
+		if (this.objectiveFunctionNumeratorScale == null) {
+			this.objectiveFunctionNumeratorScale = 1.0 / expectedImprovement;
+			this.objectiveFunctionDenominatorScale = 1.0 / (distance + distance * distance + 1e-8);
+		}
+		double numerator = this.objectiveFunctionNumeratorScale * (expectedImprovement - absoluteAmbitionLevel);
+		double denominator = this.objectiveFunctionDenominatorScale * (distance + distance * distance + 1e-8);
+		return numerator / denominator;
 	}
 
 	@Override
@@ -102,6 +112,12 @@ public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T exte
 		do {
 			switched = false;
 			Collections.shuffle(allAgents, this.rnd);
+//			Collections.sort(allAgents, new Comparator<>() {
+//				@Override
+//				public int compare(A agent1, A agent2) { // sort in descending order
+//					return Double.compare(agent2.computeGap(), agent1.computeGap());
+//				}
+//			});
 			for (A agent : allAgents) {
 				boolean agentWasUsingCandidatePlan = agentsUsingCandidatePlan.contains(agent);
 				double expectedImprovementAfterSwitch;
@@ -115,6 +131,7 @@ public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T exte
 				double objectiveFunctionValueAfterSwitch = this.computeObjectiveFunctionValue(
 						expectedImprovementAfterSwitch, approximateNetworkConditionsWithoutAnySwitch,
 						approximateNetworkConditions, absoluteAmbitionLevel);
+				
 				if (objectiveFunctionValueAfterSwitch > objectiveFunctionValue
 						* (1.0 + this.minimalRelativeImprovement)) {
 					expectedImprovement = expectedImprovementAfterSwitch;

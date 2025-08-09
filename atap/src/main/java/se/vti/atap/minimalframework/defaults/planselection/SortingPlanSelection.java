@@ -50,7 +50,6 @@ public class SortingPlanSelection<A extends Agent<?>, T extends NetworkCondition
 			public int compare(A agent1, A agent2) { // sort in descending order
 				return Double.compare(agent2.computeGap(), agent1.computeGap());
 			}
-
 		});
 		double numberOfReplanners = this.stepSize.compute(iteration) * allAgents.size();
 		for (int n = 0; n < numberOfReplanners; n++) {

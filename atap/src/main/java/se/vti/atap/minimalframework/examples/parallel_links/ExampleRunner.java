@@ -192,16 +192,20 @@ public class ExampleRunner {
 			Network network = this.createRandomNetwork();
 			Set<AgentImpl> demand = this.createRandomDemand(network);
 
+			System.out.println("  running OneAtATime");
 			this.createRunner(network, demand).setPlanSelection(new OneAtATimePlanSelection<>(null))
 					.setLogger(oneAtATimeLogger).run();
+			System.out.println("  running Uniform");
 			this.createRunner(network, demand).setPlanSelection(new UniformPlanSelection<>(-1.0, this.rnd))
 					.setLogger(uniformLogger).run();
+			System.out.println("  running Sorting");
 			this.createRunner(network, demand).setPlanSelection(new SortingPlanSelection<>(-1.0))
 					.setLogger(sortingLogger).run();
 
+			System.out.println("  running Proposed");
 			var proposedPlanSelection = new LocalSearchPlanSelection<PathFlows, AgentImpl, NetworkConditionsImpl, ApproximateNetworkConditionsImpl>(
 					-1.0, this.rnd, new ApproximateNetworkLoadingImpl(network)).setApproximateDistance(true)
-					.setMinimalRelativeImprovement(1e-8);
+					.setMinimalRelativeImprovement(1e-6);
 			createRunner(network, demand).setPlanSelection(proposedPlanSelection).setLogger(proposedLogger).run();
 
 			comparison.printToFile(this.fileName);
@@ -221,10 +225,18 @@ public class ExampleRunner {
 				.setNumberOfPaths(10).setVolumeCapacityRatio(1.0).setIterations(1000).setReplications(10)
 				.setFileName("SmallODFlowExample.tsv").run();
 	}
+	
+	static void runArticleExample() {
+		new ExampleRunner(new Random(4711)).setMode(Mode.ODPAIRS).seMinT0_s(60.0).setMaxT0_s(600.0)
+		.setMinCap_veh(1000.0).setMaxCap_veh(3000.0).setNumberOfLinks(1000).setNumberOfODPairs(1000)
+		.setNumberOfPaths(10).setVolumeCapacityRatio(1.0).setIterations(10000).setReplications(1000)
+		.setFileName("ArticleExample.tsv").run();
+	}
 
 	public static void main(String[] args) {
-		runSmallTripMakerExample();
-		runSmallODExample();
+//		runSmallTripMakerExample();
+//		runSmallODExample();
+		runArticleExample();
 	}
 
 }
