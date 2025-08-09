@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+
 import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
 import se.vti.atap.minimalframework.Logger;
 
@@ -30,66 +32,38 @@ import se.vti.atap.minimalframework.Logger;
  * 
  * @author GunnarF
  *
- * @param <A>
- * @param <T>
  */
 public class LoggerImpl implements Logger<ODPair, NetworkConditionsImpl> {
 
-	private int logCounter = 0;
+	private final List<DescriptiveStatistics> gapStatistics = new ArrayList<>();
 
-	private final List<Double> averageGaps = new ArrayList<>();
-
-	private final List<Double> averageNumberOfPaths = new ArrayList<>();
-	
 	public LoggerImpl() {
 	}
 
-	protected int getLogCounter() {
-		return this.logCounter;
-	}
-
 	@Override
-	public final void log(Set<ODPair> agents, NetworkConditionsImpl networkConditions, int iteration) {
-		assert (this.logCounter == iteration);
-
-		double numberOfPaths = 0.0;
-		for (ODPair odPair : agents) {
-			for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
-				if (odPair.getCurrentPlan().pathFlows_veh[path] >= 1e-8) {
-					numberOfPaths++;
-				}
-			}
-		}
-		this.averageNumberOfPaths.add(numberOfPaths / agents.size());
-
-		double num = 0.0;
-		for (ODPair odPair : agents) {			
-			int bestPath = odPair.computeBestPath(networkConditions);
-			double minTT_s = networkConditions.linkTravelTimes_s[odPair.availableLinks[bestPath]];
-			num += minTT_s * odPair.demand_veh;			
-		}
-		double den = 0.0;
+	public final void log(Set<ODPair> odPairs, NetworkConditionsImpl networkConditions, int iteration) {
+		double numerator = (-1.0) * odPairs.stream().mapToDouble(od -> od.getCurrentPlan().getUtility()).sum();
+		double denominator = 0.0;
 		for (int link = 0; link < networkConditions.linkFlows_veh.length; link++) {
-			den += networkConditions.linkFlows_veh[link] * networkConditions.linkTravelTimes_s[link];
+			denominator += networkConditions.linkFlows_veh[link] * networkConditions.linkTravelTimes_s[link];
 		}
-		double gap = 1.0 - num / den;
-		
-//		double gap = agents.stream().mapToDouble(od -> od.computeGap()).average().getAsDouble();
-				
-		this.averageGaps.add(gap);
+		double relativeEquilibriumGap = numerator / denominator;
+
+		while (this.gapStatistics.size() <= iteration) {
+			this.gapStatistics.add(new DescriptiveStatistics());
+		}
+		this.gapStatistics.get(iteration).addValue(relativeEquilibriumGap);
 	}
 
-	public List<Double> getAverageGaps() {
-		return this.averageGaps;
+	public int getNumberOfIterations() {
+		return this.gapStatistics.size();
 	}
 
-	public String toString() {
-		StringBuffer result = new StringBuffer("averag gap");
-		result.append("\n");
-		for (double gap : this.averageGaps) {
-			result.append(gap);
-			result.append("\n");
+	public DescriptiveStatistics getDataOrNull(int iteration) {
+		if (iteration >= this.gapStatistics.size()) {
+			return null;
+		} else {
+			return this.gapStatistics.get(iteration);
 		}
-		return result.toString();
 	}
 }

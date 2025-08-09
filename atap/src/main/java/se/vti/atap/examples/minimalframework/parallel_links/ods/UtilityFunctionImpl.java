@@ -34,11 +34,16 @@ public class UtilityFunctionImpl implements UtilityFunction<Paths, ODPair, Netwo
 
 	@Override
 	public double compute(Paths paths, ODPair odPair, NetworkConditionsImpl networkConditions) {
-		double totalTravelTime_s = 0.0;
+		int bestPath = odPair.computeBestPath(networkConditions);
+		double shortestTravelTime_s = networkConditions.linkTravelTimes_s[odPair.availableLinks[bestPath]];
+		double shortestTravelTimeSum_s = odPair.demand_veh * shortestTravelTime_s;
+
+		double realizedTravelTimeSum_s = 0.0;
 		for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
 			int link = odPair.availableLinks[path];
-			totalTravelTime_s += paths.pathFlows_veh[path] * networkConditions.linkTravelTimes_s[link];
+			realizedTravelTimeSum_s += paths.pathFlows_veh[path] * networkConditions.linkTravelTimes_s[link];
 		}
-		return -totalTravelTime_s;
+		double gap_s = realizedTravelTimeSum_s - shortestTravelTimeSum_s;
+		return (-1.0) * gap_s;
 	}
 }

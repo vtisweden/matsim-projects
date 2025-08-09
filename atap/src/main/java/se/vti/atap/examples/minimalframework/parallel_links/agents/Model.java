@@ -25,7 +25,7 @@ import java.util.Random;
 import java.util.Set;
 
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
-import se.vti.atap.examples.minimalframework.parallel_links.RandomChoiceSetGenerator;
+import se.vti.atap.examples.minimalframework.parallel_links.RandomScenarioGenerator;
 
 /**
  * 
@@ -36,7 +36,7 @@ public class Model {
 
 	public static Set<AgentImpl> createRandomAgentDemand(int numberOfAgents, int numberOfRoutes, Network network,
 			Random rnd) {
-		List<int[]> choiceSets = RandomChoiceSetGenerator.createRandomChoiceSets(numberOfAgents, numberOfRoutes, network, rnd);
+		List<int[]> choiceSets = RandomScenarioGenerator.createRandomPathSets(numberOfAgents, numberOfRoutes, network, rnd);
 		Set<AgentImpl> result = new LinkedHashSet<>(choiceSets.size());
 		int n = 0;
 		for (int[] choiceSet : choiceSets) {

@@ -19,26 +19,17 @@
  */
 package se.vti.atap.examples.minimalframework.parallel_links.ods;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-
 import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
-import se.vti.atap.examples.minimalframework.parallel_links.RandomChoiceSetGenerator;
-import se.vti.atap.examples.minimalframework.parallel_links.RandomNetworkGenerator;
-import se.vti.atap.minimalframework.PlanSelection;
+import se.vti.atap.examples.minimalframework.parallel_links.RandomScenarioGenerator;
 import se.vti.atap.minimalframework.Runner;
-import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
 import se.vti.atap.minimalframework.planselection.OneAtATimePlanSelection;
-import se.vti.atap.minimalframework.planselection.OnlyBestPlanSelection;
 import se.vti.atap.minimalframework.planselection.SortingPlanSelection;
 import se.vti.atap.minimalframework.planselection.UniformPlanSelection;
 import se.vti.atap.minimalframework.planselection.proposed.LocalSearchPlanSelection;
@@ -50,132 +41,62 @@ import se.vti.atap.minimalframework.planselection.proposed.LocalSearchPlanSelect
  */
 public class Examples {
 
-	static Set<ODPair> createRandomODPairs(Network network, int numberOfODPairs, int numberOfPaths, double demandScale,
-			Random rnd) {
-		double networkCapacity_veh = Arrays.stream(network.cap_veh).sum();		
-		double baselineODDemand_veh = networkCapacity_veh / numberOfODPairs;
-		List<int[]> choiceSets = RandomChoiceSetGenerator.createRandomChoiceSets(numberOfODPairs, numberOfPaths,
-				network, rnd);
-		Set<ODPair> odPairs = new LinkedHashSet<>(choiceSets.size());
+	public static Set<ODPair> createRandomODPairs(Network network, int numberOfODPairs, int numberOfPaths,
+			double volumeCapacityRatio, Random rnd) {
+		double networkCapacityPerODPair_veh = Arrays.stream(network.cap_veh).sum() / numberOfODPairs;
+		List<int[]> pathSets = RandomScenarioGenerator.createRandomPathSets(numberOfODPairs, numberOfPaths, network,
+				rnd);
+		Set<ODPair> odPairs = new LinkedHashSet<>(pathSets.size());
 		int n = 0;
-		for (int[] choiceSet : choiceSets) {
-			odPairs.add(new ODPair("od pair " + (n++), demandScale * baselineODDemand_veh, choiceSet));
+		for (int[] pathSet : pathSets) {
+			odPairs.add(new ODPair("od pair " + (n++), volumeCapacityRatio * networkCapacityPerODPair_veh, pathSet));
 		}
 		return odPairs;
 	}
 
-	public static Runner<Paths, ODPair, NetworkConditionsImpl> createModelRunner(Network network, Set<ODPair> odPairs,
-			Random rnd) {
+	public static Runner<Paths, ODPair, NetworkConditionsImpl> createRunner(Network network, Set<ODPair> odPairs) {
 		return new Runner<Paths, ODPair, NetworkConditionsImpl>().setAgents(odPairs)
 				.setNetworkLoading(new NetworkLoadingImpl(network)).setPlanInnovation(new GreedyInnovation(network))
 				.setUtilityFunction(new UtilityFunctionImpl()).setVerbose(false);
 	}
 
-	public static LoggerImpl runWithPlanSelection(Runner<Paths, ODPair, NetworkConditionsImpl> runner,
-			PlanSelection<ODPair, NetworkConditionsImpl> planSelection, int iterations) {
-		runner.setPlanSelection(planSelection);
-		runner.setIterations(iterations);
-		var logger = new LoggerImpl();
-		runner.setLogger(logger);
-		runner.run();
-		return logger;
-	}
-
-	//////////
-	//////////
-	//////////
-
-	// ==========
-
-	static List<DescriptiveStatistics> computeUpdated(List<DescriptiveStatistics> stats, List<Double> values) {
-		List<DescriptiveStatistics> updatedStats = stats;
-		if (updatedStats == null) {
-			updatedStats = new ArrayList<>(values.size());
-			for (int i = 0; i < values.size(); i++) {
-				updatedStats.add(new DescriptiveStatistics());
-			}
-		}
-		for (int i = 0; i < values.size(); i++) {
-			updatedStats.get(i).addValue(values.get(i));
-		}
-		return updatedStats;
-	}
-
 	public static void runAllMethodsOnRandomNetwork(long seed, int numberOfLinks, int numberOfODPairs,
 			int numberOfPaths, double demandScale, int iterations, int replications, String fileName) {
-
 		Random rnd = new Random(seed);
 
-		List<DescriptiveStatistics> oneAtATimeStats = null;
-		List<DescriptiveStatistics> onlyBestStats = null;
-		List<DescriptiveStatistics> uniformStats = null;
-		List<DescriptiveStatistics> sortingStats = null;
-		List<DescriptiveStatistics> proposedStats = null;
+		LoggerImpl oneAtATimeLogger = new LoggerImpl();
+		LoggerImpl uniformLogger = new LoggerImpl();
+		LoggerImpl sortingLogger = new LoggerImpl();
+		LoggerImpl proposedLogger = new LoggerImpl();
+
+		LogComparisonPrinter<LoggerImpl> comparison = new LogComparisonPrinter<>();
+		comparison.addLogger("OneAtATime", oneAtATimeLogger).addLogger("Uniform", uniformLogger)
+				.addLogger("Sorting", sortingLogger).addLogger("Proposed", proposedLogger);
+		comparison.addStatistic("10Percentile", ds -> ds.getPercentile(10)).addStatistic("90Percentile",
+				ds -> ds.getPercentile(90));
 
 		for (int replication = 0; replication < replications; replication++) {
-
 			System.out.println((replication + 1) + "/" + replications);
 
-			Network network = RandomNetworkGenerator.createRandomNetwork(numberOfLinks, 60.0, 600.0, 1000.0, 3000.0,
+			Network network = RandomScenarioGenerator.createRandomNetwork(numberOfLinks, 60.0, 600.0, 1000.0, 3000.0,
 					rnd);
 			Set<ODPair> odPairs = createRandomODPairs(network, numberOfODPairs, numberOfPaths, demandScale, rnd);
 
-			Random rndForRunner = null;
+			createRunner(network, odPairs).setPlanSelection(new OneAtATimePlanSelection<>(null))
+					.setIterations(iterations).setLogger(oneAtATimeLogger).run();
+			createRunner(network, odPairs).setPlanSelection(new UniformPlanSelection<>(-1.0, rnd))
+					.setIterations(iterations).setLogger(uniformLogger).run();
+			createRunner(network, odPairs).setPlanSelection(new SortingPlanSelection<>(-1.0)).setIterations(iterations)
+					.setLogger(sortingLogger).run();
 
-			oneAtATimeStats = computeUpdated(oneAtATimeStats,
-					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
-							new OneAtATimePlanSelection<>(null), iterations).getAverageGaps());
-			onlyBestStats = computeUpdated(onlyBestStats,
-					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
-							new OnlyBestPlanSelection<>(), iterations).getAverageGaps());
-			uniformStats = computeUpdated(uniformStats,
-					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
-							new UniformPlanSelection<>(-1.0, rnd), iterations).getAverageGaps());
-			sortingStats = computeUpdated(sortingStats,
-					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
-							new SortingPlanSelection<>(-1.0), iterations).getAverageGaps());			
-			proposedStats = computeUpdated(proposedStats,
-					runWithPlanSelection(createModelRunner(network, odPairs, rndForRunner),
-							new LocalSearchPlanSelection<>(-1.0, rnd, new ApproximateNetworkLoadingImpl(network))
-									.setApproximateDistance(true).setMinimalRelativeImprovement(1e-8),
-							iterations).getAverageGaps());
+			var proposedPlanSelection = new LocalSearchPlanSelection<>(-1.0, rnd,
+					new ApproximateNetworkLoadingImpl(network)).setApproximateDistance(true)
+					.setMinimalRelativeImprovement(1e-8);
+			createRunner(network, odPairs).setPlanSelection(proposedPlanSelection).setIterations(iterations)
+					.setLogger(proposedLogger).run();
 
-			double lower = 10.0;
-			double upper = 100.0 - lower;
-			try {
-				PrintWriter writer = new PrintWriter(fileName);
-				writer.println("Iteration\tOneAtATime(" + lower + ")\tOneAtATimeUpperGap\tOnlyLargestGap(" + lower
-						+ ")\tOnlyLargestGap(" + upper + ")\tUniform(" + lower + ")\tUniform(" + upper + ")\tSorting("
-						+ lower + ")\tSorting(" + upper + ")\tProposed("+lower+")\tProposedUpper");
-				for (int i = 0; i < oneAtATimeStats.size(); i++) {
-					writer.print(i);
-					writer.print("\t");
-					writer.print(oneAtATimeStats.get(i).getPercentile(lower));
-					writer.print("\t");
-					writer.print(oneAtATimeStats.get(i).getPercentile(upper));
-					writer.print("\t");
-					writer.print(onlyBestStats.get(i).getPercentile(lower));
-					writer.print("\t");
-					writer.print(onlyBestStats.get(i).getPercentile(upper));
-					writer.print("\t");
-					writer.print(uniformStats.get(i).getPercentile(lower));
-					writer.print("\t");
-					writer.print(uniformStats.get(i).getPercentile(upper));
-					writer.print("\t");
-					writer.print(sortingStats.get(i).getPercentile(lower));
-					writer.print("\t");
-					writer.print(sortingStats.get(i).getPercentile(upper));
-					writer.print("\t");
-					writer.print(proposedStats.get(i).getPercentile(lower));
-					writer.print("\t");
-					writer.print(proposedStats.get(i).getPercentile(upper));
-					writer.println();
-				}
-				writer.flush();
-				writer.close();
-			} catch (FileNotFoundException e) {
-				throw new RuntimeException();
-			}
+			// comparison.printToConsole();
+			comparison.printToFile(fileName);
 		}
 	}
 
