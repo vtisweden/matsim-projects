@@ -17,13 +17,11 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.examples.parallel_links;
 
 import java.util.Collections;
 import java.util.Set;
 
-import se.vti.atap.examples.minimalframework.parallel_links.Network;
-import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
 import se.vti.atap.minimalframework.NetworkLoading;
 
 /**
@@ -31,24 +29,27 @@ import se.vti.atap.minimalframework.NetworkLoading;
  * @author GunnarF
  *
  */
-public class NetworkLoadingImpl implements NetworkLoading<ODPair, NetworkConditionsImpl> {
+public class NetworkLoadingImpl implements NetworkLoading<AgentImpl, NetworkConditionsImpl> {
 
-	private final Network network;
+	protected Network network;
 
 	public NetworkLoadingImpl(Network network) {
 		this.network = network;
 	}
 
-	public double[] computeLinkFlows_veh(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan) {
+	public double[] computeLinkFlows_veh(Set<AgentImpl> agentsUsingCurrentPlan,
+			Set<AgentImpl> agentsUsingCandidatePlan) {
 		double[] linkFlows_veh = new double[this.network.getNumberOfLinks()];
-		for (ODPair odPair : agentsUsingCurrentPlan) {
+		for (AgentImpl odPair : agentsUsingCurrentPlan) {
+			double[] pathFlows_veh = odPair.getCurrentPlan().computePathFlows_veh();
 			for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
-				linkFlows_veh[odPair.availableLinks[path]] += odPair.getCurrentPlan().pathFlows_veh[path];
+				linkFlows_veh[odPair.availableLinks[path]] += pathFlows_veh[path];
 			}
 		}
-		for (ODPair odPair : agentsUsingCandidatePlan) {
+		for (AgentImpl odPair : agentsUsingCandidatePlan) {
+			double[] pathFlows_veh = odPair.getCandidatePlan().computePathFlows_veh();
 			for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
-				linkFlows_veh[odPair.availableLinks[path]] += odPair.getCandidatePlan().pathFlows_veh[path];
+				linkFlows_veh[odPair.availableLinks[path]] += pathFlows_veh[path];
 			}
 		}
 		return linkFlows_veh;
@@ -72,10 +73,9 @@ public class NetworkLoadingImpl implements NetworkLoading<ODPair, NetworkConditi
 	}
 
 	@Override
-	public NetworkConditionsImpl compute(Set<ODPair> odPairs) {
-		double[] linkFlows_veh = this.computeLinkFlows_veh(odPairs, Collections.emptySet());
-		var networkConditions = new NetworkConditionsImpl(linkFlows_veh, this.computeLinkTravelTimes_s(linkFlows_veh),
+	public NetworkConditionsImpl compute(Set<AgentImpl> agents) {
+		double[] linkFlows_veh = this.computeLinkFlows_veh(agents, Collections.emptySet());
+		return new NetworkConditionsImpl(linkFlows_veh, this.computeLinkTravelTimes_s(linkFlows_veh),
 				this.compute_dLinkTravelTimes_dLinkFlows_s_veh(linkFlows_veh));
-		return networkConditions;
 	}
 }

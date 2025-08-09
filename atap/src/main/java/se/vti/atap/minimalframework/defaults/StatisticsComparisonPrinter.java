@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.defaults;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -35,24 +35,31 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
  * @author GunnarF
  *
  */
-public class LogComparisonPrinter<L extends LoggerImpl> {
+public class StatisticsComparisonPrinter {
+
+	public static interface DescriptiveStatisticsLogger {
+
+		int getNumberOfIterations();
+
+		DescriptiveStatistics getDataOrNull(int iteration);
+	}
 
 	private List<String> loggerLabels = new ArrayList<>();
-	private List<L> loggers = new ArrayList<>();
+	private List<DescriptiveStatisticsLogger> loggers = new ArrayList<>();
 
 	private List<String> statisticLabels = new ArrayList<>();
 	private List<Function<DescriptiveStatistics, Double>> statistics = new ArrayList<>();
 
-	public LogComparisonPrinter() {
+	public StatisticsComparisonPrinter() {
 	}
 
-	public LogComparisonPrinter<L> addLogger(String label, L logger) {
+	public StatisticsComparisonPrinter addLogger(String label, DescriptiveStatisticsLogger logger) {
 		this.loggerLabels.add(label);
 		this.loggers.add(logger);
 		return this;
 	}
 
-	public LogComparisonPrinter<L> addStatistic(String label, Function<DescriptiveStatistics, Double> statistic) {
+	public StatisticsComparisonPrinter addStatistic(String label, Function<DescriptiveStatistics, Double> statistic) {
 		this.statisticLabels.add(label);
 		this.statistics.add(statistic);
 		return this;
@@ -75,7 +82,7 @@ public class LogComparisonPrinter<L extends LoggerImpl> {
 		for (int iteration = 0; iteration < maxIterations; iteration++) {
 			internalWriter.write(Integer.toString(iteration));
 			internalWriter.write("\t");
-			for (L logger : this.loggers) {
+			for (var logger : this.loggers) {
 				var data = logger.getDataOrNull(iteration);
 				for (var statistic : this.statistics) {
 					internalWriter.write(data == null ? "" : Double.toString(statistic.apply(data)));
@@ -85,7 +92,7 @@ public class LogComparisonPrinter<L extends LoggerImpl> {
 			internalWriter.write("\n");
 			out.flush();
 		}
-		
+
 		internalWriter.close();
 	}
 

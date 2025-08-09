@@ -23,9 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.Plan;
+import se.vti.atap.minimalframework.examples.parallel_links.Network;
 
 /**
  * 

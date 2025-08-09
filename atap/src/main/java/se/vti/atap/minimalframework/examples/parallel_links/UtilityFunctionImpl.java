@@ -17,9 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.examples.parallel_links;
 
-import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
+import java.util.Arrays;
+
 import se.vti.atap.minimalframework.UtilityFunction;
 
 /**
@@ -27,21 +28,23 @@ import se.vti.atap.minimalframework.UtilityFunction;
  * @author GunnarF
  *
  */
-public class UtilityFunctionImpl implements UtilityFunction<Paths, ODPair, NetworkConditionsImpl> {
+public class UtilityFunctionImpl implements UtilityFunction<PathFlows, AgentImpl, NetworkConditionsImpl> {
 
 	public UtilityFunctionImpl() {
 	}
 
 	@Override
-	public double compute(Paths paths, ODPair odPair, NetworkConditionsImpl networkConditions) {
-		int bestPath = odPair.computeBestPath(networkConditions);
-		double shortestTravelTime_s = networkConditions.linkTravelTimes_s[odPair.availableLinks[bestPath]];
-		double shortestTravelTimeSum_s = odPair.demand_veh * shortestTravelTime_s;
+	public double compute(PathFlows paths, AgentImpl odPair, NetworkConditionsImpl networkConditions) {
+		double[] pathFlows_veh = paths.computePathFlows_veh();
+
+		int shortestPath = odPair.computeBestPath(networkConditions);
+		double shortestTravelTime_s = networkConditions.linkTravelTimes_s[odPair.availableLinks[shortestPath]];
+		double shortestTravelTimeSum_s = Arrays.stream(pathFlows_veh).sum() * shortestTravelTime_s;
 
 		double realizedTravelTimeSum_s = 0.0;
 		for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
 			int link = odPair.availableLinks[path];
-			realizedTravelTimeSum_s += paths.pathFlows_veh[path] * networkConditions.linkTravelTimes_s[link];
+			realizedTravelTimeSum_s += pathFlows_veh[path] * networkConditions.linkTravelTimes_s[link];
 		}
 		double gap_s = realizedTravelTimeSum_s - shortestTravelTimeSum_s;
 		return (-1.0) * gap_s;

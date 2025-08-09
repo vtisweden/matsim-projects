@@ -17,53 +17,27 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.examples.parallel_links;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-
-import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
-import se.vti.atap.minimalframework.Logger;
+import se.vti.atap.minimalframework.defaults.BasicLoggerImpl;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class LoggerImpl implements Logger<ODPair, NetworkConditionsImpl> {
+public class LoggerImpl extends BasicLoggerImpl<AgentImpl, NetworkConditionsImpl> {
 
-	private final List<DescriptiveStatistics> gapStatistics = new ArrayList<>();
-
-	public LoggerImpl() {
-	}
-
-	@Override
-	public final void log(Set<ODPair> odPairs, NetworkConditionsImpl networkConditions, int iteration) {
-		double numerator = (-1.0) * odPairs.stream().mapToDouble(od -> od.getCurrentPlan().getUtility()).sum();
+	public double computeGap(Set<AgentImpl> agents, NetworkConditionsImpl networkConditions, int iteration) {
+		double numerator = (-1.0) * agents.stream().mapToDouble(a -> a.getCurrentPlan().getUtility()).sum();
 		double denominator = 0.0;
 		for (int link = 0; link < networkConditions.linkFlows_veh.length; link++) {
 			denominator += networkConditions.linkFlows_veh[link] * networkConditions.linkTravelTimes_s[link];
 		}
 		double relativeEquilibriumGap = numerator / denominator;
-
-		while (this.gapStatistics.size() <= iteration) {
-			this.gapStatistics.add(new DescriptiveStatistics());
-		}
-		this.gapStatistics.get(iteration).addValue(relativeEquilibriumGap);
+		return relativeEquilibriumGap;
 	}
 
-	public int getNumberOfIterations() {
-		return this.gapStatistics.size();
-	}
-
-	public DescriptiveStatistics getDataOrNull(int iteration) {
-		if (iteration >= this.gapStatistics.size()) {
-			return null;
-		} else {
-			return this.gapStatistics.get(iteration);
-		}
-	}
 }

@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+
 import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.Logger;
 import se.vti.atap.minimalframework.NetworkConditions;
@@ -34,37 +36,41 @@ import se.vti.atap.minimalframework.NetworkConditions;
  * @param <A>
  * @param <T>
  */
-public class BasicLoggerImpl<A extends Agent<?>, T extends NetworkConditions> implements Logger<A, T> {
+public class BasicLoggerImpl<A extends Agent<?>, T extends NetworkConditions>
+		implements Logger<A, T>, StatisticsComparisonPrinter.DescriptiveStatisticsLogger {
 
-	private int logCounter = 0;
-
-	private final List<Double> averageGaps = new ArrayList<>();
+	private final List<DescriptiveStatistics> gapStatistics = new ArrayList<>();
 
 	public BasicLoggerImpl() {
 	}
 
-	protected int getLogCounter() {
-		return this.logCounter;
+	@Override
+	public final void log(Set<A> agents, T networkConditions, int iteration) {
+		while (this.gapStatistics.size() <= iteration) {
+			this.gapStatistics.add(new DescriptiveStatistics());
+		}
+		this.gapStatistics.get(iteration).addValue(this.computeGap(agents, networkConditions, iteration));
+	}
+
+	public double computeGap(Set<A> agents, T networkConditions, int iteration) {
+		return agents.stream().mapToDouble(a -> a.computeGap()).average().getAsDouble();
+	}
+
+	public List<DescriptiveStatistics> getAverageGaps() {
+		return this.gapStatistics;
 	}
 
 	@Override
-	public final void log(Set<A> agents, T networkConditions, int iteration) {
-		assert (this.logCounter == iteration);
-		this.averageGaps.add(agents.stream().mapToDouble(a -> a.computeGap()).average().getAsDouble());
-		this.logCounter++;
+	public int getNumberOfIterations() {
+		return this.gapStatistics.size();
 	}
 
-	public List<Double> getAverageGaps() {
-		return this.averageGaps;
-	}
-
-	public String toString() {
-		StringBuffer result = new StringBuffer("averag gap");
-		result.append("\n");
-		for (double gap : this.averageGaps) {
-			result.append(gap);
-			result.append("\n");
+	@Override
+	public DescriptiveStatistics getDataOrNull(int iteration) {
+		if (this.gapStatistics.size() <= iteration) {
+			return null;
+		} else {
+			return this.gapStatistics.get(iteration);
 		}
-		return result.toString();
 	}
 }

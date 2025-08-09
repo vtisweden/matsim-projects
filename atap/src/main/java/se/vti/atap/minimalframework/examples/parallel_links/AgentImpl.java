@@ -17,9 +17,8 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.examples.parallel_links;
 
-import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
 import se.vti.atap.minimalframework.defaults.BasicAgent;
 
 /**
@@ -27,19 +26,20 @@ import se.vti.atap.minimalframework.defaults.BasicAgent;
  * @author GunnarF
  *
  */
-public class ODPair extends BasicAgent<Paths> {
-
-	public final double demand_veh;
+public class AgentImpl extends BasicAgent<PathFlows> {
 
 	public final int[] availableLinks;
 
-	private final SingleODBeckmanApproximation beckmanApproximation;
+	public final double size_veh;
 
-	public ODPair(String id, Double demand_veh, int... availableLinks) {
+	public AgentImpl(String id, double size_veh, int... availableLinks) {
 		super(id);
-		this.demand_veh = demand_veh;
+		this.size_veh = size_veh;
 		this.availableLinks = availableLinks;
-		this.beckmanApproximation = new SingleODBeckmanApproximation(this);
+	}
+
+	public AgentImpl(String id, int... availableLinks) {
+		this(id, 1.0, availableLinks);
 	}
 
 	public int getNumberOfPaths() {
@@ -58,9 +58,4 @@ public class ODPair extends BasicAgent<Paths> {
 		}
 		return bestPath;
 	}
-
-	public double[] computeApproximatelyEquilibratedPathFlows_veh(NetworkConditionsImpl networkConditions) {
-		return this.beckmanApproximation.computeApproximatelyEquilibratedPathFlows_veh(networkConditions);
-	}
-
 }

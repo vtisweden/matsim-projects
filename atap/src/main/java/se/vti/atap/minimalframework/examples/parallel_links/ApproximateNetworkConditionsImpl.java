@@ -17,11 +17,10 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.examples.parallel_links;
 
 import java.util.Set;
 
-import se.vti.atap.examples.minimalframework.parallel_links.Network;
 import se.vti.atap.minimalframework.planselection.proposed.AbstractApproximateNetworkConditions;
 
 /**
@@ -30,16 +29,16 @@ import se.vti.atap.minimalframework.planselection.proposed.AbstractApproximateNe
  *
  */
 public class ApproximateNetworkConditionsImpl
-		extends AbstractApproximateNetworkConditions<Paths, ODPair, ApproximateNetworkConditionsImpl> {
+		extends AbstractApproximateNetworkConditions<PathFlows, AgentImpl, ApproximateNetworkConditionsImpl> {
 
 	private double[] linkFlows_veh;
 
-	private Paths lastSwitchedPaths = null;
-	private ODPair lastSwitchedODPair = null;
+	private PathFlows lastSwitchedPlan = null;
+	private AgentImpl lastSwitchedAgent = null;
 	private double[] lastLinkFlowsBeforeSwitch_veh = null;
 
-	public ApproximateNetworkConditionsImpl(Set<ODPair> agentsUsingCurrentPlan, Set<ODPair> agentsUsingCandidatePlan,
-			Network network) {
+	public ApproximateNetworkConditionsImpl(Set<AgentImpl> agentsUsingCurrentPlan,
+			Set<AgentImpl> agentsUsingCandidatePlan, Network network) {
 		super(agentsUsingCurrentPlan, agentsUsingCandidatePlan, network);
 	}
 
@@ -47,7 +46,7 @@ public class ApproximateNetworkConditionsImpl
 	protected void initializeInternalState(Network network) {
 		this.linkFlows_veh = new double[network.getNumberOfLinks()];
 	}
-	
+
 	@Override
 	public double computeDistance(ApproximateNetworkConditionsImpl other) {
 		double sumOfSquares = 0.0;
@@ -59,38 +58,40 @@ public class ApproximateNetworkConditionsImpl
 	}
 
 	@Override
-	public void switchToPlan(Paths paths, ODPair odPair) {
-		this.lastSwitchedPaths = this.agent2plan.get(odPair);
-		this.lastSwitchedODPair = odPair;
-		this.lastLinkFlowsBeforeSwitch_veh = new double[odPair.getNumberOfPaths()];
-		for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
-			this.lastLinkFlowsBeforeSwitch_veh[path] = this.linkFlows_veh[odPair.availableLinks[path]];
+	public void switchToPlan(PathFlows plan, AgentImpl agent) {
+		this.lastSwitchedPlan = this.agent2plan.get(agent);
+		this.lastSwitchedAgent = agent;
+		this.lastLinkFlowsBeforeSwitch_veh = new double[agent.getNumberOfPaths()];
+		for (int path = 0; path < agent.getNumberOfPaths(); path++) {
+			this.lastLinkFlowsBeforeSwitch_veh[path] = this.linkFlows_veh[agent.availableLinks[path]];
 		}
-		
-		if (paths != null) {
-			this.agent2plan.put(odPair, paths);
-			for (int path = 0; path < paths.getNumberOfPaths(); path++) {
-				this.linkFlows_veh[odPair.availableLinks[path]] += paths.pathFlows_veh[path];
+
+		if (plan != null) {
+			double[] pathFlows_veh = plan.computePathFlows_veh();
+			this.agent2plan.put(agent, plan);
+			for (int path = 0; path < agent.getNumberOfPaths(); path++) {
+				this.linkFlows_veh[agent.availableLinks[path]] += pathFlows_veh[path];
 			}
 		} else {
-			this.agent2plan.remove(odPair);
+			this.agent2plan.remove(agent);
 		}
-		if (this.lastSwitchedPaths != null) {
-			for (int path = 0; path < odPair.getNumberOfPaths(); path++) {
-				this.linkFlows_veh[odPair.availableLinks[path]] -= this.lastSwitchedPaths.pathFlows_veh[path];
+		if (this.lastSwitchedPlan != null) {
+			double[] pathFlows_veh = this.lastSwitchedPlan.computePathFlows_veh();
+			for (int path = 0; path < agent.getNumberOfPaths(); path++) {
+				this.linkFlows_veh[agent.availableLinks[path]] -= pathFlows_veh[path];
 			}
 		}
 	}
 
 	@Override
 	public void undoLastSwitch() {
-		for (int path = 0; path < this.lastSwitchedODPair.getNumberOfPaths(); path++) {
-			this.linkFlows_veh[this.lastSwitchedODPair.availableLinks[path]] = this.lastLinkFlowsBeforeSwitch_veh[path];
+		for (int path = 0; path < this.lastSwitchedAgent.getNumberOfPaths(); path++) {
+			this.linkFlows_veh[this.lastSwitchedAgent.availableLinks[path]] = this.lastLinkFlowsBeforeSwitch_veh[path];
 		}
-		this.agent2plan.put(this.lastSwitchedODPair, this.lastSwitchedPaths);
-		
-		this.lastSwitchedPaths = null;
-		this.lastSwitchedODPair = null;
+		this.agent2plan.put(this.lastSwitchedAgent, this.lastSwitchedPlan);
+
+		this.lastSwitchedPlan = null;
+		this.lastSwitchedAgent = null;
 		this.lastLinkFlowsBeforeSwitch_veh = null;
 	}
 }

@@ -17,7 +17,9 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.examples.parallel_links;
+
+import java.util.Arrays;
 
 import se.vti.atap.minimalframework.defaults.BasicPlan;
 
@@ -26,16 +28,21 @@ import se.vti.atap.minimalframework.defaults.BasicPlan;
  * @author GunnarF
  *
  */
-public class Paths extends BasicPlan {
+public class PathFlows extends BasicPlan {
 
 	public final double[] pathFlows_veh;
 
-	public Paths(double[] pathFlows_veh) {
+	public PathFlows(double[] pathFlows_veh) {
 		this.pathFlows_veh = pathFlows_veh;
 	}
-	
-	public int getNumberOfPaths() {
-		return this.pathFlows_veh.length;
+
+	public PathFlows(int chosenPath, int numberOfPaths) {
+		this.pathFlows_veh = new double[numberOfPaths];
+		this.pathFlows_veh[chosenPath] = 1.0;
+	}
+
+	public double[] computePathFlows_veh() {
+		return Arrays.copyOf(this.pathFlows_veh, this.pathFlows_veh.length);
 	}
 
 }

@@ -1,5 +1,5 @@
 /**
- * se.vti.atap.examples.minimalframework.parallel_links
+ * se.vti.atap.minimalframework.common
  * 
  * Copyright (C) 2025 by Gunnar Flötteröd (VTI, LiU).
  * 
@@ -17,21 +17,30 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.agents;
+package se.vti.atap.minimalframework.examples.parallel_links;
 
-import se.vti.atap.minimalframework.defaults.BasicPlan;
+import java.util.Set;
+
+import se.vti.atap.minimalframework.planselection.proposed.ApproximateNetworkLoading;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class PlanImpl extends BasicPlan {
+public class ApproximateNetworkLoadingImpl implements
+		ApproximateNetworkLoading<PathFlows, AgentImpl, NetworkConditionsImpl, ApproximateNetworkConditionsImpl> {
 
-	public final int linkIndex;
+	private final Network network;
 
-	public PlanImpl(int linkIndex) {
-		this.linkIndex = linkIndex;
+	public ApproximateNetworkLoadingImpl(Network network) {
+		this.network = network;
+	}
+
+	@Override
+	public ApproximateNetworkConditionsImpl compute(Set<AgentImpl> agentsUsingCurrentPlan,
+			Set<AgentImpl> agentsUsingCandidatePlan, NetworkConditionsImpl networkConditions) {
+		return new ApproximateNetworkConditionsImpl(agentsUsingCurrentPlan, agentsUsingCandidatePlan, this.network);
 	}
 
 }

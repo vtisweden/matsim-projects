@@ -17,10 +17,8 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.examples.minimalframework.parallel_links.ods;
+package se.vti.atap.minimalframework.examples.parallel_links;
 
-import se.vti.atap.examples.minimalframework.parallel_links.Network;
-import se.vti.atap.examples.minimalframework.parallel_links.NetworkConditionsImpl;
 import se.vti.atap.minimalframework.PlanInnovation;
 
 /**
@@ -28,23 +26,23 @@ import se.vti.atap.minimalframework.PlanInnovation;
  * @author GunnarF
  *
  */
-public class GreedyInnovation implements PlanInnovation<ODPair, NetworkConditionsImpl> {
+public class ShortestPathsForTripmakers implements PlanInnovation<AgentImpl, NetworkConditionsImpl> {
 
 	private final NetworkConditionsImpl initialNetworkConditions;
 
-	public GreedyInnovation(Network network) {
+	public ShortestPathsForTripmakers(Network network) {
 		this.initialNetworkConditions = NetworkConditionsImpl.createEmptyNetworkConditions(network);
 	}
 
 	@Override
-	public void assignInitialPlan(ODPair odPair) {
-		double[] pathFlows_veh = new double[odPair.getNumberOfPaths()];
-		pathFlows_veh[odPair.computeBestPath(this.initialNetworkConditions)] = odPair.demand_veh;
-		odPair.setCurrentPlan(new Paths(pathFlows_veh));
+	public void assignInitialPlan(AgentImpl tripMaker) {
+		tripMaker.setCurrentPlan(
+				new PathFlows(tripMaker.computeBestPath(this.initialNetworkConditions), tripMaker.getNumberOfPaths()));
 	}
 
 	@Override
-	public void assignCandidatePlan(ODPair odPair, NetworkConditionsImpl networkConditions) {
-		odPair.setCandidatePlan(new Paths(odPair.computeApproximatelyEquilibratedPathFlows_veh(networkConditions)));
+	public void assignCandidatePlan(AgentImpl tripMaker, NetworkConditionsImpl networkConditions) {
+		tripMaker.setCandidatePlan(
+				new PathFlows(tripMaker.computeBestPath(networkConditions), tripMaker.getNumberOfPaths()));
 	}
 }
