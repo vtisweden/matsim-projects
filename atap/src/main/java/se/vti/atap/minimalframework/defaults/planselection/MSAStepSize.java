@@ -17,24 +17,23 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.planselection.proposed;
-
-import se.vti.atap.minimalframework.Agent;
-import se.vti.atap.minimalframework.Plan;
+package se.vti.atap.minimalframework.defaults.planselection;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public interface ApproximateNetworkConditions<P extends Plan, A extends Agent<P>, Q extends ApproximateNetworkConditions<P, A, Q>> {
+public class MSAStepSize {
 
-	void switchToPlan(P plan, A agent);
+	private final Double iterationExponent;
 
-	void undoLastSwitch();
-	
-	double computeLeaveOneOutDistance(Q other);
+	public MSAStepSize(Double iterationExponent) {
+		assert(iterationExponent <= 0);
+		this.iterationExponent = iterationExponent;
+	}
 
-	double computeDistance(Q other);
-
+	public double compute(int iteration) {
+		return Math.pow(iteration + 1, this.iterationExponent);
+	}
 }

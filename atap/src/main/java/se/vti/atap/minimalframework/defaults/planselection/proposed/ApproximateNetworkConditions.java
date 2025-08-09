@@ -17,28 +17,24 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.planselection;
-
-import java.util.Set;
+package se.vti.atap.minimalframework.defaults.planselection.proposed;
 
 import se.vti.atap.minimalframework.Agent;
-import se.vti.atap.minimalframework.NetworkConditions;
-import se.vti.atap.minimalframework.PlanSelection;
+import se.vti.atap.minimalframework.Plan;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class OnlyBestPlanSelection<A extends Agent<?>, T extends NetworkConditions> implements PlanSelection<A, T> {
+public interface ApproximateNetworkConditions<P extends Plan, A extends Agent<P>, Q extends ApproximateNetworkConditions<P, A, Q>> {
 
-	public OnlyBestPlanSelection() {
-	}
+	void switchToPlan(P plan, A agent);
 
-	@Override
-	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
-		agents.stream().max((a1, a2) -> Double.compare(a1.computeGap(), a2.computeGap())).get()
-				.setCurrentPlanToCandidatePlan();
-	}
+	void undoLastSwitch();
+	
+	double computeLeaveOneOutDistance(Q other);
+
+	double computeDistance(Q other);
 
 }

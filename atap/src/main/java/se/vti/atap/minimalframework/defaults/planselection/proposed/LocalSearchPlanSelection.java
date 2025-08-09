@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.planselection.proposed;
+package se.vti.atap.minimalframework.defaults.planselection.proposed;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +30,7 @@ import se.vti.atap.minimalframework.Agent;
 import se.vti.atap.minimalframework.NetworkConditions;
 import se.vti.atap.minimalframework.Plan;
 import se.vti.atap.minimalframework.PlanSelection;
-import se.vti.atap.minimalframework.planselection.MSAStepSize;
+import se.vti.atap.minimalframework.defaults.planselection.MSAStepSize;
 
 /**
  * 

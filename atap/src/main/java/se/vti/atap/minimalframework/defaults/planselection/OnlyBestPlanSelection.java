@@ -17,23 +17,28 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package se.vti.atap.minimalframework.planselection;
+package se.vti.atap.minimalframework.defaults.planselection;
+
+import java.util.Set;
+
+import se.vti.atap.minimalframework.Agent;
+import se.vti.atap.minimalframework.NetworkConditions;
+import se.vti.atap.minimalframework.PlanSelection;
 
 /**
  * 
  * @author GunnarF
  *
  */
-public class MSAStepSize {
+public class OnlyBestPlanSelection<A extends Agent<?>, T extends NetworkConditions> implements PlanSelection<A, T> {
 
-	private final Double iterationExponent;
-
-	public MSAStepSize(Double iterationExponent) {
-		assert(iterationExponent <= 0);
-		this.iterationExponent = iterationExponent;
+	public OnlyBestPlanSelection() {
 	}
 
-	public double compute(int iteration) {
-		return Math.pow(iteration + 1, this.iterationExponent);
+	@Override
+	public void assignSelectedPlans(Set<A> agents, T networkConditions, int iteration) {
+		agents.stream().max((a1, a2) -> Double.compare(a1.computeGap(), a2.computeGap())).get()
+				.setCurrentPlanToCandidatePlan();
 	}
+
 }
