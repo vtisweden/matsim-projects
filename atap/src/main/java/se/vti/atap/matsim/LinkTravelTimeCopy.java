@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>. See also COPYING and WARRANTY file.
  */
-package org.matsim.contrib.atap;
+package se.vti.atap.matsim;
 
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;

@@ -21,20 +21,27 @@ package se.vti.atap.matsim.examples.parallel_links;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.zip.CRC32;
 
 import org.apache.commons.io.FileUtils;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.contrib.atap.ATAP;
-import org.matsim.contrib.atap.ATAPConfigGroup;
-import org.matsim.contrib.atap.ATAPConfigGroup.ReplannerIdentifierType;
+import org.matsim.api.core.v01.population.Leg;
 import org.matsim.contrib.emulation.EmulationConfigGroup;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
+import org.matsim.core.controler.events.ShutdownEvent;
+import org.matsim.core.controler.listener.ShutdownListener;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.PopulationUtils;
+
+import se.vti.atap.matsim.ATAP;
+import se.vti.atap.matsim.ATAPConfigGroup;
+import se.vti.atap.matsim.ATAPConfigGroup.ReplannerIdentifierType;
 
 /**
  * 
@@ -69,6 +76,71 @@ public class ParallelLinkExampleRunner {
 				Paths.get(scenarioFolder, scenario.getConfig().plans().getInputFile()).toString());
 	}
 
+	public long computeChecksumForTinyTestCase() {
+		double sizeFactor = 1.0;
+		double inflowDuration_s = 60.0;
+
+		ParallelLinkScenarioFactory factory = new ParallelLinkScenarioFactory(inflowDuration_s, sizeFactor);
+		factory.setBottleneck(0, 500.0);
+		factory.setBottleneck(1, 500.0);
+		factory.setOD(2000, 0, 1);
+
+		Config config = factory.buildConfig();
+		config.controller().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controller().setLastIteration(3);
+		config.travelTimeCalculator().setTraveltimeBinSize(60);
+		config.qsim().setStuckTime(Double.POSITIVE_INFINITY);
+		config.addModule(new EmulationConfigGroup());
+		
+		ATAPConfigGroup atapConfig = new ATAPConfigGroup();
+		atapConfig.setReplannerIdentifier(ReplannerIdentifierType.UPPERBOUND_ATOMIC);
+		atapConfig.setReplanningRateIterationExponent(-0.5);
+		atapConfig.setMaxMemory(4);
+		atapConfig.setKernelHalftime_s(60);
+		atapConfig.setShuffleBeforeReplannerSelection(true);
+		atapConfig.setUseQuadraticDistance(true);
+		config.addModule(atapConfig);
+
+		Scenario scenario = factory.build(config);
+
+		var atap = new ATAP();
+		atap.meet(scenario.getConfig());
+		var controler = new Controler(scenario);
+		var flowListener = new CumulativeFlowListener();
+		controler.addControlerListener(flowListener);
+		controler.getEvents().addHandler(flowListener);
+		atap.meet(controler);
+
+		long[] checkSum = new long[1];
+		controler.addControlerListener(new ShutdownListener() {
+			@Override
+			public void notifyShutdown(ShutdownEvent event) {
+
+				CRC32 crc = new CRC32();
+
+				event.getServices().getScenario().getPopulation().getPersons().values().stream()
+						.sorted(Comparator.comparing(p -> p.getId().toString())).map(p -> p.getSelectedPlan())
+						.forEach(plan -> {
+							plan.getPlanElements().stream().filter(pe -> pe instanceof Leg).map(pe -> (Leg) pe)
+									.forEach(leg -> {
+										StringBuilder sb = new StringBuilder();
+										sb.append(leg.getDepartureTime()).append(",");
+										sb.append(leg.getTravelTime()).append(",");
+										sb.append(leg.getRoute().getRouteDescription());
+										byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+										crc.update(bytes);
+									});
+						});
+
+				checkSum[0] = crc.getValue();
+			}
+		});
+
+		controler.run();
+
+		return checkSum[0];
+	}
+
 	public Scenario createSmallExample(String scenarioFolder, ATAPConfigGroup atapConfig) {
 		double sizeFactor = 3.0;
 		double inflowDuration_s = 900.0;
@@ -83,7 +155,6 @@ public class ParallelLinkExampleRunner {
 		config.controller().setLastIteration(100);
 		config.travelTimeCalculator().setTraveltimeBinSize(60);
 		config.qsim().setStuckTime(Double.POSITIVE_INFINITY);
-		// default: config.qsim().setInsertingWaitingVehiclesBeforeDrivingVehicles(true);
 		config.addModule(new EmulationConfigGroup());
 		config.addModule(atapConfig);
 		if (scenarioFolder != null) {
@@ -115,6 +186,17 @@ public class ParallelLinkExampleRunner {
 		return this.createSmallExample(scenarioFolder, atapConfig);
 	}
 
+//	public Scenario createTinyExampleWithProposed() {
+//		ATAPConfigGroup atapConfig = new ATAPConfigGroup();
+//		atapConfig.setReplannerIdentifier(ReplannerIdentifierType.UPPERBOUND_ATOMIC);
+//		atapConfig.setReplanningRateIterationExponent(-0.5);
+//		atapConfig.setMaxMemory(4);
+//		atapConfig.setKernelHalftime_s(60);
+//		atapConfig.setShuffleBeforeReplannerSelection(true);
+//		atapConfig.setUseQuadraticDistance(true);
+//		return this.createTinyExample(atapConfig);
+//	}
+
 	public Scenario createSmallExampleWithProposed(String scenarioFolder) {
 		ATAPConfigGroup atapConfig = new ATAPConfigGroup();
 		atapConfig.setReplannerIdentifier(ReplannerIdentifierType.UPPERBOUND_ATOMIC);
@@ -139,8 +221,11 @@ public class ParallelLinkExampleRunner {
 
 	public static void main(String[] args) {
 		var example = new ParallelLinkExampleRunner();
-		Scenario scenario = example.createSmallExampleWithProposed("./small");
-		example.runScenario(scenario);
+		System.out.println("CheckSum = " + example.computeChecksumForTinyTestCase());		
+		// 314257185
+		
+//		Scenario scenario = example.createSmallExampleWithProposed("./small");
+//		example.runScenario(scenario);
 	}
 
 }
