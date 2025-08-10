@@ -33,7 +33,7 @@ import se.vti.atap.minimalframework.defaults.StatisticsComparisonPrinter;
 import se.vti.atap.minimalframework.defaults.planselection.OneAtATimePlanSelection;
 import se.vti.atap.minimalframework.defaults.planselection.SortingPlanSelection;
 import se.vti.atap.minimalframework.defaults.planselection.UniformPlanSelection;
-import se.vti.atap.minimalframework.defaults.planselection.proposed.LocalSearchPlanSelection;
+import se.vti.atap.minimalframework.defaults.planselection.proposed.ProposedMethodWithLocalSearchPlanSelection;
 
 public class ExampleRunner {
 
@@ -203,7 +203,7 @@ public class ExampleRunner {
 					.setLogger(sortingLogger).run();
 
 			System.out.println("  running Proposed");
-			var proposedPlanSelection = new LocalSearchPlanSelection<PathFlows, AgentImpl, NetworkConditionsImpl, ApproximateNetworkConditionsImpl>(
+			var proposedPlanSelection = new ProposedMethodWithLocalSearchPlanSelection<PathFlows, AgentImpl, NetworkConditionsImpl, ApproximateNetworkConditionsImpl>(
 					-1.0, this.rnd, new ApproximateNetworkLoadingImpl(network)).setApproximateDistance(true)
 					.setMinimalRelativeImprovement(1e-6);
 			createRunner(network, demand).setPlanSelection(proposedPlanSelection).setLogger(proposedLogger).run();

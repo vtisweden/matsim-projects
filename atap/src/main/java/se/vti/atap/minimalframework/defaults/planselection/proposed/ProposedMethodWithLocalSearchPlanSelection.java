@@ -38,7 +38,7 @@ import se.vti.atap.minimalframework.defaults.planselection.MSAStepSize;
  * @author GunnarF
  *
  */
-public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<P, A, Q>>
+public class ProposedMethodWithLocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T extends NetworkConditions, Q extends ApproximateNetworkConditions<P, A, Q>>
 		implements PlanSelection<A, T> {
 
 	private final MSAStepSize stepSize;
@@ -51,19 +51,19 @@ public class LocalSearchPlanSelection<P extends Plan, A extends Agent<P>, T exte
 
 	private double minimalRelativeImprovement = 1e-8;
 	
-	public LocalSearchPlanSelection(double stepSizeIterationExponent, Random rnd,
+	public ProposedMethodWithLocalSearchPlanSelection(double stepSizeIterationExponent, Random rnd,
 			ApproximateNetworkLoading<P, A, T, Q> approximateNetworkLoading) {
 		this.stepSize = new MSAStepSize(stepSizeIterationExponent);
 		this.rnd = rnd;
 		this.approximateNetworkLoading = approximateNetworkLoading;
 	}
 
-	public LocalSearchPlanSelection<P, A, T, Q> setApproximateDistance(boolean approximateDistance) {
+	public ProposedMethodWithLocalSearchPlanSelection<P, A, T, Q> setApproximateDistance(boolean approximateDistance) {
 		this.approximateDistance = approximateDistance;
 		return this;
 	}
 
-	public LocalSearchPlanSelection<P, A, T, Q> setMinimalRelativeImprovement(double minimalImprovement) {
+	public ProposedMethodWithLocalSearchPlanSelection<P, A, T, Q> setMinimalRelativeImprovement(double minimalImprovement) {
 		this.minimalRelativeImprovement = minimalImprovement;
 		return this;
 	}

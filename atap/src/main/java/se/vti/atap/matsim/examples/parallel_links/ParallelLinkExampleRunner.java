@@ -104,12 +104,12 @@ public class ParallelLinkExampleRunner {
 		Scenario scenario = factory.build(config);
 
 		var atap = new ATAP();
-		atap.meet(scenario.getConfig());
+		atap.configure(scenario.getConfig());
 		var controler = new Controler(scenario);
 		var flowListener = new CumulativeFlowListener();
 		controler.addControlerListener(flowListener);
 		controler.getEvents().addHandler(flowListener);
-		atap.meet(controler);
+		atap.configure(controler);
 
 		long[] checkSum = new long[1];
 		controler.addControlerListener(new ShutdownListener() {
@@ -210,19 +210,19 @@ public class ParallelLinkExampleRunner {
 
 	public void runScenario(Scenario scenario) {
 		var atap = new ATAP();
-		atap.meet(scenario.getConfig());
+		atap.configure(scenario.getConfig());
 		var controler = new Controler(scenario);
 		var flowListener = new CumulativeFlowListener();
 		controler.addControlerListener(flowListener);
 		controler.getEvents().addHandler(flowListener);
-		atap.meet(controler);
+		atap.configure(controler);
 		controler.run();
 	}
 
 	public static void main(String[] args) {
 		var example = new ParallelLinkExampleRunner();
 		System.out.println("CheckSum = " + example.computeChecksumForTinyTestCase());		
-		// 314257185
+		// 314257185 ... make this a unit test
 		
 //		Scenario scenario = example.createSmallExampleWithProposed("./small");
 //		example.runScenario(scenario);

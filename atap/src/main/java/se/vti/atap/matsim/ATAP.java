@@ -82,7 +82,7 @@ public class ATAP {
 		this.emulationParameters.addHandler(clazz);
 	}
 
-	public void meet(final Config config) {
+	public void configure(final Config config) {
 
 		if (this.config != null) {
 			throw new RuntimeException("Have already met a config.");
@@ -222,7 +222,7 @@ public class ATAP {
 		logger.info("Setting fractionOfIterationsToDisableInnovation to infinity.");
 	}
 
-	public void meet(final Controler controler) {
+	public void configure(final Controler controler) {
 		if (this.config == null) {
 			throw new RuntimeException("First meet the config.");
 		}
